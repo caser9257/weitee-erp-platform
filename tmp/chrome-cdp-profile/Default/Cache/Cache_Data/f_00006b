@@ -1,0 +1,329 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/layout/components/UserInfo/src/components/LockPage.vue");/* unplugin-vue-components disabled */import { ElButton as __unplugin_components_2 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_button_style_css.js?v=0f962ce1";
+import { ElInput as __unplugin_components_1 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_input_style_css.js?v=0f962ce1";
+import __unplugin_components_0 from "/src/components/Icon/src/Icon.vue";
+import { defineComponent as _defineComponent } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+import { deleteUserCache } from "/src/hooks/web/useCache.ts";
+import { useLockStore } from "/src/store/modules/lock.ts";
+import { useNow } from "/src/hooks/web/useNow.ts";
+import { useDesign } from "/src/hooks/web/useDesign.ts";
+import { useTagsViewStore } from "/src/store/modules/tagsView.ts";
+import { useUserStore } from "/src/store/modules/user.ts";
+import avatarImg from "/src/assets/imgs/avatar.gif?import";
+
+import { useRouter } from "/node_modules/.vite/deps/vue-router.js?v=0f962ce1";
+import { ref, computed } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+import { useI18n } from "/src/hooks/web/useI18n.ts";
+const _sfc_main = /* @__PURE__ */ _defineComponent({
+  __name: "LockPage",
+  setup(__props, { expose: __expose }) {
+    __expose();
+    const tagsViewStore = useTagsViewStore();
+    const { replace } = useRouter();
+    const userStore = useUserStore();
+    const password = ref("");
+    const loading = ref(false);
+    const errMsg = ref(false);
+    const showDate = ref(true);
+    const { getPrefixCls } = useDesign();
+    const prefixCls = getPrefixCls("lock-page");
+    const avatar = computed(() => userStore.user.avatar || avatarImg);
+    const userName = computed(() => userStore.user.nickname ?? "Admin");
+    const lockStore = useLockStore();
+    const { hour, month, minute, meridiem, year, day, week } = useNow(true);
+    const { t } = useI18n();
+    async function unLock() {
+      if (!password.value) {
+        return;
+      }
+      let pwd = password.value;
+      try {
+        loading.value = true;
+        const res = await lockStore.unLock(pwd);
+        errMsg.value = !res;
+      } finally {
+        loading.value = false;
+      }
+    }
+    async function goLogin() {
+      await userStore.loginOut().catch(() => {
+      });
+      deleteUserCache();
+      tagsViewStore.delAllViews();
+      lockStore.resetLockInfo();
+      replace("/login");
+    }
+    function handleShowForm(show = false) {
+      showDate.value = show;
+    }
+    const __returned__ = { tagsViewStore, replace, userStore, password, loading, errMsg, showDate, getPrefixCls, prefixCls, avatar, userName, lockStore, hour, month, minute, meridiem, year, day, week, t, unLock, goLogin, handleShowForm };
+    Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
+    return __returned__;
+  }
+});
+import { resolveComponent as _resolveComponent, createVNode as _createVNode, toDisplayString as _toDisplayString, createElementVNode as _createElementVNode, vShow as _vShow, normalizeClass as _normalizeClass, withDirectives as _withDirectives, openBlock as _openBlock, createElementBlock as _createElementBlock, createCommentVNode as _createCommentVNode, createTextVNode as _createTextVNode, withCtx as _withCtx, Transition as _Transition } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+const _hoisted_1 = { class: "flex w-screen h-screen justify-center items-center" };
+const _hoisted_2 = { class: "flex flex-col items-center" };
+const _hoisted_3 = ["src"];
+const _hoisted_4 = { class: "text-14px my-10px text-[var(--logo-title-text-color)]" };
+const _hoisted_5 = { class: "absolute bottom-5 w-full text-gray-300 xl:text-xl 2xl:text-3xl text-center enter-y" };
+const _hoisted_6 = { class: "text-5xl mb-4 enter-x" };
+const _hoisted_7 = { class: "text-3xl" };
+const _hoisted_8 = { class: "text-2xl" };
+function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_Icon = __unplugin_components_0;
+  const _component_ElInput = __unplugin_components_1;
+  const _component_ElButton = __unplugin_components_2;
+  return _openBlock(), _createElementBlock(
+    "div",
+    {
+      class: _normalizeClass([$setup.prefixCls, "fixed inset-0 flex h-screen w-screen bg-black items-center justify-center"])
+    },
+    [
+      _withDirectives(_createElementVNode(
+        "div",
+        {
+          class: _normalizeClass([`${$setup.prefixCls}__unlock`, "absolute top-0 left-1/2 flex pt-5 h-16 items-center justify-center sm:text-md xl:text-xl text-white flex-col cursor-pointer transform translate-x-1/2"]),
+          onClick: _cache[0] || (_cache[0] = ($event) => $setup.handleShowForm(false))
+        },
+        [
+          _createVNode(_component_Icon, { icon: "ep:lock" }),
+          _createElementVNode(
+            "span",
+            null,
+            _toDisplayString($setup.t("lock.unlock")),
+            1
+            /* TEXT */
+          )
+        ],
+        2
+        /* CLASS */
+      ), [
+        [_vShow, $setup.showDate]
+      ]),
+      _createElementVNode("div", _hoisted_1, [
+        _createElementVNode(
+          "div",
+          {
+            class: _normalizeClass([`${$setup.prefixCls}__hour`, "relative mr-5 md:mr-20 w-2/5 h-2/5 md:h-4/5"])
+          },
+          [
+            _createElementVNode(
+              "span",
+              null,
+              _toDisplayString($setup.hour),
+              1
+              /* TEXT */
+            ),
+            _withDirectives(_createElementVNode(
+              "span",
+              { class: "meridiem absolute left-5 top-5 text-md xl:text-xl" },
+              _toDisplayString($setup.meridiem),
+              513
+              /* TEXT, NEED_PATCH */
+            ), [
+              [_vShow, $setup.showDate]
+            ])
+          ],
+          2
+          /* CLASS */
+        ),
+        _createElementVNode(
+          "div",
+          {
+            class: _normalizeClass(`${$setup.prefixCls}__minute w-2/5 h-2/5 md:h-4/5 `)
+          },
+          [
+            _createElementVNode(
+              "span",
+              null,
+              _toDisplayString($setup.minute),
+              1
+              /* TEXT */
+            )
+          ],
+          2
+          /* CLASS */
+        )
+      ]),
+      _createVNode(_Transition, {
+        name: "fade-slide",
+        persisted: ""
+      }, {
+        default: _withCtx(() => [
+          _withDirectives(_createElementVNode(
+            "div",
+            {
+              class: _normalizeClass(`${$setup.prefixCls}-entry`)
+            },
+            [
+              _createElementVNode(
+                "div",
+                {
+                  class: _normalizeClass(`${$setup.prefixCls}-entry-content`)
+                },
+                [
+                  _createElementVNode("div", _hoisted_2, [
+                    _createElementVNode("img", {
+                      src: $setup.avatar,
+                      alt: "",
+                      class: "w-70px h-70px rounded-[50%]"
+                    }, null, 8, _hoisted_3),
+                    _createElementVNode(
+                      "span",
+                      _hoisted_4,
+                      _toDisplayString($setup.userName),
+                      1
+                      /* TEXT */
+                    )
+                  ]),
+                  _createVNode(_component_ElInput, {
+                    type: "password",
+                    placeholder: $setup.t("lock.placeholder"),
+                    class: "enter-x",
+                    modelValue: $setup.password,
+                    "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $setup.password = $event)
+                  }, null, 8, ["placeholder", "modelValue"]),
+                  $setup.errMsg ? (_openBlock(), _createElementBlock(
+                    "span",
+                    {
+                      key: 0,
+                      class: _normalizeClass(`text-14px ${$setup.prefixCls}-entry__err-msg enter-x`)
+                    },
+                    _toDisplayString($setup.t("lock.message")),
+                    3
+                    /* TEXT, CLASS */
+                  )) : _createCommentVNode("v-if", true),
+                  _createElementVNode(
+                    "div",
+                    {
+                      class: _normalizeClass(`${$setup.prefixCls}-entry__footer enter-x`)
+                    },
+                    [
+                      _createVNode(_component_ElButton, {
+                        type: "primary",
+                        size: "small",
+                        class: "mt-2 mr-2 enter-x",
+                        link: "",
+                        disabled: $setup.loading,
+                        onClick: _cache[2] || (_cache[2] = ($event) => $setup.handleShowForm(true))
+                      }, {
+                        default: _withCtx(() => [
+                          _createTextVNode(
+                            _toDisplayString($setup.t("common.back")),
+                            1
+                            /* TEXT */
+                          )
+                        ]),
+                        _: 1
+                        /* STABLE */
+                      }, 8, ["disabled"]),
+                      _createVNode(_component_ElButton, {
+                        type: "primary",
+                        size: "small",
+                        class: "mt-2 mr-2 enter-x",
+                        link: "",
+                        disabled: $setup.loading,
+                        onClick: $setup.goLogin
+                      }, {
+                        default: _withCtx(() => [
+                          _createTextVNode(
+                            _toDisplayString($setup.t("lock.backToLogin")),
+                            1
+                            /* TEXT */
+                          )
+                        ]),
+                        _: 1
+                        /* STABLE */
+                      }, 8, ["disabled"]),
+                      _createVNode(_component_ElButton, {
+                        type: "primary",
+                        class: "mt-2",
+                        size: "small",
+                        link: "",
+                        onClick: _cache[3] || (_cache[3] = ($event) => $setup.unLock()),
+                        disabled: $setup.loading
+                      }, {
+                        default: _withCtx(() => [
+                          _createTextVNode(
+                            _toDisplayString($setup.t("lock.entrySystem")),
+                            1
+                            /* TEXT */
+                          )
+                        ]),
+                        _: 1
+                        /* STABLE */
+                      }, 8, ["disabled"])
+                    ],
+                    2
+                    /* CLASS */
+                  )
+                ],
+                2
+                /* CLASS */
+              )
+            ],
+            2
+            /* CLASS */
+          ), [
+            [_vShow, !$setup.showDate]
+          ])
+        ]),
+        _: 1
+        /* STABLE */
+      }),
+      _createElementVNode("div", _hoisted_5, [
+        _withDirectives(_createElementVNode(
+          "div",
+          _hoisted_6,
+          [
+            _createTextVNode(
+              _toDisplayString($setup.hour) + ":" + _toDisplayString($setup.minute) + " ",
+              1
+              /* TEXT */
+            ),
+            _createElementVNode(
+              "span",
+              _hoisted_7,
+              _toDisplayString($setup.meridiem),
+              1
+              /* TEXT */
+            )
+          ],
+          512
+          /* NEED_PATCH */
+        ), [
+          [_vShow, !$setup.showDate]
+        ]),
+        _createElementVNode(
+          "div",
+          _hoisted_8,
+          _toDisplayString($setup.year) + "/" + _toDisplayString($setup.month) + "/" + _toDisplayString($setup.day) + " " + _toDisplayString($setup.week),
+          1
+          /* TEXT */
+        )
+      ])
+    ],
+    2
+    /* CLASS */
+  );
+}
+import "/src/layout/components/UserInfo/src/components/LockPage.vue?vue&type=style&index=0&scoped=73781e62&lang.scss";
+_sfc_main.__hmrId = "73781e62";
+typeof __VUE_HMR_RUNTIME__ !== "undefined" && __VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main);
+import.meta.hot.on("file-changed", ({ file }) => {
+  __VUE_HMR_RUNTIME__.CHANGED_FILE = file;
+});
+import.meta.hot.accept((mod) => {
+  if (!mod)
+    return;
+  const { default: updated, _rerender_only } = mod;
+  if (_rerender_only) {
+    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render);
+  } else {
+    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated);
+  }
+});
+import _export_sfc from "/@id/__x00__plugin-vue:export-helper";
+export default /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__scopeId", "data-v-73781e62"], ["__file", "D:/ruoyi-vue-pro/yudao-ui/yudao-ui-admin-vue3/src/layout/components/UserInfo/src/components/LockPage.vue"]]);
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6Ijs7OztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7Ozs7QUFFQTtBQUVBO0FBRUE7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFFQTtBQUNBO0FBRUE7QUFFQTtBQUVBO0FBR0E7QUFDRTtBQUNFO0FBQUE7QUFFRjtBQUNBO0FBQ0U7QUFDQTtBQUNBO0FBQWdCO0FBRWhCO0FBQWdCO0FBQ2xCO0FBSUY7QUFDRTtBQUF1QztBQUV2QztBQUNBO0FBRUE7QUFDQTtBQUFnQjtBQUdsQjtBQUNFO0FBQWlCOzs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQUtqQjtBQXFGTTtBQUFBO0FBbkY2RTs7O0FBRWpGO0FBUU07QUFBQTtBQU55SjtBQUN2STs7O0FBR0Y7QUFDcEI7QUFBbUM7QUFBQTtBQUF6QjtBQUFBO0FBQUE7QUFBQTs7Ozs7QUFITTs7QUFnQlo7QUFUSjtBQUtNO0FBQUE7QUFMZ0Y7OztBQUNwRjtBQUF1QjtBQUFBO0FBQVY7QUFBQTtBQUFBO0FBQUE7QUFDYjtBQUVPO0FBRndEO0FBQ2xEO0FBQUE7QUFBQTtBQUFBO0FBRG1FOzs7Ozs7QUFJbEY7QUFFTTtBQUFBO0FBRm1COzs7QUFDdkI7QUFBMEI7QUFBQTtBQUFWO0FBQUE7QUFBQTtBQUFBOzs7Ozs7QUF1RFA7QUFwREk7QUFBakI7O0FBbURRO0FBbEROO0FBa0RNO0FBQUE7QUFsRG1COzs7QUFDdkI7QUFnRE07QUFBQTtBQWhEbUI7OztBQU1qQjtBQUo0RDtBQUFyRDtBQUFZO0FBQVM7QUE5RjVDO0FBK0ZZO0FBRU87QUFGUDtBQUNhO0FBQUE7QUFBQTtBQUFBOztBQVFiO0FBSks7QUFDVTtBQUNUO0FBQ0c7QUFBUTs7QUFFbkI7QUFFTztBQUFBO0FBM0dqQjtBQXlHOEM7O0FBQzlCO0FBQUE7QUFBQTtBQTFHaEI7QUE0R1U7QUErQk07QUFBQTtBQS9CbUI7OztBQVVaO0FBUko7QUFDQTtBQUNDO0FBQ047QUFDVztBQUNXOztBQUVBO0FBckhwQztBQXFIa0I7QUFBQTtBQUFBO0FBQUE7O0FBckhsQjtBQUFBOztBQWdJdUI7QUFSSjtBQUNBO0FBQ0M7QUFDTjtBQUNXO0FBQ0g7O0FBRW1CO0FBL0h6QztBQStIa0I7QUFBQTtBQUFBO0FBQUE7O0FBL0hsQjtBQUFBOztBQTBJdUI7QUFSSjtBQUNDO0FBQ0Q7QUFDTDtBQUNjO0FBQ0g7O0FBRWdCO0FBekl6QztBQXlJa0I7QUFBQTtBQUFBO0FBQUE7O0FBeklsQjtBQUFBOzs7Ozs7Ozs7Ozs7OztBQTJGMEQ7OztBQTNGMUQ7QUFBQTs7QUFxSlU7QUFKSjtBQUVNO0FBRk47QUFFTTtBQW5KWjtBQWtKK0I7QUFBQztBQUFBO0FBQUE7QUFBQTtBQUE0QztBQUE1QztBQUFrQztBQUFBO0FBQUE7QUFBQTs7Ozs7QUFEUjs7QUFHcEQ7QUFBdUU7QUFBdkU7QUFBOEQ7QUFBQTtBQUFBO0FBQUEiLCJuYW1lcyI6W10sInNvdXJjZXMiOlsiTG9ja1BhZ2UudnVlIl0sInNvdXJjZXNDb250ZW50IjpbIjxzY3JpcHQgbGFuZz1cInRzXCIgc2V0dXA+XHJcbmltcG9ydCB7IHJlc2V0Um91dGVyIH0gZnJvbSAnQC9yb3V0ZXInXHJcbmltcG9ydCB7IGRlbGV0ZVVzZXJDYWNoZSB9IGZyb20gJ0AvaG9va3Mvd2ViL3VzZUNhY2hlJ1xyXG5pbXBvcnQgeyB1c2VMb2NrU3RvcmUgfSBmcm9tICdAL3N0b3JlL21vZHVsZXMvbG9jaydcclxuaW1wb3J0IHsgdXNlTm93IH0gZnJvbSAnQC9ob29rcy93ZWIvdXNlTm93J1xyXG5pbXBvcnQgeyB1c2VEZXNpZ24gfSBmcm9tICdAL2hvb2tzL3dlYi91c2VEZXNpZ24nXHJcbmltcG9ydCB7IHVzZVRhZ3NWaWV3U3RvcmUgfSBmcm9tICdAL3N0b3JlL21vZHVsZXMvdGFnc1ZpZXcnXHJcbmltcG9ydCB7IHVzZVVzZXJTdG9yZSB9IGZyb20gJ0Avc3RvcmUvbW9kdWxlcy91c2VyJ1xyXG5pbXBvcnQgYXZhdGFySW1nIGZyb20gJ0AvYXNzZXRzL2ltZ3MvYXZhdGFyLmdpZidcclxuXHJcbmNvbnN0IHRhZ3NWaWV3U3RvcmUgPSB1c2VUYWdzVmlld1N0b3JlKClcclxuXHJcbmNvbnN0IHsgcmVwbGFjZSB9ID0gdXNlUm91dGVyKClcclxuXHJcbmNvbnN0IHVzZXJTdG9yZSA9IHVzZVVzZXJTdG9yZSgpXHJcblxyXG5jb25zdCBwYXNzd29yZCA9IHJlZignJylcclxuY29uc3QgbG9hZGluZyA9IHJlZihmYWxzZSlcclxuY29uc3QgZXJyTXNnID0gcmVmKGZhbHNlKVxyXG5jb25zdCBzaG93RGF0ZSA9IHJlZih0cnVlKVxyXG5cclxuY29uc3QgeyBnZXRQcmVmaXhDbHMgfSA9IHVzZURlc2lnbigpXHJcbmNvbnN0IHByZWZpeENscyA9IGdldFByZWZpeENscygnbG9jay1wYWdlJylcclxuXHJcbmNvbnN0IGF2YXRhciA9IGNvbXB1dGVkKCgpID0+IHVzZXJTdG9yZS51c2VyLmF2YXRhciB8fCBhdmF0YXJJbWcpXHJcbmNvbnN0IHVzZXJOYW1lID0gY29tcHV0ZWQoKCkgPT4gdXNlclN0b3JlLnVzZXIubmlja25hbWUgPz8gJ0FkbWluJylcclxuXHJcbmNvbnN0IGxvY2tTdG9yZSA9IHVzZUxvY2tTdG9yZSgpXHJcblxyXG5jb25zdCB7IGhvdXIsIG1vbnRoLCBtaW51dGUsIG1lcmlkaWVtLCB5ZWFyLCBkYXksIHdlZWsgfSA9IHVzZU5vdyh0cnVlKVxyXG5cclxuY29uc3QgeyB0IH0gPSB1c2VJMThuKClcclxuXHJcbi8vIOino+mUgVxyXG5hc3luYyBmdW5jdGlvbiB1bkxvY2soKSB7XHJcbiAgaWYgKCFwYXNzd29yZC52YWx1ZSkge1xyXG4gICAgcmV0dXJuXHJcbiAgfVxyXG4gIGxldCBwd2QgPSBwYXNzd29yZC52YWx1ZVxyXG4gIHRyeSB7XHJcbiAgICBsb2FkaW5nLnZhbHVlID0gdHJ1ZVxyXG4gICAgY29uc3QgcmVzID0gYXdhaXQgbG9ja1N0b3JlLnVuTG9jayhwd2QpXHJcbiAgICBlcnJNc2cudmFsdWUgPSAhcmVzXHJcbiAgfSBmaW5hbGx5IHtcclxuICAgIGxvYWRpbmcudmFsdWUgPSBmYWxzZVxyXG4gIH1cclxufVxyXG5cclxuLy8g6L+U5Zue55m75b2VXHJcbmFzeW5jIGZ1bmN0aW9uIGdvTG9naW4oKSB7XHJcbiAgYXdhaXQgdXNlclN0b3JlLmxvZ2luT3V0KCkuY2F0Y2goKCkgPT4ge30pXHJcbiAgLy8g55m75Ye65ZCO5riF55CGXHJcbiAgZGVsZXRlVXNlckNhY2hlKCkgLy8g5riF56m655So5oi357yT5a2YXHJcbiAgdGFnc1ZpZXdTdG9yZS5kZWxBbGxWaWV3cygpXHJcbiAgLy8gcmVzZXRSb3V0ZXIoKSAvLyDph43nva7pnZnmgIHot6/nlLHooahcclxuICBsb2NrU3RvcmUucmVzZXRMb2NrSW5mbygpXHJcbiAgcmVwbGFjZSgnL2xvZ2luJylcclxufVxyXG5cclxuZnVuY3Rpb24gaGFuZGxlU2hvd0Zvcm0oc2hvdyA9IGZhbHNlKSB7XHJcbiAgc2hvd0RhdGUudmFsdWUgPSBzaG93XHJcbn1cclxuPC9zY3JpcHQ+XHJcblxyXG48dGVtcGxhdGU+XHJcbiAgPGRpdlxyXG4gICAgOmNsYXNzPVwicHJlZml4Q2xzXCJcclxuICAgIGNsYXNzPVwiZml4ZWQgaW5zZXQtMCBmbGV4IGgtc2NyZWVuIHctc2NyZWVuIGJnLWJsYWNrIGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWNlbnRlclwiXHJcbiAgPlxyXG4gICAgPGRpdlxyXG4gICAgICA6Y2xhc3M9XCJgJHtwcmVmaXhDbHN9X191bmxvY2tgXCJcclxuICAgICAgY2xhc3M9XCJhYnNvbHV0ZSB0b3AtMCBsZWZ0LTEvMiBmbGV4IHB0LTUgaC0xNiBpdGVtcy1jZW50ZXIganVzdGlmeS1jZW50ZXIgc206dGV4dC1tZCB4bDp0ZXh0LXhsIHRleHQtd2hpdGUgZmxleC1jb2wgY3Vyc29yLXBvaW50ZXIgdHJhbnNmb3JtIHRyYW5zbGF0ZS14LTEvMlwiXHJcbiAgICAgIEBjbGljaz1cImhhbmRsZVNob3dGb3JtKGZhbHNlKVwiXHJcbiAgICAgIHYtc2hvdz1cInNob3dEYXRlXCJcclxuICAgID5cclxuICAgICAgPEljb24gaWNvbj1cImVwOmxvY2tcIiAvPlxyXG4gICAgICA8c3Bhbj57eyB0KCdsb2NrLnVubG9jaycpIH19PC9zcGFuPlxyXG4gICAgPC9kaXY+XHJcblxyXG4gICAgPGRpdiBjbGFzcz1cImZsZXggdy1zY3JlZW4gaC1zY3JlZW4ganVzdGlmeS1jZW50ZXIgaXRlbXMtY2VudGVyXCI+XHJcbiAgICAgIDxkaXYgOmNsYXNzPVwiYCR7cHJlZml4Q2xzfV9faG91cmBcIiBjbGFzcz1cInJlbGF0aXZlIG1yLTUgbWQ6bXItMjAgdy0yLzUgaC0yLzUgbWQ6aC00LzVcIj5cclxuICAgICAgICA8c3Bhbj57eyBob3VyIH19PC9zcGFuPlxyXG4gICAgICAgIDxzcGFuIGNsYXNzPVwibWVyaWRpZW0gYWJzb2x1dGUgbGVmdC01IHRvcC01IHRleHQtbWQgeGw6dGV4dC14bFwiIHYtc2hvdz1cInNob3dEYXRlXCI+XHJcbiAgICAgICAgICB7eyBtZXJpZGllbSB9fVxyXG4gICAgICAgIDwvc3Bhbj5cclxuICAgICAgPC9kaXY+XHJcbiAgICAgIDxkaXYgOmNsYXNzPVwiYCR7cHJlZml4Q2xzfV9fbWludXRlIHctMi81IGgtMi81IG1kOmgtNC81IGBcIj5cclxuICAgICAgICA8c3Bhbj4ge3sgbWludXRlIH19PC9zcGFuPlxyXG4gICAgICA8L2Rpdj5cclxuICAgIDwvZGl2PlxyXG4gICAgPHRyYW5zaXRpb24gbmFtZT1cImZhZGUtc2xpZGVcIj5cclxuICAgICAgPGRpdiA6Y2xhc3M9XCJgJHtwcmVmaXhDbHN9LWVudHJ5YFwiIHYtc2hvdz1cIiFzaG93RGF0ZVwiPlxyXG4gICAgICAgIDxkaXYgOmNsYXNzPVwiYCR7cHJlZml4Q2xzfS1lbnRyeS1jb250ZW50YFwiPlxyXG4gICAgICAgICAgPGRpdiBjbGFzcz1cImZsZXggZmxleC1jb2wgaXRlbXMtY2VudGVyXCI+XHJcbiAgICAgICAgICAgIDxpbWcgOnNyYz1cImF2YXRhclwiIGFsdD1cIlwiIGNsYXNzPVwidy03MHB4IGgtNzBweCByb3VuZGVkLVs1MCVdXCIgLz5cclxuICAgICAgICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHggbXktMTBweCB0ZXh0LVt2YXIoLS1sb2dvLXRpdGxlLXRleHQtY29sb3IpXVwiPlxyXG4gICAgICAgICAgICAgIHt7IHVzZXJOYW1lIH19XHJcbiAgICAgICAgICAgIDwvc3Bhbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgICAgPEVsSW5wdXRcclxuICAgICAgICAgICAgdHlwZT1cInBhc3N3b3JkXCJcclxuICAgICAgICAgICAgOnBsYWNlaG9sZGVyPVwidCgnbG9jay5wbGFjZWhvbGRlcicpXCJcclxuICAgICAgICAgICAgY2xhc3M9XCJlbnRlci14XCJcclxuICAgICAgICAgICAgdi1tb2RlbD1cInBhc3N3b3JkXCJcclxuICAgICAgICAgIC8+XHJcbiAgICAgICAgICA8c3BhbiA6Y2xhc3M9XCJgdGV4dC0xNHB4ICR7cHJlZml4Q2xzfS1lbnRyeV9fZXJyLW1zZyBlbnRlci14YFwiIHYtaWY9XCJlcnJNc2dcIj5cclxuICAgICAgICAgICAge3sgdCgnbG9jay5tZXNzYWdlJykgfX1cclxuICAgICAgICAgIDwvc3Bhbj5cclxuICAgICAgICAgIDxkaXYgOmNsYXNzPVwiYCR7cHJlZml4Q2xzfS1lbnRyeV9fZm9vdGVyIGVudGVyLXhgXCI+XHJcbiAgICAgICAgICAgIDxFbEJ1dHRvblxyXG4gICAgICAgICAgICAgIHR5cGU9XCJwcmltYXJ5XCJcclxuICAgICAgICAgICAgICBzaXplPVwic21hbGxcIlxyXG4gICAgICAgICAgICAgIGNsYXNzPVwibXQtMiBtci0yIGVudGVyLXhcIlxyXG4gICAgICAgICAgICAgIGxpbmtcclxuICAgICAgICAgICAgICA6ZGlzYWJsZWQ9XCJsb2FkaW5nXCJcclxuICAgICAgICAgICAgICBAY2xpY2s9XCJoYW5kbGVTaG93Rm9ybSh0cnVlKVwiXHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICB7eyB0KCdjb21tb24uYmFjaycpIH19XHJcbiAgICAgICAgICAgIDwvRWxCdXR0b24+XHJcbiAgICAgICAgICAgIDxFbEJ1dHRvblxyXG4gICAgICAgICAgICAgIHR5cGU9XCJwcmltYXJ5XCJcclxuICAgICAgICAgICAgICBzaXplPVwic21hbGxcIlxyXG4gICAgICAgICAgICAgIGNsYXNzPVwibXQtMiBtci0yIGVudGVyLXhcIlxyXG4gICAgICAgICAgICAgIGxpbmtcclxuICAgICAgICAgICAgICA6ZGlzYWJsZWQ9XCJsb2FkaW5nXCJcclxuICAgICAgICAgICAgICBAY2xpY2s9XCJnb0xvZ2luXCJcclxuICAgICAgICAgICAgPlxyXG4gICAgICAgICAgICAgIHt7IHQoJ2xvY2suYmFja1RvTG9naW4nKSB9fVxyXG4gICAgICAgICAgICA8L0VsQnV0dG9uPlxyXG4gICAgICAgICAgICA8RWxCdXR0b25cclxuICAgICAgICAgICAgICB0eXBlPVwicHJpbWFyeVwiXHJcbiAgICAgICAgICAgICAgY2xhc3M9XCJtdC0yXCJcclxuICAgICAgICAgICAgICBzaXplPVwic21hbGxcIlxyXG4gICAgICAgICAgICAgIGxpbmtcclxuICAgICAgICAgICAgICBAY2xpY2s9XCJ1bkxvY2soKVwiXHJcbiAgICAgICAgICAgICAgOmRpc2FibGVkPVwibG9hZGluZ1wiXHJcbiAgICAgICAgICAgID5cclxuICAgICAgICAgICAgICB7eyB0KCdsb2NrLmVudHJ5U3lzdGVtJykgfX1cclxuICAgICAgICAgICAgPC9FbEJ1dHRvbj5cclxuICAgICAgICAgIDwvZGl2PlxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICA8L2Rpdj5cclxuICAgIDwvdHJhbnNpdGlvbj5cclxuXHJcbiAgICA8ZGl2IGNsYXNzPVwiYWJzb2x1dGUgYm90dG9tLTUgdy1mdWxsIHRleHQtZ3JheS0zMDAgeGw6dGV4dC14bCAyeGw6dGV4dC0zeGwgdGV4dC1jZW50ZXIgZW50ZXIteVwiPlxyXG4gICAgICA8ZGl2IGNsYXNzPVwidGV4dC01eGwgbWItNCBlbnRlci14XCIgdi1zaG93PVwiIXNob3dEYXRlXCI+XHJcbiAgICAgICAge3sgaG91ciB9fTp7eyBtaW51dGUgfX0gPHNwYW4gY2xhc3M9XCJ0ZXh0LTN4bFwiPnt7IG1lcmlkaWVtIH19PC9zcGFuPlxyXG4gICAgICA8L2Rpdj5cclxuICAgICAgPGRpdiBjbGFzcz1cInRleHQtMnhsXCI+e3sgeWVhciB9fS97eyBtb250aCB9fS97eyBkYXkgfX0ge3sgd2VlayB9fTwvZGl2PlxyXG4gICAgPC9kaXY+XHJcbiAgPC9kaXY+XHJcbjwvdGVtcGxhdGU+XHJcblxyXG48c3R5bGUgbGFuZz1cInNjc3NcIiBzY29wZWQ+XHJcbiRwcmVmaXgtY2xzOiAnI3skbmFtZXNwYWNlfS1sb2NrLXBhZ2UnO1xyXG5cclxuLy8gU21hbGwgc2NyZWVuIC8gdGFibGV0XHJcbiRzY3JlZW4tc206IDU3NnB4O1xyXG5cclxuLy8gTWVkaXVtIHNjcmVlbiAvIGRlc2t0b3BcclxuJHNjcmVlbi1tZDogNzY4cHg7XHJcblxyXG4vLyBMYXJnZSBzY3JlZW4gLyB3aWRlIGRlc2t0b3BcclxuJHNjcmVlbi1sZzogOTkycHg7XHJcblxyXG4vLyBFeHRyYSBsYXJnZSBzY3JlZW4gLyBmdWxsIGhkXHJcbiRzY3JlZW4teGw6IDEyMDBweDtcclxuXHJcbi8vIEV4dHJhIGV4dHJhIGxhcmdlIHNjcmVlbiAvIGxhcmdlIGRlc2t0b3BcclxuJHNjcmVlbi0yeGw6IDE2MDBweDtcclxuXHJcbiRlcnJvci1jb2xvcjogI2VkNmY2ZjtcclxuXHJcbi4jeyRwcmVmaXgtY2xzfSB7XHJcbiAgei1pbmRleDogMzAwMDtcclxuXHJcbiAgJl9fdW5sb2NrIHtcclxuICAgIHRyYW5zZm9ybTogdHJhbnNsYXRlKC01MCUsIDApO1xyXG4gIH1cclxuXHJcbiAgJl9faG91cixcclxuICAmX19taW51dGUge1xyXG4gICAgZGlzcGxheTogZmxleDtcclxuICAgIGZvbnQtd2VpZ2h0OiA3MDA7XHJcbiAgICBjb2xvcjogI2JhYmFiYTtcclxuICAgIGJhY2tncm91bmQtY29sb3I6ICMxNDEzMTM7XHJcbiAgICBib3JkZXItcmFkaXVzOiAzMHB4O1xyXG4gICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XHJcbiAgICBhbGlnbi1pdGVtczogY2VudGVyO1xyXG5cclxuICAgIEBtZWRpYSBzY3JlZW4gYW5kIChtYXgtd2lkdGg6ICRzY3JlZW4tbWQpIHtcclxuICAgICAgc3Bhbjpub3QoLm1lcmlkaWVtKSB7XHJcbiAgICAgICAgZm9udC1zaXplOiAxNjBweDtcclxuICAgICAgfVxyXG4gICAgfVxyXG5cclxuICAgIEBtZWRpYSBzY3JlZW4gYW5kIChtaW4td2lkdGg6ICRzY3JlZW4tbWQpIHtcclxuICAgICAgc3Bhbjpub3QoLm1lcmlkaWVtKSB7XHJcbiAgICAgICAgZm9udC1zaXplOiAxNjBweDtcclxuICAgICAgfVxyXG4gICAgfVxyXG5cclxuICAgIEBtZWRpYSBzY3JlZW4gYW5kIChtYXgtd2lkdGg6ICRzY3JlZW4tc20pIHtcclxuICAgICAgc3Bhbjpub3QoLm1lcmlkaWVtKSB7XHJcbiAgICAgICAgZm9udC1zaXplOiA5MHB4O1xyXG4gICAgICB9XHJcbiAgICB9XHJcbiAgICBAbWVkaWEgc2NyZWVuIGFuZCAobWluLXdpZHRoOiAkc2NyZWVuLWxnKSB7XHJcbiAgICAgIHNwYW46bm90KC5tZXJpZGllbSkge1xyXG4gICAgICAgIGZvbnQtc2l6ZTogMjIwcHg7XHJcbiAgICAgIH1cclxuICAgIH1cclxuXHJcbiAgICBAbWVkaWEgc2NyZWVuIGFuZCAobWluLXdpZHRoOiAkc2NyZWVuLXhsKSB7XHJcbiAgICAgIHNwYW46bm90KC5tZXJpZGllbSkge1xyXG4gICAgICAgIGZvbnQtc2l6ZTogMjYwcHg7XHJcbiAgICAgIH1cclxuICAgIH1cclxuICAgIEBtZWRpYSBzY3JlZW4gYW5kIChtaW4td2lkdGg6ICRzY3JlZW4tMnhsKSB7XHJcbiAgICAgIHNwYW46bm90KC5tZXJpZGllbSkge1xyXG4gICAgICAgIGZvbnQtc2l6ZTogMzIwcHg7XHJcbiAgICAgIH1cclxuICAgIH1cclxuICB9XHJcblxyXG4gICYtZW50cnkge1xyXG4gICAgcG9zaXRpb246IGFic29sdXRlO1xyXG4gICAgdG9wOiAwO1xyXG4gICAgbGVmdDogMDtcclxuICAgIGRpc3BsYXk6IGZsZXg7XHJcbiAgICB3aWR0aDogMTAwJTtcclxuICAgIGhlaWdodDogMTAwJTtcclxuICAgIGJhY2tncm91bmQtY29sb3I6IHJnYmEoMCwgMCwgMCwgMC41KTtcclxuICAgIGJhY2tkcm9wLWZpbHRlcjogYmx1cig4cHgpO1xyXG4gICAganVzdGlmeS1jb250ZW50OiBjZW50ZXI7XHJcbiAgICBhbGlnbi1pdGVtczogY2VudGVyO1xyXG5cclxuICAgICYtY29udGVudCB7XHJcbiAgICAgIHdpZHRoOiAyNjBweDtcclxuICAgIH1cclxuXHJcbiAgICAmX19oZWFkZXIge1xyXG4gICAgICB0ZXh0LWFsaWduOiBjZW50ZXI7XHJcblxyXG4gICAgICAmLWltZyB7XHJcbiAgICAgICAgd2lkdGg6IDcwcHg7XHJcbiAgICAgICAgbWFyZ2luOiAwIGF1dG87XHJcbiAgICAgICAgYm9yZGVyLXJhZGl1czogNTAlO1xyXG4gICAgICB9XHJcblxyXG4gICAgICAmLW5hbWUge1xyXG4gICAgICAgIG1hcmdpbi10b3A6IDVweDtcclxuICAgICAgICBmb250LXdlaWdodDogNTAwO1xyXG4gICAgICAgIGNvbG9yOiAjYmFiYWJhO1xyXG4gICAgICB9XHJcbiAgICB9XHJcblxyXG4gICAgJl9fZXJyLW1zZyB7XHJcbiAgICAgIGRpc3BsYXk6IGlubGluZS1ibG9jaztcclxuICAgICAgbWFyZ2luLXRvcDogMTBweDtcclxuICAgICAgY29sb3I6ICRlcnJvci1jb2xvcjtcclxuICAgIH1cclxuXHJcbiAgICAmX19mb290ZXIge1xyXG4gICAgICBkaXNwbGF5OiBmbGV4O1xyXG4gICAgICBqdXN0aWZ5LWNvbnRlbnQ6IHNwYWNlLWJldHdlZW47XHJcbiAgICB9XHJcbiAgfVxyXG59XHJcbjwvc3R5bGU+XHJcbiJdLCJmaWxlIjoiRDovcnVveWktdnVlLXByby95dWRhby11aS95dWRhby11aS1hZG1pbi12dWUzL3NyYy9sYXlvdXQvY29tcG9uZW50cy9Vc2VySW5mby9zcmMvY29tcG9uZW50cy9Mb2NrUGFnZS52dWUifQ==

@@ -1,0 +1,138 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.jeecgframework</groupId>
+		<artifactId>autopoi-parent</artifactId>
+		<version>2.0.2</version>
+	</parent>
+	<artifactId>autopoi</artifactId>
+	<name>autopoi</name>
+
+	<properties>
+		<!-- autopoi core requires JDK 8+ -->
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<java.version>1.8</java.version>
+	</properties>
+	
+	<dependencies>
+		<!-- poi -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+		</dependency>
+	<dependency>
+		<groupId>org.apache.poi</groupId>
+		<artifactId>poi-ooxml</artifactId>
+		<exclusions>
+			<exclusion>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+			</exclusion>
+			<exclusion>
+				<artifactId>xml-apis</artifactId>
+				<groupId>xml-apis</groupId>
+			</exclusion>
+			<exclusion>
+				<artifactId>commons-codec</artifactId>
+				<groupId>commons-codec</groupId>
+			</exclusion>
+		</exclusions>
+	</dependency>
+	<!-- Sax 读入的时候使用 -->
+		<dependency>
+			<groupId>xerces</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<!-- Word 时候用到 -->
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi-scratchpad</artifactId>
+		</dependency>
+
+		<!-- google 工具类 -->
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+
+		<!-- commons -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+
+
+		<!--日志 -->
+		<!-- slf4j -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<!--spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<optional>true</optional>
+		</dependency>
+	
+		<!-- 测试依赖 -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.2</version>
+			<scope>test</scope>
+		</dependency>
+	
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-to-slf4j</artifactId>
+			<version>2.24.3</version>
+			<scope>test</scope>
+		</dependency>
+	
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-api</artifactId>
+			<version>2.24.3</version>
+			<scope>test</scope>
+		</dependency>
+	
+	</dependencies>
+
+<build>
+	<plugins>
+		<!-- JDK 8 编译配置 - 关键：release 参数确保只使用 JDK 8 API -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-compiler-plugin</artifactId>
+			<version>3.11.0</version>
+			<configuration>
+				<source>1.8</source>
+				<target>1.8</target>
+				<release>8</release>
+				<encoding>UTF-8</encoding>
+			</configuration>
+		</plugin>
+		<!-- Maven Surefire Plugin：允许运行测试 -->
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-surefire-plugin</artifactId>
+			<version>3.0.0-M5</version>
+			<configuration>
+				<!-- autopoi 模块允许运行测试，覆盖父 pom 的配置 -->
+				<skipTests>false</skipTests>
+			</configuration>
+		</plugin>
+	</plugins>
+</build>
+</project>

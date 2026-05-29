@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpApStatementMapper">
+
+    <select id="selectSummaryList"
+            resultType="cn.iocoder.yudao.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementSummaryRespVO">
+        SELECT supplier_id AS supplierId,
+               COUNT(1) AS statementCount,
+               IFNULL(SUM(amount), 0) AS totalAmount,
+               IFNULL(SUM(paid_amount), 0) AS totalPaidAmount,
+               IFNULL(SUM(remain_amount), 0) AS totalRemainAmount
+        FROM erp_ap_statement
+        WHERE deleted = 0
+          AND status != 40
+          <if test="supplierId != null">
+              AND supplier_id = #{supplierId}
+          </if>
+        GROUP BY supplier_id
+        ORDER BY supplier_id DESC
+    </select>
+
+    <select id="selectAgingList"
+            resultType="cn.iocoder.yudao.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementAgingRespVO">
+        SELECT supplier_id AS supplierId,
+               IFNULL(SUM(CASE
+                              WHEN remain_amount &gt; 0
+                                   AND DATEDIFF(#{reqVO.asOfDate}, due_date) BETWEEN 0 AND 30
+                                  THEN remain_amount
+                              ELSE 0
+                   END), 0) AS amount0To30,
+               IFNULL(SUM(CASE
+                              WHEN remain_amount &gt; 0
+                                   AND DATEDIFF(#{reqVO.asOfDate}, due_date) BETWEEN 31 AND 60
+                                  THEN remain_amount
+                              ELSE 0
+                   END), 0) AS amount31To60,
+               IFNULL(SUM(CASE
+                              WHEN remain_amount &gt; 0
+                                   AND DATEDIFF(#{reqVO.asOfDate}, due_date) BETWEEN 61 AND 90
+                                  THEN remain_amount
+                              ELSE 0
+                   END), 0) AS amount61To90,
+               IFNULL(SUM(CASE
+                              WHEN remain_amount &gt; 0
+                                   AND DATEDIFF(#{reqVO.asOfDate}, due_date) &gt; 90
+                                  THEN remain_amount
+                              ELSE 0
+                   END), 0) AS amount91Plus,
+               IFNULL(SUM(CASE
+                              WHEN remain_amount &gt; 0
+                                  THEN remain_amount
+                              ELSE 0
+                   END), 0) AS totalRemainAmount
+        FROM erp_ap_statement
+        WHERE deleted = 0
+          AND status != 40
+          <if test="reqVO.supplierId != null">
+              AND supplier_id = #{reqVO.supplierId}
+          </if>
+          <if test="reqVO.accountId != null">
+              AND account_id = #{reqVO.accountId}
+          </if>
+        GROUP BY supplier_id
+        HAVING totalRemainAmount &gt; 0
+        ORDER BY supplier_id DESC
+    </select>
+
+    <select id="selectReconciliationPage"
+            resultType="cn.iocoder.yudao.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementReconciliationRespVO">
+        SELECT id AS statementId,
+               statement_no AS statementNo,
+               biz_type AS bizType,
+               biz_id AS bizId,
+               biz_no AS bizNo,
+               source_order_id AS sourceOrderId,
+               source_order_no AS sourceOrderNo,
+               supplier_id AS supplierId,
+               account_id AS accountId,
+               amount,
+               paid_amount AS paidAmount,
+               remain_amount AS remainAmount,
+               currency_code AS currencyCode,
+               biz_date AS bizDate,
+               due_date AS dueDate,
+               invoice_status AS invoiceStatus,
+               status,
+               remark,
+               create_time AS createTime
+        FROM erp_ap_statement
+        WHERE deleted = 0
+          <if test="reqVO.supplierId != null">
+              AND supplier_id = #{reqVO.supplierId}
+          </if>
+          <if test="reqVO.bizType != null">
+              AND biz_type = #{reqVO.bizType}
+          </if>
+          <if test="reqVO.statementNo != null and reqVO.statementNo != ''">
+              AND statement_no LIKE CONCAT('%', #{reqVO.statementNo}, '%')
+          </if>
+          <if test="reqVO.bizNo != null and reqVO.bizNo != ''">
+              AND biz_no LIKE CONCAT('%', #{reqVO.bizNo}, '%')
+          </if>
+          <if test="reqVO.status != null">
+              AND status = #{reqVO.status}
+          </if>
+          <if test="reqVO.bizDate != null and reqVO.bizDate[0] != null">
+              AND biz_date <![CDATA[ >= ]]> #{reqVO.bizDate[0]}
+          </if>
+          <if test="reqVO.bizDate != null and reqVO.bizDate[1] != null">
+              AND biz_date <![CDATA[ <= ]]> #{reqVO.bizDate[1]}
+          </if>
+        ORDER BY id DESC
+    </select>
+
+</mapper>

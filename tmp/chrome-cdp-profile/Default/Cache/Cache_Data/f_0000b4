@@ -1,0 +1,416 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/views/erp/mrp/substitute/index.vue");/* unplugin-vue-components disabled */import { ElLoadingDirective as __unplugin_directives_0 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_loading_style_css.js?v=0f962ce1";
+import __unplugin_components_12 from "/src/components/Pagination/index.vue";
+import { ElTable as __unplugin_components_11 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_table_style_css.js?v=0f962ce1";
+import { ElTag as __unplugin_components_10 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_tag_style_css.js?v=0f962ce1";
+import { ElTableColumn as __unplugin_components_9 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_table-column_style_css.js?v=0f962ce1";
+import { ElAlert as __unplugin_components_8 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_alert_style_css.js?v=0f962ce1";
+import __unplugin_components_7 from "/src/components/ContentWrap/src/ContentWrap.vue";
+import { ElForm as __unplugin_components_6 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_form_style_css.js?v=0f962ce1";
+import { ElButton as __unplugin_components_5 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_button_style_css.js?v=0f962ce1";
+import __unplugin_components_4 from "/src/components/Icon/src/Icon.vue";
+import { ElSelect as __unplugin_components_3 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_select_style_css.js?v=0f962ce1";
+import { ElOption as __unplugin_components_2 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_option_style_css.js?v=0f962ce1";
+import { ElFormItem as __unplugin_components_1 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_form-item_style_css.js?v=0f962ce1";
+import { ElInputNumber as __unplugin_components_0 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_input-number_style_css.js?v=0f962ce1";
+import { defineComponent as _defineComponent } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+import { computed, onMounted, reactive, ref } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+import { dateFormatter } from "/src/utils/formatTime.ts";
+import { ProductApi } from "/src/api/erp/product/product/index.ts?t=1776678050518";
+import {
+  BomItemSubstituteApi
+} from "/src/api/erp/mrp/substitute/index.ts?t=1776678050518";
+const _sfc_main = /* @__PURE__ */ _defineComponent({
+  ...{ name: "ErpMrpSubstitutePage" },
+  __name: "index",
+  setup(__props, { expose: __expose }) {
+    __expose();
+    const queryFormRef = ref();
+    const loadingList = ref(false);
+    const loadErrorMessage = ref("");
+    const list = ref([]);
+    const total = ref(0);
+    const productOptions = ref([]);
+    const queryParams = reactive({
+      pageNo: 1,
+      pageSize: 10,
+      bomId: void 0,
+      materialId: void 0,
+      substituteMaterialId: void 0,
+      enableAutoRecommend: void 0
+    });
+    const hasFilters = computed(() => {
+      return Boolean(
+        queryParams.bomId || queryParams.materialId || queryParams.substituteMaterialId || queryParams.enableAutoRecommend !== void 0
+      );
+    });
+    const canSearch = computed(() => !loadingList.value);
+    const canReset = computed(() => !loadingList.value && hasFilters.value);
+    const formatQty = (value) => Number(value ?? 0).toFixed(6);
+    const getList = async () => {
+      loadingList.value = true;
+      loadErrorMessage.value = "";
+      try {
+        const data = await BomItemSubstituteApi.getSubstitutePage(queryParams);
+        list.value = data.list;
+        total.value = data.total;
+      } catch (error) {
+        loadErrorMessage.value = error?.message || "替代料列表加载失败";
+      } finally {
+        loadingList.value = false;
+      }
+    };
+    const handleQuery = async () => {
+      queryParams.pageNo = 1;
+      await getList();
+    };
+    const resetQuery = async () => {
+      queryFormRef.value?.resetFields();
+      await handleQuery();
+    };
+    onMounted(async () => {
+      productOptions.value = await ProductApi.getProductSimpleList();
+      await getList();
+    });
+    const __returned__ = { queryFormRef, loadingList, loadErrorMessage, list, total, productOptions, queryParams, hasFilters, canSearch, canReset, formatQty, getList, handleQuery, resetQuery, get dateFormatter() {
+      return dateFormatter;
+    } };
+    Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
+    return __returned__;
+  }
+});
+import { resolveComponent as _resolveComponent, createVNode as _createVNode, withCtx as _withCtx, renderList as _renderList, Fragment as _Fragment, openBlock as _openBlock, createElementBlock as _createElementBlock, createBlock as _createBlock, createTextVNode as _createTextVNode, createCommentVNode as _createCommentVNode, toDisplayString as _toDisplayString, resolveDirective as _resolveDirective, withDirectives as _withDirectives } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_el_input_number = __unplugin_components_0;
+  const _component_el_form_item = __unplugin_components_1;
+  const _component_el_option = __unplugin_components_2;
+  const _component_el_select = __unplugin_components_3;
+  const _component_Icon = __unplugin_components_4;
+  const _component_el_button = __unplugin_components_5;
+  const _component_el_form = __unplugin_components_6;
+  const _component_ContentWrap = __unplugin_components_7;
+  const _component_el_alert = __unplugin_components_8;
+  const _component_el_table_column = __unplugin_components_9;
+  const _component_el_tag = __unplugin_components_10;
+  const _component_el_table = __unplugin_components_11;
+  const _component_Pagination = __unplugin_components_12;
+  const _directive_loading = __unplugin_directives_0;
+  return _openBlock(), _createElementBlock(
+    _Fragment,
+    null,
+    [
+      _createVNode(_component_ContentWrap, null, {
+        default: _withCtx(() => [
+          _createVNode(_component_el_form, {
+            ref: "queryFormRef",
+            model: $setup.queryParams,
+            inline: true,
+            "label-width": "90px",
+            class: "-mb-15px"
+          }, {
+            default: _withCtx(() => [
+              _createVNode(_component_el_form_item, {
+                label: "BOM编号",
+                prop: "bomId"
+              }, {
+                default: _withCtx(() => [
+                  _createVNode(_component_el_input_number, {
+                    modelValue: $setup.queryParams.bomId,
+                    "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.queryParams.bomId = $event),
+                    min: 1,
+                    precision: 0,
+                    class: "!w-220px",
+                    placeholder: "请输入BOM编号"
+                  }, null, 8, ["modelValue"])
+                ]),
+                _: 1
+                /* STABLE */
+              }),
+              _createVNode(_component_el_form_item, {
+                label: "BOM物料",
+                prop: "materialId"
+              }, {
+                default: _withCtx(() => [
+                  _createVNode(_component_el_select, {
+                    modelValue: $setup.queryParams.materialId,
+                    "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $setup.queryParams.materialId = $event),
+                    clearable: "",
+                    filterable: "",
+                    class: "!w-240px",
+                    placeholder: "请选择BOM物料"
+                  }, {
+                    default: _withCtx(() => [
+                      (_openBlock(true), _createElementBlock(
+                        _Fragment,
+                        null,
+                        _renderList($setup.productOptions, (item) => {
+                          return _openBlock(), _createBlock(_component_el_option, {
+                            key: item.id,
+                            label: item.name,
+                            value: item.id
+                          }, null, 8, ["label", "value"]);
+                        }),
+                        128
+                        /* KEYED_FRAGMENT */
+                      ))
+                    ]),
+                    _: 1
+                    /* STABLE */
+                  }, 8, ["modelValue"])
+                ]),
+                _: 1
+                /* STABLE */
+              }),
+              _createVNode(_component_el_form_item, {
+                label: "替代料",
+                prop: "substituteMaterialId"
+              }, {
+                default: _withCtx(() => [
+                  _createVNode(_component_el_select, {
+                    modelValue: $setup.queryParams.substituteMaterialId,
+                    "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => $setup.queryParams.substituteMaterialId = $event),
+                    clearable: "",
+                    filterable: "",
+                    class: "!w-240px",
+                    placeholder: "请选择替代料"
+                  }, {
+                    default: _withCtx(() => [
+                      (_openBlock(true), _createElementBlock(
+                        _Fragment,
+                        null,
+                        _renderList($setup.productOptions, (item) => {
+                          return _openBlock(), _createBlock(_component_el_option, {
+                            key: item.id,
+                            label: item.name,
+                            value: item.id
+                          }, null, 8, ["label", "value"]);
+                        }),
+                        128
+                        /* KEYED_FRAGMENT */
+                      ))
+                    ]),
+                    _: 1
+                    /* STABLE */
+                  }, 8, ["modelValue"])
+                ]),
+                _: 1
+                /* STABLE */
+              }),
+              _createVNode(_component_el_form_item, {
+                label: "自动推荐",
+                prop: "enableAutoRecommend"
+              }, {
+                default: _withCtx(() => [
+                  _createVNode(_component_el_select, {
+                    modelValue: $setup.queryParams.enableAutoRecommend,
+                    "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => $setup.queryParams.enableAutoRecommend = $event),
+                    clearable: "",
+                    class: "!w-180px",
+                    placeholder: "请选择"
+                  }, {
+                    default: _withCtx(() => [
+                      _createVNode(_component_el_option, {
+                        label: "是",
+                        value: true
+                      }),
+                      _createVNode(_component_el_option, {
+                        label: "否",
+                        value: false
+                      })
+                    ]),
+                    _: 1
+                    /* STABLE */
+                  }, 8, ["modelValue"])
+                ]),
+                _: 1
+                /* STABLE */
+              }),
+              _createVNode(_component_el_form_item, null, {
+                default: _withCtx(() => [
+                  _createVNode(_component_el_button, {
+                    disabled: !$setup.canSearch,
+                    onClick: $setup.handleQuery
+                  }, {
+                    default: _withCtx(() => [
+                      _createVNode(_component_Icon, {
+                        icon: "ep:search",
+                        class: "mr-5px"
+                      }),
+                      _cache[6] || (_cache[6] = _createTextVNode(" 搜索 "))
+                    ]),
+                    _: 1
+                    /* STABLE */
+                  }, 8, ["disabled"]),
+                  _createVNode(_component_el_button, {
+                    disabled: !$setup.canReset,
+                    onClick: $setup.resetQuery
+                  }, {
+                    default: _withCtx(() => [
+                      _createVNode(_component_Icon, {
+                        icon: "ep:refresh",
+                        class: "mr-5px"
+                      }),
+                      _cache[7] || (_cache[7] = _createTextVNode(" 重置 "))
+                    ]),
+                    _: 1
+                    /* STABLE */
+                  }, 8, ["disabled"])
+                ]),
+                _: 1
+                /* STABLE */
+              })
+            ]),
+            _: 1
+            /* STABLE */
+          }, 8, ["model"])
+        ]),
+        _: 1
+        /* STABLE */
+      }),
+      _createVNode(_component_ContentWrap, null, {
+        default: _withCtx(() => [
+          $setup.loadErrorMessage ? (_openBlock(), _createBlock(_component_el_alert, {
+            key: 0,
+            title: $setup.loadErrorMessage,
+            type: "error",
+            closable: false,
+            "show-icon": "",
+            class: "mb-12px"
+          }, null, 8, ["title"])) : _createCommentVNode("v-if", true),
+          _withDirectives((_openBlock(), _createBlock(_component_el_table, {
+            data: $setup.list,
+            stripe: "",
+            "show-overflow-tooltip": ""
+          }, {
+            default: _withCtx(() => [
+              _createVNode(_component_el_table_column, {
+                label: "替代料编号",
+                prop: "id",
+                width: "110",
+                align: "center"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "BOM编号",
+                prop: "bomCode",
+                "min-width": "150"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "BOM成品",
+                prop: "productName",
+                "min-width": "180"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "BOM物料",
+                prop: "materialName",
+                "min-width": "180"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "替代料",
+                prop: "substituteMaterialName",
+                "min-width": "180"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "优先级",
+                prop: "priority",
+                width: "90",
+                align: "center"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "替换比例",
+                prop: "replaceRatio",
+                width: "110",
+                align: "center"
+              }, {
+                default: _withCtx(({ row }) => [
+                  _createTextVNode(
+                    _toDisplayString($setup.formatQty(row.replaceRatio)),
+                    1
+                    /* TEXT */
+                  )
+                ]),
+                _: 1
+                /* STABLE */
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "自动推荐",
+                prop: "enableAutoRecommend",
+                width: "110",
+                align: "center"
+              }, {
+                default: _withCtx(({ row }) => [
+                  _createVNode(_component_el_tag, {
+                    type: row.enableAutoRecommend ? "success" : "info"
+                  }, {
+                    default: _withCtx(() => [
+                      _createTextVNode(
+                        _toDisplayString(row.enableAutoRecommend ? "是" : "否"),
+                        1
+                        /* TEXT */
+                      )
+                    ]),
+                    _: 2
+                    /* DYNAMIC */
+                  }, 1032, ["type"])
+                ]),
+                _: 1
+                /* STABLE */
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "排序",
+                prop: "sort",
+                width: "90",
+                align: "center"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "备注",
+                prop: "remark",
+                "min-width": "160"
+              }),
+              _createVNode(_component_el_table_column, {
+                label: "创建时间",
+                prop: "createTime",
+                width: "180",
+                align: "center",
+                formatter: $setup.dateFormatter
+              }, null, 8, ["formatter"])
+            ]),
+            _: 1
+            /* STABLE */
+          }, 8, ["data"])), [
+            [_directive_loading, $setup.loadingList]
+          ]),
+          _createVNode(_component_Pagination, {
+            page: $setup.queryParams.pageNo,
+            "onUpdate:page": _cache[4] || (_cache[4] = ($event) => $setup.queryParams.pageNo = $event),
+            limit: $setup.queryParams.pageSize,
+            "onUpdate:limit": _cache[5] || (_cache[5] = ($event) => $setup.queryParams.pageSize = $event),
+            total: $setup.total,
+            onPagination: $setup.getList
+          }, null, 8, ["page", "limit", "total"])
+        ]),
+        _: 1
+        /* STABLE */
+      })
+    ],
+    64
+    /* STABLE_FRAGMENT */
+  );
+}
+_sfc_main.__hmrId = "9fdfb148";
+typeof __VUE_HMR_RUNTIME__ !== "undefined" && __VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main);
+import.meta.hot.on("file-changed", ({ file }) => {
+  __VUE_HMR_RUNTIME__.CHANGED_FILE = file;
+});
+import.meta.hot.accept((mod) => {
+  if (!mod)
+    return;
+  const { default: updated, _rerender_only } = mod;
+  if (_rerender_only) {
+    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render);
+  } else {
+    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated);
+  }
+});
+import _export_sfc from "/@id/__x00__plugin-vue:export-helper";
+export default /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__file", "D:/ruoyi-vue-pro/yudao-ui/yudao-ui-admin-vue3/src/views/erp/mrp/substitute/index.vue"]]);
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7Ozs7Ozs7O0FBNEdBO0FBQ0E7QUFDQTtBQUNBO0FBQUE7QUFDRTs7Ozs7O0FBT0Y7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFBeUQ7QUFDL0M7QUFDRTtBQUNIO0FBQ0s7QUFDVTtBQUNEO0FBR3ZCO0FBQ0U7QUFBTztBQUlpQztBQUN4QztBQUdGO0FBQ0E7QUFFQTtBQUVBO0FBQ0U7QUFDQTtBQUNBO0FBQ0U7QUFDQTtBQUNBO0FBQW1CO0FBRW5CO0FBQTJDO0FBRTNDO0FBQW9CO0FBQ3RCO0FBR0Y7QUFDRTtBQUNBO0FBQWM7QUFHaEI7QUFDRTtBQUNBO0FBQWtCO0FBR3BCO0FBQ0U7QUFDQTtBQUFjOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7O0FBL0toQjtBQUFBO0FBQUE7QUFBQTtBQThEZ0I7QUFERjtBQUFBO0FBMURKO0FBQ0k7QUFDQztBQUNHO0FBQ047O0FBVVM7QUFBQTtBQVJLO0FBQWE7O0FBTzdCO0FBQUE7QUFMcUI7QUFBSztBQUNwQjtBQUNNO0FBQ047QUFDTTs7O0FBZnRCO0FBQUE7O0FBNEJxQjtBQVZLO0FBQWE7O0FBU25CO0FBQUE7QUFQVztBQUFVO0FBQy9CO0FBQ0E7QUFDTTtBQUNNOztBQUU2QjtBQUF6QztBQUErRjtBQUFBOztBQUFBO0FBQTFDO0FBQWlCO0FBQW1COzs7Ozs7O0FBMUJuRztBQUFBOzs7QUFBQTtBQUFBOztBQXVDcUI7QUFWSztBQUFXOztBQVNqQjtBQUFBO0FBUFc7QUFBb0I7QUFDekM7QUFDQTtBQUNNO0FBQ007O0FBRTZCO0FBQXpDO0FBQStGO0FBQUE7O0FBQUE7QUFBMUM7QUFBaUI7QUFBbUI7Ozs7Ozs7QUFyQ25HO0FBQUE7OztBQUFBO0FBQUE7O0FBa0RxQjtBQVZLO0FBQVk7O0FBU2xCO0FBQUE7QUFQVztBQUFtQjtBQUN4QztBQUNNO0FBQ007O0FBRXlCO0FBQUE7QUFBcEI7QUFBWTs7QUFDUztBQUFyQjtBQUFZOzs7QUFoRHZDO0FBQUE7OztBQUFBO0FBQUE7O0FBNERxQjtBQUxEO0FBQUE7QUFIVztBQUFtQjs7QUFDQTtBQUFBO0FBQTdCO0FBQWtCOztBQUUvQjs7QUF2RFI7QUFBQTs7QUEyRG9CO0FBSFc7QUFBa0I7O0FBQ0U7QUFBQTtBQUE5QjtBQUFtQjs7QUFFaEM7O0FBM0RSO0FBQUE7OztBQUFBO0FBQUE7OztBQUFBO0FBQUE7OztBQUFBO0FBQUE7O0FBd0dnQjtBQWhDVjtBQUFBO0FBeEVOO0FBbUVjO0FBQ0g7QUFDTTtBQUNYO0FBQ007QUF2RVo7QUFnR2U7QUF0QjhCO0FBQU07QUFBTzs7QUFDa0I7QUFBQTtBQUEvQztBQUFhO0FBQVc7QUFBWTs7QUFDSztBQUF6QztBQUFhO0FBQW9COztBQUNZO0FBQTdDO0FBQWE7QUFBd0I7O0FBQ1M7QUFBOUM7QUFBYTtBQUF5Qjs7QUFDZ0I7QUFBdEQ7QUFBVztBQUFtQzs7QUFDSTtBQUFsRDtBQUFXO0FBQWlCO0FBQVc7O0FBSzVDO0FBSks7QUFBWTtBQUFxQjtBQUFZOztBQUN6QztBQWxGakM7QUFtRnVDO0FBQUE7QUFBQTtBQUFBOztBQW5GdkM7QUFBQTs7QUE0RndCO0FBTks7QUFBWTtBQUE0QjtBQUFZOztBQUNoRDtBQUdkO0FBRjZCOztBQUNLO0FBekZyRDtBQXlGc0M7QUFBQTtBQUFBO0FBQUE7O0FBekZ0QztBQUFBOzs7QUFBQTtBQUFBOztBQTZGMEU7QUFBN0M7QUFBVTtBQUFhO0FBQVc7O0FBQ0c7QUFBckM7QUFBVTtBQUFtQjs7QUFDb0Q7QUFBakY7QUFBWTtBQUFtQjtBQUFZO0FBQXFCOzs7QUEvRjdGO0FBQUE7O0FBMEVvQzs7QUE2QjlCO0FBSjBCO0FBQU07QUFDTDtBQUFRO0FBQzNCO0FBQ0s7OztBQXRHbkI7QUFBQSIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJpbmRleC52dWUiXSwic291cmNlc0NvbnRlbnQiOlsiPHRlbXBsYXRlPlxuICA8Q29udGVudFdyYXA+XG4gICAgPGVsLWZvcm1cbiAgICAgIHJlZj1cInF1ZXJ5Rm9ybVJlZlwiXG4gICAgICA6bW9kZWw9XCJxdWVyeVBhcmFtc1wiXG4gICAgICA6aW5saW5lPVwidHJ1ZVwiXG4gICAgICBsYWJlbC13aWR0aD1cIjkwcHhcIlxuICAgICAgY2xhc3M9XCItbWItMTVweFwiXG4gICAgPlxuICAgICAgPGVsLWZvcm0taXRlbSBsYWJlbD1cIkJPTee8luWPt1wiIHByb3A9XCJib21JZFwiPlxuICAgICAgICA8ZWwtaW5wdXQtbnVtYmVyXG4gICAgICAgICAgdi1tb2RlbD1cInF1ZXJ5UGFyYW1zLmJvbUlkXCJcbiAgICAgICAgICA6bWluPVwiMVwiXG4gICAgICAgICAgOnByZWNpc2lvbj1cIjBcIlxuICAgICAgICAgIGNsYXNzPVwiIXctMjIwcHhcIlxuICAgICAgICAgIHBsYWNlaG9sZGVyPVwi6K+36L6T5YWlQk9N57yW5Y+3XCJcbiAgICAgICAgLz5cbiAgICAgIDwvZWwtZm9ybS1pdGVtPlxuICAgICAgPGVsLWZvcm0taXRlbSBsYWJlbD1cIkJPTeeJqeaWmVwiIHByb3A9XCJtYXRlcmlhbElkXCI+XG4gICAgICAgIDxlbC1zZWxlY3RcbiAgICAgICAgICB2LW1vZGVsPVwicXVlcnlQYXJhbXMubWF0ZXJpYWxJZFwiXG4gICAgICAgICAgY2xlYXJhYmxlXG4gICAgICAgICAgZmlsdGVyYWJsZVxuICAgICAgICAgIGNsYXNzPVwiIXctMjQwcHhcIlxuICAgICAgICAgIHBsYWNlaG9sZGVyPVwi6K+36YCJ5oupQk9N54mp5paZXCJcbiAgICAgICAgPlxuICAgICAgICAgIDxlbC1vcHRpb24gdi1mb3I9XCJpdGVtIGluIHByb2R1Y3RPcHRpb25zXCIgOmtleT1cIml0ZW0uaWRcIiA6bGFiZWw9XCJpdGVtLm5hbWVcIiA6dmFsdWU9XCJpdGVtLmlkXCIgLz5cbiAgICAgICAgPC9lbC1zZWxlY3Q+XG4gICAgICA8L2VsLWZvcm0taXRlbT5cbiAgICAgIDxlbC1mb3JtLWl0ZW0gbGFiZWw9XCLmm7/ku6PmlplcIiBwcm9wPVwic3Vic3RpdHV0ZU1hdGVyaWFsSWRcIj5cbiAgICAgICAgPGVsLXNlbGVjdFxuICAgICAgICAgIHYtbW9kZWw9XCJxdWVyeVBhcmFtcy5zdWJzdGl0dXRlTWF0ZXJpYWxJZFwiXG4gICAgICAgICAgY2xlYXJhYmxlXG4gICAgICAgICAgZmlsdGVyYWJsZVxuICAgICAgICAgIGNsYXNzPVwiIXctMjQwcHhcIlxuICAgICAgICAgIHBsYWNlaG9sZGVyPVwi6K+36YCJ5oup5pu/5Luj5paZXCJcbiAgICAgICAgPlxuICAgICAgICAgIDxlbC1vcHRpb24gdi1mb3I9XCJpdGVtIGluIHByb2R1Y3RPcHRpb25zXCIgOmtleT1cIml0ZW0uaWRcIiA6bGFiZWw9XCJpdGVtLm5hbWVcIiA6dmFsdWU9XCJpdGVtLmlkXCIgLz5cbiAgICAgICAgPC9lbC1zZWxlY3Q+XG4gICAgICA8L2VsLWZvcm0taXRlbT5cbiAgICAgIDxlbC1mb3JtLWl0ZW0gbGFiZWw9XCLoh6rliqjmjqjojZBcIiBwcm9wPVwiZW5hYmxlQXV0b1JlY29tbWVuZFwiPlxuICAgICAgICA8ZWwtc2VsZWN0XG4gICAgICAgICAgdi1tb2RlbD1cInF1ZXJ5UGFyYW1zLmVuYWJsZUF1dG9SZWNvbW1lbmRcIlxuICAgICAgICAgIGNsZWFyYWJsZVxuICAgICAgICAgIGNsYXNzPVwiIXctMTgwcHhcIlxuICAgICAgICAgIHBsYWNlaG9sZGVyPVwi6K+36YCJ5oupXCJcbiAgICAgICAgPlxuICAgICAgICAgIDxlbC1vcHRpb24gbGFiZWw9XCLmmK9cIiA6dmFsdWU9XCJ0cnVlXCIgLz5cbiAgICAgICAgICA8ZWwtb3B0aW9uIGxhYmVsPVwi5ZCmXCIgOnZhbHVlPVwiZmFsc2VcIiAvPlxuICAgICAgICA8L2VsLXNlbGVjdD5cbiAgICAgIDwvZWwtZm9ybS1pdGVtPlxuICAgICAgPGVsLWZvcm0taXRlbT5cbiAgICAgICAgPGVsLWJ1dHRvbiA6ZGlzYWJsZWQ9XCIhY2FuU2VhcmNoXCIgQGNsaWNrPVwiaGFuZGxlUXVlcnlcIj5cbiAgICAgICAgICA8SWNvbiBpY29uPVwiZXA6c2VhcmNoXCIgY2xhc3M9XCJtci01cHhcIiAvPlxuICAgICAgICAgIOaQnOe0olxuICAgICAgICA8L2VsLWJ1dHRvbj5cbiAgICAgICAgPGVsLWJ1dHRvbiA6ZGlzYWJsZWQ9XCIhY2FuUmVzZXRcIiBAY2xpY2s9XCJyZXNldFF1ZXJ5XCI+XG4gICAgICAgICAgPEljb24gaWNvbj1cImVwOnJlZnJlc2hcIiBjbGFzcz1cIm1yLTVweFwiIC8+XG4gICAgICAgICAg6YeN572uXG4gICAgICAgIDwvZWwtYnV0dG9uPlxuICAgICAgPC9lbC1mb3JtLWl0ZW0+XG4gICAgPC9lbC1mb3JtPlxuICA8L0NvbnRlbnRXcmFwPlxuXG4gIDxDb250ZW50V3JhcD5cbiAgICA8ZWwtYWxlcnRcbiAgICAgIHYtaWY9XCJsb2FkRXJyb3JNZXNzYWdlXCJcbiAgICAgIDp0aXRsZT1cImxvYWRFcnJvck1lc3NhZ2VcIlxuICAgICAgdHlwZT1cImVycm9yXCJcbiAgICAgIDpjbG9zYWJsZT1cImZhbHNlXCJcbiAgICAgIHNob3ctaWNvblxuICAgICAgY2xhc3M9XCJtYi0xMnB4XCJcbiAgICAvPlxuXG4gICAgPGVsLXRhYmxlIHYtbG9hZGluZz1cImxvYWRpbmdMaXN0XCIgOmRhdGE9XCJsaXN0XCIgc3RyaXBlIHNob3ctb3ZlcmZsb3ctdG9vbHRpcD5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCLmm7/ku6PmlpnnvJblj7dcIiBwcm9wPVwiaWRcIiB3aWR0aD1cIjExMFwiIGFsaWduPVwiY2VudGVyXCIgLz5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCJCT03nvJblj7dcIiBwcm9wPVwiYm9tQ29kZVwiIG1pbi13aWR0aD1cIjE1MFwiIC8+XG4gICAgICA8ZWwtdGFibGUtY29sdW1uIGxhYmVsPVwiQk9N5oiQ5ZOBXCIgcHJvcD1cInByb2R1Y3ROYW1lXCIgbWluLXdpZHRoPVwiMTgwXCIgLz5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCJCT03nianmlplcIiBwcm9wPVwibWF0ZXJpYWxOYW1lXCIgbWluLXdpZHRoPVwiMTgwXCIgLz5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCLmm7/ku6PmlplcIiBwcm9wPVwic3Vic3RpdHV0ZU1hdGVyaWFsTmFtZVwiIG1pbi13aWR0aD1cIjE4MFwiIC8+XG4gICAgICA8ZWwtdGFibGUtY29sdW1uIGxhYmVsPVwi5LyY5YWI57qnXCIgcHJvcD1cInByaW9yaXR5XCIgd2lkdGg9XCI5MFwiIGFsaWduPVwiY2VudGVyXCIgLz5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCLmm7/mjaLmr5TkvotcIiBwcm9wPVwicmVwbGFjZVJhdGlvXCIgd2lkdGg9XCIxMTBcIiBhbGlnbj1cImNlbnRlclwiPlxuICAgICAgICA8dGVtcGxhdGUgI2RlZmF1bHQ9XCJ7IHJvdyB9XCI+XG4gICAgICAgICAge3sgZm9ybWF0UXR5KHJvdy5yZXBsYWNlUmF0aW8pIH19XG4gICAgICAgIDwvdGVtcGxhdGU+XG4gICAgICA8L2VsLXRhYmxlLWNvbHVtbj5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCLoh6rliqjmjqjojZBcIiBwcm9wPVwiZW5hYmxlQXV0b1JlY29tbWVuZFwiIHdpZHRoPVwiMTEwXCIgYWxpZ249XCJjZW50ZXJcIj5cbiAgICAgICAgPHRlbXBsYXRlICNkZWZhdWx0PVwieyByb3cgfVwiPlxuICAgICAgICAgIDxlbC10YWcgOnR5cGU9XCJyb3cuZW5hYmxlQXV0b1JlY29tbWVuZCA/ICdzdWNjZXNzJyA6ICdpbmZvJ1wiPlxuICAgICAgICAgICAge3sgcm93LmVuYWJsZUF1dG9SZWNvbW1lbmQgPyAn5pivJyA6ICflkKYnIH19XG4gICAgICAgICAgPC9lbC10YWc+XG4gICAgICAgIDwvdGVtcGxhdGU+XG4gICAgICA8L2VsLXRhYmxlLWNvbHVtbj5cbiAgICAgIDxlbC10YWJsZS1jb2x1bW4gbGFiZWw9XCLmjpLluo9cIiBwcm9wPVwic29ydFwiIHdpZHRoPVwiOTBcIiBhbGlnbj1cImNlbnRlclwiIC8+XG4gICAgICA8ZWwtdGFibGUtY29sdW1uIGxhYmVsPVwi5aSH5rOoXCIgcHJvcD1cInJlbWFya1wiIG1pbi13aWR0aD1cIjE2MFwiIC8+XG4gICAgICA8ZWwtdGFibGUtY29sdW1uIGxhYmVsPVwi5Yib5bu65pe26Ze0XCIgcHJvcD1cImNyZWF0ZVRpbWVcIiB3aWR0aD1cIjE4MFwiIGFsaWduPVwiY2VudGVyXCIgOmZvcm1hdHRlcj1cImRhdGVGb3JtYXR0ZXJcIiAvPlxuICAgIDwvZWwtdGFibGU+XG5cbiAgICA8UGFnaW5hdGlvblxuICAgICAgdi1tb2RlbDpwYWdlPVwicXVlcnlQYXJhbXMucGFnZU5vXCJcbiAgICAgIHYtbW9kZWw6bGltaXQ9XCJxdWVyeVBhcmFtcy5wYWdlU2l6ZVwiXG4gICAgICA6dG90YWw9XCJ0b3RhbFwiXG4gICAgICBAcGFnaW5hdGlvbj1cImdldExpc3RcIlxuICAgIC8+XG4gIDwvQ29udGVudFdyYXA+XG48L3RlbXBsYXRlPlxuXG48c2NyaXB0IHNldHVwIGxhbmc9XCJ0c1wiPlxuaW1wb3J0IHsgY29tcHV0ZWQsIG9uTW91bnRlZCwgcmVhY3RpdmUsIHJlZiB9IGZyb20gJ3Z1ZSdcbmltcG9ydCB7IGRhdGVGb3JtYXR0ZXIgfSBmcm9tICdAL3V0aWxzL2Zvcm1hdFRpbWUnXG5pbXBvcnQgeyBQcm9kdWN0QXBpLCB0eXBlIFByb2R1Y3RWTyB9IGZyb20gJ0AvYXBpL2VycC9wcm9kdWN0L3Byb2R1Y3QnXG5pbXBvcnQge1xuICBCb21JdGVtU3Vic3RpdHV0ZUFwaSxcbiAgdHlwZSBCb21JdGVtU3Vic3RpdHV0ZVBhZ2VSZXFWTyxcbiAgdHlwZSBCb21JdGVtU3Vic3RpdHV0ZVZPXG59IGZyb20gJ0AvYXBpL2VycC9tcnAvc3Vic3RpdHV0ZSdcblxuZGVmaW5lT3B0aW9ucyh7IG5hbWU6ICdFcnBNcnBTdWJzdGl0dXRlUGFnZScgfSlcblxuY29uc3QgcXVlcnlGb3JtUmVmID0gcmVmKClcbmNvbnN0IGxvYWRpbmdMaXN0ID0gcmVmKGZhbHNlKVxuY29uc3QgbG9hZEVycm9yTWVzc2FnZSA9IHJlZignJylcbmNvbnN0IGxpc3QgPSByZWY8Qm9tSXRlbVN1YnN0aXR1dGVWT1tdPihbXSlcbmNvbnN0IHRvdGFsID0gcmVmKDApXG5jb25zdCBwcm9kdWN0T3B0aW9ucyA9IHJlZjxQcm9kdWN0Vk9bXT4oW10pXG5cbmNvbnN0IHF1ZXJ5UGFyYW1zID0gcmVhY3RpdmU8Qm9tSXRlbVN1YnN0aXR1dGVQYWdlUmVxVk8+KHtcbiAgcGFnZU5vOiAxLFxuICBwYWdlU2l6ZTogMTAsXG4gIGJvbUlkOiB1bmRlZmluZWQsXG4gIG1hdGVyaWFsSWQ6IHVuZGVmaW5lZCxcbiAgc3Vic3RpdHV0ZU1hdGVyaWFsSWQ6IHVuZGVmaW5lZCxcbiAgZW5hYmxlQXV0b1JlY29tbWVuZDogdW5kZWZpbmVkXG59KVxuXG5jb25zdCBoYXNGaWx0ZXJzID0gY29tcHV0ZWQoKCkgPT4ge1xuICByZXR1cm4gQm9vbGVhbihcbiAgICBxdWVyeVBhcmFtcy5ib21JZCB8fFxuICAgICAgcXVlcnlQYXJhbXMubWF0ZXJpYWxJZCB8fFxuICAgICAgcXVlcnlQYXJhbXMuc3Vic3RpdHV0ZU1hdGVyaWFsSWQgfHxcbiAgICAgIHF1ZXJ5UGFyYW1zLmVuYWJsZUF1dG9SZWNvbW1lbmQgIT09IHVuZGVmaW5lZFxuICApXG59KVxuXG5jb25zdCBjYW5TZWFyY2ggPSBjb21wdXRlZCgoKSA9PiAhbG9hZGluZ0xpc3QudmFsdWUpXG5jb25zdCBjYW5SZXNldCA9IGNvbXB1dGVkKCgpID0+ICFsb2FkaW5nTGlzdC52YWx1ZSAmJiBoYXNGaWx0ZXJzLnZhbHVlKVxuXG5jb25zdCBmb3JtYXRRdHkgPSAodmFsdWU/OiBudW1iZXIpID0+IE51bWJlcih2YWx1ZSA/PyAwKS50b0ZpeGVkKDYpXG5cbmNvbnN0IGdldExpc3QgPSBhc3luYyAoKSA9PiB7XG4gIGxvYWRpbmdMaXN0LnZhbHVlID0gdHJ1ZVxuICBsb2FkRXJyb3JNZXNzYWdlLnZhbHVlID0gJydcbiAgdHJ5IHtcbiAgICBjb25zdCBkYXRhID0gYXdhaXQgQm9tSXRlbVN1YnN0aXR1dGVBcGkuZ2V0U3Vic3RpdHV0ZVBhZ2UocXVlcnlQYXJhbXMpXG4gICAgbGlzdC52YWx1ZSA9IGRhdGEubGlzdFxuICAgIHRvdGFsLnZhbHVlID0gZGF0YS50b3RhbFxuICB9IGNhdGNoIChlcnJvcjogYW55KSB7XG4gICAgbG9hZEVycm9yTWVzc2FnZS52YWx1ZSA9IGVycm9yPy5tZXNzYWdlIHx8ICfmm7/ku6PmlpnliJfooajliqDovb3lpLHotKUnXG4gIH0gZmluYWxseSB7XG4gICAgbG9hZGluZ0xpc3QudmFsdWUgPSBmYWxzZVxuICB9XG59XG5cbmNvbnN0IGhhbmRsZVF1ZXJ5ID0gYXN5bmMgKCkgPT4ge1xuICBxdWVyeVBhcmFtcy5wYWdlTm8gPSAxXG4gIGF3YWl0IGdldExpc3QoKVxufVxuXG5jb25zdCByZXNldFF1ZXJ5ID0gYXN5bmMgKCkgPT4ge1xuICBxdWVyeUZvcm1SZWYudmFsdWU/LnJlc2V0RmllbGRzKClcbiAgYXdhaXQgaGFuZGxlUXVlcnkoKVxufVxuXG5vbk1vdW50ZWQoYXN5bmMgKCkgPT4ge1xuICBwcm9kdWN0T3B0aW9ucy52YWx1ZSA9IGF3YWl0IFByb2R1Y3RBcGkuZ2V0UHJvZHVjdFNpbXBsZUxpc3QoKVxuICBhd2FpdCBnZXRMaXN0KClcbn0pXG48L3NjcmlwdD5cbiJdLCJmaWxlIjoiRDovcnVveWktdnVlLXByby95dWRhby11aS95dWRhby11aS1hZG1pbi12dWUzL3NyYy92aWV3cy9lcnAvbXJwL3N1YnN0aXR1dGUvaW5kZXgudnVlIn0=

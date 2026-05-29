@@ -1,0 +1,45 @@
+package cn.iocoder.yudao.module.erp.dal.dataobject.finance;
+
+import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import com.baomidou.mybatisplus.annotation.KeySequence;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.Accessors;
+
+@TableName("erp_finance_report_item")
+@KeySequence("erp_finance_report_item_seq")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Builder
+@Accessors(chain = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class ErpFinanceReportItemDO extends BaseDO {
+
+    @TableId
+    private Long id;
+
+    private Long ledgerId;
+
+    private Integer reportType;
+
+    private Integer itemCategory;
+
+    private String itemCode;
+
+    private String itemName;
+
+    private Integer status;
+
+    private Integer sort;
+
+    private String remark;
+
+}

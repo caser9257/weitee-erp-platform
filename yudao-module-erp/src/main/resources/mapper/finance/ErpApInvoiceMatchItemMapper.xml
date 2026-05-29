@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpApInvoiceMatchItemMapper">
+
+    <select id="selectPendingItemPage"
+            resultType="cn.iocoder.yudao.module.erp.controller.admin.finance.vo.apinvoice.ErpApInvoicePendingItemRespVO">
+        SELECT
+            st.id AS apStatementId,
+            st.source_order_id AS sourceOrderId,
+            st.source_order_no AS sourceOrderNo,
+            pin.id AS sourcePurchaseInId,
+            pin.no AS sourcePurchaseInNo,
+            pii.id AS sourcePurchaseInItemId,
+            st.supplier_id AS supplierId,
+            pii.product_id AS productId,
+            st.biz_date AS bizDate,
+            pii.count AS totalCount,
+            IFNULL(SUM(match_item.match_count), 0) AS matchedCount,
+            GREATEST(pii.count - IFNULL(SUM(match_item.match_count), 0), 0) AS remainCount,
+            pii.total_price AS totalAmount,
+            IFNULL(SUM(match_item.match_amount), 0) AS matchedAmount,
+            GREATEST(pii.total_price - IFNULL(SUM(match_item.match_amount), 0), 0) AS remainAmount
+        FROM erp_ap_statement st
+        INNER JOIN erp_purchase_in pin
+            ON pin.id = st.biz_id
+           AND pin.deleted = 0
+        INNER JOIN erp_purchase_in_items pii
+            ON pii.in_id = pin.id
+           AND pii.deleted = 0
+        LEFT JOIN erp_ap_invoice_match_item match_item
+            ON match_item.source_purchase_in_item_id = pii.id
+           AND match_item.status = #{activeStatus}
+           AND match_item.deleted = 0
+        WHERE st.deleted = 0
+          AND st.biz_type = #{purchaseInBizType}
+          AND st.status != #{closedStatus}
+          AND st.supplier_id = #{supplierId}
+          <if test="reqVO.purchaseInNo != null and reqVO.purchaseInNo != ''">
+              AND pin.no LIKE CONCAT('%', #{reqVO.purchaseInNo}, '%')
+          </if>
+          <if test="reqVO.sourceOrderNo != null and reqVO.sourceOrderNo != ''">
+              AND st.source_order_no LIKE CONCAT('%', #{reqVO.sourceOrderNo}, '%')
+          </if>
+        GROUP BY
+            st.id,
+            st.source_order_id,
+            st.source_order_no,
+            pin.id,
+            pin.no,
+            pii.id,
+            st.supplier_id,
+            pii.product_id,
+            st.biz_date,
+            pii.count,
+            pii.total_price
+        HAVING remainCount > 0 OR remainAmount > 0
+        ORDER BY st.biz_date DESC, pii.id DESC
+    </select>
+
+</mapper>

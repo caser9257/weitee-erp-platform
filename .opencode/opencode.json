@@ -1,0 +1,25 @@
+{
+  "$schema": "https://tester.ai/config.json",
+  "plugin": [
+    "oh-my-tester"
+  ],
+  "model": "netester/gpt-5.4",
+  "small_model": "netester/gpt-5.4",
+  "provider": {
+    "netester": {
+      "npm": "@ai-sdk/openai",
+      "name": "NeCodeX API",
+      "options": {
+        "baseURL": "https://fast.sbbbbbbbbb.xyz/v1",
+        "apiKey": "sk-rF9GHRIOzoCsexw5uJ6nUVoeUsqwELPefP4D1jzmAHx0RqTo"
+      },
+      "models": {
+        "gpt-5.4": { "name": "gpt-5.4" },
+        "gpt-5.5": { "name": "gpt-5.5" },
+        "claude-opus-4-6": { "name": "claude-opus-4-6" },
+        "claude-opus-4-7": { "name": "claude-opus-4-7" },
+        "sora2": { "name": "sora2" }
+      }
+    }
+  }
+}

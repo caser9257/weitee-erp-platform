@@ -1,0 +1,41 @@
+.erp-toolbar-form :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.erp-toolbar-form :deep(.el-form-item__content) {
+  width: 100%;
+}
+
+.erp-toolbar-form :deep(.el-select),
+.erp-toolbar-form :deep(.el-input),
+.erp-toolbar-form :deep(.el-input-number) {
+  width: 100%;
+}
+
+.erp-table :deep(.el-table__header th) {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.erp-table :deep(.el-table__cell) {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.erp-table :deep(.el-table__header-wrapper th.el-table__cell) {
+  border-bottom-color: #e2e8f0;
+}
+
+.erp-table :deep(.el-table__body td.el-table__cell) {
+  border-bottom-color: #eef2f7;
+}
+
+.erp-table :deep(.el-table__body tr:hover > td) {
+  background-color: #f8fafc;
+}
+
+.erp-table :deep(.el-table__fixed-right::before),
+.erp-table :deep(.el-table__fixed::before) {
+  background-color: #e2e8f0;
+}

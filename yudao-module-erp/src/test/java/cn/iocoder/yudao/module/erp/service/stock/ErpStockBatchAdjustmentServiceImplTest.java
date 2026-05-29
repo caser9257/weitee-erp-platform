@@ -1,0 +1,90 @@
+package cn.iocoder.yudao.module.erp.service.stock;
+
+import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.batch.ErpStockBatchAdjustReqVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockBatchAdjustmentDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockBatchAdjustmentMapper;
+import cn.iocoder.yudao.module.erp.enums.stock.ErpStockBatchAdjustTypeEnum;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+class ErpStockBatchAdjustmentServiceImplTest {
+
+    @Test
+    void adjustBatch_shouldCreateAdjustmentMasterAndUseAdjustmentIdAsRecordBizId() throws Exception {
+        ErpStockBatchAdjustmentServiceImpl service = new ErpStockBatchAdjustmentServiceImpl();
+        AtomicReference<ErpStockBatchAdjustReqVO> delegatedReqRef = new AtomicReference<>();
+
+        setField(service, "stockBatchAdjustmentMapper", createProxy(ErpStockBatchAdjustmentMapper.class, (methodName, args) -> {
+            if ("selectByAdjustNo".equals(methodName)) {
+                return new ErpStockBatchAdjustmentDO().setId(501L).setAdjustNo("TZ202604290003")
+                        .setStockBatchId(11L).setBeforeAvailableQty(new BigDecimal("5.000"))
+                        .setBeforeTotalQty(new BigDecimal("5.000")).setAfterAvailableQty(new BigDecimal("8.000"))
+                        .setAfterTotalQty(new BigDecimal("8.000"));
+            }
+            return null;
+        }));
+        setField(service, "stockBatchService", createProxy(ErpStockBatchService.class, (methodName, args) -> {
+            if ("adjustBatch".equals(methodName)) {
+                delegatedReqRef.set((ErpStockBatchAdjustReqVO) args[0]);
+            }
+            return null;
+        }));
+
+        ErpStockBatchAdjustReqVO reqVO = new ErpStockBatchAdjustReqVO();
+        reqVO.setStockBatchId(11L);
+        reqVO.setAdjustType(ErpStockBatchAdjustTypeEnum.INCREASE.getType());
+        reqVO.setCount(new BigDecimal("3.000"));
+        reqVO.setAdjustNo("TZ202604290003");
+        reqVO.setRemark("期初补录");
+
+        ErpStockBatchAdjustmentDO result = service.adjustBatch(reqVO);
+
+        assertThat(result.getId()).isEqualTo(501L);
+        assertThat(delegatedReqRef.get()).isSameAs(reqVO);
+        assertThat(result)
+                .extracting(ErpStockBatchAdjustmentDO::getStockBatchId,
+                        ErpStockBatchAdjustmentDO::getBeforeAvailableQty,
+                        ErpStockBatchAdjustmentDO::getBeforeTotalQty)
+                .containsExactly(11L, new BigDecimal("5.000"), new BigDecimal("5.000"));
+        assertThat(result)
+                .extracting(ErpStockBatchAdjustmentDO::getAfterAvailableQty,
+                        ErpStockBatchAdjustmentDO::getAfterTotalQty)
+                .containsExactly(new BigDecimal("8.000"), new BigDecimal("8.000"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> T createProxy(Class<T> type, MethodHandler handler) {
+        return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},
+                (proxy, method, args) -> {
+                    if (method.getDeclaringClass() == Object.class) {
+                        if ("toString".equals(method.getName())) {
+                            return type.getSimpleName() + "Proxy";
+                        }
+                        if ("hashCode".equals(method.getName())) {
+                            return System.identityHashCode(proxy);
+                        }
+                        if ("equals".equals(method.getName())) {
+                            return proxy == args[0];
+                        }
+                    }
+                    return handler.handle(method.getName(), args);
+                });
+    }
+
+    private void setField(Object target, String fieldName, Object value) throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    @FunctionalInterface
+    private interface MethodHandler {
+        Object handle(String methodName, Object[] args);
+    }
+}

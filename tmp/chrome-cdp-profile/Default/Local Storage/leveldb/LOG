@@ -1,0 +1,29 @@
+2026/04/20-16:29:04.555 733c Creating DB D:\ruoyi-vue-pro\tmp\chrome-cdp-profile\Default\Local Storage\leveldb since it was missing.
+2026/04/20-16:29:04.588 733c Reusing MANIFEST D:\ruoyi-vue-pro\tmp\chrome-cdp-profile\Default\Local Storage\leveldb/MANIFEST-000001
+2026/04/20-16:39:15.511 7524 Level-0 table #5: started
+2026/04/20-16:39:15.516 7524 Level-0 table #5: 19513 bytes OK
+2026/04/20-16:39:15.519 7524 Delete type=0 #3
+2026/04/20-16:39:20.580 7524 Level-0 table #7: started
+2026/04/20-16:39:20.588 7524 Level-0 table #7: 18480 bytes OK
+2026/04/20-16:39:20.591 7524 Delete type=0 #4
+2026/04/20-16:40:41.793 7524 Level-0 table #9: started
+2026/04/20-16:40:41.799 7524 Level-0 table #9: 18346 bytes OK
+2026/04/20-16:40:41.802 7524 Delete type=0 #6
+2026/04/20-16:47:58.127 7524 Level-0 table #11: started
+2026/04/20-16:47:58.134 7524 Level-0 table #11: 22147 bytes OK
+2026/04/20-16:47:58.139 7524 Delete type=0 #8
+2026/04/20-16:48:03.504 7524 Level-0 table #13: started
+2026/04/20-16:48:03.512 7524 Level-0 table #13: 18423 bytes OK
+2026/04/20-16:48:03.517 7524 Delete type=0 #10
+2026/04/20-18:11:04.648 733c Level-0 table #15: started
+2026/04/20-18:11:04.655 733c Level-0 table #15: 18731 bytes OK
+2026/04/20-18:11:04.658 733c Delete type=0 #12
+2026/04/20-18:11:04.659 7524 Compacting 4@0 + 1@1 files
+2026/04/20-18:11:04.667 7524 Generated table #16@0: 41 keys, 22676 bytes
+2026/04/20-18:11:04.667 7524 Compacted 4@0 + 1@1 files => 22676 bytes
+2026/04/20-18:11:04.668 7524 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/20-18:11:04.670 7524 Delete type=2 #7
+2026/04/20-18:11:04.670 7524 Delete type=2 #9
+2026/04/20-18:11:04.670 7524 Delete type=2 #11
+2026/04/20-18:11:04.670 7524 Delete type=2 #13
+2026/04/20-18:11:04.670 7524 Delete type=2 #15

@@ -1,0 +1,85 @@
+######################################################################
+# Build Tools
+
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+.flattened-pom.xml
+
+######################################################################
+# IDE
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+nbproject/private/
+build/*
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+######################################################################
+# Others
+*.log
+*.xml.versionsBackup
+*.swp
+
+!*/build/*.java
+!*/build/*.html
+!*/build/*.xml
+
+### JRebel ###
+rebel.xml
+
+application-my.yaml
+
+/yudao-ui-app/unpackage/
+**/.DS_Store
+
+# Local tooling scratch files
+/.tester-temp/
+/.superpowers/
+/.worktrees/
+Query*.java
+Query*.class
+Temp*.java
+Temp*.class
+Tmp*.java
+Tmp*.class
+tmp_*.java
+tmp_*.class
+_tmp_*.vue
+yudao-ui/yudao-ui-admin-vue3/.tsconfig.tscheck.changed.json
+
+# tmp workspace garbage
+tmp/m2repo/
+tmp/.m2/
+tmp/chrome-cdp-profile/
+tmp/chrome-headless-profile*/
+tmp/*.class
+tmp/*.log
+tmp/*.out
+tmp/*.err
+tmp/*.sqlite
+tmp/*.json
+tmp/*.xml
+tmp/*.exe
+tmp/git-objects/
+tmp/awesome-design-md-skill/

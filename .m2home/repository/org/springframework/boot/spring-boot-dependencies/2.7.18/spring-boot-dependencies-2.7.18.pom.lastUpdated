@@ -1,0 +1,10 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Apr 21 12:04:37 CST 2026
+@default-aliyunmaven-https\://maven.aliyun.com/repository/public/.lastUpdated=1776744277262
+@default-central-https\://repo.maven.apache.org/maven2/.lastUpdated=1776744277771
+@default-huaweicloud-https\://mirrors.huaweicloud.com/repository/maven/.lastUpdated=1776744277200
+https\://maven.aliyun.com/repository/public/.error=Could not transfer artifact org.springframework.boot\:spring-boot-dependencies\:pom\:2.7.18 from/to aliyunmaven (https\://maven.aliyun.com/repository/public)\: D\:\\ruoyi-vue-pro\\.m2home\\repository\\org\\springframework\\boot\\spring-boot-dependencies\\2.7.18\\spring-boot-dependencies-2.7.18.pom.2213344758262396749.tmp.13314608635040291537.tmp
+https\://mirrors.huaweicloud.com/repository/maven/.error=Could not transfer artifact org.springframework.boot\:spring-boot-dependencies\:pom\:2.7.18 from/to huaweicloud (https\://mirrors.huaweicloud.com/repository/maven/)\: D\:\\ruoyi-vue-pro\\.m2home\\repository\\org\\springframework\\boot\\spring-boot-dependencies\\2.7.18\\spring-boot-dependencies-2.7.18.pom.15082826346704666680.tmp.2756028734146567158.tmp
+https\://repo.maven.apache.org/maven2/.error=Could not transfer artifact org.springframework.boot\:spring-boot-dependencies\:pom\:2.7.18 from/to central (https\://repo.maven.apache.org/maven2)\: D\:\\ruoyi-vue-pro\\.m2home\\repository\\org\\springframework\\boot\\spring-boot-dependencies\\2.7.18\\spring-boot-dependencies-2.7.18.pom.623161616661158899.tmp.15262083812853216832.tmp
+https\://repo.spring.io/milestone/.error=
+https\://repo.spring.io/milestone/.lastUpdated=1776744277537

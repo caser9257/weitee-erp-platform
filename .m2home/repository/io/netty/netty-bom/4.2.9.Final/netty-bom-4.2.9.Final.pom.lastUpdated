@@ -1,0 +1,10 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Tue Apr 21 12:04:35 CST 2026
+@default-aliyunmaven-https\://maven.aliyun.com/repository/public/.lastUpdated=1776744273953
+@default-central-https\://repo.maven.apache.org/maven2/.lastUpdated=1776744275667
+@default-huaweicloud-https\://mirrors.huaweicloud.com/repository/maven/.lastUpdated=1776744273845
+https\://maven.aliyun.com/repository/public/.error=Could not transfer artifact io.netty\:netty-bom\:pom\:4.2.9.Final from/to aliyunmaven (https\://maven.aliyun.com/repository/public)\: D\:\\ruoyi-vue-pro\\.m2home\\repository\\io\\netty\\netty-bom\\4.2.9.Final\\netty-bom-4.2.9.Final.pom.1246211312015520558.tmp.3477603399748781487.tmp
+https\://mirrors.huaweicloud.com/repository/maven/.error=Could not transfer artifact io.netty\:netty-bom\:pom\:4.2.9.Final from/to huaweicloud (https\://mirrors.huaweicloud.com/repository/maven/)\: D\:\\ruoyi-vue-pro\\.m2home\\repository\\io\\netty\\netty-bom\\4.2.9.Final\\netty-bom-4.2.9.Final.pom.17296023012515427081.tmp.6232486512369623945.tmp
+https\://repo.maven.apache.org/maven2/.error=Could not transfer artifact io.netty\:netty-bom\:pom\:4.2.9.Final from/to central (https\://repo.maven.apache.org/maven2)\: D\:\\ruoyi-vue-pro\\.m2home\\repository\\io\\netty\\netty-bom\\4.2.9.Final\\netty-bom-4.2.9.Final.pom.9372880270979752866.tmp.13049449450595855131.tmp
+https\://repo.spring.io/milestone/.error=
+https\://repo.spring.io/milestone/.lastUpdated=1776744274985

@@ -1,0 +1,410 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/layout/components/Setting/src/components/InterfaceDisplay.vue");/* unplugin-vue-components disabled */import { ElInput as __unplugin_components_1 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_input_style_css.js?v=0f962ce1";
+import { ElSwitch as __unplugin_components_0 } from "/node_modules/.vite/deps/element-plus_es.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_base_style_css.js?v=0f962ce1";import "/node_modules/.vite/deps/element-plus_es_components_switch_style_css.js?v=0f962ce1";
+import { defineComponent as _defineComponent } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+import { setCssVar } from "/src/utils/index.ts";
+import { useDesign } from "/src/hooks/web/useDesign.ts";
+import { useWatermark } from "/src/hooks/web/useWatermark.ts";
+import { useAppStore } from "/src/store/modules/app.ts";
+
+import { useI18n } from "/src/hooks/web/useI18n.ts";
+import { ref, computed, watch } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+const _sfc_main = /* @__PURE__ */ _defineComponent({
+  ...{ name: "InterfaceDisplay" },
+  __name: "InterfaceDisplay",
+  setup(__props, { expose: __expose }) {
+    __expose();
+    const { t } = useI18n();
+    const { getPrefixCls } = useDesign();
+    const { setWatermark } = useWatermark();
+    const prefixCls = getPrefixCls("interface-display");
+    const appStore = useAppStore();
+    const water = ref();
+    const breadcrumb = ref(appStore.getBreadcrumb);
+    const breadcrumbChange = (show) => {
+      appStore.setBreadcrumb(show);
+    };
+    const breadcrumbIcon = ref(appStore.getBreadcrumbIcon);
+    const breadcrumbIconChange = (show) => {
+      appStore.setBreadcrumbIcon(show);
+    };
+    const hamburger = ref(appStore.getHamburger);
+    const hamburgerChange = (show) => {
+      appStore.setHamburger(show);
+    };
+    const screenfull = ref(appStore.getScreenfull);
+    const screenfullChange = (show) => {
+      appStore.setScreenfull(show);
+    };
+    const size = ref(appStore.getSize);
+    const sizeChange = (show) => {
+      appStore.setSize(show);
+    };
+    const locale = ref(appStore.getLocale);
+    const localeChange = (show) => {
+      appStore.setLocale(show);
+    };
+    const message = ref(appStore.getMessage);
+    const messageChange = (show) => {
+      appStore.setMessage(show);
+    };
+    const tagsView = ref(appStore.getTagsView);
+    const tagsViewChange = (show) => {
+      setCssVar("--tags-view-height", show ? "35px" : "0px");
+      appStore.setTagsView(show);
+    };
+    const tagsViewImmerse = ref(appStore.getTagsViewImmerse);
+    const tagsViewImmerseChange = (immerse) => {
+      appStore.setTagsViewImmerse(immerse);
+    };
+    const tagsViewIcon = ref(appStore.getTagsViewIcon);
+    const tagsViewIconChange = (show) => {
+      appStore.setTagsViewIcon(show);
+    };
+    const logo = ref(appStore.getLogo);
+    const logoChange = (show) => {
+      appStore.setLogo(show);
+    };
+    const uniqueOpened = ref(appStore.getUniqueOpened);
+    const uniqueOpenedChange = (uniqueOpened2) => {
+      appStore.setUniqueOpened(uniqueOpened2);
+    };
+    const fixedHeader = ref(appStore.getFixedHeader);
+    const fixedHeaderChange = (show) => {
+      appStore.setFixedHeader(show);
+    };
+    const footer = ref(appStore.getFooter);
+    const footerChange = (show) => {
+      appStore.setFooter(show);
+    };
+    const greyMode = ref(appStore.getGreyMode);
+    const greyModeChange = (show) => {
+      appStore.setGreyMode(show);
+    };
+    const fixedMenu = ref(appStore.getFixedMenu);
+    const fixedMenuChange = (show) => {
+      appStore.setFixedMenu(show);
+    };
+    const setWater = () => {
+      setWatermark(water.value);
+    };
+    const layout = computed(() => appStore.getLayout);
+    watch(
+      () => layout.value,
+      (n) => {
+        if (n === "top") {
+          appStore.setCollapse(false);
+        }
+      }
+    );
+    const __returned__ = { t, getPrefixCls, setWatermark, prefixCls, appStore, water, breadcrumb, breadcrumbChange, breadcrumbIcon, breadcrumbIconChange, hamburger, hamburgerChange, screenfull, screenfullChange, size, sizeChange, locale, localeChange, message, messageChange, tagsView, tagsViewChange, tagsViewImmerse, tagsViewImmerseChange, tagsViewIcon, tagsViewIconChange, logo, logoChange, uniqueOpened, uniqueOpenedChange, fixedHeader, fixedHeaderChange, footer, footerChange, greyMode, greyModeChange, fixedMenu, fixedMenuChange, setWater, layout };
+    Object.defineProperty(__returned__, "__isScriptSetup", { enumerable: false, value: true });
+    return __returned__;
+  }
+});
+import { toDisplayString as _toDisplayString, createElementVNode as _createElementVNode, resolveComponent as _resolveComponent, createVNode as _createVNode, normalizeClass as _normalizeClass, openBlock as _openBlock, createElementBlock as _createElementBlock } from "/node_modules/.vite/deps/vue.js?v=0f962ce1";
+const _hoisted_1 = { class: "flex items-center justify-between" };
+const _hoisted_2 = { class: "text-14px" };
+const _hoisted_3 = { class: "flex items-center justify-between" };
+const _hoisted_4 = { class: "text-14px" };
+const _hoisted_5 = { class: "flex items-center justify-between" };
+const _hoisted_6 = { class: "text-14px" };
+const _hoisted_7 = { class: "flex items-center justify-between" };
+const _hoisted_8 = { class: "text-14px" };
+const _hoisted_9 = { class: "flex items-center justify-between" };
+const _hoisted_10 = { class: "text-14px" };
+const _hoisted_11 = { class: "flex items-center justify-between" };
+const _hoisted_12 = { class: "text-14px" };
+const _hoisted_13 = { class: "flex items-center justify-between" };
+const _hoisted_14 = { class: "text-14px" };
+const _hoisted_15 = { class: "flex items-center justify-between" };
+const _hoisted_16 = { class: "text-14px" };
+const _hoisted_17 = { class: "flex items-center justify-between" };
+const _hoisted_18 = { class: "text-14px" };
+const _hoisted_19 = { class: "flex items-center justify-between" };
+const _hoisted_20 = { class: "text-14px" };
+const _hoisted_21 = { class: "flex items-center justify-between" };
+const _hoisted_22 = { class: "text-14px" };
+const _hoisted_23 = { class: "flex items-center justify-between" };
+const _hoisted_24 = { class: "text-14px" };
+const _hoisted_25 = { class: "flex items-center justify-between" };
+const _hoisted_26 = { class: "text-14px" };
+const _hoisted_27 = { class: "flex items-center justify-between" };
+const _hoisted_28 = { class: "text-14px" };
+const _hoisted_29 = { class: "flex items-center justify-between" };
+const _hoisted_30 = { class: "text-14px" };
+const _hoisted_31 = { class: "flex items-center justify-between" };
+const _hoisted_32 = { class: "text-14px" };
+const _hoisted_33 = { class: "flex items-center justify-between" };
+const _hoisted_34 = { class: "text-14px" };
+function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  const _component_ElSwitch = __unplugin_components_0;
+  const _component_ElInput = __unplugin_components_1;
+  return _openBlock(), _createElementBlock(
+    "div",
+    {
+      class: _normalizeClass($setup.prefixCls)
+    },
+    [
+      _createElementVNode("div", _hoisted_1, [
+        _createElementVNode(
+          "span",
+          _hoisted_2,
+          _toDisplayString($setup.t("setting.breadcrumb")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.breadcrumb,
+          "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => $setup.breadcrumb = $event),
+          onChange: $setup.breadcrumbChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_3, [
+        _createElementVNode(
+          "span",
+          _hoisted_4,
+          _toDisplayString($setup.t("setting.breadcrumbIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.breadcrumbIcon,
+          "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => $setup.breadcrumbIcon = $event),
+          onChange: $setup.breadcrumbIconChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_5, [
+        _createElementVNode(
+          "span",
+          _hoisted_6,
+          _toDisplayString($setup.t("setting.hamburgerIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.hamburger,
+          "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => $setup.hamburger = $event),
+          onChange: $setup.hamburgerChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_7, [
+        _createElementVNode(
+          "span",
+          _hoisted_8,
+          _toDisplayString($setup.t("setting.screenfullIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.screenfull,
+          "onUpdate:modelValue": _cache[3] || (_cache[3] = ($event) => $setup.screenfull = $event),
+          onChange: $setup.screenfullChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_9, [
+        _createElementVNode(
+          "span",
+          _hoisted_10,
+          _toDisplayString($setup.t("setting.sizeIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.size,
+          "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => $setup.size = $event),
+          onChange: $setup.sizeChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_11, [
+        _createElementVNode(
+          "span",
+          _hoisted_12,
+          _toDisplayString($setup.t("setting.localeIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.locale,
+          "onUpdate:modelValue": _cache[5] || (_cache[5] = ($event) => $setup.locale = $event),
+          onChange: $setup.localeChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_13, [
+        _createElementVNode(
+          "span",
+          _hoisted_14,
+          _toDisplayString($setup.t("setting.messageIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.message,
+          "onUpdate:modelValue": _cache[6] || (_cache[6] = ($event) => $setup.message = $event),
+          onChange: $setup.messageChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_15, [
+        _createElementVNode(
+          "span",
+          _hoisted_16,
+          _toDisplayString($setup.t("setting.tagsView")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.tagsView,
+          "onUpdate:modelValue": _cache[7] || (_cache[7] = ($event) => $setup.tagsView = $event),
+          onChange: $setup.tagsViewChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_17, [
+        _createElementVNode(
+          "span",
+          _hoisted_18,
+          _toDisplayString($setup.t("setting.tagsViewImmerse")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.tagsViewImmerse,
+          "onUpdate:modelValue": _cache[8] || (_cache[8] = ($event) => $setup.tagsViewImmerse = $event),
+          onChange: $setup.tagsViewImmerseChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_19, [
+        _createElementVNode(
+          "span",
+          _hoisted_20,
+          _toDisplayString($setup.t("setting.tagsViewIcon")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.tagsViewIcon,
+          "onUpdate:modelValue": _cache[9] || (_cache[9] = ($event) => $setup.tagsViewIcon = $event),
+          onChange: $setup.tagsViewIconChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_21, [
+        _createElementVNode(
+          "span",
+          _hoisted_22,
+          _toDisplayString($setup.t("setting.logo")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.logo,
+          "onUpdate:modelValue": _cache[10] || (_cache[10] = ($event) => $setup.logo = $event),
+          onChange: $setup.logoChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_23, [
+        _createElementVNode(
+          "span",
+          _hoisted_24,
+          _toDisplayString($setup.t("setting.uniqueOpened")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.uniqueOpened,
+          "onUpdate:modelValue": _cache[11] || (_cache[11] = ($event) => $setup.uniqueOpened = $event),
+          onChange: $setup.uniqueOpenedChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_25, [
+        _createElementVNode(
+          "span",
+          _hoisted_26,
+          _toDisplayString($setup.t("setting.fixedHeader")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.fixedHeader,
+          "onUpdate:modelValue": _cache[12] || (_cache[12] = ($event) => $setup.fixedHeader = $event),
+          onChange: $setup.fixedHeaderChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_27, [
+        _createElementVNode(
+          "span",
+          _hoisted_28,
+          _toDisplayString($setup.t("setting.footer")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.footer,
+          "onUpdate:modelValue": _cache[13] || (_cache[13] = ($event) => $setup.footer = $event),
+          onChange: $setup.footerChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_29, [
+        _createElementVNode(
+          "span",
+          _hoisted_30,
+          _toDisplayString($setup.t("setting.greyMode")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.greyMode,
+          "onUpdate:modelValue": _cache[14] || (_cache[14] = ($event) => $setup.greyMode = $event),
+          onChange: $setup.greyModeChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_31, [
+        _createElementVNode(
+          "span",
+          _hoisted_32,
+          _toDisplayString($setup.t("setting.fixedMenu")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElSwitch, {
+          modelValue: $setup.fixedMenu,
+          "onUpdate:modelValue": _cache[15] || (_cache[15] = ($event) => $setup.fixedMenu = $event),
+          onChange: $setup.fixedMenuChange
+        }, null, 8, ["modelValue"])
+      ]),
+      _createElementVNode("div", _hoisted_33, [
+        _createElementVNode(
+          "span",
+          _hoisted_34,
+          _toDisplayString($setup.t("watermark.watermark")),
+          1
+          /* TEXT */
+        ),
+        _createVNode(_component_ElInput, {
+          modelValue: $setup.water,
+          "onUpdate:modelValue": _cache[16] || (_cache[16] = ($event) => $setup.water = $event),
+          class: "right-1 w-20",
+          onChange: _cache[17] || (_cache[17] = ($event) => $setup.setWater())
+        }, null, 8, ["modelValue"])
+      ])
+    ],
+    2
+    /* CLASS */
+  );
+}
+_sfc_main.__hmrId = "8ff9180f";
+typeof __VUE_HMR_RUNTIME__ !== "undefined" && __VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main);
+import.meta.hot.on("file-changed", ({ file }) => {
+  __VUE_HMR_RUNTIME__.CHANGED_FILE = file;
+});
+import.meta.hot.accept((mod) => {
+  if (!mod)
+    return;
+  const { default: updated, _rerender_only } = mod;
+  if (_rerender_only) {
+    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render);
+  } else {
+    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated);
+  }
+});
+import _export_sfc from "/@id/__x00__plugin-vue:export-helper";
+export default /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render], ["__file", "D:/ruoyi-vue-pro/yudao-ui/yudao-ui-admin-vue3/src/layout/components/Setting/src/components/InterfaceDisplay.vue"]]);
+
+//# sourceMappingURL=data:application/json;base64,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IjxzY3JpcHQgbGFuZz1cInRzXCIgc2V0dXA+XHJcbmltcG9ydCB7IHNldENzc1ZhciB9IGZyb20gJ0AvdXRpbHMnXHJcblxyXG5pbXBvcnQgeyB1c2VEZXNpZ24gfSBmcm9tICdAL2hvb2tzL3dlYi91c2VEZXNpZ24nXHJcbmltcG9ydCB7IHVzZVdhdGVybWFyayB9IGZyb20gJ0AvaG9va3Mvd2ViL3VzZVdhdGVybWFyaydcclxuaW1wb3J0IHsgdXNlQXBwU3RvcmUgfSBmcm9tICdAL3N0b3JlL21vZHVsZXMvYXBwJ1xyXG5cclxuZGVmaW5lT3B0aW9ucyh7IG5hbWU6ICdJbnRlcmZhY2VEaXNwbGF5JyB9KVxyXG5cclxuY29uc3QgeyB0IH0gPSB1c2VJMThuKClcclxuY29uc3QgeyBnZXRQcmVmaXhDbHMgfSA9IHVzZURlc2lnbigpXHJcbmNvbnN0IHsgc2V0V2F0ZXJtYXJrIH0gPSB1c2VXYXRlcm1hcmsoKVxyXG5jb25zdCBwcmVmaXhDbHMgPSBnZXRQcmVmaXhDbHMoJ2ludGVyZmFjZS1kaXNwbGF5JylcclxuY29uc3QgYXBwU3RvcmUgPSB1c2VBcHBTdG9yZSgpXHJcblxyXG5jb25zdCB3YXRlciA9IHJlZigpXHJcblxyXG4vLyDpnaLljIXlsZFcclxuY29uc3QgYnJlYWRjcnVtYiA9IHJlZihhcHBTdG9yZS5nZXRCcmVhZGNydW1iKVxyXG5cclxuY29uc3QgYnJlYWRjcnVtYkNoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0QnJlYWRjcnVtYihzaG93KVxyXG59XHJcblxyXG4vLyDpnaLljIXlsZHlm77moIdcclxuY29uc3QgYnJlYWRjcnVtYkljb24gPSByZWYoYXBwU3RvcmUuZ2V0QnJlYWRjcnVtYkljb24pXHJcblxyXG5jb25zdCBicmVhZGNydW1iSWNvbkNoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0QnJlYWRjcnVtYkljb24oc2hvdylcclxufVxyXG5cclxuLy8g5oqY5Y+g5Zu+5qCHXHJcbmNvbnN0IGhhbWJ1cmdlciA9IHJlZihhcHBTdG9yZS5nZXRIYW1idXJnZXIpXHJcblxyXG5jb25zdCBoYW1idXJnZXJDaGFuZ2UgPSAoc2hvdzogYm9vbGVhbikgPT4ge1xyXG4gIGFwcFN0b3JlLnNldEhhbWJ1cmdlcihzaG93KVxyXG59XHJcblxyXG4vLyDlhajlsY/lm77moIdcclxuY29uc3Qgc2NyZWVuZnVsbCA9IHJlZihhcHBTdG9yZS5nZXRTY3JlZW5mdWxsKVxyXG5cclxuY29uc3Qgc2NyZWVuZnVsbENoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0U2NyZWVuZnVsbChzaG93KVxyXG59XHJcblxyXG4vLyDlsLrlr7jlm77moIdcclxuY29uc3Qgc2l6ZSA9IHJlZihhcHBTdG9yZS5nZXRTaXplKVxyXG5cclxuY29uc3Qgc2l6ZUNoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0U2l6ZShzaG93KVxyXG59XHJcblxyXG4vLyDlpJror63oqIDlm77moIdcclxuY29uc3QgbG9jYWxlID0gcmVmKGFwcFN0b3JlLmdldExvY2FsZSlcclxuXHJcbmNvbnN0IGxvY2FsZUNoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0TG9jYWxlKHNob3cpXHJcbn1cclxuXHJcbi8vIOa2iOaBr+Wbvuagh1xyXG5jb25zdCBtZXNzYWdlID0gcmVmKGFwcFN0b3JlLmdldE1lc3NhZ2UpXHJcblxyXG5jb25zdCBtZXNzYWdlQ2hhbmdlID0gKHNob3c6IGJvb2xlYW4pID0+IHtcclxuICBhcHBTdG9yZS5zZXRNZXNzYWdlKHNob3cpXHJcbn1cclxuXHJcbi8vIOagh+etvumhtVxyXG5jb25zdCB0YWdzVmlldyA9IHJlZihhcHBTdG9yZS5nZXRUYWdzVmlldylcclxuXHJcbmNvbnN0IHRhZ3NWaWV3Q2hhbmdlID0gKHNob3c6IGJvb2xlYW4pID0+IHtcclxuICAvLyDliIfmjaLmoIfnrb7moI/mmL7npLrml7bvvIzlkIzmraXliIfmjaLmoIfnrb7moI/nmoTpq5jluqZcclxuICBzZXRDc3NWYXIoJy0tdGFncy12aWV3LWhlaWdodCcsIHNob3cgPyAnMzVweCcgOiAnMHB4JylcclxuICBhcHBTdG9yZS5zZXRUYWdzVmlldyhzaG93KVxyXG59XHJcblxyXG4vLyDmoIfnrb7pobXmsonmtbhcclxuY29uc3QgdGFnc1ZpZXdJbW1lcnNlID0gcmVmKGFwcFN0b3JlLmdldFRhZ3NWaWV3SW1tZXJzZSlcclxuXHJcbmNvbnN0IHRhZ3NWaWV3SW1tZXJzZUNoYW5nZSA9IChpbW1lcnNlOiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0VGFnc1ZpZXdJbW1lcnNlKGltbWVyc2UpXHJcbn1cclxuXHJcbi8vIOagh+etvumhteWbvuagh1xyXG5jb25zdCB0YWdzVmlld0ljb24gPSByZWYoYXBwU3RvcmUuZ2V0VGFnc1ZpZXdJY29uKVxyXG5cclxuY29uc3QgdGFnc1ZpZXdJY29uQ2hhbmdlID0gKHNob3c6IGJvb2xlYW4pID0+IHtcclxuICBhcHBTdG9yZS5zZXRUYWdzVmlld0ljb24oc2hvdylcclxufVxyXG5cclxuLy8gbG9nb1xyXG5jb25zdCBsb2dvID0gcmVmKGFwcFN0b3JlLmdldExvZ28pXHJcblxyXG5jb25zdCBsb2dvQ2hhbmdlID0gKHNob3c6IGJvb2xlYW4pID0+IHtcclxuICBhcHBTdG9yZS5zZXRMb2dvKHNob3cpXHJcbn1cclxuXHJcbi8vIOiPnOWNleaJi+mjjueQtFxyXG5jb25zdCB1bmlxdWVPcGVuZWQgPSByZWYoYXBwU3RvcmUuZ2V0VW5pcXVlT3BlbmVkKVxyXG5cclxuY29uc3QgdW5pcXVlT3BlbmVkQ2hhbmdlID0gKHVuaXF1ZU9wZW5lZDogYm9vbGVhbikgPT4ge1xyXG4gIGFwcFN0b3JlLnNldFVuaXF1ZU9wZW5lZCh1bmlxdWVPcGVuZWQpXHJcbn1cclxuXHJcbi8vIOWbuuWumuWktOmDqFxyXG5jb25zdCBmaXhlZEhlYWRlciA9IHJlZihhcHBTdG9yZS5nZXRGaXhlZEhlYWRlcilcclxuXHJcbmNvbnN0IGZpeGVkSGVhZGVyQ2hhbmdlID0gKHNob3c6IGJvb2xlYW4pID0+IHtcclxuICBhcHBTdG9yZS5zZXRGaXhlZEhlYWRlcihzaG93KVxyXG59XHJcblxyXG4vLyDpobXohJpcclxuY29uc3QgZm9vdGVyID0gcmVmKGFwcFN0b3JlLmdldEZvb3RlcilcclxuXHJcbmNvbnN0IGZvb3RlckNoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0Rm9vdGVyKHNob3cpXHJcbn1cclxuXHJcbi8vIOeBsOiJsuaooeW8j1xyXG5jb25zdCBncmV5TW9kZSA9IHJlZihhcHBTdG9yZS5nZXRHcmV5TW9kZSlcclxuXHJcbmNvbnN0IGdyZXlNb2RlQ2hhbmdlID0gKHNob3c6IGJvb2xlYW4pID0+IHtcclxuICBhcHBTdG9yZS5zZXRHcmV5TW9kZShzaG93KVxyXG59XHJcblxyXG4vLyDlm7rlrproj5zljZVcclxuY29uc3QgZml4ZWRNZW51ID0gcmVmKGFwcFN0b3JlLmdldEZpeGVkTWVudSlcclxuXHJcbmNvbnN0IGZpeGVkTWVudUNoYW5nZSA9IChzaG93OiBib29sZWFuKSA9PiB7XHJcbiAgYXBwU3RvcmUuc2V0Rml4ZWRNZW51KHNob3cpXHJcbn1cclxuXHJcbi8vIOiuvue9ruawtOWNsFxyXG5jb25zdCBzZXRXYXRlciA9ICgpID0+IHtcclxuICBzZXRXYXRlcm1hcmsod2F0ZXIudmFsdWUpXHJcbn1cclxuXHJcbmNvbnN0IGxheW91dCA9IGNvbXB1dGVkKCgpID0+IGFwcFN0b3JlLmdldExheW91dClcclxuXHJcbndhdGNoKFxyXG4gICgpID0+IGxheW91dC52YWx1ZSxcclxuICAobikgPT4ge1xyXG4gICAgaWYgKG4gPT09ICd0b3AnKSB7XHJcbiAgICAgIGFwcFN0b3JlLnNldENvbGxhcHNlKGZhbHNlKVxyXG4gICAgfVxyXG4gIH1cclxuKVxyXG48L3NjcmlwdD5cclxuXHJcbjx0ZW1wbGF0ZT5cclxuICA8ZGl2IDpjbGFzcz1cInByZWZpeENsc1wiPlxyXG4gICAgPGRpdiBjbGFzcz1cImZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktYmV0d2VlblwiPlxyXG4gICAgICA8c3BhbiBjbGFzcz1cInRleHQtMTRweFwiPnt7IHQoJ3NldHRpbmcuYnJlYWRjcnVtYicpIH19PC9zcGFuPlxyXG4gICAgICA8RWxTd2l0Y2ggdi1tb2RlbD1cImJyZWFkY3J1bWJcIiBAY2hhbmdlPVwiYnJlYWRjcnVtYkNoYW5nZVwiIC8+XHJcbiAgICA8L2Rpdj5cclxuXHJcbiAgICA8ZGl2IGNsYXNzPVwiZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuXCI+XHJcbiAgICAgIDxzcGFuIGNsYXNzPVwidGV4dC0xNHB4XCI+e3sgdCgnc2V0dGluZy5icmVhZGNydW1iSWNvbicpIH19PC9zcGFuPlxyXG4gICAgICA8RWxTd2l0Y2ggdi1tb2RlbD1cImJyZWFkY3J1bWJJY29uXCIgQGNoYW5nZT1cImJyZWFkY3J1bWJJY29uQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLmhhbWJ1cmdlckljb24nKSB9fTwvc3Bhbj5cclxuICAgICAgPEVsU3dpdGNoIHYtbW9kZWw9XCJoYW1idXJnZXJcIiBAY2hhbmdlPVwiaGFtYnVyZ2VyQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLnNjcmVlbmZ1bGxJY29uJykgfX08L3NwYW4+XHJcbiAgICAgIDxFbFN3aXRjaCB2LW1vZGVsPVwic2NyZWVuZnVsbFwiIEBjaGFuZ2U9XCJzY3JlZW5mdWxsQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLnNpemVJY29uJykgfX08L3NwYW4+XHJcbiAgICAgIDxFbFN3aXRjaCB2LW1vZGVsPVwic2l6ZVwiIEBjaGFuZ2U9XCJzaXplQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLmxvY2FsZUljb24nKSB9fTwvc3Bhbj5cclxuICAgICAgPEVsU3dpdGNoIHYtbW9kZWw9XCJsb2NhbGVcIiBAY2hhbmdlPVwibG9jYWxlQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLm1lc3NhZ2VJY29uJykgfX08L3NwYW4+XHJcbiAgICAgIDxFbFN3aXRjaCB2LW1vZGVsPVwibWVzc2FnZVwiIEBjaGFuZ2U9XCJtZXNzYWdlQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLnRhZ3NWaWV3JykgfX08L3NwYW4+XHJcbiAgICAgIDxFbFN3aXRjaCB2LW1vZGVsPVwidGFnc1ZpZXdcIiBAY2hhbmdlPVwidGFnc1ZpZXdDaGFuZ2VcIiAvPlxyXG4gICAgPC9kaXY+XHJcblxyXG4gICAgPGRpdiBjbGFzcz1cImZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktYmV0d2VlblwiPlxyXG4gICAgICA8c3BhbiBjbGFzcz1cInRleHQtMTRweFwiPnt7IHQoJ3NldHRpbmcudGFnc1ZpZXdJbW1lcnNlJykgfX08L3NwYW4+XHJcbiAgICAgIDxFbFN3aXRjaCB2LW1vZGVsPVwidGFnc1ZpZXdJbW1lcnNlXCIgQGNoYW5nZT1cInRhZ3NWaWV3SW1tZXJzZUNoYW5nZVwiIC8+XHJcbiAgICA8L2Rpdj5cclxuXHJcbiAgICA8ZGl2IGNsYXNzPVwiZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuXCI+XHJcbiAgICAgIDxzcGFuIGNsYXNzPVwidGV4dC0xNHB4XCI+e3sgdCgnc2V0dGluZy50YWdzVmlld0ljb24nKSB9fTwvc3Bhbj5cclxuICAgICAgPEVsU3dpdGNoIHYtbW9kZWw9XCJ0YWdzVmlld0ljb25cIiBAY2hhbmdlPVwidGFnc1ZpZXdJY29uQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLmxvZ28nKSB9fTwvc3Bhbj5cclxuICAgICAgPEVsU3dpdGNoIHYtbW9kZWw9XCJsb2dvXCIgQGNoYW5nZT1cImxvZ29DaGFuZ2VcIiAvPlxyXG4gICAgPC9kaXY+XHJcblxyXG4gICAgPGRpdiBjbGFzcz1cImZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktYmV0d2VlblwiPlxyXG4gICAgICA8c3BhbiBjbGFzcz1cInRleHQtMTRweFwiPnt7IHQoJ3NldHRpbmcudW5pcXVlT3BlbmVkJykgfX08L3NwYW4+XHJcbiAgICAgIDxFbFN3aXRjaCB2LW1vZGVsPVwidW5pcXVlT3BlbmVkXCIgQGNoYW5nZT1cInVuaXF1ZU9wZW5lZENoYW5nZVwiIC8+XHJcbiAgICA8L2Rpdj5cclxuXHJcbiAgICA8ZGl2IGNsYXNzPVwiZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuXCI+XHJcbiAgICAgIDxzcGFuIGNsYXNzPVwidGV4dC0xNHB4XCI+e3sgdCgnc2V0dGluZy5maXhlZEhlYWRlcicpIH19PC9zcGFuPlxyXG4gICAgICA8RWxTd2l0Y2ggdi1tb2RlbD1cImZpeGVkSGVhZGVyXCIgQGNoYW5nZT1cImZpeGVkSGVhZGVyQ2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCdzZXR0aW5nLmZvb3RlcicpIH19PC9zcGFuPlxyXG4gICAgICA8RWxTd2l0Y2ggdi1tb2RlbD1cImZvb3RlclwiIEBjaGFuZ2U9XCJmb290ZXJDaGFuZ2VcIiAvPlxyXG4gICAgPC9kaXY+XHJcblxyXG4gICAgPGRpdiBjbGFzcz1cImZsZXggaXRlbXMtY2VudGVyIGp1c3RpZnktYmV0d2VlblwiPlxyXG4gICAgICA8c3BhbiBjbGFzcz1cInRleHQtMTRweFwiPnt7IHQoJ3NldHRpbmcuZ3JleU1vZGUnKSB9fTwvc3Bhbj5cclxuICAgICAgPEVsU3dpdGNoIHYtbW9kZWw9XCJncmV5TW9kZVwiIEBjaGFuZ2U9XCJncmV5TW9kZUNoYW5nZVwiIC8+XHJcbiAgICA8L2Rpdj5cclxuXHJcbiAgICA8ZGl2IGNsYXNzPVwiZmxleCBpdGVtcy1jZW50ZXIganVzdGlmeS1iZXR3ZWVuXCI+XHJcbiAgICAgIDxzcGFuIGNsYXNzPVwidGV4dC0xNHB4XCI+e3sgdCgnc2V0dGluZy5maXhlZE1lbnUnKSB9fTwvc3Bhbj5cclxuICAgICAgPEVsU3dpdGNoIHYtbW9kZWw9XCJmaXhlZE1lbnVcIiBAY2hhbmdlPVwiZml4ZWRNZW51Q2hhbmdlXCIgLz5cclxuICAgIDwvZGl2PlxyXG5cclxuICAgIDxkaXYgY2xhc3M9XCJmbGV4IGl0ZW1zLWNlbnRlciBqdXN0aWZ5LWJldHdlZW5cIj5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ0ZXh0LTE0cHhcIj57eyB0KCd3YXRlcm1hcmsud2F0ZXJtYXJrJykgfX08L3NwYW4+XHJcbiAgICAgIDxFbElucHV0IHYtbW9kZWw9XCJ3YXRlclwiIGNsYXNzPVwicmlnaHQtMSB3LTIwXCIgQGNoYW5nZT1cInNldFdhdGVyKClcIiAvPlxyXG4gICAgPC9kaXY+XHJcbiAgPC9kaXY+XHJcbjwvdGVtcGxhdGU+XHJcbiJdLCJmaWxlIjoiRDovcnVveWktdnVlLXByby95dWRhby11aS95dWRhby11aS1hZG1pbi12dWUzL3NyYy9sYXlvdXQvY29tcG9uZW50cy9TZXR0aW5nL3NyYy9jb21wb25lbnRzL0ludGVyZmFjZURpc3BsYXkudnVlIn0=

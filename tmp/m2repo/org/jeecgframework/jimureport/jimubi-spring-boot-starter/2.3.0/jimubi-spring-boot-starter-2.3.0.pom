@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.18</version>
+    </parent>
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.jeecgframework.jimureport</groupId>
+  <artifactId>jimubi-spring-boot-starter</artifactId>
+  <version>2.3.0</version>
+  <packaging>jar</packaging>
+  <name>jimubi-spring-boot-starter</name>
+  <url>https://www.qiaoqiaoyun.com</url>
+	
+  <description>积木BI 数据可视化，支持仪表盘和大屏设计，致力于更生动、更友好的形式呈现实时业务数据分析</description>
+  
+    <licenses>
+        <license>
+            <name>功能可以免费用</name>
+            <url>http://jimureport.com/vip</url>
+        </license>
+    </licenses>
+
+	<scm>  
+      <connection>scm:git:https://github.com/jeecgboot/JimuReport.git</connection>
+      <developerConnection>scm:git:https://github.com/jeecgboot/JimuReport.git</developerConnection>  
+      <url>https://github.com/jeecgboot/JimuReport</url>  
+	</scm>
+	
+	<developers>
+        <developer>
+            <name>jeecg</name>
+            <email>jeecgos@163.com</email>
+        </developer>
+    </developers>
+
+
+    <dependencies>
+        <!--  begin 积木仪表盘需要的依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-core</artifactId>
+            <version>5.8.25</version>
+        </dependency>
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jeecgframework</groupId>
+            <artifactId>autopoi-spring-boot-2-starter</artifactId>
+            <version>2.0.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-codec</groupId>
+                    <artifactId>commons-codec</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>xercesImpl</artifactId>
+                    <groupId>xerces</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>xerces</groupId>
+            <artifactId>xercesImpl</artifactId>
+            <version>2.12.2</version>
+            <optional>true</optional>
+        </dependency>
+        <!--  end 积木仪表盘需要的依赖 -->
+        
+        <!--spring-boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- 积木报表 -->
+        <dependency>
+            <groupId>org.jeecgframework.jimureport</groupId>
+            <artifactId>jimureport-spring-boot-starter</artifactId>
+            <version>2.3.0.1</version>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

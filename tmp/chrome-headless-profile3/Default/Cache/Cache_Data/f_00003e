@@ -1,0 +1,294 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/Verifition/src/Verify/VerifyPoints.vue");/* unplugin-vue-components disabled */import { resetSize } from "/src/components/Verifition/src/utils/util.ts"
+import { aesEncrypt } from "/src/components/Verifition/src/utils/ase.ts"
+import { getCode, reqCheck } from "/src/api/login/index.ts"
+import { getCurrentInstance, nextTick, onMounted, reactive, ref, toRefs } from "/node_modules/.vite/deps/vue.js?v=0f962ce1"
+
+
+
+import { useI18n } from "/src/hooks/web/useI18n.ts";
+const _sfc_main = {
+  __name: 'VerifyPoints',
+  props: {
+  //弹出式pop，固定fixed
+  mode: {
+    type: String,
+    default: 'fixed'
+  },
+  captchaType: {
+    type: String
+  },
+  //间隔
+  vSpace: {
+    type: Number,
+    default: 5
+  },
+  imgSize: {
+    type: Object,
+    default() {
+      return {
+        width: '310px',
+        height: '155px'
+      }
+    }
+  },
+  barSize: {
+    type: Object,
+    default() {
+      return {
+        width: '310px',
+        height: '40px'
+      }
+    }
+  }
+},
+  setup(__props, { expose: __expose }) {
+  __expose();
+
+/**
+ * VerifyPoints
+ * @description 点选
+ * */
+const props = __props
+
+const { t } = useI18n()
+const { mode, captchaType } = toRefs(props)
+const { proxy } = getCurrentInstance()
+let secretKey = ref(''), //后端返回的ase加密秘钥
+  checkNum = ref(3), //默认需要点击的字数
+  fontPos = reactive([]), //选中的坐标信息
+  checkPosArr = reactive([]), //用户点击的坐标
+  num = ref(1), //点击的记数
+  pointBackImgBase = ref(''), //后端获取到的背景图片
+  poinTextList = reactive([]), //后端返回的点击字体顺序
+  backToken = ref(''), //后端返回的token值
+  setSize = reactive({
+    imgHeight: 0,
+    imgWidth: 0,
+    barHeight: 0,
+    barWidth: 0
+  }),
+  tempPoints = reactive([]),
+  text = ref(''),
+  barAreaColor = ref(undefined),
+  barAreaBorderColor = ref(undefined),
+  showRefresh = ref(true),
+  bindingClick = ref(true)
+
+const init = () => {
+  //加载页面
+  fontPos.splice(0, fontPos.length)
+  checkPosArr.splice(0, checkPosArr.length)
+  num.value = 1
+  getPictrue()
+  nextTick(() => {
+    let { imgHeight, imgWidth, barHeight, barWidth } = resetSize(proxy)
+    setSize.imgHeight = imgHeight
+    setSize.imgWidth = imgWidth
+    setSize.barHeight = barHeight
+    setSize.barWidth = barWidth
+    proxy.$parent.$emit('ready', proxy)
+  })
+}
+onMounted(() => {
+  // 禁止拖拽
+  init()
+  proxy.$el.onselectstart = function () {
+    return false
+  }
+})
+const canvas = ref(null)
+const canvasClick = (e) => {
+  checkPosArr.push(getMousePos(canvas, e))
+  if (num.value == checkNum.value) {
+    num.value = createPoint(getMousePos(canvas, e))
+    //按比例转换坐标值
+    let arr = pointTransfrom(checkPosArr, setSize)
+    checkPosArr.length = 0
+    checkPosArr.push(...arr)
+    //等创建坐标执行完
+    setTimeout(() => {
+      // var flag = this.comparePos(this.fontPos, this.checkPosArr);
+      //发送后端请求
+      var captchaVerification = secretKey.value
+        ? aesEncrypt(backToken.value + '---' + JSON.stringify(checkPosArr), secretKey.value)
+        : backToken.value + '---' + JSON.stringify(checkPosArr)
+      let data = {
+        captchaType: captchaType.value,
+        pointJson: secretKey.value
+          ? aesEncrypt(JSON.stringify(checkPosArr), secretKey.value)
+          : JSON.stringify(checkPosArr),
+        token: backToken.value
+      }
+      reqCheck(data).then((res) => {
+        if (res.repCode == '0000') {
+          barAreaColor.value = '#4cae4c'
+          barAreaBorderColor.value = '#5cb85c'
+          text.value = t('captcha.success')
+          bindingClick.value = false
+          if (mode.value == 'pop') {
+            setTimeout(() => {
+              proxy.$parent.clickShow = false
+              refresh()
+            }, 1500)
+          }
+          proxy.$parent.$emit('success', { captchaVerification })
+        } else {
+          proxy.$parent.$emit('error', proxy)
+          barAreaColor.value = '#d9534f'
+          barAreaBorderColor.value = '#d9534f'
+          text.value = t('captcha.fail')
+          setTimeout(() => {
+            refresh()
+          }, 700)
+        }
+      })
+    }, 400)
+  }
+  if (num.value < checkNum.value) {
+    num.value = createPoint(getMousePos(canvas, e))
+  }
+}
+//获取坐标
+const getMousePos = function (obj, e) {
+  var x = e.offsetX
+  var y = e.offsetY
+  return { x, y }
+}
+//创建坐标点
+const createPoint = function (pos) {
+  tempPoints.push(Object.assign({}, pos))
+  return num.value + 1
+}
+const refresh = async function () {
+  tempPoints.splice(0, tempPoints.length)
+  barAreaColor.value = '#000'
+  barAreaBorderColor.value = '#ddd'
+  bindingClick.value = true
+  fontPos.splice(0, fontPos.length)
+  checkPosArr.splice(0, checkPosArr.length)
+  num.value = 1
+  await getPictrue()
+  showRefresh.value = true
+}
+
+// 请求背景图片和验证图片
+const getPictrue = async () => {
+  let data = {
+    captchaType: captchaType.value
+  }
+  const res = await getCode(data)
+  if (res.repCode == '0000') {
+    pointBackImgBase.value = res.repData.originalImageBase64
+    backToken.value = res.repData.token
+    secretKey.value = res.repData.secretKey
+    poinTextList.value = res.repData.wordList
+    text.value = t('captcha.point') + '【' + poinTextList.value.join(',') + '】'
+  } else {
+    text.value = res.repMsg
+  }
+}
+//坐标转换函数
+const pointTransfrom = function (pointArr, imgSize) {
+  var newPointArr = pointArr.map((p) => {
+    let x = Math.round((310 * p.x) / parseInt(imgSize.imgWidth))
+    let y = Math.round((155 * p.y) / parseInt(imgSize.imgHeight))
+    return { x, y }
+  })
+  return newPointArr
+}
+
+const __returned__ = { props, t, mode, captchaType, proxy, get secretKey() { return secretKey }, set secretKey(v) { secretKey = v }, get checkNum() { return checkNum }, set checkNum(v) { checkNum = v }, get fontPos() { return fontPos }, set fontPos(v) { fontPos = v }, get checkPosArr() { return checkPosArr }, set checkPosArr(v) { checkPosArr = v }, get num() { return num }, set num(v) { num = v }, get pointBackImgBase() { return pointBackImgBase }, set pointBackImgBase(v) { pointBackImgBase = v }, get poinTextList() { return poinTextList }, set poinTextList(v) { poinTextList = v }, get backToken() { return backToken }, set backToken(v) { backToken = v }, get setSize() { return setSize }, set setSize(v) { setSize = v }, get tempPoints() { return tempPoints }, set tempPoints(v) { tempPoints = v }, get text() { return text }, set text(v) { text = v }, get barAreaColor() { return barAreaColor }, set barAreaColor(v) { barAreaColor = v }, get barAreaBorderColor() { return barAreaBorderColor }, set barAreaBorderColor(v) { barAreaBorderColor = v }, get showRefresh() { return showRefresh }, set showRefresh(v) { showRefresh = v }, get bindingClick() { return bindingClick }, set bindingClick(v) { bindingClick = v }, init, canvas, canvasClick, getMousePos, createPoint, refresh, getPictrue, pointTransfrom, get resetSize() { return resetSize }, get aesEncrypt() { return aesEncrypt }, get getCode() { return getCode }, get reqCheck() { return reqCheck }, getCurrentInstance, nextTick, onMounted, reactive, ref, toRefs }
+Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true })
+return __returned__
+}
+
+}
+import { createElementVNode as _createElementVNode, vShow as _vShow, withDirectives as _withDirectives, renderList as _renderList, Fragment as _Fragment, openBlock as _openBlock, createElementBlock as _createElementBlock, toDisplayString as _toDisplayString, normalizeStyle as _normalizeStyle, createCommentVNode as _createCommentVNode } from "/node_modules/.vite/deps/vue.js?v=0f962ce1"
+
+const _hoisted_1 = { style: {"position":"relative"} }
+const _hoisted_2 = { class: "verify-img-out" }
+const _hoisted_3 = ["src"]
+const _hoisted_4 = { class: "verify-msg" }
+
+function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
+  return (_openBlock(), _createElementBlock("div", _hoisted_1, [
+    _createElementVNode("div", _hoisted_2, [
+      _createElementVNode("div", {
+        style: _normalizeStyle({
+          width: $setup.setSize.imgWidth,
+          height: $setup.setSize.imgHeight,
+          'background-size': $setup.setSize.imgWidth + ' ' + $setup.setSize.imgHeight,
+          'margin-bottom': $props.vSpace + 'px'
+        }),
+        class: "verify-img-panel"
+      }, [
+        _withDirectives(_createElementVNode("div", {
+          class: "verify-refresh",
+          style: {"z-index":"3"},
+          onClick: $setup.refresh
+        }, _cache[1] || (_cache[1] = [
+          _createElementVNode("i", { class: "iconfont icon-refresh" }, null, -1 /* HOISTED */)
+        ]), 512 /* NEED_PATCH */), [
+          [_vShow, $setup.showRefresh]
+        ]),
+        _createElementVNode("img", {
+          ref: "canvas",
+          src: 'data:image/png;base64,' + $setup.pointBackImgBase,
+          alt: "",
+          style: {"display":"block","width":"100%","height":"100%"},
+          onClick: _cache[0] || (_cache[0] = $event => ($setup.bindingClick ? $setup.canvasClick($event) : undefined))
+        }, null, 8 /* PROPS */, _hoisted_3),
+        (_openBlock(true), _createElementBlock(_Fragment, null, _renderList($setup.tempPoints, (tempPoint, index) => {
+          return (_openBlock(), _createElementBlock("div", {
+            key: index,
+            style: _normalizeStyle({
+            'background-color': '#1abd6c',
+            color: '#fff',
+            'z-index': 9999,
+            width: '20px',
+            height: '20px',
+            'text-align': 'center',
+            'line-height': '20px',
+            'border-radius': '50%',
+            position: 'absolute',
+            top: parseInt(tempPoint.y - 10) + 'px',
+            left: parseInt(tempPoint.x - 10) + 'px'
+          }),
+            class: "point-area"
+          }, _toDisplayString(index + 1), 5 /* TEXT, STYLE */))
+        }), 128 /* KEYED_FRAGMENT */))
+      ], 4 /* STYLE */)
+    ]),
+    _createCommentVNode(" 'height': this.barSize.height, "),
+    _createElementVNode("div", {
+      style: _normalizeStyle({
+        width: $setup.setSize.imgWidth,
+        color: $setup.barAreaColor,
+        'border-color': $setup.barAreaBorderColor,
+        'line-height': $props.barSize.height
+      }),
+      class: "verify-bar-area"
+    }, [
+      _createElementVNode("span", _hoisted_4, _toDisplayString($setup.text), 1 /* TEXT */)
+    ], 4 /* STYLE */)
+  ]))
+}
+
+
+_sfc_main.__hmrId = "2c9fb5a6"
+typeof __VUE_HMR_RUNTIME__ !== 'undefined' && __VUE_HMR_RUNTIME__.createRecord(_sfc_main.__hmrId, _sfc_main)
+import.meta.hot.on('file-changed', ({ file }) => {
+  __VUE_HMR_RUNTIME__.CHANGED_FILE = file
+})
+import.meta.hot.accept(mod => {
+  if (!mod) return
+  const { default: updated, _rerender_only } = mod
+  if (_rerender_only) {
+    __VUE_HMR_RUNTIME__.rerender(updated.__hmrId, updated.render)
+  } else {
+    __VUE_HMR_RUNTIME__.reload(updated.__hmrId, updated)
+  }
+})
+import _export_sfc from "/@id/__x00__plugin-vue:export-helper"
+export default /*#__PURE__*/_export_sfc(_sfc_main, [['render',_sfc_render],['__file',"D:/ruoyi-vue-pro/yudao-ui/yudao-ui-admin-vue3/src/components/Verifition/src/Verify/VerifyPoints.vue"]])
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6InNDQWdFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztBQVRnQztBQUNoQztBQUNBO0FBQ0E7QUFDQTtBQU1BO0FBaUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJWZXJpZnlQb2ludHMudnVlIl0sInNvdXJjZXNDb250ZW50IjpbIjx0ZW1wbGF0ZT5cclxuICA8ZGl2IHN0eWxlPVwicG9zaXRpb246IHJlbGF0aXZlXCI+XHJcbiAgICA8ZGl2IGNsYXNzPVwidmVyaWZ5LWltZy1vdXRcIj5cclxuICAgICAgPGRpdlxyXG4gICAgICAgIDpzdHlsZT1cIntcclxuICAgICAgICAgIHdpZHRoOiBzZXRTaXplLmltZ1dpZHRoLFxyXG4gICAgICAgICAgaGVpZ2h0OiBzZXRTaXplLmltZ0hlaWdodCxcclxuICAgICAgICAgICdiYWNrZ3JvdW5kLXNpemUnOiBzZXRTaXplLmltZ1dpZHRoICsgJyAnICsgc2V0U2l6ZS5pbWdIZWlnaHQsXHJcbiAgICAgICAgICAnbWFyZ2luLWJvdHRvbSc6IHZTcGFjZSArICdweCdcclxuICAgICAgICB9XCJcclxuICAgICAgICBjbGFzcz1cInZlcmlmeS1pbWctcGFuZWxcIlxyXG4gICAgICA+XHJcbiAgICAgICAgPGRpdiB2LXNob3c9XCJzaG93UmVmcmVzaFwiIGNsYXNzPVwidmVyaWZ5LXJlZnJlc2hcIiBzdHlsZT1cInotaW5kZXg6IDNcIiBAY2xpY2s9XCJyZWZyZXNoXCI+XHJcbiAgICAgICAgICA8aSBjbGFzcz1cImljb25mb250IGljb24tcmVmcmVzaFwiPjwvaT5cclxuICAgICAgICA8L2Rpdj5cclxuICAgICAgICA8aW1nXHJcbiAgICAgICAgICByZWY9XCJjYW52YXNcIlxyXG4gICAgICAgICAgOnNyYz1cIidkYXRhOmltYWdlL3BuZztiYXNlNjQsJyArIHBvaW50QmFja0ltZ0Jhc2VcIlxyXG4gICAgICAgICAgYWx0PVwiXCJcclxuICAgICAgICAgIHN0eWxlPVwiZGlzcGxheTogYmxvY2s7IHdpZHRoOiAxMDAlOyBoZWlnaHQ6IDEwMCVcIlxyXG4gICAgICAgICAgQGNsaWNrPVwiYmluZGluZ0NsaWNrID8gY2FudmFzQ2xpY2soJGV2ZW50KSA6IHVuZGVmaW5lZFwiXHJcbiAgICAgICAgLz5cclxuXHJcbiAgICAgICAgPGRpdlxyXG4gICAgICAgICAgdi1mb3I9XCIodGVtcFBvaW50LCBpbmRleCkgaW4gdGVtcFBvaW50c1wiXHJcbiAgICAgICAgICA6a2V5PVwiaW5kZXhcIlxyXG4gICAgICAgICAgOnN0eWxlPVwie1xyXG4gICAgICAgICAgICAnYmFja2dyb3VuZC1jb2xvcic6ICcjMWFiZDZjJyxcclxuICAgICAgICAgICAgY29sb3I6ICcjZmZmJyxcclxuICAgICAgICAgICAgJ3otaW5kZXgnOiA5OTk5LFxyXG4gICAgICAgICAgICB3aWR0aDogJzIwcHgnLFxyXG4gICAgICAgICAgICBoZWlnaHQ6ICcyMHB4JyxcclxuICAgICAgICAgICAgJ3RleHQtYWxpZ24nOiAnY2VudGVyJyxcclxuICAgICAgICAgICAgJ2xpbmUtaGVpZ2h0JzogJzIwcHgnLFxyXG4gICAgICAgICAgICAnYm9yZGVyLXJhZGl1cyc6ICc1MCUnLFxyXG4gICAgICAgICAgICBwb3NpdGlvbjogJ2Fic29sdXRlJyxcclxuICAgICAgICAgICAgdG9wOiBwYXJzZUludCh0ZW1wUG9pbnQueSAtIDEwKSArICdweCcsXHJcbiAgICAgICAgICAgIGxlZnQ6IHBhcnNlSW50KHRlbXBQb2ludC54IC0gMTApICsgJ3B4J1xyXG4gICAgICAgICAgfVwiXHJcbiAgICAgICAgICBjbGFzcz1cInBvaW50LWFyZWFcIlxyXG4gICAgICAgID5cclxuICAgICAgICAgIHt7IGluZGV4ICsgMSB9fVxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICA8L2Rpdj5cclxuICAgIDwvZGl2PlxyXG4gICAgPCEtLSAnaGVpZ2h0JzogdGhpcy5iYXJTaXplLmhlaWdodCwgLS0+XHJcbiAgICA8ZGl2XHJcbiAgICAgIDpzdHlsZT1cIntcclxuICAgICAgICB3aWR0aDogc2V0U2l6ZS5pbWdXaWR0aCxcclxuICAgICAgICBjb2xvcjogYmFyQXJlYUNvbG9yLFxyXG4gICAgICAgICdib3JkZXItY29sb3InOiBiYXJBcmVhQm9yZGVyQ29sb3IsXHJcbiAgICAgICAgJ2xpbmUtaGVpZ2h0JzogYmFyU2l6ZS5oZWlnaHRcclxuICAgICAgfVwiXHJcbiAgICAgIGNsYXNzPVwidmVyaWZ5LWJhci1hcmVhXCJcclxuICAgID5cclxuICAgICAgPHNwYW4gY2xhc3M9XCJ2ZXJpZnktbXNnXCI+e3sgdGV4dCB9fTwvc3Bhbj5cclxuICAgIDwvZGl2PlxyXG4gIDwvZGl2PlxyXG48L3RlbXBsYXRlPlxyXG48c2NyaXB0IHNldHVwIHR5cGU9XCJ0ZXh0L2JhYmVsXCI+XHJcbi8qKlxyXG4gKiBWZXJpZnlQb2ludHNcclxuICogQGRlc2NyaXB0aW9uIOeCuemAiVxyXG4gKiAqL1xyXG5pbXBvcnQgeyByZXNldFNpemUgfSBmcm9tICcuLy4uL3V0aWxzL3V0aWwnXHJcbmltcG9ydCB7IGFlc0VuY3J5cHQgfSBmcm9tICcuLy4uL3V0aWxzL2FzZSdcclxuaW1wb3J0IHsgZ2V0Q29kZSwgcmVxQ2hlY2sgfSBmcm9tICdAL2FwaS9sb2dpbidcclxuaW1wb3J0IHsgZ2V0Q3VycmVudEluc3RhbmNlLCBuZXh0VGljaywgb25Nb3VudGVkLCByZWFjdGl2ZSwgcmVmLCB0b1JlZnMgfSBmcm9tICd2dWUnXHJcblxyXG5jb25zdCBwcm9wcyA9IGRlZmluZVByb3BzKHtcclxuICAvL+W8ueWHuuW8j3BvcO+8jOWbuuWummZpeGVkXHJcbiAgbW9kZToge1xyXG4gICAgdHlwZTogU3RyaW5nLFxyXG4gICAgZGVmYXVsdDogJ2ZpeGVkJ1xyXG4gIH0sXHJcbiAgY2FwdGNoYVR5cGU6IHtcclxuICAgIHR5cGU6IFN0cmluZ1xyXG4gIH0sXHJcbiAgLy/pl7TpmpRcclxuICB2U3BhY2U6IHtcclxuICAgIHR5cGU6IE51bWJlcixcclxuICAgIGRlZmF1bHQ6IDVcclxuICB9LFxyXG4gIGltZ1NpemU6IHtcclxuICAgIHR5cGU6IE9iamVjdCxcclxuICAgIGRlZmF1bHQoKSB7XHJcbiAgICAgIHJldHVybiB7XHJcbiAgICAgICAgd2lkdGg6ICczMTBweCcsXHJcbiAgICAgICAgaGVpZ2h0OiAnMTU1cHgnXHJcbiAgICAgIH1cclxuICAgIH1cclxuICB9LFxyXG4gIGJhclNpemU6IHtcclxuICAgIHR5cGU6IE9iamVjdCxcclxuICAgIGRlZmF1bHQoKSB7XHJcbiAgICAgIHJldHVybiB7XHJcbiAgICAgICAgd2lkdGg6ICczMTBweCcsXHJcbiAgICAgICAgaGVpZ2h0OiAnNDBweCdcclxuICAgICAgfVxyXG4gICAgfVxyXG4gIH1cclxufSlcclxuXHJcbmNvbnN0IHsgdCB9ID0gdXNlSTE4bigpXHJcbmNvbnN0IHsgbW9kZSwgY2FwdGNoYVR5cGUgfSA9IHRvUmVmcyhwcm9wcylcclxuY29uc3QgeyBwcm94eSB9ID0gZ2V0Q3VycmVudEluc3RhbmNlKClcclxubGV0IHNlY3JldEtleSA9IHJlZignJyksIC8v5ZCO56uv6L+U5Zue55qEYXNl5Yqg5a+G56eY6ZKlXHJcbiAgY2hlY2tOdW0gPSByZWYoMyksIC8v6buY6K6k6ZyA6KaB54K55Ye755qE5a2X5pWwXHJcbiAgZm9udFBvcyA9IHJlYWN0aXZlKFtdKSwgLy/pgInkuK3nmoTlnZDmoIfkv6Hmga9cclxuICBjaGVja1Bvc0FyciA9IHJlYWN0aXZlKFtdKSwgLy/nlKjmiLfngrnlh7vnmoTlnZDmoIdcclxuICBudW0gPSByZWYoMSksIC8v54K55Ye755qE6K6w5pWwXHJcbiAgcG9pbnRCYWNrSW1nQmFzZSA9IHJlZignJyksIC8v5ZCO56uv6I635Y+W5Yiw55qE6IOM5pmv5Zu+54mHXHJcbiAgcG9pblRleHRMaXN0ID0gcmVhY3RpdmUoW10pLCAvL+WQjuerr+i/lOWbnueahOeCueWHu+Wtl+S9k+mhuuW6j1xyXG4gIGJhY2tUb2tlbiA9IHJlZignJyksIC8v5ZCO56uv6L+U5Zue55qEdG9rZW7lgLxcclxuICBzZXRTaXplID0gcmVhY3RpdmUoe1xyXG4gICAgaW1nSGVpZ2h0OiAwLFxyXG4gICAgaW1nV2lkdGg6IDAsXHJcbiAgICBiYXJIZWlnaHQ6IDAsXHJcbiAgICBiYXJXaWR0aDogMFxyXG4gIH0pLFxyXG4gIHRlbXBQb2ludHMgPSByZWFjdGl2ZShbXSksXHJcbiAgdGV4dCA9IHJlZignJyksXHJcbiAgYmFyQXJlYUNvbG9yID0gcmVmKHVuZGVmaW5lZCksXHJcbiAgYmFyQXJlYUJvcmRlckNvbG9yID0gcmVmKHVuZGVmaW5lZCksXHJcbiAgc2hvd1JlZnJlc2ggPSByZWYodHJ1ZSksXHJcbiAgYmluZGluZ0NsaWNrID0gcmVmKHRydWUpXHJcblxyXG5jb25zdCBpbml0ID0gKCkgPT4ge1xyXG4gIC8v5Yqg6L296aG16Z2iXHJcbiAgZm9udFBvcy5zcGxpY2UoMCwgZm9udFBvcy5sZW5ndGgpXHJcbiAgY2hlY2tQb3NBcnIuc3BsaWNlKDAsIGNoZWNrUG9zQXJyLmxlbmd0aClcclxuICBudW0udmFsdWUgPSAxXHJcbiAgZ2V0UGljdHJ1ZSgpXHJcbiAgbmV4dFRpY2soKCkgPT4ge1xyXG4gICAgbGV0IHsgaW1nSGVpZ2h0LCBpbWdXaWR0aCwgYmFySGVpZ2h0LCBiYXJXaWR0aCB9ID0gcmVzZXRTaXplKHByb3h5KVxyXG4gICAgc2V0U2l6ZS5pbWdIZWlnaHQgPSBpbWdIZWlnaHRcclxuICAgIHNldFNpemUuaW1nV2lkdGggPSBpbWdXaWR0aFxyXG4gICAgc2V0U2l6ZS5iYXJIZWlnaHQgPSBiYXJIZWlnaHRcclxuICAgIHNldFNpemUuYmFyV2lkdGggPSBiYXJXaWR0aFxyXG4gICAgcHJveHkuJHBhcmVudC4kZW1pdCgncmVhZHknLCBwcm94eSlcclxuICB9KVxyXG59XHJcbm9uTW91bnRlZCgoKSA9PiB7XHJcbiAgLy8g56aB5q2i5ouW5ou9XHJcbiAgaW5pdCgpXHJcbiAgcHJveHkuJGVsLm9uc2VsZWN0c3RhcnQgPSBmdW5jdGlvbiAoKSB7XHJcbiAgICByZXR1cm4gZmFsc2VcclxuICB9XHJcbn0pXHJcbmNvbnN0IGNhbnZhcyA9IHJlZihudWxsKVxyXG5jb25zdCBjYW52YXNDbGljayA9IChlKSA9PiB7XHJcbiAgY2hlY2tQb3NBcnIucHVzaChnZXRNb3VzZVBvcyhjYW52YXMsIGUpKVxyXG4gIGlmIChudW0udmFsdWUgPT0gY2hlY2tOdW0udmFsdWUpIHtcclxuICAgIG51bS52YWx1ZSA9IGNyZWF0ZVBvaW50KGdldE1vdXNlUG9zKGNhbnZhcywgZSkpXHJcbiAgICAvL+aMieavlOS+i+i9rOaNouWdkOagh+WAvFxyXG4gICAgbGV0IGFyciA9IHBvaW50VHJhbnNmcm9tKGNoZWNrUG9zQXJyLCBzZXRTaXplKVxyXG4gICAgY2hlY2tQb3NBcnIubGVuZ3RoID0gMFxyXG4gICAgY2hlY2tQb3NBcnIucHVzaCguLi5hcnIpXHJcbiAgICAvL+etieWIm+W7uuWdkOagh+aJp+ihjOWujFxyXG4gICAgc2V0VGltZW91dCgoKSA9PiB7XHJcbiAgICAgIC8vIHZhciBmbGFnID0gdGhpcy5jb21wYXJlUG9zKHRoaXMuZm9udFBvcywgdGhpcy5jaGVja1Bvc0Fycik7XHJcbiAgICAgIC8v5Y+R6YCB5ZCO56uv6K+35rGCXHJcbiAgICAgIHZhciBjYXB0Y2hhVmVyaWZpY2F0aW9uID0gc2VjcmV0S2V5LnZhbHVlXHJcbiAgICAgICAgPyBhZXNFbmNyeXB0KGJhY2tUb2tlbi52YWx1ZSArICctLS0nICsgSlNPTi5zdHJpbmdpZnkoY2hlY2tQb3NBcnIpLCBzZWNyZXRLZXkudmFsdWUpXHJcbiAgICAgICAgOiBiYWNrVG9rZW4udmFsdWUgKyAnLS0tJyArIEpTT04uc3RyaW5naWZ5KGNoZWNrUG9zQXJyKVxyXG4gICAgICBsZXQgZGF0YSA9IHtcclxuICAgICAgICBjYXB0Y2hhVHlwZTogY2FwdGNoYVR5cGUudmFsdWUsXHJcbiAgICAgICAgcG9pbnRKc29uOiBzZWNyZXRLZXkudmFsdWVcclxuICAgICAgICAgID8gYWVzRW5jcnlwdChKU09OLnN0cmluZ2lmeShjaGVja1Bvc0FyciksIHNlY3JldEtleS52YWx1ZSlcclxuICAgICAgICAgIDogSlNPTi5zdHJpbmdpZnkoY2hlY2tQb3NBcnIpLFxyXG4gICAgICAgIHRva2VuOiBiYWNrVG9rZW4udmFsdWVcclxuICAgICAgfVxyXG4gICAgICByZXFDaGVjayhkYXRhKS50aGVuKChyZXMpID0+IHtcclxuICAgICAgICBpZiAocmVzLnJlcENvZGUgPT0gJzAwMDAnKSB7XHJcbiAgICAgICAgICBiYXJBcmVhQ29sb3IudmFsdWUgPSAnIzRjYWU0YydcclxuICAgICAgICAgIGJhckFyZWFCb3JkZXJDb2xvci52YWx1ZSA9ICcjNWNiODVjJ1xyXG4gICAgICAgICAgdGV4dC52YWx1ZSA9IHQoJ2NhcHRjaGEuc3VjY2VzcycpXHJcbiAgICAgICAgICBiaW5kaW5nQ2xpY2sudmFsdWUgPSBmYWxzZVxyXG4gICAgICAgICAgaWYgKG1vZGUudmFsdWUgPT0gJ3BvcCcpIHtcclxuICAgICAgICAgICAgc2V0VGltZW91dCgoKSA9PiB7XHJcbiAgICAgICAgICAgICAgcHJveHkuJHBhcmVudC5jbGlja1Nob3cgPSBmYWxzZVxyXG4gICAgICAgICAgICAgIHJlZnJlc2goKVxyXG4gICAgICAgICAgICB9LCAxNTAwKVxyXG4gICAgICAgICAgfVxyXG4gICAgICAgICAgcHJveHkuJHBhcmVudC4kZW1pdCgnc3VjY2VzcycsIHsgY2FwdGNoYVZlcmlmaWNhdGlvbiB9KVxyXG4gICAgICAgIH0gZWxzZSB7XHJcbiAgICAgICAgICBwcm94eS4kcGFyZW50LiRlbWl0KCdlcnJvcicsIHByb3h5KVxyXG4gICAgICAgICAgYmFyQXJlYUNvbG9yLnZhbHVlID0gJyNkOTUzNGYnXHJcbiAgICAgICAgICBiYXJBcmVhQm9yZGVyQ29sb3IudmFsdWUgPSAnI2Q5NTM0ZidcclxuICAgICAgICAgIHRleHQudmFsdWUgPSB0KCdjYXB0Y2hhLmZhaWwnKVxyXG4gICAgICAgICAgc2V0VGltZW91dCgoKSA9PiB7XHJcbiAgICAgICAgICAgIHJlZnJlc2goKVxyXG4gICAgICAgICAgfSwgNzAwKVxyXG4gICAgICAgIH1cclxuICAgICAgfSlcclxuICAgIH0sIDQwMClcclxuICB9XHJcbiAgaWYgKG51bS52YWx1ZSA8IGNoZWNrTnVtLnZhbHVlKSB7XHJcbiAgICBudW0udmFsdWUgPSBjcmVhdGVQb2ludChnZXRNb3VzZVBvcyhjYW52YXMsIGUpKVxyXG4gIH1cclxufVxyXG4vL+iOt+WPluWdkOagh1xyXG5jb25zdCBnZXRNb3VzZVBvcyA9IGZ1bmN0aW9uIChvYmosIGUpIHtcclxuICB2YXIgeCA9IGUub2Zmc2V0WFxyXG4gIHZhciB5ID0gZS5vZmZzZXRZXHJcbiAgcmV0dXJuIHsgeCwgeSB9XHJcbn1cclxuLy/liJvlu7rlnZDmoIfngrlcclxuY29uc3QgY3JlYXRlUG9pbnQgPSBmdW5jdGlvbiAocG9zKSB7XHJcbiAgdGVtcFBvaW50cy5wdXNoKE9iamVjdC5hc3NpZ24oe30sIHBvcykpXHJcbiAgcmV0dXJuIG51bS52YWx1ZSArIDFcclxufVxyXG5jb25zdCByZWZyZXNoID0gYXN5bmMgZnVuY3Rpb24gKCkge1xyXG4gIHRlbXBQb2ludHMuc3BsaWNlKDAsIHRlbXBQb2ludHMubGVuZ3RoKVxyXG4gIGJhckFyZWFDb2xvci52YWx1ZSA9ICcjMDAwJ1xyXG4gIGJhckFyZWFCb3JkZXJDb2xvci52YWx1ZSA9ICcjZGRkJ1xyXG4gIGJpbmRpbmdDbGljay52YWx1ZSA9IHRydWVcclxuICBmb250UG9zLnNwbGljZSgwLCBmb250UG9zLmxlbmd0aClcclxuICBjaGVja1Bvc0Fyci5zcGxpY2UoMCwgY2hlY2tQb3NBcnIubGVuZ3RoKVxyXG4gIG51bS52YWx1ZSA9IDFcclxuICBhd2FpdCBnZXRQaWN0cnVlKClcclxuICBzaG93UmVmcmVzaC52YWx1ZSA9IHRydWVcclxufVxyXG5cclxuLy8g6K+35rGC6IOM5pmv5Zu+54mH5ZKM6aqM6K+B5Zu+54mHXHJcbmNvbnN0IGdldFBpY3RydWUgPSBhc3luYyAoKSA9PiB7XHJcbiAgbGV0IGRhdGEgPSB7XHJcbiAgICBjYXB0Y2hhVHlwZTogY2FwdGNoYVR5cGUudmFsdWVcclxuICB9XHJcbiAgY29uc3QgcmVzID0gYXdhaXQgZ2V0Q29kZShkYXRhKVxyXG4gIGlmIChyZXMucmVwQ29kZSA9PSAnMDAwMCcpIHtcclxuICAgIHBvaW50QmFja0ltZ0Jhc2UudmFsdWUgPSByZXMucmVwRGF0YS5vcmlnaW5hbEltYWdlQmFzZTY0XHJcbiAgICBiYWNrVG9rZW4udmFsdWUgPSByZXMucmVwRGF0YS50b2tlblxyXG4gICAgc2VjcmV0S2V5LnZhbHVlID0gcmVzLnJlcERhdGEuc2VjcmV0S2V5XHJcbiAgICBwb2luVGV4dExpc3QudmFsdWUgPSByZXMucmVwRGF0YS53b3JkTGlzdFxyXG4gICAgdGV4dC52YWx1ZSA9IHQoJ2NhcHRjaGEucG9pbnQnKSArICfjgJAnICsgcG9pblRleHRMaXN0LnZhbHVlLmpvaW4oJywnKSArICfjgJEnXHJcbiAgfSBlbHNlIHtcclxuICAgIHRleHQudmFsdWUgPSByZXMucmVwTXNnXHJcbiAgfVxyXG59XHJcbi8v5Z2Q5qCH6L2s5o2i5Ye95pWwXHJcbmNvbnN0IHBvaW50VHJhbnNmcm9tID0gZnVuY3Rpb24gKHBvaW50QXJyLCBpbWdTaXplKSB7XHJcbiAgdmFyIG5ld1BvaW50QXJyID0gcG9pbnRBcnIubWFwKChwKSA9PiB7XHJcbiAgICBsZXQgeCA9IE1hdGgucm91bmQoKDMxMCAqIHAueCkgLyBwYXJzZUludChpbWdTaXplLmltZ1dpZHRoKSlcclxuICAgIGxldCB5ID0gTWF0aC5yb3VuZCgoMTU1ICogcC55KSAvIHBhcnNlSW50KGltZ1NpemUuaW1nSGVpZ2h0KSlcclxuICAgIHJldHVybiB7IHgsIHkgfVxyXG4gIH0pXHJcbiAgcmV0dXJuIG5ld1BvaW50QXJyXHJcbn1cclxuPC9zY3JpcHQ+XHJcbiJdLCJmaWxlIjoiRDovcnVveWktdnVlLXByby95dWRhby11aS95dWRhby11aS1hZG1pbi12dWUzL3NyYy9jb21wb25lbnRzL1ZlcmlmaXRpb24vc3JjL1ZlcmlmeS9WZXJpZnlQb2ludHMudnVlIn0=
