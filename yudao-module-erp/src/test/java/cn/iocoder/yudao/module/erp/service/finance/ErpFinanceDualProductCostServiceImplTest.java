@@ -124,11 +124,29 @@ class ErpFinanceDualProductCostServiceImplTest {
                 ErpFinanceDualLedgerDiffConfigService.class,
                 (methodName, args) -> List.of()));
 
+        // Mock 业务单据 Mapper（用于凭证过滤）
+        setField(service, "productionInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionInboundMapper.class,
+                (methodName, args) -> {
+                    if ("selectById".equals(methodName)) {
+                        return cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionInboundDO.builder()
+                                .id((Long) args[0]).productId(1L).productionOrderId(10L).build();
+                    }
+                    return null;
+                }));
+        setField(service, "outsourceInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper.class,
+                (methodName, args) -> null));
+        setField(service, "outsourceOrderMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper.class,
+                (methodName, args) -> null));
+
         // Mock factory
         AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
         Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
         calcMapField.setAccessible(true);
-        java.util.Map<Integer, ?> calcMap = (java.util.Map<Integer, ?>) calcMapField.get(factory);
+        @SuppressWarnings("unchecked")
+        java.util.Map<Integer, Object> calcMap = (java.util.Map<Integer, Object>) calcMapField.get(factory);
         ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
         calcMap.put(proRata.getCalculationType(), proRata);
         setField(service, "amountDiffCalculatorFactory", factory);
@@ -249,10 +267,28 @@ class ErpFinanceDualProductCostServiceImplTest {
                     return List.of();
                 }));
 
+        // Mock 业务单据 Mapper（用于凭证过滤）
+        setField(service, "productionInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionInboundMapper.class,
+                (methodName, args) -> {
+                    if ("selectById".equals(methodName)) {
+                        return cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionInboundDO.builder()
+                                .id((Long) args[0]).productId(1L).productionOrderId(10L).build();
+                    }
+                    return null;
+                }));
+        setField(service, "outsourceInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper.class,
+                (methodName, args) -> null));
+        setField(service, "outsourceOrderMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper.class,
+                (methodName, args) -> null));
+
         AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
         Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
         calcMapField.setAccessible(true);
-        java.util.Map<Integer, ?> calcMap = (java.util.Map<Integer, ?>) calcMapField.get(factory);
+        @SuppressWarnings("unchecked")
+        java.util.Map<Integer, Object> calcMap = (java.util.Map<Integer, Object>) calcMapField.get(factory);
         ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
         calcMap.put(proRata.getCalculationType(), proRata);
         setField(service, "amountDiffCalculatorFactory", factory);
@@ -304,6 +340,244 @@ class ErpFinanceDualProductCostServiceImplTest {
         assertEquals(30, method.invoke(service, "6601"), "未知科目 → 制造费用");
         assertEquals(30, method.invoke(service, (String) null), "null → 制造费用");
         assertEquals(30, method.invoke(service, ""), "空字符串 → 制造费用");
+    }
+
+    // ========== 单产品重算过滤测试 ==========
+
+    @Test
+    void rebuildProductDualCost_shouldOnlyIncludeMatchingProduct() throws Exception {
+        ErpFinanceDualProductCostServiceImpl service = new ErpFinanceDualProductCostServiceImpl();
+
+        List<ErpFinanceDualProductCostResultDO> insertedResults = new ArrayList<>();
+        List<ErpFinanceDualProductCostItemDO> insertedItems = new ArrayList<>();
+        AtomicLong idGen = new AtomicLong(1);
+
+        setField(service, "productCostResultMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostResultMapper.class,
+                (methodName, args) -> {
+                    if ("delete".equals(methodName)) return 0;
+                    if ("insert".equals(methodName)) {
+                        ErpFinanceDualProductCostResultDO r = (ErpFinanceDualProductCostResultDO) args[0];
+                        r.setId(idGen.getAndIncrement());
+                        insertedResults.add(r);
+                        return 1;
+                    }
+                    return null;
+                }));
+        setField(service, "productCostItemMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostItemMapper.class,
+                (methodName, args) -> {
+                    if ("delete".equals(methodName)) return 0;
+                    if ("insert".equals(methodName)) {
+                        ErpFinanceDualProductCostItemDO item = (ErpFinanceDualProductCostItemDO) args[0];
+                        item.setId(idGen.getAndIncrement());
+                        insertedItems.add(item);
+                        return 1;
+                    }
+                    return null;
+                }));
+        setField(service, "rebuildLogMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostRebuildLogMapper.class,
+                (methodName, args) -> {
+                    if ("insert".equals(methodName)) {
+                        ErpFinanceDualProductCostRebuildLogDO log = (ErpFinanceDualProductCostRebuildLogDO) args[0];
+                        log.setId(idGen.getAndIncrement());
+                        return 1;
+                    }
+                    if ("updateById".equals(methodName)) return 1;
+                    return null;
+                }));
+
+        // 两条凭证：bizId=88 对应 productId=1，bizId=99 对应 productId=2
+        setField(service, "voucherMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper.class,
+                (methodName, args) -> {
+                    if ("selectList".equals(methodName)) {
+                        return List.of(
+                                new ErpFinanceVoucherDO().setId(201L).setLedgerId(1L)
+                                        .setBizType(ErpBizTypeEnum.PRODUCTION_INBOUND.getType())
+                                        .setBizId(88L).setBizNo("ZZRK-001")
+                                        .setVoucherTime(LocalDateTime.of(2026, 5, 20, 10, 0))
+                                        .setStatus(ErpFinanceVoucherStatusEnum.GENERATED.getStatus()),
+                                new ErpFinanceVoucherDO().setId(202L).setLedgerId(1L)
+                                        .setBizType(ErpBizTypeEnum.PRODUCTION_INBOUND.getType())
+                                        .setBizId(99L).setBizNo("ZZRK-002")
+                                        .setVoucherTime(LocalDateTime.of(2026, 5, 21, 10, 0))
+                                        .setStatus(ErpFinanceVoucherStatusEnum.GENERATED.getStatus()));
+                    }
+                    return null;
+                }));
+        // 分录查询：基于 LambdaQueryWrapperX，返回匹配的分录
+        setField(service, "voucherEntryMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper.class,
+                (methodName, args) -> {
+                    if ("selectList".equals(methodName)) {
+                        // 返回所有分录，filterVouchersByProductDimensions 已正确过滤凭证
+                        return List.of(
+                                new ErpFinanceVoucherEntryDO().setId(301L).setVoucherId(201L)
+                                        .setEntryNo(1).setSubjectCode("1403").setSubjectName("原材料")
+                                        .setDebitAmount(new BigDecimal("5000.00")).setCreditAmount(BigDecimal.ZERO));
+                    }
+                    return null;
+                }));
+
+        // Mock 业务单据 Mapper：bizId=88 → productId=1，bizId=99 → productId=2
+        setField(service, "productionInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionInboundMapper.class,
+                (methodName, args) -> {
+                    if ("selectById".equals(methodName)) {
+                        Long id = (Long) args[0];
+                        if (id == 88L) {
+                            return cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionInboundDO.builder()
+                                    .id(88L).productId(1L).productionOrderId(10L).build();
+                        }
+                        if (id == 99L) {
+                            return cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionInboundDO.builder()
+                                    .id(99L).productId(2L).productionOrderId(20L).build();
+                        }
+                    }
+                    return null;
+                }));
+        setField(service, "outsourceInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper.class,
+                (methodName, args) -> null));
+        setField(service, "outsourceOrderMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper.class,
+                (methodName, args) -> null));
+
+        setField(service, "dualLedgerDiffConfigService", createProxy(
+                ErpFinanceDualLedgerDiffConfigService.class, (methodName, args) -> List.of()));
+
+        AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
+        Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
+        calcMapField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.Map<Integer, Object> calcMap = (java.util.Map<Integer, Object>) calcMapField.get(factory);
+        ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
+        calcMap.put(proRata.getCalculationType(), proRata);
+        setField(service, "amountDiffCalculatorFactory", factory);
+
+        // 只重算 productId=1
+        ErpFinanceDualProductCostRebuildReqVO reqVO = new ErpFinanceDualProductCostRebuildReqVO();
+        reqVO.setProductId(1L);
+        reqVO.setPeriod("2026-05");
+        service.rebuildProductDualCost(1L, reqVO);
+
+        // 验证：只命中 bizId=88 的凭证，金额 = 5000
+        assertEquals(1, insertedResults.size(), "应只生成一条结果");
+        assertEquals(new BigDecimal("5000.00"), insertedResults.get(0).getInternalMaterialAmount(),
+                "只应包含 productId=1 对应的凭证金额");
+        assertEquals(1, insertedItems.size(), "应只生成一条明细");
+    }
+
+    // ========== 委外入库产品反查测试 ==========
+
+    @Test
+    void rebuildProductDualCost_outsourceInbound_shouldResolveProductIdFromOrder() throws Exception {
+        ErpFinanceDualProductCostServiceImpl service = new ErpFinanceDualProductCostServiceImpl();
+
+        List<ErpFinanceDualProductCostResultDO> insertedResults = new ArrayList<>();
+        AtomicLong idGen = new AtomicLong(1);
+
+        setField(service, "productCostResultMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostResultMapper.class,
+                (methodName, args) -> {
+                    if ("delete".equals(methodName)) return 0;
+                    if ("insert".equals(methodName)) {
+                        ErpFinanceDualProductCostResultDO r = (ErpFinanceDualProductCostResultDO) args[0];
+                        r.setId(idGen.getAndIncrement());
+                        insertedResults.add(r);
+                        return 1;
+                    }
+                    return null;
+                }));
+        setField(service, "productCostItemMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostItemMapper.class,
+                (methodName, args) -> {
+                    if ("delete".equals(methodName)) return 0;
+                    if ("insert".equals(methodName)) return 1;
+                    return null;
+                }));
+        setField(service, "rebuildLogMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostRebuildLogMapper.class,
+                (methodName, args) -> {
+                    if ("insert".equals(methodName)) {
+                        ErpFinanceDualProductCostRebuildLogDO log = (ErpFinanceDualProductCostRebuildLogDO) args[0];
+                        log.setId(idGen.getAndIncrement());
+                        return 1;
+                    }
+                    if ("updateById".equals(methodName)) return 1;
+                    return null;
+                }));
+
+        // 一条委外入库凭证
+        setField(service, "voucherMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper.class,
+                (methodName, args) -> {
+                    if ("selectList".equals(methodName)) {
+                        return List.of(new ErpFinanceVoucherDO().setId(201L).setLedgerId(1L)
+                                .setBizType(ErpBizTypeEnum.OUTSOURCE_INBOUND.getType())
+                                .setBizId(55L).setBizNo("WWRK-001")
+                                .setVoucherTime(LocalDateTime.of(2026, 5, 20, 10, 0))
+                                .setStatus(ErpFinanceVoucherStatusEnum.GENERATED.getStatus()));
+                    }
+                    return null;
+                }));
+        setField(service, "voucherEntryMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper.class,
+                (methodName, args) -> {
+                    if ("selectList".equals(methodName)) {
+                        return List.of(new ErpFinanceVoucherEntryDO().setId(301L).setVoucherId(201L)
+                                .setEntryNo(1).setSubjectCode("1403").setSubjectName("原材料")
+                                .setDebitAmount(new BigDecimal("8000.00")).setCreditAmount(BigDecimal.ZERO));
+                    }
+                    return null;
+                }));
+
+        // 委外入库：bizId=55 → orderId=77 → productId=3
+        setField(service, "productionInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionInboundMapper.class,
+                (methodName, args) -> null));
+        setField(service, "outsourceInboundMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper.class,
+                (methodName, args) -> {
+                    if ("selectById".equals(methodName) && Long.valueOf(55L).equals(args[0])) {
+                        return cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpOutsourceInboundDO.builder()
+                                .id(55L).orderId(77L).batchNo("BATCH-001").build();
+                    }
+                    return null;
+                }));
+        setField(service, "outsourceOrderMapper", createProxy(
+                cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper.class,
+                (methodName, args) -> {
+                    if ("selectById".equals(methodName) && Long.valueOf(77L).equals(args[0])) {
+                        return cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpOutsourceOrderDO.builder()
+                                .id(77L).productId(3L).build();
+                    }
+                    return null;
+                }));
+
+        setField(service, "dualLedgerDiffConfigService", createProxy(
+                ErpFinanceDualLedgerDiffConfigService.class, (methodName, args) -> List.of()));
+
+        AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
+        Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
+        calcMapField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        java.util.Map<Integer, Object> calcMap = (java.util.Map<Integer, Object>) calcMapField.get(factory);
+        ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
+        calcMap.put(proRata.getCalculationType(), proRata);
+        setField(service, "amountDiffCalculatorFactory", factory);
+
+        // 重算 productId=3（从委外订单反查得到）
+        ErpFinanceDualProductCostRebuildReqVO reqVO = new ErpFinanceDualProductCostRebuildReqVO();
+        reqVO.setProductId(3L);
+        reqVO.setPeriod("2026-05");
+        service.rebuildProductDualCost(1L, reqVO);
+
+        // 验证：委外入库凭证被命中
+        assertEquals(1, insertedResults.size());
+        assertEquals(new BigDecimal("8000.00"), insertedResults.get(0).getInternalMaterialAmount());
     }
 
     // ========== 辅助方法 ==========

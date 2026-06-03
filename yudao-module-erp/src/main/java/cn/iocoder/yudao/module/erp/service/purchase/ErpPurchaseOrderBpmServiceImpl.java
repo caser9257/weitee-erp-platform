@@ -58,11 +58,10 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
                 && StrUtil.isNotBlank(purchaseOrder.getProcessInstanceId())) {
             throw exception(PURCHASE_ORDER_BPM_SUBMIT_FAIL);
         }
-        String processInstanceId = approvalRuntimeService.submit("erp.purchase.order.submit", purchaseOrder.getId(), userId);
+        approvalRuntimeService.submit("erp.purchase.order.submit", purchaseOrder.getId(), userId);
         erpPurchaseOrderMapper.updateById(new ErpPurchaseOrderDO()
                 .setId(purchaseOrder.getId())
-                .setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId(processInstanceId));
+                .setStatus(ErpAuditStatus.PROCESS.getStatus()));
         if (ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.REJECT.getStatus())) {
             erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
                     .setOrderId(purchaseOrder.getId())
@@ -70,7 +69,7 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
                     .setBeforeStatus(ErpAuditStatus.REJECT.getStatus())
                     .setAfterStatus(ErpAuditStatus.PROCESS.getStatus()));
         }
-        return processInstanceId;
+        return null;
     }
 
     @Override

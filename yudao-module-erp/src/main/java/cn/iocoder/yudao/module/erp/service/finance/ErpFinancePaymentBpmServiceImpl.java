@@ -47,12 +47,11 @@ public class ErpFinancePaymentBpmServiceImpl implements ErpFinancePaymentBpmServ
                 && StrUtil.isNotBlank(payment.getProcessInstanceId())) {
             throw exception(FINANCE_PAYMENT_BPM_SUBMIT_FAIL);
         }
-        String processInstanceId = approvalRuntimeService.submit("erp.finance.payment.submit", payment.getId(), userId);
+        approvalRuntimeService.submit("erp.finance.payment.submit", payment.getId(), userId);
         erpFinancePaymentMapper.updateById(new ErpFinancePaymentDO()
                 .setId(payment.getId())
-                .setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId(processInstanceId));
-        return processInstanceId;
+                .setStatus(ErpAuditStatus.PROCESS.getStatus()));
+        return null;
     }
 
     @Override

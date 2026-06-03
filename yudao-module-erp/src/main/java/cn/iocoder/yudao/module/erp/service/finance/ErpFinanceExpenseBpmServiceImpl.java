@@ -46,12 +46,11 @@ public class ErpFinanceExpenseBpmServiceImpl implements ErpFinanceExpenseBpmServ
                 && StrUtil.isNotBlank(expense.getProcessInstanceId())) {
             throw exception(EXPENSE_BPM_SUBMIT_FAIL);
         }
-        String processInstanceId = approvalRuntimeService.submit("erp.finance.expense.submit", expense.getId(), userId);
+        approvalRuntimeService.submit("erp.finance.expense.submit", expense.getId(), userId);
         erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
                 .setId(expense.getId())
-                .setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId(processInstanceId));
-        return processInstanceId;
+                .setStatus(ErpAuditStatus.PROCESS.getStatus()));
+        return null;
     }
 
     @Override

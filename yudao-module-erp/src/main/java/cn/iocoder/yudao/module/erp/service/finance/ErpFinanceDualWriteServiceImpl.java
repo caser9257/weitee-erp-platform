@@ -663,6 +663,20 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void recomputeByBizIdStrict(Integer bizType, Long bizId) {
+        // 查询该业务单据的双写日志
+        ErpFinanceDualWriteLogDO logDO = dualWriteLogMapper.selectLatestByBizTypeAndBizId(
+                bizType, bizId, ErpFinanceDualWriteStatusEnum.SUCCESS.getStatus());
+        if (logDO == null) {
+            log.warn("recomputeByBizIdStrict: 未找到需要重算的双写日志。bizType={}, bizId={}", bizType, bizId);
+            return;
+        }
+        // 直接执行，失败向上抛异常，不吞掉
+        recomputeSingleVoucher(logDO);
+    }
+
     /**
      * 重算单个凭证的金额差异
      */

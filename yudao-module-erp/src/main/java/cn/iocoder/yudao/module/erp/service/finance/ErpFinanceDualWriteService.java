@@ -70,4 +70,13 @@ public interface ErpFinanceDualWriteService {
      * @return 重算是否成功
      */
     boolean recomputeByBizId(Integer bizType, Long bizId);
+
+    /**
+     * 按业务单据重算双账套凭证金额差异（strict 模式，失败直接抛异常）
+     * 用于编排型入口，确保调用方能感知失败
+     *
+     * @param bizType 业务类型
+     * @param bizId   业务单据ID
+     */
+    void recomputeByBizIdStrict(Integer bizType, Long bizId);
 }
