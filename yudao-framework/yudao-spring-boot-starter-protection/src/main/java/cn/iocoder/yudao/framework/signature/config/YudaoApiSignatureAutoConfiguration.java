@@ -4,7 +4,6 @@ import cn.iocoder.yudao.framework.redis.config.YudaoRedisAutoConfiguration;
 import cn.iocoder.yudao.framework.signature.core.aop.ApiSignatureAspect;
 import cn.iocoder.yudao.framework.signature.core.redis.ApiSignatureRedisDAO;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -14,7 +13,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
  * @author Zhougang
  */
 @AutoConfiguration(after = YudaoRedisAutoConfiguration.class)
-@ConditionalOnClass(StringRedisTemplate.class)
 public class YudaoApiSignatureAutoConfiguration {
 
     @Bean

@@ -11,7 +11,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;

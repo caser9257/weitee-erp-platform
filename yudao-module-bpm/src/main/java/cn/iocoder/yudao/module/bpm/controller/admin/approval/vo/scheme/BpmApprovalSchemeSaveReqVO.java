@@ -3,9 +3,9 @@ package cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scheme;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Schema(description = "管理后台 - 审批方案新增/修改 Request VO")

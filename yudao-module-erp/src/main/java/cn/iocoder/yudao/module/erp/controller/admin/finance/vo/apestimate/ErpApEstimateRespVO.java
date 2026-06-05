@@ -1,7 +1,7 @@
 package cn.iocoder.yudao.module.erp.controller.admin.finance.vo.apestimate;
 
-import org.apache.fesod.sheet.annotation.ExcelIgnoreUnannotated;
-import org.apache.fesod.sheet.annotation.ExcelProperty;
+import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
+import cn.idev.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

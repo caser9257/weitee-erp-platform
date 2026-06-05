@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceLedgerMappingMapp
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 @Service

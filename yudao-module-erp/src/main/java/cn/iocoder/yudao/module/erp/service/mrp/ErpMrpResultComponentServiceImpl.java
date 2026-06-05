@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpMrpResultComponentMapper;
 import cn.iocoder.yudao.module.erp.service.mrp.support.ErpMrpNettingComponentResult;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package cn.iocoder.yudao.module.crm.controller.admin.operatelog.vo;
 
-import org.apache.fesod.sheet.annotation.ExcelIgnoreUnannotated;
+import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 

@@ -2,7 +2,7 @@ package cn.iocoder.yudao.module.project.service.column;
 
 import cn.iocoder.yudao.module.project.controller.admin.vo.column.ProjectColumnSaveReqVO;
 import cn.iocoder.yudao.module.project.dal.dataobject.column.ProjectColumnDO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ProjectColumnService {

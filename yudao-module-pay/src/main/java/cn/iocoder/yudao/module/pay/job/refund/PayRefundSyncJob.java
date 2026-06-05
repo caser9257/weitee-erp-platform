@@ -5,7 +5,7 @@ import cn.iocoder.yudao.framework.quartz.core.handler.JobHandler;
 import cn.iocoder.yudao.module.pay.service.refund.PayRefundService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 退款订单的同步 Job

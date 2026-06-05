@@ -2,8 +2,8 @@ package cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.outsource;
 
 import lombok.Data;
 
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

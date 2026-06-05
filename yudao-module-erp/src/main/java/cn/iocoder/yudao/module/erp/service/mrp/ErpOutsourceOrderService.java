@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.outsource.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

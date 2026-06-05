@@ -17,7 +17,7 @@ import cn.iocoder.yudao.module.erp.service.stock.ErpWarehouseService;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;

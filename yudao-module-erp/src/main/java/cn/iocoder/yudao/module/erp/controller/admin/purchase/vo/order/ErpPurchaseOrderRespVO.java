@@ -1,12 +1,12 @@
 package cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order;
 
-import org.apache.fesod.sheet.annotation.ExcelIgnoreUnannotated;
-import org.apache.fesod.sheet.annotation.ExcelProperty;
+import cn.idev.excel.annotation.ExcelIgnoreUnannotated;
+import cn.idev.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;

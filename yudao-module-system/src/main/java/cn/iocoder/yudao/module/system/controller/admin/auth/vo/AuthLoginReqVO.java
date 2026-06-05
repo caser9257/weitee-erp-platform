@@ -11,10 +11,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.AssertTrue;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 @Schema(description = "\u7BA1\u7406\u540E\u53F0 - \u8D26\u53F7\u5BC6\u7801\u767B\u5F55 Request VO\uFF1B\u5982\u679C\u767B\u5F55\u5E76\u7ED1\u5B9A\u793E\u4EA4\u7528\u6237\uFF0C\u9700\u8981\u4F20\u9012 social \u5F00\u5934\u7684\u53C2\u6570")
 @Data

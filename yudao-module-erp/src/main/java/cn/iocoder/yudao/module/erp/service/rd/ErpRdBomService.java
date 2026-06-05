@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

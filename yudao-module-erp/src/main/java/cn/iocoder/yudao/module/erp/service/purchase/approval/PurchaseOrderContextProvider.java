@@ -6,9 +6,10 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpPurchaseSuggestMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseOrderMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpPurchaseOrderBpmConstants;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ public class PurchaseOrderContextProvider implements ApprovalContextProvider {
 
     @Resource
     private ErpPurchaseOrderMapper purchaseOrderMapper;
-    @Resource(required = false)
+    @Autowired(required = false)
     private ErpPurchaseSuggestMapper purchaseSuggestMapper;
 
     @Override

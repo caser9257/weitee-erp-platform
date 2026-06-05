@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceExpenseMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceExpenseBpmConstants;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 

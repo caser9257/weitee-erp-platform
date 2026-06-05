@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - 审批场景新增/修改 Request VO")
 @Data

@@ -5,7 +5,7 @@ import cn.iocoder.yudao.framework.quartz.core.handler.JobHandler;
 import cn.iocoder.yudao.module.pay.service.order.PayOrderService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 支付订单的过期 Job

@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - 采购入库 IQC 发起复检 Request VO")
 @Data

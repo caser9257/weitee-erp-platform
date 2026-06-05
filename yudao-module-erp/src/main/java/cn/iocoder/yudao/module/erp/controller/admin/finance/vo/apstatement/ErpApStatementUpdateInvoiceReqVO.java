@@ -5,8 +5,8 @@ import cn.iocoder.yudao.module.erp.enums.ErpApInvoiceStatusEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.DecimalMin;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 @Schema(description = "管理后台 - ERP 应付台账收票登记 Request VO")

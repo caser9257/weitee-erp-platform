@@ -21,11 +21,12 @@ import cn.iocoder.yudao.module.system.dal.mysql.oauth2.OAuth2AccessTokenMapper;
 import cn.iocoder.yudao.module.system.dal.mysql.oauth2.OAuth2RefreshTokenMapper;
 import cn.iocoder.yudao.module.system.dal.redis.oauth2.OAuth2AccessTokenRedisDAO;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
@@ -148,6 +149,35 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
             oauth2AccessTokenRedisDAO.delete(accessToken.getAccessToken());
             oauth2RefreshTokenMapper.deleteByRefreshToken(accessToken.getRefreshToken());
         });
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer cleanRefreshToken(Integer retainDays, Integer limit) {
+        LocalDateTime expiredTime = LocalDateTime.now().minusDays(retainDays);
+        List<OAuth2RefreshTokenDO> refreshTokens = oauth2RefreshTokenMapper.selectList(new LambdaQueryWrapperX<OAuth2RefreshTokenDO>()
+                .lt(OAuth2RefreshTokenDO::getExpiresTime, expiredTime)
+                .last("LIMIT " + limit));
+        if (CollUtil.isEmpty(refreshTokens)) {
+            return 0;
+        }
+        oauth2RefreshTokenMapper.deleteByIds(convertSet(refreshTokens, OAuth2RefreshTokenDO::getId));
+        return refreshTokens.size();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Integer cleanAccessToken(Integer retainDays, Integer limit) {
+        LocalDateTime expiredTime = LocalDateTime.now().minusDays(retainDays);
+        List<OAuth2AccessTokenDO> accessTokens = oauth2AccessTokenMapper.selectList(new LambdaQueryWrapperX<OAuth2AccessTokenDO>()
+                .lt(OAuth2AccessTokenDO::getExpiresTime, expiredTime)
+                .last("LIMIT " + limit));
+        if (CollUtil.isEmpty(accessTokens)) {
+            return 0;
+        }
+        oauth2AccessTokenMapper.deleteByIds(convertSet(accessTokens, OAuth2AccessTokenDO::getId));
+        oauth2AccessTokenRedisDAO.deleteList(convertSet(accessTokens, OAuth2AccessTokenDO::getAccessToken));
+        return accessTokens.size();
     }
 
     @Override

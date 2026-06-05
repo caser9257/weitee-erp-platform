@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.asset.ErpFinanceA
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAssetCandidateDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAssetDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ErpFinanceAssetService {

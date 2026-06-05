@@ -14,7 +14,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExe
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemBatchDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;

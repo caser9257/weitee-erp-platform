@@ -17,7 +17,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpOutsourceOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

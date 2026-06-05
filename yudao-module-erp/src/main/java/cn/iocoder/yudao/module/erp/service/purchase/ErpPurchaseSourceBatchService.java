@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.sourcebatch.ErpP
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.sourcebatch.ErpPurchaseSourceBatchSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseSourceBatchDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

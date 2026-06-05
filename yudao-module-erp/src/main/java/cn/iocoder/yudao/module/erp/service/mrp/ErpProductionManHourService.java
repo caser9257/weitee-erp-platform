@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionMan
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionManHourSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionManHourDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ErpProductionManHourService {

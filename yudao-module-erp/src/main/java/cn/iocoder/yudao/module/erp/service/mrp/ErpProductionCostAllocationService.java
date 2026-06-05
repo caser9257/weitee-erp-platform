@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostAllocationSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostAllocationDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ErpProductionCostAllocationService {
 

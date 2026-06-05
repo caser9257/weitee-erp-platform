@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 采购订单撤回审批 Request VO")
 @Data

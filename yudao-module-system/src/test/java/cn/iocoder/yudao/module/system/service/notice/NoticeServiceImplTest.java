@@ -13,7 +13,7 @@ import cn.iocoder.yudao.module.system.enums.notice.NoticeTypeEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Arrays;
 import java.util.List;
 

@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.erp.controller.admin.stock.vo.warehouse.category
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 仓库分类新增/修改 Request VO")
 @Data

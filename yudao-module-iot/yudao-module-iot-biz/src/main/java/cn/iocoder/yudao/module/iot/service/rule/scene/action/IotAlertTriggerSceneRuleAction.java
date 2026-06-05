@@ -13,8 +13,8 @@ import cn.iocoder.yudao.module.system.api.notify.NotifyMessageSendApi;
 import cn.iocoder.yudao.module.system.api.sms.SmsSendApi;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
-import javax.annotation.Resource;
+import jakarta.annotation.Nullable;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**

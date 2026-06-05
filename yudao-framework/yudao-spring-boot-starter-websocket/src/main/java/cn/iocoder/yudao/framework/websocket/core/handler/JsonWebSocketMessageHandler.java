@@ -72,7 +72,6 @@ public class JsonWebSocketMessageHandler extends TextWebSocketHandler {
             // 2.3 处理消息
             Type type = TypeUtil.getTypeArgument(messageListener.getClass(), 0);
             Object messageObj = JsonUtils.parseObject(jsonMessage.getContent(), type);
-            Long tenantId = WebSocketFrameworkUtils.getTenantId(session);
         } catch (Throwable ex) {
             log.error("[handleTextMessage][session({}) message({}) 处理异常]", session.getId(), message.getPayload());
         }

@@ -2,7 +2,7 @@ package cn.iocoder.yudao.module.project.controller.admin.vo.flow;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Schema(description = "管理后台 - 工作流保存 Request VO")

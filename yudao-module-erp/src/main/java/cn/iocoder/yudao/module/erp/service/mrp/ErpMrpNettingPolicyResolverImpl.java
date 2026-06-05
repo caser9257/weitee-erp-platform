@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpMrpPolicyBindingMapper;
 import cn.iocoder.yudao.module.erp.service.mrp.support.ErpMrpNettingRuntimePolicy;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Service
 public class ErpMrpNettingPolicyResolverImpl implements ErpMrpNettingPolicyResolver {

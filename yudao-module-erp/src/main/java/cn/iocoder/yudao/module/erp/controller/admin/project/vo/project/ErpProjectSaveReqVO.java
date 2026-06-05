@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.project.vo.project;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - ERP 项目新增/修改 Request VO")

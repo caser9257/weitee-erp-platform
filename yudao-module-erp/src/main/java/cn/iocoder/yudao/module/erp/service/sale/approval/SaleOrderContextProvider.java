@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpSaleOrderBpmConstants;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 

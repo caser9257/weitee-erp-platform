@@ -15,7 +15,7 @@ import cn.iocoder.yudao.module.system.enums.common.SexEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

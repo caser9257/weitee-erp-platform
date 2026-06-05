@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scheme.BpmApprov
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scheme.BpmApprovalSchemeSaveReqVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scheme.BpmApprovalSchemeSubmitReqVO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 /**
  * 审批方案 Service

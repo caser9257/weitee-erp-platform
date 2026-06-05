@@ -27,7 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -270,7 +270,7 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
 
     @Override
     public void exportExternalProjectCost(ErpFinanceDualProjectCostPageReqVO pageReqVO,
-                                          javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+                                          jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         List<ErpFinanceDualProjectCostResultDO> list = projectCostResultMapper.selectList(
                 new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
                         .eqIfPresent(ErpFinanceDualProjectCostResultDO::getProjectId, pageReqVO.getProjectId())
@@ -285,7 +285,7 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
 
     @Override
     public void exportInternalProjectCost(ErpFinanceDualProjectCostPageReqVO pageReqVO,
-                                          javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+                                          jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         List<ErpFinanceDualProjectCostResultDO> list = projectCostResultMapper.selectList(
                 new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
                         .eqIfPresent(ErpFinanceDualProjectCostResultDO::getProjectId, pageReqVO.getProjectId())
@@ -302,15 +302,15 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
      * 通用项目双账成本 Excel 导出
      */
     private void writeProjectCostExcel(List<ErpFinanceDualProjectCostResultDO> list, String ledgerLabel,
-                                       javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+                                       jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         String exportTime = java.time.LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String fileName = "项目" + ledgerLabel + "成本-" + exportTime.substring(0, 10) + ".xlsx";
         String encodedFileName = java.net.URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
 
-        try (org.apache.fesod.sheet.ExcelWriter writer = org.apache.fesod.sheet.FastExcel.write(response.getOutputStream()).build()) {
-            org.apache.fesod.sheet.write.metadata.WriteSheet sheet = org.apache.fesod.sheet.FastExcel.writerSheet("项目成本").build();
-            org.apache.fesod.sheet.write.metadata.WriteTable ctxTable = org.apache.fesod.sheet.FastExcel.writerTable().build();
+        try (cn.idev.excel.ExcelWriter writer = cn.idev.excel.FastExcel.write(response.getOutputStream()).build()) {
+            cn.idev.excel.write.metadata.WriteSheet sheet = cn.idev.excel.FastExcel.writerSheet("项目成本").build();
+            cn.idev.excel.write.metadata.WriteTable ctxTable = cn.idev.excel.FastExcel.writerTable().build();
             List<List<String>> ctxHead = new ArrayList<>();
             ctxHead.add(java.util.Collections.singletonList("项目" + ledgerLabel + "成本导出"));
             List<List<Object>> ctxData = new ArrayList<>();
@@ -320,11 +320,11 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
             writer.write(ctxData, sheet, ctxTable);
 
             // 空行
-            org.apache.fesod.sheet.write.metadata.WriteTable emptyTable = org.apache.fesod.sheet.FastExcel.writerTable().build();
+            cn.idev.excel.write.metadata.WriteTable emptyTable = cn.idev.excel.FastExcel.writerTable().build();
             writer.write(java.util.Collections.singletonList(java.util.Collections.singletonList("")), sheet, emptyTable);
 
             // 数据表
-            org.apache.fesod.sheet.write.metadata.WriteTable dataTable = org.apache.fesod.sheet.FastExcel.writerTable().build();
+            cn.idev.excel.write.metadata.WriteTable dataTable = cn.idev.excel.FastExcel.writerTable().build();
             List<List<String>> head = new ArrayList<>();
             head.add(java.util.Collections.singletonList("项目编号"));
             head.add(java.util.Collections.singletonList("项目名称"));
