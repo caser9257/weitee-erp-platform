@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.project.controller.admin.vo.log.ProjectLogCreateReqVO;
 import cn.iocoder.yudao.module.project.controller.admin.vo.log.ProjectLogPageReqVO;
 import cn.iocoder.yudao.module.project.controller.admin.vo.log.ProjectLogRespVO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ProjectLogService {
 

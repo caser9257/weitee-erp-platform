@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpQcDefectReasonMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**

@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.prepayment.ErpFin
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePrepaymentAllocateDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePrepaymentDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

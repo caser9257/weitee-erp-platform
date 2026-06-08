@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.enums.ErpPurchaseInBpmConstants;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpPurchaseInBpmService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Component
 public class ErpPurchaseInBpmStatusListener extends BpmProcessInstanceStatusEventListener {

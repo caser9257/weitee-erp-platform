@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.erp.service.mrp;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnCreateReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnableBatchesRespVO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ErpProductionReturnService {
 

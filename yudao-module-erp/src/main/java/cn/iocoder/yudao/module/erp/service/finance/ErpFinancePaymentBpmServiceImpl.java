@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,11 +47,12 @@ public class ErpFinancePaymentBpmServiceImpl implements ErpFinancePaymentBpmServ
                 && StrUtil.isNotBlank(payment.getProcessInstanceId())) {
             throw exception(FINANCE_PAYMENT_BPM_SUBMIT_FAIL);
         }
-        approvalRuntimeService.submit("erp.finance.payment.submit", payment.getId(), userId);
+        String processInstanceId = approvalRuntimeService.submit("erp.finance.payment.submit", payment.getId(), userId);
         erpFinancePaymentMapper.updateById(new ErpFinancePaymentDO()
                 .setId(payment.getId())
-                .setStatus(ErpAuditStatus.PROCESS.getStatus()));
-        return null;
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId(processInstanceId));
+        return processInstanceId;
     }
 
     @Override

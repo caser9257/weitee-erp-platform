@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprova
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprovalSceneRespVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprovalSceneSaveReqVO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 /**
  * 审批场景 Service 接口

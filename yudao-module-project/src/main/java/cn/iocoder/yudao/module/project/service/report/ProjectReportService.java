@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.project.controller.admin.vo.report.ProjectReportP
 import cn.iocoder.yudao.module.project.controller.admin.vo.report.ProjectReportSaveReqVO;
 import cn.iocoder.yudao.module.project.dal.dataobject.report.ProjectReportDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ProjectReportService {
     Long createReport(@Valid ProjectReportSaveReqVO createReqVO);

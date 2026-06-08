@@ -10,7 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.apinvoice.ErpApIn
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApInvoiceDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApInvoiceMatchItemDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

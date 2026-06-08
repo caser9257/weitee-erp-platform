@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 销售订单状态更新 Request VO")
 @Data

@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.rule.ErpMaterialPlanR
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.rule.ErpMaterialPlanRuleSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpMaterialPlanRuleDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ErpMaterialPlanRuleService {
 

@@ -81,6 +81,24 @@ public interface OAuth2TokenService {
     void removeAccessToken(Long userId, Integer userType);
 
     /**
+     * 清理过期的刷新令牌
+     *
+     * @param retainDays 保留天数
+     * @param limit 每次清理数量
+     * @return 清理数量
+     */
+    Integer cleanRefreshToken(Integer retainDays, Integer limit);
+
+    /**
+     * 清理过期的访问令牌
+     *
+     * @param retainDays 保留天数
+     * @param limit 每次清理数量
+     * @return 清理数量
+     */
+    Integer cleanAccessToken(Integer retainDays, Integer limit);
+
+    /**
      * 获得访问令牌分页
      *
      * @param reqVO 请求

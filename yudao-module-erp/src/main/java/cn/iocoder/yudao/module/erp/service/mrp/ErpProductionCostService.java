@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntrySaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ErpProductionCostService {

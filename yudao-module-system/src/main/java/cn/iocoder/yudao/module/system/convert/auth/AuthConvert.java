@@ -79,10 +79,27 @@ public interface AuthConvert {
         return filterList(treeNodeMap.values(), node -> ID_ROOT.equals(node.getParentId()));
     }
 
-    SocialUserBindReqDTO convert(Long userId, Integer userType, AuthSocialLoginReqVO reqVO);
+    default SocialUserBindReqDTO convert(Long userId, Integer userType, AuthSocialLoginReqVO reqVO) {
+        return new SocialUserBindReqDTO()
+                .setUserId(userId)
+                .setUserType(userType)
+                .setSocialType(reqVO.getType())
+                .setCode(reqVO.getCode())
+                .setState(reqVO.getState());
+    }
 
-    SmsCodeSendReqDTO convert(AuthSmsSendReqVO reqVO);
+    default SmsCodeSendReqDTO convert(AuthSmsSendReqVO reqVO) {
+        return new SmsCodeSendReqDTO()
+                .setMobile(reqVO.getMobile())
+                .setScene(reqVO.getScene());
+    }
 
-    SmsCodeUseReqDTO convert(AuthSmsLoginReqVO reqVO, Integer scene, String usedIp);
+    default SmsCodeUseReqDTO convert(AuthSmsLoginReqVO reqVO, Integer scene, String usedIp) {
+        return new SmsCodeUseReqDTO()
+                .setMobile(reqVO.getMobile())
+                .setCode(reqVO.getCode())
+                .setScene(scene)
+                .setUsedIp(usedIp);
+    }
 
 }

@@ -12,7 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
- * {@link ApiSignatureTest} 的单元测试
+ * {@link ApiSignatureTest} 的单元测�?
  */
 @ExtendWith(MockitoExtension.class)
 public class ApiSignatureTest {
@@ -36,7 +36,7 @@ public class ApiSignatureTest {
 
     @Test
     public void testSignatureGet() throws IOException {
-        // 搞一个签名
+        // 搞一个签�?
         Long timestamp = System.currentTimeMillis();
         String nonce = IdUtil.randomUUID();
         String appId = "xxxxxx";

@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.productdualcost.E
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.productdualcost.ErpFinanceDualProductCostRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.productdualcost.ErpFinanceDualProductCostRebuildReqVO;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 

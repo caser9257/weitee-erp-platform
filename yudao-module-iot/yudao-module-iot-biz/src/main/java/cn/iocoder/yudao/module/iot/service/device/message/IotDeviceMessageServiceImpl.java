@@ -32,13 +32,13 @@ import cn.iocoder.yudao.module.iot.service.ota.IotOtaTaskRecordService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.base.Objects;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -67,19 +67,19 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
     private IotOtaTaskRecordService otaTaskRecordService;
 
     @Resource
-    private IotDeviceMessageMapper iotDeviceMessageMapper;
+    private IotDeviceMessageMapper deviceMessageMapper;
 
     @Resource
     private IotDeviceMessageProducer deviceMessageProducer;
 
     @Override
     public void defineDeviceMessageStable() {
-        if (StrUtil.isNotEmpty(iotDeviceMessageMapper.showSTable())) {
+        if (StrUtil.isNotEmpty(deviceMessageMapper.showSTable())) {
             log.info("[defineDeviceMessageStable][设备消息超级表已存在，创建跳过]");
             return;
         }
         log.info("[defineDeviceMessageStable][设备消息超级表不存在，创建开始...]");
-        iotDeviceMessageMapper.createSTable();
+        deviceMessageMapper.createSTable();
         log.info("[defineDeviceMessageStable][设备消息超级表不存在，创建成功]");
     }
 
@@ -95,7 +95,18 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
         if (messageDO.getData() != null) {
             messageDO.setData(JsonUtils.toJsonString(messageDO.getData()));
         }
-        iotDeviceMessageMapper.insert(messageDO);
+        if (messageDO.getTs() == null) {
+            messageDO.setTs(System.currentTimeMillis());
+        }
+        try {
+            deviceMessageMapper.insert(messageDO);
+        } catch (Exception ex) {
+            // 特殊：@Async 方法的异常默认会被 handler 吞掉，这里显式记录便于排查
+            log.error("[createDeviceLogAsync][消息日志写入失败 deviceId({}) messageId({}) paramsLen({}) dataLen({})]",
+                    messageDO.getDeviceId(), messageDO.getId(),
+                    StrUtil.length((String) messageDO.getParams()),
+                    StrUtil.length((String) messageDO.getData()), ex);
+        }
     }
 
     @Override
@@ -148,7 +159,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
      */
     private void appendDeviceMessage(IotDeviceMessage message, IotDeviceDO device) {
         message.setId(IotDeviceMessageUtils.generateMessageId()).setReportTime(LocalDateTime.now())
-                .setDeviceId(device.getId()).setTenantId(device.getTenantId());
+                .setDeviceId(device.getId());
         // 特殊：如果设备没有指定 requestId，则使用 messageId
         if (StrUtil.isEmpty(message.getRequestId())) {
             message.setRequestId(message.getId());
@@ -296,7 +307,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
         // 1. 发送属性消息
         if (MapUtil.isNotEmpty(properties)) {
             IotDeviceMessage propertyMsg = IotDeviceMessage.requestOf(
-                    device.getId(), device.getTenantId(), serverId,
+                    device.getId(), 0L, serverId,
                     IotDeviceMessageMethodEnum.PROPERTY_POST.getMethod(),
                     IotDevicePropertyPostReqDTO.of(properties));
             deviceMessageProducer.sendDeviceMessage(propertyMsg);
@@ -311,7 +322,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
                     continue;
                 }
                 IotDeviceMessage eventMsg = IotDeviceMessage.requestOf(
-                        device.getId(), device.getTenantId(), serverId,
+                        device.getId(), 0L, serverId,
                         IotDeviceMessageMethodEnum.EVENT_POST.getMethod(),
                         IotDeviceEventPostReqDTO.of(eventId, eventValue.getValue(), eventValue.getTime()));
                 deviceMessageProducer.sendDeviceMessage(eventMsg);
@@ -324,7 +335,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
     @Override
     public PageResult<IotDeviceMessageDO> getDeviceMessagePage(IotDeviceMessagePageReqVO pageReqVO) {
         try {
-            IPage<IotDeviceMessageDO> page = iotDeviceMessageMapper.selectPage(
+            IPage<IotDeviceMessageDO> page = deviceMessageMapper.selectPage(
                     new Page<>(pageReqVO.getPageNo(), pageReqVO.getPageSize()), pageReqVO);
             return new PageResult<>(page.getRecords(), page.getTotal());
         } catch (Exception exception) {
@@ -340,12 +351,12 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
         if (CollUtil.isEmpty(requestIds)) {
             return ListUtil.of();
         }
-        return iotDeviceMessageMapper.selectListByRequestIdsAndReply(deviceId, requestIds, reply);
+        return deviceMessageMapper.selectListByRequestIdsAndReply(deviceId, requestIds, reply);
     }
 
     @Override
     public Long getDeviceMessageCount(LocalDateTime createTime) {
-        return iotDeviceMessageMapper.selectCountByCreateTime(
+        return deviceMessageMapper.selectCountByCreateTime(
                 createTime != null ? LocalDateTimeUtil.toEpochMilli(createTime) : null);
     }
 
@@ -353,7 +364,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
     public List<IotStatisticsDeviceMessageSummaryByDateRespVO> getDeviceMessageSummaryByDate(
             IotStatisticsDeviceMessageReqVO reqVO) {
         // 1. 按小时统计，获取分项统计数据
-        List<Map<String, Object>> countList = iotDeviceMessageMapper.selectDeviceMessageCountGroupByDate(
+        List<Map<String, Object>> countList = deviceMessageMapper.selectDeviceMessageCountGroupByDate(
                 LocalDateTimeUtil.toEpochMilli(reqVO.getTimes()[0]),
                 LocalDateTimeUtil.toEpochMilli(reqVO.getTimes()[1]));
 

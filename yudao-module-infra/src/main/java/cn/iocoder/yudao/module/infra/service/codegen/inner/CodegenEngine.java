@@ -42,8 +42,8 @@ import lombok.Setter;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.Resource;
 import java.util.*;
 
 import static cn.hutool.core.map.MapUtil.getStr;
@@ -238,7 +238,7 @@ public class CodegenEngine {
      * 是否使用 jakarta 包，用于解决 Spring Boot 2.X 和 3.X 的兼容性问题
      *
      * true  - 使用 jakarta.validation.constraints.*
-     * false - 使用 javax.validation.constraints.*
+     * false - 使用 jakarta.validation.constraints.*
      */
     @Setter // 允许设置的原因，是因为单测需要手动改变
     private Boolean jakartaEnable;
@@ -284,6 +284,7 @@ public class CodegenEngine {
         globalBindingMap.put("jakartaPackage", jakartaEnable ? "jakarta" : "javax");
         globalBindingMap.put("voType", codegenProperties.getVoType());
         globalBindingMap.put("deleteBatchEnable", codegenProperties.getDeleteBatchEnable());
+        globalBindingMap.put("importEnable", codegenProperties.getImportEnable());
         // 全局 Java Bean
         globalBindingMap.put("CommonResultClassName", CommonResult.class.getName());
         globalBindingMap.put("PageResultClassName", PageResult.class.getName());

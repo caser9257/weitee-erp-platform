@@ -9,7 +9,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpMrpResultDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpMrpShortageDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ErpMrpPlanService {

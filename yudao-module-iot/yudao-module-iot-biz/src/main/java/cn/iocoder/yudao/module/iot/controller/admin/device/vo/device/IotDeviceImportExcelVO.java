@@ -1,13 +1,13 @@
 package cn.iocoder.yudao.module.iot.controller.admin.device.vo.device;
 
-import org.apache.fesod.sheet.annotation.ExcelProperty;
+import cn.idev.excel.annotation.ExcelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 
 /**
  * 设备 Excel 导入 VO

@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 双账套账簿映射新增/修改 Request VO")
 @Data

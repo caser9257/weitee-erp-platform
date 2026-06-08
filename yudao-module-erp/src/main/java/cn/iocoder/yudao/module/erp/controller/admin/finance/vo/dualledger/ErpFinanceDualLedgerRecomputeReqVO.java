@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.erp.controller.admin.finance.vo.dualledger;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 双账套重算 Request VO")
 @Data

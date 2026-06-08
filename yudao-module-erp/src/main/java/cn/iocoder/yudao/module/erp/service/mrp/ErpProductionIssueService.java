@@ -9,7 +9,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionIssueBatchDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionIssueDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionIssueItemDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

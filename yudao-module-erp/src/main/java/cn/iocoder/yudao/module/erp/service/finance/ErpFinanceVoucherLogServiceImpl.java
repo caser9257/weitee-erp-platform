@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherLogDO
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherLogMapper;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 @Service

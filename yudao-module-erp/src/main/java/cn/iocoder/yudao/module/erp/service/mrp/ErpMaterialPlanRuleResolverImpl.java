@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpMaterialPlanRuleMapper;
 import cn.iocoder.yudao.module.erp.enums.mrp.ErpMaterialPlanReplenishModeEnum;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 
 @Service

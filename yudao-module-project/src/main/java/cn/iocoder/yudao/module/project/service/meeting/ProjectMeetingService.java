@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.project.controller.admin.vo.meeting.ProjectMeetin
 import cn.iocoder.yudao.module.project.controller.admin.vo.meeting.ProjectMeetingSaveReqVO;
 import cn.iocoder.yudao.module.project.dal.dataobject.meeting.ProjectMeetingDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ProjectMeetingService {
     Long createMeeting(@Valid ProjectMeetingSaveReqVO createReqVO);

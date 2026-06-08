@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.project.controller.admin.vo.meeting;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 @Schema(description = "管理后台 - 会议创建/更新 Request VO")

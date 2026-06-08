@@ -15,7 +15,7 @@ import cn.iocoder.yudao.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
 

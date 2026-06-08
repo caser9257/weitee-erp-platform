@@ -4,7 +4,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.report.ErpFinance
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.report.ErpFinanceStatementRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.report.ErpFinanceTrialBalanceRespVO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ErpFinanceReportService {
 

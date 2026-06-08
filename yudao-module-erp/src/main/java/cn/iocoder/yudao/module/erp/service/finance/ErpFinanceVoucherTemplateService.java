@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.voucher.ErpFinanc
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherTemplateDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherTemplateItemDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

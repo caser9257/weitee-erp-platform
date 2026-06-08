@@ -12,7 +12,7 @@ import cn.iocoder.yudao.module.iot.service.device.message.IotDeviceMessageServic
 import cn.iocoder.yudao.module.iot.service.device.property.IotDevicePropertyService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Collections;

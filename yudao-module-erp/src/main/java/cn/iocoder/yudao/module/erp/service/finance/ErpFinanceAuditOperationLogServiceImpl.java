@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceAuditOperationLog
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 审计操作日志服务实现

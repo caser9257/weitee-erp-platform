@@ -4,7 +4,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.warehouse.category.
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.warehouse.category.ErpWarehouseCategorySaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpWarehouseCategoryDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

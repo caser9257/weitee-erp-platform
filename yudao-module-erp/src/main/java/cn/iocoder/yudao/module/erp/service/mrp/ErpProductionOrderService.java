@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.production.ErpProduct
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionSuggestDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

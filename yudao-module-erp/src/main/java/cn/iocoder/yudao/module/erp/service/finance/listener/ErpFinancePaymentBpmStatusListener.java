@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.erp.enums.ErpFinancePaymentBpmConstants;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinancePaymentBpmService;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 @Component
 public class ErpFinancePaymentBpmStatusListener extends BpmProcessInstanceStatusEventListener {

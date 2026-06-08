@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockBatchDO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchInboundReqBO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

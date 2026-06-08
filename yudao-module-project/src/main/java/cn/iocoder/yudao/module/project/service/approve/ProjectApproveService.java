@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.project.controller.admin.vo.approve.ProjectApprov
 import cn.iocoder.yudao.module.project.controller.admin.vo.approve.ProjectApproveSaveReqVO;
 import cn.iocoder.yudao.module.project.dal.dataobject.approve.ProjectApproveProcDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ProjectApproveService {
     Long createApprove(@Valid ProjectApproveSaveReqVO createReqVO);

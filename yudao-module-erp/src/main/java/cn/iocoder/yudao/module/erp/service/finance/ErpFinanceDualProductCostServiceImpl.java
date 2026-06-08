@@ -12,24 +12,18 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDualProductC
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerDiffConfigDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherEntryDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpOutsourceInboundDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpOutsourceOrderDO;
-import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionInboundDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostResultMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceDualProductCostRebuildLogMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
-import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper;
-import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper;
-import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionInboundMapper;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -65,12 +59,6 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
     private ErpFinanceDualLedgerDiffConfigService dualLedgerDiffConfigService;
     @Resource
     private cn.iocoder.yudao.module.erp.service.finance.diffcalc.AmountDiffCalculatorFactory amountDiffCalculatorFactory;
-    @Resource
-    private ErpProductionInboundMapper productionInboundMapper;
-    @Resource
-    private ErpOutsourceInboundMapper outsourceInboundMapper;
-    @Resource
-    private ErpOutsourceOrderMapper outsourceOrderMapper;
 
     @Override
     public PageResult<ErpFinanceDualProductCostRespVO> getProductDualCostPage(ErpFinanceDualProductCostPageReqVO pageReqVO) {
@@ -137,17 +125,13 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
             productCostResultMapper.delete(deleteQuery);
 
             // 3. 查询该期间相关的自制入库/委外入库凭证
-            List<ErpFinanceVoucherDO> allVouchers = voucherMapper.selectList(
+            List<ErpFinanceVoucherDO> vouchers = voucherMapper.selectList(
                     new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
                             .in(ErpFinanceVoucherDO::getBizType,
                                     ErpBizTypeEnum.PRODUCTION_INBOUND.getType(),
                                     ErpBizTypeEnum.OUTSOURCE_INBOUND.getType())
                             .ge(ErpFinanceVoucherDO::getVoucherTime, parsePeriodStart(period))
                             .le(ErpFinanceVoucherDO::getVoucherTime, parsePeriodEnd(period)));
-
-            // 3.1 按产品维度过滤凭证（通过 bizId 反查业务单据获取真实 productId/productionOrderId/batchNo）
-            List<ErpFinanceVoucherDO> vouchers = filterVouchersByProductDimensions(
-                    allVouchers, productId, reqVO.getProductionOrderId(), reqVO.getProductBatchNo());
 
             // 4. 按料/工/费归集（基于凭证分录科目判断）
             //    加载产品成本差异配置（bizType=70 表示产品成本归集）
@@ -280,7 +264,7 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
 
     @Override
     public int rebuildBatchByPeriod(Long userId, String period, String remark) {
-        // 查出该期间所有有自制入库/委外入库凭证
+        // 查出该期间所有有自制入库/委外入库凭证的产品
         List<ErpFinanceVoucherDO> vouchers = voucherMapper.selectList(
                 new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
                         .in(ErpFinanceVoucherDO::getBizType,
@@ -288,15 +272,16 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
                                 ErpBizTypeEnum.OUTSOURCE_INBOUND.getType())
                         .ge(ErpFinanceVoucherDO::getVoucherTime, parsePeriodStart(period))
                         .le(ErpFinanceVoucherDO::getVoucherTime, parsePeriodEnd(period)));
-
-        // 通过业务单据反查真实 productId 集合，不再使用 null/0L 占位
-        Set<Long> productIds = extractProductIdsFromVouchers(vouchers);
+        Set<Long> productIds = vouchers.stream()
+                .map(v -> (Long) null) // 凭证上暂无 productId，用 null 触发全量重跑
+                .collect(Collectors.toSet());
+        productIds.add(null); // 确保至少执行一次
 
         int successCount = 0;
         for (Long pid : productIds) {
             try {
                 ErpFinanceDualProductCostRebuildReqVO reqVO = new ErpFinanceDualProductCostRebuildReqVO();
-                reqVO.setProductId(pid);
+                reqVO.setProductId(pid != null ? pid : 0L);
                 reqVO.setPeriod(period);
                 reqVO.setRemark(remark != null ? remark : "批量重跑");
                 rebuildProductDualCost(userId, reqVO);
@@ -310,7 +295,7 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
 
     @Override
     public void exportExternalProductCost(ErpFinanceDualProductCostPageReqVO pageReqVO,
-                                          javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+                                          jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         List<ErpFinanceDualProductCostResultDO> list = productCostResultMapper.selectList(
                 new LambdaQueryWrapperX<ErpFinanceDualProductCostResultDO>()
                         .eqIfPresent(ErpFinanceDualProductCostResultDO::getProductId, pageReqVO.getProductId())
@@ -324,7 +309,7 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
 
     @Override
     public void exportInternalProductCost(ErpFinanceDualProductCostPageReqVO pageReqVO,
-                                          javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+                                          jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         List<ErpFinanceDualProductCostResultDO> list = productCostResultMapper.selectList(
                 new LambdaQueryWrapperX<ErpFinanceDualProductCostResultDO>()
                         .eqIfPresent(ErpFinanceDualProductCostResultDO::getProductId, pageReqVO.getProductId())
@@ -340,17 +325,17 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
      * 通用产品双账成本 Excel 导出
      */
     private void writeProductCostExcel(List<ErpFinanceDualProductCostResultDO> list, String ledgerLabel,
-                                       javax.servlet.http.HttpServletResponse response) throws java.io.IOException {
+                                       jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
         String exportTime = java.time.LocalDateTime.now()
                 .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String fileName = "产品" + ledgerLabel + "成本-" + exportTime.substring(0, 10) + ".xlsx";
         String encodedFileName = java.net.URLEncoder.encode(fileName, "UTF-8").replace("+", "%20");
 
-        try (org.apache.fesod.sheet.ExcelWriter writer = org.apache.fesod.sheet.FastExcel.write(response.getOutputStream()).build()) {
-            org.apache.fesod.sheet.write.metadata.WriteSheet sheet = org.apache.fesod.sheet.FastExcel.writerSheet("产品成本").build();
+        try (cn.idev.excel.ExcelWriter writer = cn.idev.excel.FastExcel.write(response.getOutputStream()).build()) {
+            cn.idev.excel.write.metadata.WriteSheet sheet = cn.idev.excel.FastExcel.writerSheet("产品成本").build();
 
             // 上下文区
-            org.apache.fesod.sheet.write.metadata.WriteTable ctxTable = org.apache.fesod.sheet.FastExcel.writerTable().build();
+            cn.idev.excel.write.metadata.WriteTable ctxTable = cn.idev.excel.FastExcel.writerTable().build();
             List<List<String>> ctxHead = new ArrayList<>();
             ctxHead.add(java.util.Collections.singletonList("产品" + ledgerLabel + "成本导出"));
             List<List<Object>> ctxData = new ArrayList<>();
@@ -360,11 +345,11 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
             writer.write(ctxData, sheet, ctxTable);
 
             // 空行
-            org.apache.fesod.sheet.write.metadata.WriteTable emptyTable = org.apache.fesod.sheet.FastExcel.writerTable().build();
+            cn.idev.excel.write.metadata.WriteTable emptyTable = cn.idev.excel.FastExcel.writerTable().build();
             writer.write(java.util.Collections.singletonList(java.util.Collections.singletonList("")), sheet, emptyTable);
 
             // 数据表
-            org.apache.fesod.sheet.write.metadata.WriteTable dataTable = org.apache.fesod.sheet.FastExcel.writerTable().build();
+            cn.idev.excel.write.metadata.WriteTable dataTable = cn.idev.excel.FastExcel.writerTable().build();
             List<List<String>> head = new ArrayList<>();
             head.add(java.util.Collections.singletonList("产品编号"));
             head.add(java.util.Collections.singletonList("产品名称"));
@@ -500,94 +485,5 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
             case 30: return 30; // 折旧（简化处理，后续可按子科目细分）
             default: return 50; // 其他
         }
-    }
-
-    // ========== 业务单据反查与过滤 ==========
-
-    /**
-     * 产品维度信息，用于凭证过滤
-     */
-    @lombok.Data
-    @lombok.Builder
-    private static class ProductDimensionInfo {
-        private Long productId;
-        private Long productionOrderId;
-        private String batchNo;
-    }
-
-    /**
-     * 根据凭证的 bizType + bizId 反查业务单据，获取产品维度信息
-     * - 自制入库（PRODUCTION_INBOUND）：直接从 ErpProductionInboundDO 取 productId / productionOrderId
-     * - 委外入库（OUTSOURCE_INBOUND）：从 ErpOutsourceInboundDO.orderId → ErpOutsourceOrderDO.productId 反查
-     *   注意：委外入库没有 productionOrderId，不臆造映射
-     */
-    private ProductDimensionInfo resolveProductDimension(ErpFinanceVoucherDO voucher) {
-        if (ObjectUtil.equal(voucher.getBizType(), ErpBizTypeEnum.PRODUCTION_INBOUND.getType())) {
-            ErpProductionInboundDO inbound = productionInboundMapper.selectById(voucher.getBizId());
-            if (inbound != null) {
-                return ProductDimensionInfo.builder()
-                        .productId(inbound.getProductId())
-                        .productionOrderId(inbound.getProductionOrderId())
-                        .build();
-            }
-        } else if (ObjectUtil.equal(voucher.getBizType(), ErpBizTypeEnum.OUTSOURCE_INBOUND.getType())) {
-            ErpOutsourceInboundDO inbound = outsourceInboundMapper.selectById(voucher.getBizId());
-            if (inbound != null) {
-                Long productId = null;
-                if (inbound.getOrderId() != null) {
-                    ErpOutsourceOrderDO order = outsourceOrderMapper.selectById(inbound.getOrderId());
-                    if (order != null) {
-                        productId = order.getProductId();
-                    }
-                }
-                return ProductDimensionInfo.builder()
-                        .productId(productId)
-                        .batchNo(inbound.getBatchNo())
-                        .build();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 按产品维度过滤凭证列表
-     * 通过 bizId 反查业务单据获取真实 productId/productionOrderId/batchNo，与请求维度比对
-     */
-    private List<ErpFinanceVoucherDO> filterVouchersByProductDimensions(
-            List<ErpFinanceVoucherDO> vouchers, Long productId, Long productionOrderId, String productBatchNo) {
-        return vouchers.stream().filter(voucher -> {
-            ProductDimensionInfo dim = resolveProductDimension(voucher);
-            if (dim == null) {
-                return false;
-            }
-            // 按 productId 过滤
-            if (productId != null && !ObjectUtil.equal(dim.getProductId(), productId)) {
-                return false;
-            }
-            // 按 productionOrderId 过滤（仅自制入库有此维度）
-            if (productionOrderId != null && !ObjectUtil.equal(dim.getProductionOrderId(), productionOrderId)) {
-                return false;
-            }
-            // 按 productBatchNo 过滤（仅委外入库有 batchNo）
-            if (productBatchNo != null && !ObjectUtil.equal(dim.getBatchNo(), productBatchNo)) {
-                return false;
-            }
-            return true;
-        }).collect(Collectors.toList());
-    }
-
-    /**
-     * 从凭证列表中提取所有真实 productId（用于批量重跑展开）
-     * 通过 bizId 反查业务单据获取真实 productId，不再使用 null/0L 占位
-     */
-    private Set<Long> extractProductIdsFromVouchers(List<ErpFinanceVoucherDO> vouchers) {
-        Set<Long> productIds = new java.util.LinkedHashSet<>();
-        for (ErpFinanceVoucherDO voucher : vouchers) {
-            ProductDimensionInfo dim = resolveProductDimension(voucher);
-            if (dim != null && dim.getProductId() != null) {
-                productIds.add(dim.getProductId());
-            }
-        }
-        return productIds;
     }
 }

@@ -30,16 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.*;
@@ -72,42 +66,24 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     private Map<String, ApprovalResultHandler> resultHandlerMap;
 
     /**
-     * 注入所有 ApprovalContextProvider，启动时校验 sceneCode 唯一性
+     * 注入所有 ApprovalContextProvider
      */
     @Resource
     public void setContextProviders(List<ApprovalContextProvider> providers) {
         this.contextProviderMap = CollectionUtils.convertMap(providers, ApprovalContextProvider::getSceneCode);
-        validateUniqueSceneCodes(providers.stream()
-                .map(ApprovalContextProvider::getSceneCode).collect(Collectors.toList()),
-                "ApprovalContextProvider");
     }
 
     /**
-     * 注入所有 ApprovalResultHandler，启动时校验 sceneCode 唯一性
+     * 注入所有 ApprovalResultHandler
      */
     @Resource
     public void setResultHandlers(List<ApprovalResultHandler> handlers) {
         this.resultHandlerMap = CollectionUtils.convertMap(handlers, ApprovalResultHandler::getSceneCode);
-        validateUniqueSceneCodes(handlers.stream()
-                .map(ApprovalResultHandler::getSceneCode).collect(Collectors.toList()),
-                "ApprovalResultHandler");
-    }
-
-    private void validateUniqueSceneCodes(List<String> codes, String componentType) {
-        Set<String> unique = codes.stream().collect(Collectors.toSet());
-        if (unique.size() != codes.size()) {
-            throw new IllegalStateException("[" + componentType + "] 存在重复的 sceneCode，请检查配置");
-        }
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void submit(String sceneCode, Long bizId, Long userId) {
-        // 0. 参数校验
-        if (StrUtil.isBlank(sceneCode)) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
-        }
-
+    public String submit(String sceneCode, Long bizId, Long userId) {
         // 1. 校验场景存在（getSceneByCode 已内置不存在时抛异常）
         BpmApprovalSceneRespVO scene = approvalSceneService.getSceneByCode(sceneCode);
         if (!ObjectUtil.equal(scene.getStatus(), BpmApprovalSceneStatusEnum.ENABLED.getStatus())) {
@@ -147,7 +123,9 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_RULE_NOT_FOUND, activeVersion.getId());
         }
 
-        // 6. 创建运行时快照（本地 DB，事务内完成）
+        // 6. 创建运行时快照
+        // processDefinitionKey：BPM 启动所需流程定义 Key，取自规则的 processJson 字段
+        // processJson：快照留存的流程配置 JSON，当前仅存 Key；未来扩展节点配置时在此追加
         String processKey = hitRule.getProcessJson();
         BpmApprovalInstanceSnapshotDO snapshot = BpmApprovalInstanceSnapshotDO.builder()
                 .sceneCode(sceneCode)
@@ -163,31 +141,23 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 .build();
         Long snapshotId = approvalInstanceSnapshotService.createSnapshot(snapshot);
 
-        // 7. 注册事务提交后回调：事务成功后再调 BPM 引擎，避免外部调用成功但本地回滚导致孤儿流程
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                try {
-                    Map<String, Object> variables = new HashMap<>(context.getVariables());
-                    variables.put("sceneCode", sceneCode);
-                    variables.put("bizId", String.valueOf(bizId));
-                    variables.put("snapshotId", snapshotId);
+        // 7. 生成 BPM 启动参数
+        Map<String, Object> variables = new HashMap<>(context.getVariables());
+        variables.put("sceneCode", sceneCode);
+        variables.put("bizId", String.valueOf(bizId));
+        variables.put("snapshotId", snapshotId);
 
-                    String processInstanceId = processInstanceApi.createProcessInstance(userId,
-                            new BpmProcessInstanceCreateReqDTO()
-                                    .setProcessDefinitionKey(processKey)
-                                    .setBusinessKey(String.valueOf(bizId))
-                                    .setVariables(variables));
-                    approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(snapshotId, processInstanceId);
-                } catch (Exception e) {
-                    // BPM 创建失败，将快照标记为失败，避免留下 PROCESSING + 无 processInstanceId 的不可恢复脏数据
-                    log.error("[submit][场景({}) 业务({}) BPM引擎创建流程实例失败，快照标记为失败]",
-                            sceneCode, bizId, e);
-                    approvalInstanceSnapshotService.updateSnapshotStatus(snapshotId,
-                            BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus(), "BPM创建失败: " + e.getMessage());
-                }
-            }
-        });
+        // 8. 启动 BPM 实例
+        String processInstanceId = processInstanceApi.createProcessInstance(userId,
+                new BpmProcessInstanceCreateReqDTO()
+                        .setProcessDefinitionKey(processKey)
+                        .setBusinessKey(String.valueOf(bizId))
+                        .setVariables(variables));
+
+        // 9. 更新快照流程实例 ID
+        approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(snapshotId, processInstanceId);
+
+        return processInstanceId;
     }
 
     @Override
@@ -226,14 +196,23 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_PROCESS_INSTANCE_NOT_EXISTS);
         }
 
-        // 3. 同步调用 BPM 引擎撤回（在事务内，失败则整个事务回滚，snapshot 保持 PROCESSING 可重试）
+        // 3. 调用 BPM 撤回
         processInstanceService.cancelProcessInstanceByStartUser(userId,
                 new BpmProcessInstanceCancelReqVO()
                         .setId(snapshot.getProcessInstanceId())
                         .setReason(reason));
 
-        // 4. 快照状态更新和 handler.onCancel() 由 BPM CANCEL 事件统一驱动（通过 BpmProcessInstanceEventListener → BpmApprovalEventDispatcher）
-        //    不在此处重复更新，避免与事件分发器双重写入
+        // 4. 更新快照状态
+        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
+                BpmApprovalInstanceSnapshotStatusEnum.CANCEL.getStatus(), reason);
+
+        // 5. 调用结果处理器
+        // 异常不做静默吞掉：若 onCancel() 抛出异常，快照状态保持 PROCESSING，避免标记撤回但业务未回写；
+        // 调用方需感知失败并做补偿。若未来确认 onCancel() 仅为通知类副作用，可在实现内自行 try-catch。
+        ApprovalResultHandler handler = resultHandlerMap.get(sceneCode);
+        if (handler != null) {
+            handler.onCancel(bizId, snapshot.getProcessInstanceId(), reason);
+        }
     }
 
     @Override

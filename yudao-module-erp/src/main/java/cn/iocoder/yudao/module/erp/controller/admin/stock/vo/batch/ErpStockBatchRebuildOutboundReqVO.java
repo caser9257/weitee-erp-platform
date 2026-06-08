@@ -3,9 +3,9 @@ package cn.iocoder.yudao.module.erp.controller.admin.stock.vo.batch;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 历史出库批次重建 Request VO")
 @Data

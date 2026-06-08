@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ErpFinanc
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceExpenseItemDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.time.YearMonth;
 import java.util.Collection;
 import java.util.List;

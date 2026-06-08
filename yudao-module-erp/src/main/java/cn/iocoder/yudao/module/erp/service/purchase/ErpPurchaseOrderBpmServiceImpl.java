@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,10 +58,11 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
                 && StrUtil.isNotBlank(purchaseOrder.getProcessInstanceId())) {
             throw exception(PURCHASE_ORDER_BPM_SUBMIT_FAIL);
         }
-        approvalRuntimeService.submit("erp.purchase.order.submit", purchaseOrder.getId(), userId);
+        String processInstanceId = approvalRuntimeService.submit("erp.purchase.order.submit", purchaseOrder.getId(), userId);
         erpPurchaseOrderMapper.updateById(new ErpPurchaseOrderDO()
                 .setId(purchaseOrder.getId())
-                .setStatus(ErpAuditStatus.PROCESS.getStatus()));
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId(processInstanceId));
         if (ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.REJECT.getStatus())) {
             erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
                     .setOrderId(purchaseOrder.getId())
@@ -69,7 +70,7 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
                     .setBeforeStatus(ErpAuditStatus.REJECT.getStatus())
                     .setAfterStatus(ErpAuditStatus.PROCESS.getStatus()));
         }
-        return null;
+        return processInstanceId;
     }
 
     @Override

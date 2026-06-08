@@ -3,8 +3,8 @@ package cn.iocoder.yudao.module.system.controller.admin.postlevel.vo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 @Schema(description = "绠＄悊鍚庡彴 - 宀椾綅鍒嗛厤浜哄憳 Request VO")

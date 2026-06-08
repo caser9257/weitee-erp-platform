@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.project.controller.admin.vo.task.ProjectTaskPageR
 import cn.iocoder.yudao.module.project.controller.admin.vo.task.ProjectTaskSaveReqVO;
 import cn.iocoder.yudao.module.project.dal.dataobject.task.ProjectTaskDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 

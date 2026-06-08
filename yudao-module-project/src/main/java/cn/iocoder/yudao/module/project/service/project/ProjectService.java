@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.project.controller.admin.vo.project.ProjectSaveRe
 import cn.iocoder.yudao.module.project.dal.dataobject.project.ProjectDO;
 import cn.iocoder.yudao.module.project.dal.dataobject.project.ProjectUserDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ProjectService {

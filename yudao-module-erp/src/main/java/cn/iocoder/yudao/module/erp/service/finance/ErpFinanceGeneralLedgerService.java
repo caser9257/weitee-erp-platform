@@ -10,7 +10,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceSubjectBalan
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherEntryDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 
 public interface ErpFinanceGeneralLedgerService {

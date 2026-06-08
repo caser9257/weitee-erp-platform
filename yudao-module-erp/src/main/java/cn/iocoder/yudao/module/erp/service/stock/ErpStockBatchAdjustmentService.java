@@ -5,7 +5,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.batch.ErpStockBatch
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.batch.ErpStockBatchAdjustmentPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockBatchAdjustmentDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 public interface ErpStockBatchAdjustmentService {
 

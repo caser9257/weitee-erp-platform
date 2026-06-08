@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApEstimateDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApEstimateItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApStatementDO;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.Collection;
 import java.util.List;
 

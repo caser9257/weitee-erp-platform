@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.project.controller.admin.vo.approve;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 @Schema(description = "管理后台 - 审批操作 Request VO")
 @Data
