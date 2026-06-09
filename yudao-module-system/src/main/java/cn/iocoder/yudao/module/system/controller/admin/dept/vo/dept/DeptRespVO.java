@@ -33,6 +33,9 @@ public class DeptRespVO {
     @Schema(description = "状态,见 CommonStatusEnum 枚举", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
+    @Schema(description = "成本类型（0=不归集, 1=制造费用, 2=管理费用, 3=销售费用, 4=研发支出）", example = "0")
+    private Integer costType;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED, example = "时间戳格式")
     private LocalDateTime createTime;
 

@@ -118,7 +118,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
     private void appendDeviceMessage(IotDeviceMessage message,
                                      IotDeviceRespDTO device, String serverId) {
         message.setId(IotDeviceMessageUtils.generateMessageId()).setReportTime(LocalDateTime.now())
-                .setDeviceId(device.getId()).setTenantId(device.getTenantId()).setServerId(serverId);
+                .setDeviceId(device.getId()).setServerId(serverId);
         // 特殊：如果设备没有指定 requestId，则使用 messageId
         if (StrUtil.isEmpty(message.getRequestId())) {
             message.setRequestId(message.getId());

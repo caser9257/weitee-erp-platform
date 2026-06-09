@@ -1,19 +1,17 @@
-### /pay/create 提交支付订单【alipay_pc】
+### /pay/create 提交支付订单【alipay_pc�?
 POST {{appApi}}/pay/order/submit
 Content-Type: application/json
 Authorization: Bearer {{appToken}}
-tenant-id: {{appTenantId}}
 
 {
   "id": 174,
   "channelCode": "alipay_pc"
 }
 
-### /pay/create 提交支付订单【wx_bar】
+### /pay/create 提交支付订单【wx_bar�?
 POST {{appApi}}/pay/order/submit
 Content-Type: application/json
 Authorization: Bearer {{appToken}}
-tenant-id: {{appTenantId}}
 
 {
   "id": 202,
@@ -23,11 +21,10 @@ tenant-id: {{appTenantId}}
   }
 }
 
-### /pay/create 提交支付订单【wx_pub】
+### /pay/create 提交支付订单【wx_pub�?
 POST {{appApi}}/pay/order/submit
 Content-Type: application/json
 Authorization: Bearer {{appToken}}
-tenant-id: {{appTenantId}}
 
 {
   "id": 202,
@@ -37,11 +34,10 @@ tenant-id: {{appTenantId}}
   }
 }
 
-### /pay/create 提交支付订单【wx_lite】
+### /pay/create 提交支付订单【wx_lite�?
 POST {{appApi}}/pay/order/submit
 Content-Type: application/json
 Authorization: Bearer {{appToken}}
-tenant-id: {{appTenantId}}
 
 {
   "id": 202,
@@ -51,13 +47,13 @@ tenant-id: {{appTenantId}}
   }
 }
 
-### /pay/create 提交支付订单【wx_native】
+### /pay/create 提交支付订单【wx_native�?
 POST {{appApi}}/pay/order/submit
 Content-Type: application/json
 Authorization: Bearer {{appToken}}
-tenant-id: {{appTenantId}}
 
 {
   "id": 202,
   "channelCode": "wx_native"
 }
+

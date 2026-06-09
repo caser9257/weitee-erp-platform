@@ -63,12 +63,7 @@ public class FlowableUtils {
     }
 
     public static String getTenantId() {
-        Long tenantId = null;
-        LoginUser loginUser = SecurityFrameworkUtils.getLoginUser();
-        if (loginUser != null && loginUser.getTenantId() != null && loginUser.getTenantId() > 0) {
-            tenantId = loginUser.getTenantId();
-        }
-        return tenantId != null ? String.valueOf(tenantId) : ProcessEngineConfiguration.NO_TENANT_ID;
+        return ProcessEngineConfiguration.NO_TENANT_ID;
     }
 
     /**
@@ -78,12 +73,7 @@ public class FlowableUtils {
      * 便于查询场景按需跳过租户过滤。
      */
     public static String getTenantIdIfPresent() {
-        Long tenantId = null;
-        LoginUser loginUser = SecurityFrameworkUtils.getLoginUser();
-        if (loginUser != null && loginUser.getTenantId() != null && loginUser.getTenantId() > 0) {
-            tenantId = loginUser.getTenantId();
-        }
-        return tenantId != null && tenantId > 0 ? String.valueOf(tenantId) : null;
+        return null;
     }
 
     public static void execute(String tenantIdStr, Runnable runnable) {

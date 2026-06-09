@@ -88,6 +88,16 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
                 .setStatus(status));
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void bindScheme(Long id, Long activeSchemeId) {
+        validateSceneExists(id);
+        validateActiveSchemeExists(activeSchemeId);
+        approvalSceneMapper.updateById(new BpmApprovalSceneDO()
+                .setId(id)
+                .setActiveSchemeId(activeSchemeId));
+    }
+
     private BpmApprovalSceneDO validateSceneExists(Long id) {
         BpmApprovalSceneDO scene = approvalSceneMapper.selectById(id);
         if (scene == null) {

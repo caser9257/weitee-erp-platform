@@ -62,4 +62,26 @@ public interface ErpStockService {
      */
     BigDecimal updateStockCountIncrement(Long productId, Long warehouseId, BigDecimal count);
 
+    /**
+     * 增量更新产品库存数量（带成本追踪）
+     *
+     * @param productId 产品编号
+     * @param warehouseId 仓库编号
+     * @param count 增量数量：正数，表示增加；负数，表示减少
+     * @param price 单价（入库时传入，出库时可为 null）
+     * @return 更新后的库存
+     */
+    BigDecimal updateStockCountIncrement(Long productId, Long warehouseId, BigDecimal count, BigDecimal price);
+
+    /**
+     * 计算移动加权平均成本
+     *
+     * @param productId 产品编号
+     * @param warehouseId 仓库编号
+     * @param inCount 入库数量
+     * @param inPrice 入库单价
+     * @return 新的加权平均成本
+     */
+    BigDecimal calculateWeightedAverageCost(Long productId, Long warehouseId, BigDecimal inCount, BigDecimal inPrice);
+
 }

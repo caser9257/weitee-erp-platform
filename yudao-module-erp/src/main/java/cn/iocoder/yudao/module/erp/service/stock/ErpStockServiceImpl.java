@@ -71,10 +71,17 @@ public class ErpStockServiceImpl implements ErpStockService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BigDecimal updateStockCountIncrement(Long productId, Long warehouseId, BigDecimal count) {
+        return updateStockCountIncrement(productId, warehouseId, count, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public BigDecimal updateStockCountIncrement(Long productId, Long warehouseId, BigDecimal count, BigDecimal price) {
         // 1.1 查询当前库存
         ErpStockDO stock = erpStockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
         if (stock == null) {
-            stock = new ErpStockDO().setProductId(productId).setWarehouseId(warehouseId).setCount(BigDecimal.ZERO);
+            stock = new ErpStockDO().setProductId(productId).setWarehouseId(warehouseId)
+                    .setCount(BigDecimal.ZERO).setAverageCost(BigDecimal.ZERO).setTotalCost(BigDecimal.ZERO);
             erpStockMapper.insert(stock);
         }
         // 1.2 校验库存是否充足
@@ -86,13 +93,44 @@ public class ErpStockServiceImpl implements ErpStockService {
         // 2. 库存变更
         int updateCount = erpStockMapper.updateCountIncrement(stock.getId(), count, NEGATIVE_STOCK_COUNT_ENABLE);
         if (updateCount == 0) {
-            // 此时不好去查询最新库存，所以直接抛出该提示，不提供具体库存数字
             throw exception(STOCK_COUNT_NEGATIVE2, productService.getProduct(productId).getName(),
                     warehouseService.getWarehouse(warehouseId).getName());
         }
 
-        // 3. 返回最新库存
+        // 3. 成本计算
+        if (count.compareTo(BigDecimal.ZERO) > 0 && price != null && price.compareTo(BigDecimal.ZERO) > 0) {
+            // 入库：重算加权平均成本
+            BigDecimal newAverageCost = calculateWeightedAverageCost(productId, warehouseId, count, price);
+            BigDecimal newTotalCount = stock.getCount().add(count);
+            BigDecimal newTotalCost = newAverageCost.multiply(newTotalCount).setScale(2, java.math.RoundingMode.HALF_UP);
+            erpStockMapper.updateById(new ErpStockDO().setId(stock.getId())
+                    .setAverageCost(newAverageCost).setTotalCost(newTotalCost));
+        } else if (count.compareTo(BigDecimal.ZERO) < 0 && stock.getAverageCost() != null) {
+            // 出库：更新总金额
+            BigDecimal newTotalCount = stock.getCount().add(count);
+            BigDecimal newTotalCost = stock.getAverageCost().multiply(newTotalCount).setScale(2, java.math.RoundingMode.HALF_UP);
+            erpStockMapper.updateById(new ErpStockDO().setId(stock.getId()).setTotalCost(newTotalCost));
+        }
+
+        // 4. 返回最新库存
         return stock.getCount().add(count);
+    }
+
+    @Override
+    public BigDecimal calculateWeightedAverageCost(Long productId, Long warehouseId, BigDecimal inCount, BigDecimal inPrice) {
+        ErpStockDO stock = erpStockMapper.selectByProductIdAndWarehouseIdForUpdate(productId, warehouseId);
+        if (stock == null || stock.getAverageCost() == null || stock.getCount() == null
+                || stock.getCount().compareTo(BigDecimal.ZERO) <= 0) {
+            return inPrice;
+        }
+        // 加权平均 = (现有库存 * 现有平均成本 + 新入库数量 * 新入库单价) / (现有库存 + 新入库数量)
+        BigDecimal existingTotalCost = stock.getAverageCost().multiply(stock.getCount());
+        BigDecimal newTotalCost = inPrice.multiply(inCount);
+        BigDecimal newTotalCount = stock.getCount().add(inCount);
+        if (newTotalCount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return existingTotalCost.add(newTotalCost).divide(newTotalCount, 6, java.math.RoundingMode.HALF_UP);
     }
 
 }

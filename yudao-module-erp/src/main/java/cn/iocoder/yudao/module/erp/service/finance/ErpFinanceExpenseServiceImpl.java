@@ -76,13 +76,16 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
     @Resource
     @Lazy
     private ErpFinanceAssetCandidateService financeAssetCandidateService;
+    @Resource
+    private ErpFinanceExpenseTypeService financeExpenseTypeService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createFinanceExpense(ErpFinanceExpenseSaveReqVO createReqVO) {
         validateRefs(createReqVO.getExpenseType(), createReqVO.getRdAccountingType(),
                 createReqVO.getDeptId(), createReqVO.getProjectId(),
-                createReqVO.getSupplierId(), createReqVO.getAccountId(), createReqVO.getFinanceUserId());
+                createReqVO.getSupplierId(), createReqVO.getAccountId(), createReqVO.getFinanceUserId(),
+                createReqVO.getLeaseContractNo());
         List<ErpFinanceExpenseItemDO> items = validateItems(createReqVO.getItems(), createReqVO.getExpensePrice());
         String no = noRedisDAO.generate(ErpNoRedisDAO.FINANCE_EXPENSE_NO_PREFIX);
         if (erpFinanceExpenseMapper.selectByNo(no) != null) {
@@ -107,7 +110,8 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
         }
         validateRefs(updateReqVO.getExpenseType(), updateReqVO.getRdAccountingType(),
                 updateReqVO.getDeptId(), updateReqVO.getProjectId(),
-                updateReqVO.getSupplierId(), updateReqVO.getAccountId(), updateReqVO.getFinanceUserId());
+                updateReqVO.getSupplierId(), updateReqVO.getAccountId(), updateReqVO.getFinanceUserId(),
+                updateReqVO.getLeaseContractNo());
         List<ErpFinanceExpenseItemDO> items = validateItems(updateReqVO.getItems(), updateReqVO.getExpensePrice());
         ErpFinanceExpenseDO updateObj = BeanUtils.toBean(updateReqVO, ErpFinanceExpenseDO.class, in -> in
                 .setPaidPrice(BigDecimal.ZERO)
@@ -271,16 +275,16 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
     }
 
     private void validateRefs(Integer expenseType, Integer rdAccountingType, Long deptId, Long projectId,
-                              Long supplierId, Long accountId, Long financeUserId) {
-        ErpFinanceExpenseTypeEnum expenseTypeEnum = ErpFinanceExpenseTypeEnum.fromType(expenseType);
-        if (expenseTypeEnum == null) {
-            throw exception(ErrorCodeConstantsExpense.EXPENSE_TYPE_INVALID);
+                              Long supplierId, Long accountId, Long financeUserId, String leaseContractNo) {
+        // 用混合类型服务校验（核心枚举 + 字典扩展）
+        financeExpenseTypeService.validateExpenseType(expenseType, projectId != null ? projectId.intValue() : null, deptId, leaseContractNo);
+        // 研发口径校验（仅核心类型中的研发费用需要）
+        if (ErpFinanceExpenseTypeEnum.RESEARCH.getType().equals(expenseType)) {
+            validateRdAccountingType(ErpFinanceExpenseTypeEnum.RESEARCH, rdAccountingType);
+        } else if (rdAccountingType != null) {
+            throw exception(ErrorCodeConstantsExpense.EXPENSE_RD_ACCOUNTING_TYPE_INVALID);
         }
-        validateRdAccountingType(expenseTypeEnum, rdAccountingType);
         deptApi.validateDeptList(Collections.singleton(deptId));
-        if (expenseTypeEnum.isProjectRequired() && projectId == null) {
-            throw exception(ErrorCodeConstantsExpense.EXPENSE_PROJECT_REQUIRED);
-        }
         if (projectId != null) {
             projectService.validateProject(projectId);
         }
@@ -344,7 +348,8 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
         }
         validateRefs(expense.getExpenseType(), expense.getRdAccountingType(),
                 expense.getDeptId(), expense.getProjectId(),
-                expense.getSupplierId(), expense.getAccountId(), expense.getFinanceUserId());
+                expense.getSupplierId(), expense.getAccountId(), expense.getFinanceUserId(),
+                expense.getLeaseContractNo());
     }
 
     private void validateExpenseCanRollback(ErpFinanceExpenseDO expense) {

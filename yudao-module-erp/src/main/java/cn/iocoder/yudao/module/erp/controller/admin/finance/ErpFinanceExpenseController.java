@@ -17,7 +17,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ErpFinanc
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ErpFinanceExpenseSaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ErpFinanceExpenseSubmitReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ErpFinanceExpenseTraceRespVO;
-import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ErpFinanceExpenseTypeRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.expense.ExpenseTypeVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpAccountDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApStatementDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApStatementItemDO;
@@ -36,6 +36,7 @@ import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpApStatementService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceExpenseBpmService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceExpenseService;
+import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceExpenseTypeService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinancePaymentService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectService;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpSupplierService;
@@ -99,6 +100,8 @@ public class ErpFinanceExpenseController {
     private DeptApi deptApi;
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private ErpFinanceExpenseTypeService financeExpenseTypeService;
 
     @PostMapping("/create")
     @Operation(summary = "创建费用单")
@@ -212,17 +215,22 @@ public class ErpFinanceExpenseController {
     @GetMapping("/expense-types")
     @Operation(summary = "获得费用类型")
     @PreAuthorize("@ss.hasPermission('erp:finance-expense:query')")
-    public CommonResult<List<ErpFinanceExpenseTypeRespVO>> getExpenseTypeList() {
-        List<ErpFinanceExpenseTypeRespVO> list = java.util.Arrays.stream(ErpFinanceExpenseTypeEnum.values())
-                .map(type -> {
-                    ErpFinanceExpenseTypeRespVO vo = new ErpFinanceExpenseTypeRespVO();
-                    vo.setValue(type.getType());
-                    vo.setLabel(type.getName());
-                    vo.setProjectRequired(type.isProjectRequired());
-                    return vo;
-                })
-                .toList();
-        return success(list);
+    public CommonResult<List<ExpenseTypeVO>> getExpenseTypeList() {
+        return success(financeExpenseTypeService.getExpenseTypeList());
+    }
+
+    @GetMapping("/core-type-list")
+    @Operation(summary = "获取核心类型列表")
+    @PreAuthorize("@ss.hasPermission('erp:finance-expense:query')")
+    public CommonResult<List<ExpenseTypeVO>> getCoreTypeList() {
+        return success(financeExpenseTypeService.getCoreTypeList());
+    }
+
+    @GetMapping("/extended-type-list")
+    @Operation(summary = "获取扩展类型列表")
+    @PreAuthorize("@ss.hasPermission('erp:finance-expense:query')")
+    public CommonResult<List<ExpenseTypeVO>> getExtendedTypeList() {
+        return success(financeExpenseTypeService.getExtendedTypeList());
     }
 
     @GetMapping("/export-excel")

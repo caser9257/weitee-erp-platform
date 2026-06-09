@@ -68,4 +68,14 @@ public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstan
                 .setProcessInstanceId(processInstanceId));
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteSnapshot(Long id) {
+        BpmApprovalInstanceSnapshotDO snapshot = approvalInstanceSnapshotMapper.selectById(id);
+        if (snapshot == null) {
+            throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
+        }
+        approvalInstanceSnapshotMapper.deleteById(id);
+    }
+
 }

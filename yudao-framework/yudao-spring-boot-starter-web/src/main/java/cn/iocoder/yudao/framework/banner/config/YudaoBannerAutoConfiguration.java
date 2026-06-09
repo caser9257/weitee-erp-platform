@@ -2,6 +2,7 @@ package cn.iocoder.yudao.framework.banner.config;
 
 import cn.iocoder.yudao.framework.banner.core.BannerApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 public class YudaoBannerAutoConfiguration {
 
     @Bean
+    @ConditionalOnProperty(prefix = "yudao.banner", name = "enable", havingValue = "true", matchIfMissing = true)
     public BannerApplicationRunner bannerApplicationRunner() {
         return new BannerApplicationRunner();
     }

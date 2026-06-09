@@ -55,5 +55,13 @@ public class ErpStockRecordCreateReqBO {
      */
     @NotNull(message = "业务单号不能为空")
     private String bizNo;
+    /**
+     * 单价（可选，入库时传入用于计算加权平均成本）
+     */
+    private BigDecimal price;
+    /**
+     * 金额（可选，入库时传入）
+     */
+    private BigDecimal amount;
 
 }

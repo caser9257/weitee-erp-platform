@@ -146,15 +146,7 @@ public class SecurityFrameworkUtils {
      * @return 是否跳过
      */
     public static boolean skipPermissionCheck() {
-        LoginUser loginUser = getLoginUser();
-        if (loginUser == null) {
-            return false;
-        }
-        if (loginUser.getVisitTenantId() == null) {
-            return false;
-        }
-        // 重点：跨租户访问时，无法进行权限校验
-        return ObjUtil.notEqual(loginUser.getVisitTenantId(), loginUser.getTenantId());
+        return false;
     }
 
 }

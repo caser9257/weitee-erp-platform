@@ -43,7 +43,7 @@
 
 <script lang="ts" setup>
 import * as UserApi from '@/api/system/user'
-import { getAccessToken, getTenantId } from '@/utils/auth'
+import { getAccessToken } from '@/utils/auth'
 import download from '@/utils/download'
 
 defineOptions({ name: 'SystemUserImportForm' })
@@ -130,10 +130,7 @@ const buildUploadHeaders = () => {
   const headers: Record<string, string> = {
     Authorization: 'Bearer ' + getAccessToken()
   }
-  const tenantId = getTenantId()
-  if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
-    headers['tenant-id'] = String(tenantId)
-  }
+
   return headers
 }
 

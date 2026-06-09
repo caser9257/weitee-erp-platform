@@ -54,5 +54,9 @@ public class ErpFinanceExpenseDO extends BaseDO {
     private BigDecimal paidPrice;
     private BigDecimal remainPrice;
     private String remark;
+    /**
+     * 租赁合同编号
+     */
+    private String leaseContractNo;
 
 }

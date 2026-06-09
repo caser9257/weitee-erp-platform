@@ -77,6 +77,15 @@
         </template>
       </el-table-column>
       <el-table-column prop="sort" label="排序" />
+      <el-table-column label="成本类型" align="center" prop="costType">
+        <template #default="scope">
+          <el-tag v-if="scope.row.costType === 1" type="success">制造费用</el-tag>
+          <el-tag v-else-if="scope.row.costType === 2" type="info">管理费用</el-tag>
+          <el-tag v-else-if="scope.row.costType === 3" type="warning">销售费用</el-tag>
+          <el-tag v-else-if="scope.row.costType === 4" type="danger">研发支出</el-tag>
+          <el-tag v-else type="info">不归集</el-tag>
+        </template>
+      </el-table-column>
       <el-table-column prop="status" label="状态">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />

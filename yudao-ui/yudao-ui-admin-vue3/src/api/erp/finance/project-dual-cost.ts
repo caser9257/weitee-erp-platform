@@ -1,5 +1,4 @@
-import request from '@/utils/axios'
-import type { PageResult } from '@/types/api'
+import request from '@/config/axios'
 
 // ========== 类型定义 ==========
 
@@ -60,31 +59,31 @@ export const getCostTypeLabel = (value?: number) =>
 export const DualProjectCostApi = {
   /** 获得项目双账成本分页 */
   getProjectDualCostPage(params: DualProjectCostPageReqVO) {
-    return request.get<PageResult<DualProjectCostVO>>('/erp/finance-dual-project-cost/page', { params })
+    return request.get({ url: '/erp/finance-dual-project-cost/page', params })
   },
 
   /** 获得单个项目双账成本 */
   getProjectDualCost(id: number) {
-    return request.get<DualProjectCostVO>('/erp/finance-dual-project-cost/get', { params: { id } })
+    return request.get({ url: '/erp/finance-dual-project-cost/get', params: { id } })
   },
 
   /** 获得项目双账成本明细 */
   getProjectDualCostItems(resultId: number) {
-    return request.get<DualProjectCostVO[]>('/erp/finance-dual-project-cost/items', { params: { resultId } })
+    return request.get({ url: '/erp/finance-dual-project-cost/items', params: { resultId } })
   },
 
   /** 项目级重跑 */
   rebuildProjectDualCost(data: DualProjectCostRebuildReqVO) {
-    return request.post<boolean>('/erp/finance-dual-project-cost/rebuild', data)
+    return request.post({ url: '/erp/finance-dual-project-cost/rebuild', data })
   },
 
   /** 导出外部账项目成本 */
   exportExternalProjectCost(params: DualProjectCostPageReqVO) {
-    return request.get('/erp/finance-dual-project-cost/export-external', { params, responseType: 'blob' })
+    return request.get({ url: '/erp/finance-dual-project-cost/export-external', params, responseType: 'blob' })
   },
 
   /** 导出内部账项目成本 */
   exportInternalProjectCost(params: DualProjectCostPageReqVO) {
-    return request.get('/erp/finance-dual-project-cost/export-internal', { params, responseType: 'blob' })
+    return request.get({ url: '/erp/finance-dual-project-cost/export-internal', params, responseType: 'blob' })
   }
 }

@@ -161,4 +161,50 @@ public class ErpSaleOrderDO extends BaseDO {
 
     private String deliveryReadyStatus;
 
+    // ========== 合同关联与放行状态（销售执行闭环） ==========
+
+    /**
+     * 关联合同编号
+     *
+     * 关联 crm_contract.id
+     */
+    private Long contractId;
+    /**
+     * 合同编号（冗余存储）
+     */
+    private String contractNo;
+    /**
+     * 发货放行状态
+     *
+     * 枚举值：
+     * - PENDING: 待校验
+     * - BLOCKED: 阻塞
+     * - RELEASED: 已放行
+     * - FINANCE_REVIEW: 待财务审核
+     */
+    private String shipmentReleaseStatus;
+    /**
+     * 放行阻塞原因
+     */
+    private String shipmentReleaseReason;
+    /**
+     * 开票状态
+     *
+     * 枚举值：
+     * - NOT_INVOICED: 未开票
+     * - PARTIAL_INVOICED: 部分开票
+     * - FULLY_INVOICED: 全额开票
+     */
+    private String invoiceStatus;
+    /**
+     * 验收状态
+     *
+     * 枚举值：
+     * - NOT_REQUIRED: 无需验收
+     * - PENDING: 待验收
+     * - ACCEPTED: 已验收
+     * - REJECTED: 验收不通过
+     */
+    private String acceptanceStatus;
+
 }

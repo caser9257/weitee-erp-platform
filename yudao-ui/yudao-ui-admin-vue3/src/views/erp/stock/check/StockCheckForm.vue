@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Dialog
     v-model="dialogVisible"
     :title="dialogTitle"
@@ -47,6 +47,20 @@
                 :disabled="disabled"
               />
             </el-form-item>
+            <el-form-item label="盲盘模式" prop="blindCount">
+              <el-switch v-model="formData.blindCount" :disabled="disabled" />
+              <span v-if="formData.blindCount" class="ml-8px text-xs text-slate-400">盘点时不显示账面数量</span>
+            </el-form-item>
+            <el-form-item label="冻结模式" prop="freezeMode">
+              <el-select v-model="formData.freezeMode" placeholder="请选择冻结模式" class="stock-check-form__field" :disabled="disabled">
+                <el-option label="不冻结" :value="0" />
+                <el-option label="软冻结（仅警告）" :value="1" />
+                <el-option label="硬冻结（禁止操作）" :value="2" />
+              </el-select>
+            </el-form-item>
+            <el-form-item v-if="formData.snapshotTime" label="快照时间" prop="snapshotTime">
+              <el-input :model-value="formData.snapshotTime" disabled />
+            </el-form-item>
             <el-form-item label="备注" prop="remark" class="stock-check-form__remark">
               <el-input
                 v-model="formData.remark"
@@ -60,7 +74,7 @@
 
         <section class="stock-check-form__section">
           <div class="stock-check-form__section-title">盘点产品清单</div>
-          <StockCheckItemForm ref="itemFormRef" :items="formData.items" :disabled="disabled" />
+          <StockCheckItemForm ref="itemFormRef" :items="formData.items" :disabled="disabled" :blind-count="formData.blindCount" />
         </section>
       </div>
     </div>
@@ -108,6 +122,9 @@ type StockCheckFormData = Partial<StockCheckVO> & {
   checkTime?: string | number
   remark?: string
   fileUrl?: string
+  blindCount?: boolean
+  freezeMode?: number
+  snapshotTime?: string
   items: StockCheckItemRow[]
 }
 
@@ -120,6 +137,9 @@ const createDefaultFormData = (): StockCheckFormData => ({
   checkTime: undefined,
   remark: undefined,
   fileUrl: '',
+  blindCount: false,
+  freezeMode: 0,
+  snapshotTime: '',
   items: []
 })
 
@@ -248,7 +268,7 @@ const handleDialogClosed = () => {
 
 .stock-check-form__section-title {
   margin-bottom: 14px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 15px;
   line-height: 22px;
   font-weight: 700;

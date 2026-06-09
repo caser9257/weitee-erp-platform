@@ -295,52 +295,52 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="84" align="center">
+      <el-table-column label="操作" width="220" align="left">
         <template #default="{ row }">
           <div class="ledger-actions">
             <el-button
+              v-if="canViewDetail"
               link
               type="primary"
               @click="openForm('detail', row.id)"
-              v-if="canViewDetail"
             >
               详情
             </el-button>
-            <el-dropdown v-if="hasMoreActions(row)" @command="(command) => handleCommand(command, row)">
-              <el-button link type="primary">
-                更多 <Icon icon="ep:more-filled" class="ml-4px" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-if="canUpdate && canEdit(row)" command="edit">
-                    编辑
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="canUpdateStatus && canApprove(row)"
-                    command="approve"
-                    :disabled="isUpdatingStatus(row.id)"
-                  >
-                    审批
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="canUpdateStatus && canReverseApprove(row)"
-                    command="reverseApprove"
-                    :disabled="isUpdatingStatus(row.id)"
-                  >
-                    反审批
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="canRemove"
-                    command="delete"
-                    :disabled="isDeletingRow(row.id)"
-                    divided
-                    class="text-red-500"
-                  >
-                    删除
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <el-button
+              v-if="canUpdate && canEdit(row)"
+              link
+              type="primary"
+              @click="handleCommand('edit', row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              v-if="canUpdateStatus && canApprove(row)"
+              link
+              type="success"
+              :disabled="isUpdatingStatus(row.id)"
+              @click="handleCommand('approve', row)"
+            >
+              审批
+            </el-button>
+            <el-button
+              v-if="canUpdateStatus && canReverseApprove(row)"
+              link
+              type="warning"
+              :disabled="isUpdatingStatus(row.id)"
+              @click="handleCommand('reverseApprove', row)"
+            >
+              反审批
+            </el-button>
+            <el-button
+              v-if="canRemove"
+              link
+              type="danger"
+              :disabled="isDeletingRow(row.id)"
+              @click="handleCommand('delete', row)"
+            >
+              删除
+            </el-button>
           </div>
         </template>
       </el-table-column>
@@ -428,41 +428,41 @@
             >
               详情
             </el-button>
-            <el-dropdown v-if="hasMoreActions(row)" @command="(command) => handleCommand(command, row)">
-              <el-button link type="primary">
-                更多 <Icon icon="ep:more-filled" class="ml-4px" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-if="canUpdate && canEdit(row)" command="edit">
-                    编辑
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="canUpdateStatus && canApprove(row)"
-                    command="approve"
-                    :disabled="isUpdatingStatus(row.id)"
-                  >
-                    审批
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="canUpdateStatus && canReverseApprove(row)"
-                    command="reverseApprove"
-                    :disabled="isUpdatingStatus(row.id)"
-                  >
-                    反审批
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="canRemove"
-                    command="delete"
-                    :disabled="isDeletingRow(row.id)"
-                    divided
-                    class="text-red-500"
-                  >
-                    删除
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <el-button
+              v-if="canUpdate && canEdit(row)"
+              link
+              type="primary"
+              @click="handleCommand('edit', row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              v-if="canUpdateStatus && canApprove(row)"
+              link
+              type="success"
+              :disabled="isUpdatingStatus(row.id)"
+              @click="handleCommand('approve', row)"
+            >
+              审批
+            </el-button>
+            <el-button
+              v-if="canUpdateStatus && canReverseApprove(row)"
+              link
+              type="warning"
+              :disabled="isUpdatingStatus(row.id)"
+              @click="handleCommand('reverseApprove', row)"
+            >
+              反审批
+            </el-button>
+            <el-button
+              v-if="canRemove"
+              link
+              type="danger"
+              :disabled="isDeletingRow(row.id)"
+              @click="handleCommand('delete', row)"
+            >
+              删除
+            </el-button>
           </div>
         </article>
       </template>
@@ -673,10 +673,6 @@ const setIdsLoading = (source: Ref<number[]>, ids: number[], loadingState: boole
 
 const isDeletingRow = (id?: number) => !!id && deletingIds.value.includes(id)
 const isUpdatingStatus = (id?: number) => !!id && statusUpdatingIds.value.includes(id)
-const hasMoreActions = (row: SaleOutListRow) =>
-  (canUpdate && canEdit(row)) ||
-  (canUpdateStatus && (canApprove(row) || canReverseApprove(row))) ||
-  canRemove
 
 const resolveSettledValue = <T,>(result: PromiseSettledResult<T>, fallback: T) =>
   result.status === 'fulfilled' ? result.value : fallback

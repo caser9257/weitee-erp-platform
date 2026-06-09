@@ -93,11 +93,32 @@
                 filterable
                 placeholder="请选择客户"
                 class="!w-1/1"
+                @change="handleCustomerChange"
               >
                 <el-option
                   v-for="item in customerList"
                   :key="item.id"
                   :label="item.name"
+                  :value="item.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :lg="8">
+            <el-form-item label="关联合同" prop="contractId">
+              <el-select
+                v-model="formData.contractId"
+                clearable
+                filterable
+                placeholder="请选择合同"
+                class="!w-1/1"
+                :disabled="!formData.customerId"
+                @change="handleContractChange"
+              >
+                <el-option
+                  v-for="item in contractList"
+                  :key="item.id"
+                  :label="`${item.no} - ${item.name}`"
                   :value="item.id"
                 />
               </el-select>
@@ -120,6 +141,26 @@
                 />
               </el-select>
             </el-form-item>
+          </el-col>
+          <!-- 合同条款摘要 -->
+          <el-col :xs="24" v-if="selectedContract">
+            <div class="contract-terms-summary">
+              <div class="contract-terms-summary__title">合同条款摘要</div>
+              <div class="contract-terms-summary__content">
+                <el-tag size="small" type="info">
+                  放行规则：{{ formatReleaseRule(selectedContract.shipmentReleaseRule) }}
+                </el-tag>
+                <el-tag size="small" type="info">
+                  开票触发：{{ formatInvoiceTrigger(selectedContract.invoiceTrigger) }}
+                </el-tag>
+                <el-tag size="small" type="info">
+                  收款规则：{{ formatCollectionRule(selectedContract.collectionRule) }}
+                </el-tag>
+                <el-tag size="small" type="info" v-if="selectedContract.prepaymentRatio">
+                  预付款比例：{{ selectedContract.prepaymentRatio }}%
+                </el-tag>
+              </div>
+            </div>
           </el-col>
           <el-col :xs="24" :sm="12" :lg="8">
             <el-form-item label="业务类型" prop="businessType">
@@ -676,6 +717,7 @@ import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { erpPriceInputFormatter, erpPriceMultiply } from '@/utils'
 import * as UserApi from '@/api/system/user'
 import { ProjectApi } from '@/api/erp/project'
+import * as ContractApi from '@/api/crm/contract'
 
 /** ERP 销售订单表单 */
 defineOptions({ name: 'SaleOrderForm' })
@@ -718,7 +760,10 @@ const formData = ref<any>({
   lastRejectReason: undefined,
   lastRejectTime: undefined,
   rejectLogs: [],
-  auditLogs: []
+  auditLogs: [],
+  // 合同关联字段
+  contractId: undefined,
+  contractNo: undefined
 })
 const formRules = reactive({
   customerId: [{ required: true, message: '客户不能为空', trigger: 'blur' }],
@@ -799,6 +844,8 @@ const customerList = ref<CustomerVO[]>([]) // 客户列表
 const projectList = ref<any[]>([]) // 项目列表
 const accountList = ref<AccountVO[]>([]) // 账户列表
 const userList = ref<UserApi.UserVO[]>([]) // 用户列表
+const contractList = ref<any[]>([]) // 合同列表
+const selectedContract = ref<any>(null) // 选中的合同
 
 const resolveDisplayText = (value?: string | number | null) => {
   if (value === undefined || value === null || value === '') {
@@ -1158,9 +1205,83 @@ const resetForm = () => {
     lastRejectReason: undefined,
     lastRejectTime: undefined,
     rejectLogs: [],
-    auditLogs: []
+    auditLogs: [],
+    // 合同关联字段
+    contractId: undefined,
+    contractNo: undefined
   }
+  selectedContract.value = null
   formRef.value?.resetFields()
+}
+
+/** 处理客户变更 */
+const handleCustomerChange = async () => {
+  formData.value.contractId = undefined
+  formData.value.contractNo = undefined
+  selectedContract.value = null
+  if (formData.value.customerId) {
+    // 加载该客户的合同列表
+    try {
+      const res = await ContractApi.getContractPage({
+        customerId: formData.value.customerId,
+        pageNo: 1,
+        pageSize: 100
+      })
+      contractList.value = res.list || []
+    } catch (e) {
+      contractList.value = []
+    }
+  } else {
+    contractList.value = []
+  }
+}
+
+/** 处理合同变更 */
+const handleContractChange = () => {
+  if (formData.value.contractId) {
+    const contract = contractList.value.find((c) => c.id === formData.value.contractId)
+    if (contract) {
+      selectedContract.value = contract
+      formData.value.contractNo = contract.no
+    }
+  } else {
+    selectedContract.value = null
+    formData.value.contractNo = undefined
+  }
+}
+
+/** 格式化放行规则 */
+const formatReleaseRule = (rule?: string) => {
+  const map: Record<string, string> = {
+    SIGN_AND_SHIP: '签约即发',
+    AFTER_PAYMENT: '到账后发',
+    AFTER_PREPAYMENT: '达到预付款比例后发',
+    FINANCE_APPROVAL: '财务审核后发'
+  }
+  return map[rule || ''] || rule || '--'
+}
+
+/** 格式化开票触发条件 */
+const formatInvoiceTrigger = (trigger?: string) => {
+  const map: Record<string, string> = {
+    PREPAYMENT_FULL: '预付款全额开票',
+    PREPAYMENT_PARTIAL: '预付款部分开票',
+    PREPAYMENT_ONLY: '仅预付款开票',
+    AFTER_SHIPMENT: '发货后开票',
+    AFTER_DELIVERY_RECEIPT: '交付收款后开票',
+    MANUAL: '手工决定'
+  }
+  return map[trigger || ''] || trigger || '--'
+}
+
+/** 格式化收款规则 */
+const formatCollectionRule = (rule?: string) => {
+  const map: Record<string, string> = {
+    BEFORE_SHIPMENT: '发货前付款',
+    ON_SHIPMENT: '发货时付款',
+    AFTER_SHIPMENT: '发货后约定期限付款'
+  }
+  return map[rule || ''] || rule || '--'
 }
 </script>
 
@@ -1174,7 +1295,7 @@ const resetForm = () => {
 
   :deep(.el-form-item__label) {
     padding-bottom: 8px;
-    color: #475569;
+    color: var(--erp-slate-600);
     font-size: 13px;
     font-weight: 600;
     line-height: 20px;
@@ -1185,7 +1306,7 @@ const resetForm = () => {
   }
 
   :deep(.el-form-item.is-required:not(.is-no-asterisked) > .el-form-item__label:before) {
-    color: #f97316;
+    color: var(--erp-warning-500);
     margin-right: 4px;
   }
 
@@ -1219,8 +1340,8 @@ const resetForm = () => {
   :deep(.el-select.is-disabled .el-select__wrapper),
   :deep(.el-textarea.is-disabled .el-textarea__inner) {
     border-color: transparent;
-    background: #f1f5f9;
-    color: #64748b;
+    background: var(--erp-slate-100);
+    color: var(--erp-slate-500);
     box-shadow: none;
   }
 
@@ -1254,7 +1375,7 @@ const resetForm = () => {
   border-radius: 22px;
   background:
     radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 30%),
-    linear-gradient(135deg, #0f172a, #1e293b 68%, #334155);
+    linear-gradient(135deg, var(--erp-slate-900), var(--erp-slate-800) 68%, var(--erp-slate-700));
   color: #fff;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
 }
@@ -1316,7 +1437,7 @@ const resetForm = () => {
 }
 
 .sale-order-detail__process-link {
-  color: #bfdbfe;
+  color: var(--erp-primary-200);
 }
 
 .sale-order-detail__hero-metrics {
@@ -1359,14 +1480,14 @@ const resetForm = () => {
 }
 
 .sale-order-detail__risk-title {
-  color: #b45309;
+  color: var(--erp-warning-700);
   font-size: 13px;
   font-weight: 700;
 }
 
 .sale-order-detail__risk-text,
 .sale-order-detail__risk-time {
-  color: #92400e;
+  color: var(--erp-warning-800);
   font-size: 13px;
   line-height: 20px;
 }
@@ -1416,7 +1537,7 @@ const resetForm = () => {
   gap: 8px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
   border: 1px solid rgba(226, 232, 240, 0.92);
 }
 
@@ -1425,14 +1546,14 @@ const resetForm = () => {
 }
 
 .sale-order-detail-field__label {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
   font-weight: 700;
   line-height: 18px;
 }
 
 .sale-order-detail-field__value {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 600;
   line-height: 22px;
@@ -1457,7 +1578,7 @@ const resetForm = () => {
   padding: 0;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -1468,7 +1589,7 @@ const resetForm = () => {
 }
 
 .sale-order-detail-tabs__item.is-active {
-  color: #1677ff;
+  color: var(--erp-primary-600);
 }
 
 .sale-order-detail-tabs__item.is-active::after {
@@ -1479,7 +1600,7 @@ const resetForm = () => {
   bottom: 0;
   height: 2px;
   border-radius: 999px;
-  background: #1677ff;
+  background: var(--erp-primary-600);
 }
 
 .sale-order-detail-tabs__count {
@@ -1489,7 +1610,7 @@ const resetForm = () => {
   padding: 0;
   border-radius: 0;
   background: transparent;
-  color: #1677ff;
+  color: var(--erp-primary-600);
   font-size: 14px;
   font-weight: 600;
 }
@@ -1548,7 +1669,7 @@ const resetForm = () => {
 .sale-order-detail-ledger__cell {
   min-width: 0;
   padding: 15px 12px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 13px;
   line-height: 20px;
   display: flex;
@@ -1558,14 +1679,14 @@ const resetForm = () => {
 .sale-order-detail-ledger__head .sale-order-detail-ledger__cell {
   padding-top: 15px;
   padding-bottom: 15px;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 12px;
   font-weight: 600;
 }
 
 .sale-order-detail-ledger__cell--index {
   justify-content: center;
-  color: #cbd5e1;
+  color: var(--erp-slate-300);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
@@ -1574,11 +1695,11 @@ const resetForm = () => {
   text-align: right;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-weight: 700;
-  color: #475569;
+  color: var(--erp-slate-600);
 }
 
 .sale-order-detail-ledger__cell--highlight {
-  color: #0891b2;
+  color: var(--erp-primary-600);
 }
 
 .sale-order-detail-ledger__cell--gross {
@@ -1586,7 +1707,7 @@ const resetForm = () => {
 }
 
 .sale-order-detail-ledger__cell--remark {
-  color: #475569;
+  color: var(--erp-slate-600);
   justify-content: flex-start;
   padding-left: 26px;
   border-left: 1px solid rgba(241, 245, 249, 0.96);
@@ -1599,7 +1720,7 @@ const resetForm = () => {
 }
 
 .sale-order-detail-ledger__product-name {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 700;
   line-height: 19px;
@@ -1607,7 +1728,7 @@ const resetForm = () => {
 
 .sale-order-detail-ledger__product-meta {
   margin-top: 2px;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 11px;
   line-height: 16px;
 }
@@ -1631,21 +1752,21 @@ const resetForm = () => {
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 13px;
   line-height: 20px;
 }
 
 .sale-order-detail-timeline__label {
-  color: #64748b;
+  color: var(--erp-slate-500);
   min-width: 56px;
 }
 
 .sale-order-detail-timeline__reason {
   padding: 10px 12px;
   border-radius: 12px;
-  background: #f8fafc;
-  color: #475569;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-600);
   font-size: 13px;
   line-height: 20px;
 }
@@ -1663,7 +1784,7 @@ const resetForm = () => {
   background:
     radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 42%),
     linear-gradient(180deg, rgba(239, 246, 255, 0.98), rgba(255, 255, 255, 1));
-  color: #2563eb;
+  color: var(--erp-primary-600);
   font-size: 30px;
   font-weight: 800;
   line-height: 1.1;
@@ -1684,15 +1805,15 @@ const resetForm = () => {
   gap: 12px;
   padding: 11px 12px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
   border: 1px solid rgba(226, 232, 240, 0.9);
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 13px;
 }
 
 .sale-order-summary-panel__item strong,
 .sale-order-delivery-panel__metric strong {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 700;
   text-align: right;
@@ -1807,7 +1928,7 @@ const resetForm = () => {
 }
 
 .sale-order-items-toolbar__label {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 700;
 }
@@ -1816,7 +1937,7 @@ const resetForm = () => {
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(59, 130, 246, 0.08);
-  color: #2563eb;
+  color: var(--erp-primary-600);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1850,7 +1971,7 @@ const resetForm = () => {
 }
 
 .sale-order-summary-card__label {
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -1996,6 +2117,27 @@ const resetForm = () => {
   .sale-order-items-toolbar__title {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+.contract-terms-summary {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--erp-primary-50);
+  border: 1px solid var(--erp-primary-200);
+  border-radius: 8px;
+
+  &__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--erp-primary-700);
+    margin-bottom: 8px;
+  }
+
+  &__content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 </style>

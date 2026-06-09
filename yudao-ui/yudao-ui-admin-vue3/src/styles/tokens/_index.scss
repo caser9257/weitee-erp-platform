@@ -1,0 +1,11 @@
+// ============================================================
+//  ERP 设计系统 — Token 统一导出
+//  所有 SCSS 文件通过 @use '@/styles/tokens' 即可访问全部 Token
+// ============================================================
+
+@use 'colors';
+@use 'spacing';
+@use 'radius';
+@use 'shadows';
+@use 'typography';
+@use 'components';

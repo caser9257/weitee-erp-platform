@@ -31,6 +31,7 @@ export interface ErpFinanceExpenseVO {
   paidPrice?: number
   remainPrice?: number
   remark?: string
+  leaseContractNo?: string
   creator?: string
   creatorName?: string
   createTime?: string
@@ -65,6 +66,7 @@ export interface ErpFinanceExpenseSaveReqVO {
   accountId?: number
   expensePrice?: number
   remark?: string
+  leaseContractNo?: string
   items?: Array<{
     id?: number
     itemName?: string

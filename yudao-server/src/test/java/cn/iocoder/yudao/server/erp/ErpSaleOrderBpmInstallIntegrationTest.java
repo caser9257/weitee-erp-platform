@@ -134,7 +134,6 @@ class ErpSaleOrderBpmInstallIntegrationTest {
         LoginUser loginUser = new LoginUser();
         loginUser.setId(MANAGER_USER_ID);
         loginUser.setUserType(1);
-        loginUser.setTenantId(TENANT_ID);
         SecurityFrameworkUtils.setLoginUser(loginUser, new MockHttpServletRequest());
     }
 

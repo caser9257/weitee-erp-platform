@@ -50,6 +50,7 @@ public class ExpenseContextProvider implements ApprovalContextProvider {
                 .bizTitle("费用单 " + expense.getNo())
                 .amount(expense.getExpensePrice())
                 .startUserId(parseCreatorId(expense.getCreator()))
+                .detailUrl("/finance/expense/detail?id=" + expense.getId())
                 .variables(variables)
                 .notifyParams(notifyParams)
                 .build();

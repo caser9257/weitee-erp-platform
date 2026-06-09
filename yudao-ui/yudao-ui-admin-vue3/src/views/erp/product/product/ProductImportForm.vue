@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Dialog v-model="dialogVisible" title="产品导入" width="600">
     <div class="import-wizard">
       <div class="wizard-step mb-25px">
@@ -83,7 +83,7 @@
 </template>
 
 <script lang="ts" setup>
-import { getAccessToken, getTenantId } from '@/utils/auth'
+import { getAccessToken } from '@/utils/auth'
 import download from '@/utils/download'
 import request from '@/config/axios'
 import type { UploadInstance, UploadProps, UploadUserFile } from 'element-plus'
@@ -170,10 +170,7 @@ const buildUploadHeaders = () => {
   const headers: Record<string, string> = {
     Authorization: 'Bearer ' + getAccessToken()
   }
-  const tenantId = getTenantId()
-  if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
-    headers['tenant-id'] = String(tenantId)
-  }
+
   return headers
 }
 
@@ -195,8 +192,8 @@ const importTemplate = async () => {
   :deep(.el-upload-dragger) {
     width: 100%;
     padding: 30px 0;
-    border-color: #e2e8f0;
-    background-color: #f8fafc;
+    border-color: var(--erp-slate-200);
+    background-color: var(--erp-slate-50);
     transition: all 0.2s ease;
 
     &:hover {

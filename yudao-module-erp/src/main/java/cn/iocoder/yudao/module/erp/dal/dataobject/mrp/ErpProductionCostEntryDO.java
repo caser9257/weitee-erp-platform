@@ -37,5 +37,13 @@ public class ErpProductionCostEntryDO extends BaseDO {
     private BigDecimal amount;
 
     private String remark;
+    /**
+     * 来源单据编号（如盘点单ID）
+     */
+    private Long sourceId;
+    /**
+     * 来源单据号（如盘点单号）
+     */
+    private String sourceNo;
 
 }

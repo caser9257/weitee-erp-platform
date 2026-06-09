@@ -10,6 +10,7 @@ spring:
       - org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration # 默认 local 环境，不开启 Quartz 的自动配置
       - org.springframework.ai.vectorstore.qdrant.autoconfigure.QdrantVectorStoreAutoConfiguration # 禁用 AI 模块的 Qdrant，手动创建
       - org.springframework.ai.vectorstore.milvus.autoconfigure.MilvusVectorStoreAutoConfiguration # 禁用 AI 模块的 Milvus，手动创建
+      - org.jeecg.modules.jmreport.config.init.JimuReportConfiguration # 禁用积木报表本地启动初始化输出
   # 数据源配置项
   datasource:
     druid: # Druid 【监控】相关的全局配置
@@ -84,6 +85,14 @@ spring:
     port: 6379 # 端口
     database: 0 # 数据库索引
 #    password: dev # 密码，建议生产环境开启
+  ai:
+    vectorstore:
+      redis:
+        initialize-schema: false
+      qdrant:
+        initialize-schema: false
+      milvus:
+        initialize-schema: false
 
 --- #################### 定时任务相关配置 ####################
 
@@ -115,6 +124,9 @@ spring:
             class: org.quartz.simpl.SimpleThreadPool # 线程池类型
     jdbc: # 使用 JDBC 的 JobStore 的时候，JDBC 的配置
       initialize-schema: NEVER # 是否自动使用 SQL 初始化 Quartz 表结构。这里设置成 never ，我们手动创建表结构。
+
+flowable:
+  database-schema-update: false
 
 --- #################### 消息队列相关 ####################
 
@@ -149,6 +161,15 @@ management:
       base-path: /actuator # Actuator 提供的 API 接口的根目录。默认为 /actuator
       exposure:
         include: '*' # 需要开放的端点。默认值只打开 health 和 info 两个端点。通过设置 * ，可以开放所有端点。
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+knife4j:
+  enable: false
 
 # Spring Boot Admin 配置项
 spring:
@@ -191,8 +212,15 @@ logging:
     cn.iocoder.yudao.module.iot.service.rule: debug
     cn.iocoder.yudao.module.ai.dal.mysql: debug
     org.springframework.context.support.PostProcessorRegistrationDelegate: ERROR # TODO 芋艿：先禁用，Spring Boot 3.X 存在部分错误的 WARN 提示
+    org.jeecg.modules.jmreport: WARN
+    cn.iocoder.yudao.framework.banner: WARN
+    cn.iocoder.yudao.framework.banner.core.BannerApplicationRunner: WARN
 
 debug: false
+
+yudao:
+  banner:
+    enable: false
 
 --- #################### 微信公众号、小程序相关配置 ####################
 wx:

@@ -38,6 +38,16 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
                 ErpStockDO::getWarehouseId, warehouseId);
     }
 
+    /**
+     * 使用行锁查询库存（用于加权平均成本计算）
+     */
+    default ErpStockDO selectByProductIdAndWarehouseIdForUpdate(Long productId, Long warehouseId) {
+        return selectOne(new LambdaQueryWrapperX<ErpStockDO>()
+                .eq(ErpStockDO::getProductId, productId)
+                .eq(ErpStockDO::getWarehouseId, warehouseId)
+                .last("FOR UPDATE"));
+    }
+
     default int updateCountIncrement(Long id, BigDecimal count, boolean negativeEnable) {
         LambdaUpdateWrapper<ErpStockDO> updateWrapper = new LambdaUpdateWrapper<ErpStockDO>()
                 .eq(ErpStockDO::getId, id);

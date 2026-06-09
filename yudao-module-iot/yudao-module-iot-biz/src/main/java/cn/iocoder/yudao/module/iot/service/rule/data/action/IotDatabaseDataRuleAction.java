@@ -38,13 +38,12 @@ public class IotDatabaseDataRuleAction extends
 
             // 2. 构建并执行 INSERT SQL
             String sql = StrUtil.format(
-                    "INSERT INTO {} (id, device_id, tenant_id, method, report_time, data, create_time) VALUES (?, ?, ?, ?, ?, ?, NOW())",
+                    "INSERT INTO {} (id, device_id, method, report_time, data, create_time) VALUES (?, ?, ?, ?, ?, NOW())",
                     config.getTableName());
             String messageJson = JsonUtils.toJsonString(message);
             jdbcTemplate.update(sql,
                     message.getId(),
                     message.getDeviceId(),
-                    message.getTenantId(),
                     message.getMethod(),
                     message.getReportTime(),
                     messageJson);

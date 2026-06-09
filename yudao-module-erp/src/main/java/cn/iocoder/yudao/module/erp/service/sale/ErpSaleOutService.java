@@ -80,6 +80,14 @@ public interface ErpSaleOutService {
      */
     PageResult<ErpSaleOutDO> getSaleOutPage(ErpSaleOutPageReqVO pageReqVO);
 
+    /**
+     * 获得指定销售订单关联的出库单列表
+     *
+     * @param orderId 销售订单编号
+     * @return 出库单列表
+     */
+    List<ErpSaleOutDO> getSaleOutListByOrderId(Long orderId);
+
     // ==================== 销售出库项 ====================
 
     /**

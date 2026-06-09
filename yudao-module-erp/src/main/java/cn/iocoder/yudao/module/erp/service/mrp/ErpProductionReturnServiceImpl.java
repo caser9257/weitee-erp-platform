@@ -12,6 +12,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionReturnBatchDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionReturnDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionReturnItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionIssueBatchMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionIssueItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpProductionMaterialMapper;
@@ -22,6 +23,7 @@ import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockBatchService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.springframework.stereotype.Service;
@@ -69,6 +71,8 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
     private ErpStockBatchService stockBatchService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
 
@@ -178,9 +182,14 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                 stockBatchService.increaseBatch(new ErpStockBatchChangeReqBO(
                         batch.getStockBatchId(), batch.getReturnQty(), ErpStockRecordBizTypeEnum.PRODUCTION_RETURN.getType(),
                         productionReturn.getId(), returnItem.getId(), productionReturn.getReturnNo(), item.getRemark()));
+                // 获取加权平均成本作为退料价格
+                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                BigDecimal price = stock != null ? stock.getAverageCost() : null;
+                BigDecimal amount = price != null ? price.multiply(batch.getReturnQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                         item.getMaterialId(), item.getWarehouseId(), batch.getReturnQty(),
-                        ErpStockRecordBizTypeEnum.PRODUCTION_RETURN.getType(), productionReturn.getId(), returnItem.getId(), productionReturn.getReturnNo()));
+                        ErpStockRecordBizTypeEnum.PRODUCTION_RETURN.getType(), productionReturn.getId(), returnItem.getId(), productionReturn.getReturnNo(),
+                        price, amount));
                 erpProductionReturnBatchMapper.insert(new ErpProductionReturnBatchDO()
                         .setReturnItemId(returnItem.getId())
                         .setIssueBatchId(batch.getIssueBatchId())

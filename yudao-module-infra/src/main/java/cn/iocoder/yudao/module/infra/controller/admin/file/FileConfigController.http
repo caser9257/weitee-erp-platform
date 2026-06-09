@@ -1,11 +1,10 @@
 ### 请求 /infra/file-config/create 接口 => 成功
 POST {{baseUrl}}/infra/file-config/create
 Content-Type: application/json
-tenant-id: {{adminTenantId}}
 Authorization: Bearer {{token}}
 
 {
-  "name": "S3 - 七牛云",
+  "name": "S3 - 七牛�?,
   "remark": "",
   "storage": 20,
   "config": {
@@ -21,12 +20,11 @@ Authorization: Bearer {{token}}
 ### 请求 /infra/file-config/update 接口 => 成功
 PUT {{baseUrl}}/infra/file-config/update
 Content-Type: application/json
-tenant-id: {{adminTenantId}}
 Authorization: Bearer {{token}}
 
 {
   "id": 2,
-  "name": "S3 - 七牛云",
+  "name": "S3 - 七牛�?,
   "remark": "",
   "config": {
     "accessKey": "b7yvuhBSAGjmtPhMFcn9iMOxUOY_I06cA_p0ZUx8",
@@ -41,5 +39,5 @@ Authorization: Bearer {{token}}
 ### 请求 /infra/file-config/test 接口 => 成功
 GET {{baseUrl}}/infra/file-config/test?id=2
 Content-Type: application/json
-tenant-id: {{adminTenantId}}
 Authorization: Bearer {{token}}
+

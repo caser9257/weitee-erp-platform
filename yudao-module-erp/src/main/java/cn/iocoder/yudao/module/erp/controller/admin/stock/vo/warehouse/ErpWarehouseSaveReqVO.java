@@ -48,4 +48,7 @@ public class ErpWarehouseSaveReqVO {
     @InEnum(CommonStatusEnum.class)
     private Integer status;
 
+    @Schema(description = "是否冻结（盘点期间使用）", example = "false")
+    private Boolean frozen;
+
 }

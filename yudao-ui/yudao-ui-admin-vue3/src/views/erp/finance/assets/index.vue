@@ -1,12 +1,13 @@
-<template>
+﻿<template>
   <div class="finance-asset-page">
     <ContentWrap>
       <div class="finance-asset-page__hero">
         <div>
-          <div class="finance-asset-page__title">固定资产台账</div>
+          <div class="finance-asset-page__title">资产台账</div>
           <div class="finance-asset-page__summary">
-            统一维护固定资产卡片、候选入账、折旧参数和净值信息，支撑后续财务核算。
+            维护固定资产和无形资产卡片、候选入账、折旧/摊销参数和净值信息，支撑后续财务核算。
           </div>
+        </div>
         </div>
         <div class="finance-asset-page__hero-actions">
           <el-tag effect="light" round>资产管理</el-tag>
@@ -90,12 +91,12 @@
           </el-button>
           <el-button type="success" plain :disabled="generatingDepreciation" @click="openDepreciationDialog">
             <Icon icon="ep:histogram" class="mr-5px" />
-            生成折旧
+            生成折旧/摊销
           </el-button>
         </div>
       </div>
 
-      <el-result v-if="listErrorMessage && !assetList.length" icon="error" title="固定资产列表加载失败">
+      <el-result v-if="listErrorMessage && !assetList.length" icon="error" title="资产列表加载失败">
         <template #extra>
           <el-button type="primary" @click="getAssetList">重试</el-button>
         </template>
@@ -148,13 +149,13 @@
             <el-table-column label="原值" align="right" min-width="120">
               <template #default="{ row }">{{ formatAmount(row.originalAmount) }}</template>
             </el-table-column>
-            <el-table-column label="累计折旧" align="right" min-width="120">
+            <el-table-column label="累计折旧/摊销" align="right" min-width="120">
               <template #default="{ row }">{{ formatAmount(row.depreciatedAmount) }}</template>
             </el-table-column>
             <el-table-column label="净值" align="right" min-width="120">
               <template #default="{ row }">{{ formatAmount(row.currentAmount) }}</template>
             </el-table-column>
-            <el-table-column label="折旧方式" min-width="140">
+            <el-table-column label="折旧/摊销方式" min-width="140">
               <template #default="{ row }">
                 <div class="finance-asset-page__primary-cell">
                   <span class="finance-asset-page__muted-text">{{ row.depreciationMethod || '-' }}</span>
@@ -205,7 +206,7 @@
             </el-table-column>
           </el-table>
         </div>
-        <el-empty v-else description="暂无固定资产数据" />
+        <el-empty v-else description="暂无资产数据" />
       </template>
 
       <Pagination
@@ -219,7 +220,7 @@
 
     <Dialog
       v-model="assetDialogOpen"
-      :title="assetDialogMode === 'create' ? '新增固定资产' : '编辑固定资产'"
+      :title="assetDialogMode === 'create' ? '新增资产' : '编辑资产'"
       width="760px"
       scroll
       maxHeight="78vh"
@@ -233,6 +234,15 @@
         class="finance-asset-page__dialog-form"
       >
         <div class="finance-asset-page__dialog-grid">
+          <el-form-item label="资产类型" prop="assetType">
+            <el-radio-group v-model="assetForm.assetType" @change="handleAssetTypeChange">
+              <el-radio :value="0">固定资产</el-radio>
+              <el-radio :value="1">无形资产</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item v-if="isIntangibleAsset" label="子分类" prop="subCategory">
+            <el-input v-model="assetForm.subCategory" placeholder="如：专利权、软件著作权" />
+          </el-form-item>
           <el-form-item label="资产名称" prop="name">
             <el-input v-model="assetForm.name" placeholder="请输入资产名称" />
           </el-form-item>
@@ -251,15 +261,15 @@
           <el-form-item label="残值率" prop="salvageRate">
             <el-input-number v-model="assetForm.salvageRate" :min="0" :max="1" :step="0.01" :precision="2" class="!w-full" />
           </el-form-item>
-          <el-form-item label="折旧方式" prop="depreciationMethod">
-            <el-select v-model="assetForm.depreciationMethod" placeholder="请选择折旧方式" class="!w-full">
+          <el-form-item :label="depreciationLabel + '方式'" prop="depreciationMethod">
+            <el-select v-model="assetForm.depreciationMethod" :placeholder="'请选择' + depreciationLabel + '方式'" class="!w-full">
               <el-option label="年限平均法" value="年限平均法" />
             </el-select>
           </el-form-item>
-          <el-form-item label="折旧月数" prop="depreciationPeriodMonths">
+          <el-form-item :label="depreciationLabel + '月数'" prop="depreciationPeriodMonths">
             <el-input-number v-model="assetForm.depreciationPeriodMonths" :min="1" :precision="0" class="!w-full" />
           </el-form-item>
-          <el-form-item label="折旧起始期间" prop="depreciationStartPeriod">
+          <el-form-item :label="depreciationLabel + '起始期间'" prop="depreciationStartPeriod">
             <el-input v-model="assetForm.depreciationStartPeriod" placeholder="请输入如 2026-05" />
           </el-form-item>
           <el-form-item label="来源业务单号" prop="sourceBizNo">
@@ -355,7 +365,7 @@
 
     <Dialog
       v-model="candidateConfirmDialogOpen"
-      title="确认生成固定资产"
+      title="确认生成资产"
       width="760px"
       scroll
       maxHeight="78vh"
@@ -414,6 +424,15 @@
         class="finance-asset-page__dialog-form"
       >
         <div class="finance-asset-page__dialog-grid">
+          <el-form-item label="资产类型" prop="assetType">
+            <el-radio-group v-model="candidateConfirmForm.assetType" @change="handleCandidateAssetTypeChange">
+              <el-radio :value="0">固定资产</el-radio>
+              <el-radio :value="1">无形资产</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item v-if="candidateConfirmForm.assetType === 1" label="子分类" prop="subCategory">
+            <el-input v-model="candidateConfirmForm.subCategory" placeholder="如：专利权、软件著作权" />
+          </el-form-item>
           <el-form-item label="资产名称" prop="name">
             <el-input v-model="candidateConfirmForm.name" placeholder="请输入资产名称" />
           </el-form-item>
@@ -432,15 +451,15 @@
           <el-form-item label="残值率" prop="salvageRate">
             <el-input-number v-model="candidateConfirmForm.salvageRate" :min="0" :max="1" :step="0.01" :precision="2" class="!w-full" />
           </el-form-item>
-          <el-form-item label="折旧方式" prop="depreciationMethod">
-            <el-select v-model="candidateConfirmForm.depreciationMethod" placeholder="请选择折旧方式" class="!w-full">
+          <el-form-item :label="(candidateConfirmForm.assetType === 1 ? '摊销' : '折旧') + '方式'" prop="depreciationMethod">
+            <el-select v-model="candidateConfirmForm.depreciationMethod" :placeholder="'请选择' + (candidateConfirmForm.assetType === 1 ? '摊销' : '折旧') + '方式'" class="!w-full">
               <el-option label="年限平均法" value="年限平均法" />
             </el-select>
           </el-form-item>
-          <el-form-item label="折旧月数" prop="depreciationPeriodMonths">
+          <el-form-item :label="(candidateConfirmForm.assetType === 1 ? '摊销' : '折旧') + '月数'" prop="depreciationPeriodMonths">
             <el-input-number v-model="candidateConfirmForm.depreciationPeriodMonths" :min="1" :precision="0" class="!w-full" />
           </el-form-item>
-          <el-form-item label="折旧起始期间" prop="depreciationStartPeriod">
+          <el-form-item :label="(candidateConfirmForm.assetType === 1 ? '摊销' : '折旧') + '起始期间'" prop="depreciationStartPeriod">
             <el-input v-model="candidateConfirmForm.depreciationStartPeriod" placeholder="请输入如 2026-05" />
           </el-form-item>
           <el-form-item label="备注" prop="remark" class="finance-asset-page__dialog-grid-span">
@@ -456,14 +475,14 @@
 
     <Dialog
       v-model="depreciationDialogOpen"
-      title="生成折旧"
+      title="生成折旧/摊销"
       width="520px"
       scroll
       maxHeight="72vh"
       @closed="resetDepreciationDialog"
     >
       <el-form label-width="110px">
-        <el-form-item label="折旧期间">
+        <el-form-item label="折旧/摊销期间">
           <el-input v-model="depreciationPeriod" placeholder="请输入如 2026-05" />
         </el-form-item>
       </el-form>
@@ -496,7 +515,7 @@
                 <strong>{{ formatAmount(assetDetail.originalAmount) }}</strong>
               </div>
               <div>
-                <span>累计折旧</span>
+                <span>{{ assetDetail.assetType === 1 ? '累计摊销' : '累计折旧' }}</span>
                 <strong>{{ formatAmount(assetDetail.depreciatedAmount) }}</strong>
               </div>
               <div>
@@ -514,8 +533,8 @@
               <div><span>购置日期</span><strong>{{ formatDateValue(assetDetail.purchaseDate) }}</strong></div>
               <div><span>启用日期</span><strong>{{ formatDateValue(assetDetail.startUseDate) }}</strong></div>
               <div><span>状态</span><strong>{{ getAssetStatusLabel(assetDetail.status) }}</strong></div>
-              <div><span>折旧方式</span><strong>{{ assetDetail.depreciationMethod || '-' }}</strong></div>
-              <div><span>折旧期间</span><strong>{{ assetDetail.depreciationStartPeriod || '-' }}</strong></div>
+              <div><span>{{ assetDetail.assetType === 1 ? '摊销方式' : '折旧方式' }}</span><strong>{{ assetDetail.depreciationMethod || '-' }}</strong></div>
+              <div><span>{{ assetDetail.assetType === 1 ? '摊销期间' : '折旧期间' }}</span><strong>{{ assetDetail.depreciationStartPeriod || '-' }}</strong></div>
             </div>
           </div>
 
@@ -558,7 +577,7 @@
           </div>
 
           <div class="finance-asset-page__detail-block">
-            <div class="finance-asset-page__detail-block-title">折旧记录</div>
+            <div class="finance-asset-page__detail-block-title">{{ assetDetail.assetType === 1 ? '摊销记录' : '折旧记录' }}</div>
             <div v-if="depreciationList.length" class="finance-asset-page__depreciation-list">
               <div v-for="item in depreciationList" :key="item.id" class="finance-asset-page__depreciation-item">
                 <div class="finance-asset-page__depreciation-head">
@@ -566,11 +585,11 @@
                   <strong>{{ formatAmount(item.depreciationAmount) }}</strong>
                 </div>
                 <div class="finance-asset-page__muted-text">
-                  累计折旧 {{ formatAmount(item.afterDepreciatedAmount) }}，净值 {{ formatAmount(item.afterCurrentAmount) }}
+                  {{ assetDetail.assetType === 1 ? '累计摊销' : '累计折旧' }} {{ formatAmount(item.afterDepreciatedAmount) }}，净值 {{ formatAmount(item.afterCurrentAmount) }}
                 </div>
               </div>
             </div>
-            <el-empty v-else description="暂无折旧记录" />
+            <el-empty v-else :description="'暂无' + (assetDetail.assetType === 1 ? '摊销' : '折旧') + '记录'" />
           </div>
         </template>
       </div>
@@ -890,6 +909,8 @@ const assetForm = reactive<FinanceAssetVO>({
   name: '',
   categoryName: '',
   sourceType: 0,
+  assetType: 0,
+  subCategory: '',
   originalAmount: 0,
   salvageRate: 0.05,
   depreciationMethod: '年限平均法',
@@ -898,12 +919,17 @@ const assetForm = reactive<FinanceAssetVO>({
   remark: ''
 })
 
+const isIntangibleAsset = computed(() => assetForm.assetType === 1)
+const depreciationLabel = computed(() => isIntangibleAsset.value ? '摊销' : '折旧')
+
 const candidateConfirmForm = reactive<any>({
   candidateId: undefined,
   sourceType: 0,
   sourceBizId: undefined,
   sourceBizNo: '',
   sourceRemark: '',
+  assetType: 0,
+  subCategory: '',
   name: '',
   categoryName: '',
   purchaseDate: '',
@@ -1182,6 +1208,22 @@ const submitAssetForm = async () => {
   }
 }
 
+const handleAssetTypeChange = (value: number) => {
+  if (value === 1) {
+    assetForm.salvageRate = 0
+  } else {
+    assetForm.salvageRate = 0.05
+  }
+}
+
+const handleCandidateAssetTypeChange = (value: number) => {
+  if (value === 1) {
+    candidateConfirmForm.salvageRate = 0
+  } else {
+    candidateConfirmForm.salvageRate = 0.05
+  }
+}
+
 const resetAssetDialog = () => {
   assetFormRef.value?.resetFields()
   Object.assign(assetForm, {
@@ -1189,6 +1231,8 @@ const resetAssetDialog = () => {
     name: '',
     categoryName: '',
     sourceType: 0,
+    assetType: 0,
+    subCategory: '',
     sourceBizId: undefined,
     sourceBizNo: '',
     purchaseDate: '',
@@ -1286,6 +1330,8 @@ const resetCandidateConfirmDialog = () => {
     sourceBizId: undefined,
     sourceBizNo: '',
     sourceRemark: '',
+    assetType: 0,
+    subCategory: '',
     name: '',
     categoryName: '',
     purchaseDate: '',
@@ -1372,14 +1418,14 @@ onMounted(() => {
 
 .finance-asset-page__title,
 .finance-asset-page__toolbar-title {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 20px;
   font-weight: 700;
 }
 
 .finance-asset-page__summary {
   margin-top: 6px;
-  color: #64748b;
+  color: var(--erp-slate-500);
   line-height: 1.7;
 }
 
@@ -1426,7 +1472,7 @@ onMounted(() => {
 
 .finance-asset-page__primary-text {
   overflow: hidden;
-  color: #1e293b;
+  color: var(--erp-slate-800);
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1434,7 +1480,7 @@ onMounted(() => {
 
 .finance-asset-page__muted-text {
   overflow: hidden;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1464,7 +1510,7 @@ onMounted(() => {
   margin-bottom: 16px;
   padding: 20px 24px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  background: linear-gradient(135deg, var(--erp-slate-900) 0%, var(--erp-primary-800) 100%);
   color: #fff;
 }
 
@@ -1549,7 +1595,7 @@ onMounted(() => {
   margin-top: 8px;
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--erp-slate-900);
 }
 
 .finance-asset-page__context-stat strong {
@@ -1574,7 +1620,7 @@ onMounted(() => {
 .finance-asset-page__detail-card {
   padding: 20px;
   border-radius: 16px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+  background: linear-gradient(135deg, var(--erp-slate-900) 0%, var(--erp-primary-800) 100%);
   color: #fff;
 }
 
@@ -1613,7 +1659,7 @@ onMounted(() => {
 
 .finance-asset-page__detail-block {
   padding: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 16px;
   background: #fff;
 }
@@ -1624,7 +1670,7 @@ onMounted(() => {
 
 .finance-asset-page__detail-block-title {
   margin-bottom: 12px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 15px;
   font-weight: 700;
 }
@@ -1637,14 +1683,14 @@ onMounted(() => {
 
 .finance-asset-page__detail-grid span {
   display: block;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
 }
 
 .finance-asset-page__detail-grid strong {
   display: block;
   margin-top: 4px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 600;
 }
@@ -1657,14 +1703,14 @@ onMounted(() => {
 
 .finance-asset-page__trace-item {
   padding: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 14px;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
 }
 
 .finance-asset-page__trace-item--matched {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
+  border-color: var(--erp-success-200);
+  background: var(--erp-success-50);
 }
 
 .finance-asset-page__trace-item-head {
@@ -1674,7 +1720,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 8px 12px;
   margin-bottom: 12px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
 }
 
 .finance-asset-page__trace-item-grid {
@@ -1685,14 +1731,14 @@ onMounted(() => {
 
 .finance-asset-page__trace-item-grid span {
   display: block;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
 }
 
 .finance-asset-page__trace-item-grid strong {
   display: block;
   margin-top: 4px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 600;
 }
@@ -1706,7 +1752,7 @@ onMounted(() => {
 .finance-asset-page__depreciation-item {
   padding: 12px 14px;
   border-radius: 12px;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
 }
 
 .finance-asset-page__depreciation-head {
@@ -1715,7 +1761,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 6px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
 }
 
 @media (max-width: 1200px) {

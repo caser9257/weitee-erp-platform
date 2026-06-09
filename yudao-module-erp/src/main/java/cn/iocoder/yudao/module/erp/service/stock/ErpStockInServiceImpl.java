@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.in.ErpStockInPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.in.ErpStockInSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockInDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockInItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockInItemMapper;
@@ -58,6 +59,8 @@ public class ErpStockInServiceImpl implements ErpStockInService {
     private ErpSupplierService supplierService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -130,9 +133,14 @@ public class ErpStockInServiceImpl implements ErpStockInService {
                 : ErpStockRecordBizTypeEnum.OTHER_IN_CANCEL.getType();
         stockInItems.forEach(stockInItem -> {
             BigDecimal count = approve ? stockInItem.getCount() : stockInItem.getCount().negate();
+            // 获取加权平均成本作为入库价格
+            ErpStockDO stock = stockService.getStock(stockInItem.getProductId(), stockInItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockInItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     stockInItem.getProductId(), stockInItem.getWarehouseId(), count,
-                    bizType, stockInItem.getInId(), stockInItem.getId(), stockIn.getNo()));
+                    bizType, stockInItem.getInId(), stockInItem.getId(), stockIn.getNo(),
+                    price, amount));
         });
     }
 

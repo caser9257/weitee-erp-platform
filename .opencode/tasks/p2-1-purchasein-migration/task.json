@@ -1,0 +1,15 @@
+{
+  "id": "p2-1-purchasein-migration",
+  "title": "P2-1 PurchaseIn 迁移到统一审批运行时门面",
+  "status": "pending",
+  "phase": "实现",
+  "gate": null,
+  "description": "消除旧接法残留。为采购入库补齐 PurchaseInContextProvider 和 PurchaseInResultHandler，提交/撤回改走 approvalRuntimeService。",
+  "files": [
+    "yudao-module-erp/src/main/java/cn/iocoder/yudao/module/erp/service/purchase/ErpPurchaseInBpmServiceImpl.java",
+    "yudao-module-erp/src/main/java/cn/iocoder/yudao/module/erp/service/purchase/approval/PurchaseInContextProvider.java",
+    "yudao-module-erp/src/main/java/cn/iocoder/yudao/module/erp/service/purchase/approval/PurchaseInResultHandler.java"
+  ],
+  "created_at": "2026-06-01T08:02:03.275Z",
+  "updated_at": "2026-06-01T08:02:03.275Z"
+}

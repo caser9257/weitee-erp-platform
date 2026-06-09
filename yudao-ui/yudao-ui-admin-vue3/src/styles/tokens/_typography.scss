@@ -1,0 +1,40 @@
+// ============================================================
+//  ERP 设计系统 — 字体 Token
+//  统一字体族、字号、行高、字重
+// ============================================================
+
+// ── 字体族 ──────────────────────────────────────────────────
+$erp-font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+                 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$erp-font-mono:  'JetBrains Mono', 'Cascadia Code', 'SF Mono',
+                 'Fira Code', Consolas, 'Liberation Mono', Menlo, monospace;
+
+// ── 字号 ────────────────────────────────────────────────────
+$erp-text-xs:    12px;    // 辅助文本、标签、注释
+$erp-text-sm:    13px;    // 表格正文、次要信息
+$erp-text-base:  14px;    // 默认正文
+$erp-text-md:    16px;    // 小标题、卡片标题
+$erp-text-lg:    18px;    // 区块标题
+$erp-text-xl:    20px;    // 页面标题
+$erp-text-2xl:   24px;    // 大标题
+$erp-text-3xl:   30px;    // 数字高亮（金额大字）
+$erp-text-4xl:   36px;    // KPI 指标大字
+
+// ── 行高 ────────────────────────────────────────────────────
+$erp-leading-tight:  1.25;  // 紧凑（标题、表格）
+$erp-leading-normal: 1.5;   // 默认正文
+$erp-leading-relaxed: 1.75; // 宽松（长段落）
+
+// ── 字重 ────────────────────────────────────────────────────
+$erp-font-normal:   400;   // 正文
+$erp-font-medium:   500;   // 次要强调（表头、按钮文字）
+$erp-font-semibold: 600;   // 标题、金额
+$erp-font-bold:     700;   // 重点强调
+
+// ── 行为映射 ────────────────────────────────────────────────
+//  正文：14px / 1.5 / 400
+//  表头：13px / 1.25 / 600
+//  标题：16px / 1.25 / 600
+//  金额：等宽字体 / 右对齐 / 加粗
+//  辅助：12px / 1.5 / 400 / slate-500

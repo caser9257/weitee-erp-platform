@@ -4,6 +4,7 @@ import cn.iocoder.yudao.module.system.framework.justauth.core.AuthRequestFactory
 import com.xkcoding.justauth.autoconfigure.JustAuthProperties;
 import com.xkcoding.justauth.support.cache.RedisStateCache;
 import me.zhyd.oauth.cache.AuthStateCache;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,12 @@ import org.springframework.data.redis.core.RedisTemplate;
  */
 @Configuration(proxyBeanMethods = false)
 public class YudaoJustAuthConfiguration {
+
+    @Bean
+    @ConfigurationProperties(prefix = "justauth")
+    public JustAuthProperties justAuthProperties() {
+        return new JustAuthProperties();
+    }
 
     @Bean(name = "authRequestFactory2") // TODO @芋艿：等 justauth1.4.1 发布，可以去掉
     @ConditionalOnProperty(

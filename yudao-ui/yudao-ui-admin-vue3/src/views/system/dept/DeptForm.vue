@@ -40,6 +40,15 @@
       <el-form-item label="邮箱" prop="email">
         <el-input v-model="formData.email" maxlength="50" placeholder="请输入邮箱" />
       </el-form-item>
+      <el-form-item label="成本类型" prop="costType">
+        <el-select v-model="formData.costType" placeholder="请选择成本类型" clearable>
+          <el-option label="不归集" :value="0" />
+          <el-option label="制造费用" :value="1" />
+          <el-option label="管理费用" :value="2" />
+          <el-option label="销售费用" :value="3" />
+          <el-option label="研发支出" :value="4" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="formData.status" clearable placeholder="请选择状态">
           <el-option
@@ -83,6 +92,7 @@ const formData = ref({
   leaderUserId: undefined,
   phone: undefined,
   email: undefined,
+  costType: 0,
   status: CommonStatusEnum.ENABLE
 })
 const formRules = reactive<FormRules>({
@@ -156,6 +166,7 @@ const resetForm = () => {
     leaderUserId: undefined,
     phone: undefined,
     email: undefined,
+    costType: 0,
     status: CommonStatusEnum.ENABLE
   }
   formRef.value?.resetFields()

@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptItemDO;
 
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -80,5 +81,13 @@ public interface ErpFinanceReceiptService {
      * @return 收款单项 List
      */
     List<ErpFinanceReceiptItemDO> getFinanceReceiptItemListByReceiptIds(Collection<Long> receiptIds);
+
+    /**
+     * 获得订单的已收款金额
+     *
+     * @param orderId 订单编号
+     * @return 已收款金额
+     */
+    BigDecimal getReceivedAmountByOrderId(Long orderId);
 
 }

@@ -1,0 +1,73 @@
+package cn.iocoder.yudao.module.erp.controller.admin.sale;
+
+import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseCheckReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseResultVO;
+import cn.iocoder.yudao.module.erp.service.sale.ErpShipmentReleaseService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.annotation.Resource;
+
+import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+
+/**
+ * 发货放行审核 Controller
+ *
+ * @author system
+ */
+@Tag(name = "ERP - 发货放行审核")
+@RestController
+@RequestMapping("/erp/shipment-release")
+@Validated
+@Slf4j
+public class ErpShipmentReleaseController {
+
+    @Resource
+    private ErpShipmentReleaseService erpShipmentReleaseService;
+
+    @PostMapping("/check")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:check')")
+    @Operation(summary = "校验发货放行")
+    public CommonResult<ShipmentReleaseResultVO> checkRelease(@Validated @RequestBody ShipmentReleaseCheckReqVO reqVO) {
+        ShipmentReleaseResultVO result = erpShipmentReleaseService.checkRelease(reqVO.getOrderId());
+        return success(result);
+    }
+
+    @PostMapping("/submit-finance")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:submit')")
+    @Operation(summary = "提交财务审核")
+    public CommonResult<Boolean> submitFinanceApproval(
+            @RequestParam("orderId") Long orderId,
+            @RequestParam("approverId") Long approverId) {
+        erpShipmentReleaseService.submitFinanceApproval(orderId, approverId);
+        return success(true);
+    }
+
+    @PostMapping("/approve")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:approve')")
+    @Operation(summary = "财务审核通过")
+    public CommonResult<Boolean> approveFinance(
+            @RequestParam("orderId") Long orderId,
+            @RequestParam("approverId") Long approverId,
+            @RequestParam(value = "remark", required = false) String remark) {
+        erpShipmentReleaseService.approveFinance(orderId, approverId, remark);
+        return success(true);
+    }
+
+    @PostMapping("/reject")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:reject')")
+    @Operation(summary = "财务审核驳回")
+    public CommonResult<Boolean> rejectFinance(
+            @RequestParam("orderId") Long orderId,
+            @RequestParam("approverId") Long approverId,
+            @RequestParam("reason") String reason) {
+        erpShipmentReleaseService.rejectFinance(orderId, approverId, reason);
+        return success(true);
+    }
+
+}

@@ -49,7 +49,7 @@ public class BpmTaskServiceImplTest {
 
     @Test
     public void testGetTaskTodoPage_applyTenantFilterWhenTenantPresent() {
-        setLoginUser(1L);
+        setLoginUser();
         try {
             BpmTaskPageReqVO pageVO = new BpmTaskPageReqVO();
 
@@ -61,11 +61,10 @@ public class BpmTaskServiceImplTest {
         }
     }
 
-    private static void setLoginUser(Long tenantId) {
+    private static void setLoginUser() {
         LoginUser loginUser = new LoginUser();
         loginUser.setId(1L);
         loginUser.setUserType(1);
-        loginUser.setTenantId(tenantId);
         SecurityFrameworkUtils.setLoginUser(loginUser, new MockHttpServletRequest());
     }
 

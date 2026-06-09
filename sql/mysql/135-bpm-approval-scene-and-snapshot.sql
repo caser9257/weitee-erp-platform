@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_instance_snapshot`
     `deleted`               BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
     `tenant_id`             BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_bpm_approval_instance_snapshot_scene_biz` (`scene_code`, `biz_id`, `deleted`),
     KEY `idx_bpm_approval_instance_snapshot_scene_code` (`scene_code`),
     KEY `idx_bpm_approval_instance_snapshot_biz_id` (`biz_id`),
     KEY `idx_bpm_approval_instance_snapshot_process_instance_id` (`process_instance_id`)
@@ -54,3 +55,9 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_instance_snapshot`
 -- 为已有数据库补充 notify_json 字段（新建库已由 53 号 SQL 包含）
 ALTER TABLE `bpm_approval_scheme_version`
     ADD COLUMN `notify_json` MEDIUMTEXT DEFAULT NULL COMMENT '通知配置 JSON' AFTER `published_time`;
+
+-- 为已有数据库补充 scene_code + biz_id 唯一约束（防止重复提交审批）
+-- 注意：1）执行前需确认不存在重复数据，如有重复需先清理
+--       2）包含 deleted 字段以兼容软删除场景（已完结审批重新提交时先软删除旧快照）
+ALTER TABLE `bpm_approval_instance_snapshot`
+    ADD UNIQUE KEY `uk_bpm_approval_instance_snapshot_scene_biz` (`scene_code`, `biz_id`, `deleted`);

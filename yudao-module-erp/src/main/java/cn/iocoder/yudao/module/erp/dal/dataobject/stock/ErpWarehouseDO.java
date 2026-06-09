@@ -70,5 +70,9 @@ public class ErpWarehouseDO extends BaseDO {
      * 是否默认
      */
     private Boolean defaultStatus;
+    /**
+     * 是否冻结（盘点期间使用）
+     */
+    private Boolean frozen;
 
 }

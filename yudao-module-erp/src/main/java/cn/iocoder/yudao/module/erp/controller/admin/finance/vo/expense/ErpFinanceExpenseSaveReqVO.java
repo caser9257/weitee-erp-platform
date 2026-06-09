@@ -59,6 +59,9 @@ public class ErpFinanceExpenseSaveReqVO {
     @Schema(description = "备注", example = "零星采购")
     private String remark;
 
+    @Schema(description = "租赁合同编号", example = "LEASE-2026-001")
+    private String leaseContractNo;
+
     @Schema(description = "费用明细列表")
     @Valid
     private List<Item> items;

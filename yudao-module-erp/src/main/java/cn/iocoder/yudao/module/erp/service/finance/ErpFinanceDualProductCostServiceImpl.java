@@ -113,9 +113,12 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
 
         try {
             // 2. 删除该范围的旧结果和明细
+            //    当 productId 为 null 时，删除该期间所有结果（全量重建）
             LambdaQueryWrapperX<ErpFinanceDualProductCostResultDO> deleteQuery = new LambdaQueryWrapperX<ErpFinanceDualProductCostResultDO>()
-                    .eq(ErpFinanceDualProductCostResultDO::getProductId, productId)
                     .eq(ErpFinanceDualProductCostResultDO::getPeriod, period);
+            if (productId != null) {
+                deleteQuery.eq(ErpFinanceDualProductCostResultDO::getProductId, productId);
+            }
             if (reqVO.getProductionOrderId() != null) {
                 deleteQuery.eq(ErpFinanceDualProductCostResultDO::getProductionOrderId, reqVO.getProductionOrderId());
             }
@@ -264,33 +267,14 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
 
     @Override
     public int rebuildBatchByPeriod(Long userId, String period, String remark) {
-        // 查出该期间所有有自制入库/委外入库凭证的产品
-        List<ErpFinanceVoucherDO> vouchers = voucherMapper.selectList(
-                new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
-                        .in(ErpFinanceVoucherDO::getBizType,
-                                ErpBizTypeEnum.PRODUCTION_INBOUND.getType(),
-                                ErpBizTypeEnum.OUTSOURCE_INBOUND.getType())
-                        .ge(ErpFinanceVoucherDO::getVoucherTime, parsePeriodStart(period))
-                        .le(ErpFinanceVoucherDO::getVoucherTime, parsePeriodEnd(period)));
-        Set<Long> productIds = vouchers.stream()
-                .map(v -> (Long) null) // 凭证上暂无 productId，用 null 触发全量重跑
-                .collect(Collectors.toSet());
-        productIds.add(null); // 确保至少执行一次
-
-        int successCount = 0;
-        for (Long pid : productIds) {
-            try {
-                ErpFinanceDualProductCostRebuildReqVO reqVO = new ErpFinanceDualProductCostRebuildReqVO();
-                reqVO.setProductId(pid != null ? pid : 0L);
-                reqVO.setPeriod(period);
-                reqVO.setRemark(remark != null ? remark : "批量重跑");
-                rebuildProductDualCost(userId, reqVO);
-                successCount++;
-            } catch (Exception e) {
-                log.warn("批量重跑跳过产品: productId={}, period={}, error={}", pid, period, e.getMessage());
-            }
-        }
-        return successCount;
+        // 按期间批量重跑：先删除该期间所有产品级结果，再执行一次全量重建
+        // 注意：当前凭证上暂无 productId，无法按产品拆分，因此采用全量重建策略
+        ErpFinanceDualProductCostRebuildReqVO reqVO = new ErpFinanceDualProductCostRebuildReqVO();
+        reqVO.setProductId(null); // null 表示全量重建，不限定产品
+        reqVO.setPeriod(period);
+        reqVO.setRemark(remark != null ? remark : "批量重跑");
+        rebuildProductDualCost(userId, reqVO);
+        return 1;
     }
 
     @Override
@@ -446,25 +430,31 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
 
     /**
      * 根据科目编码判断成本构成类型
-     * 10-材料（原材料、包装物等）
-     * 20-人工（应付职工薪酬等）
-     * 30-制造费用（折旧、电费、其他制造费用等）
+     *
+     * 科目前缀 → 成本构成类型映射：
+     * - 1403（原材料）、1405（库存商品）、1406（包装物） → 10-材料
+     * - 2211（应付职工薪酬） → 20-人工
+     * - 5101（制造费用） → 30-制造费用
+     *
+     * 注意：当前为硬编码映射，如企业科目体系不同需修改此处。
+     *      后续可考虑将映射关系存入数据库配置表。
      */
+    private static final Map<String, Integer> SUBJECT_CODE_TO_COST_TYPE = new java.util.LinkedHashMap<>() {{
+        put("1403", 10); // 原材料 → 材料
+        put("1405", 10); // 库存商品 → 材料
+        put("1406", 10); // 包装物 → 材料
+        put("2211", 20); // 应付职工薪酬 → 人工
+        put("5101", 30); // 制造费用 → 制造费用
+    }};
+
     private Integer resolveCostComponentType(String subjectCode) {
         if (subjectCode == null || subjectCode.isEmpty()) {
             return 30; // 默认归入制造费用
         }
-        // 材料类科目：1403原材料、1405库存商品、1406包装物
-        if (subjectCode.startsWith("1403") || subjectCode.startsWith("1405") || subjectCode.startsWith("1406")) {
-            return 10;
-        }
-        // 人工类科目：2211应付职工薪酬
-        if (subjectCode.startsWith("2211")) {
-            return 20;
-        }
-        // 制造费用类科目：5101制造费用
-        if (subjectCode.startsWith("5101")) {
-            return 30;
+        for (Map.Entry<String, Integer> entry : SUBJECT_CODE_TO_COST_TYPE.entrySet()) {
+            if (subjectCode.startsWith(entry.getKey())) {
+                return entry.getValue();
+            }
         }
         return 30; // 默认归入制造费用
     }

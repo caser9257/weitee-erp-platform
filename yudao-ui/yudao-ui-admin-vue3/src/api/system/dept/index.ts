@@ -9,6 +9,7 @@ export interface DeptVO {
   leaderUserId: number
   phone: string
   email: string
+  costType: number
   createTime: Date
 }
 

@@ -22,10 +22,7 @@ public class IotDeviceRespDTO {
      * 设备名称
      */
     private String deviceName;
-    /**
-     * 租户编号
-     */
-    private Long tenantId;
+
 
     // ========== 产品相关字段 ==========
 

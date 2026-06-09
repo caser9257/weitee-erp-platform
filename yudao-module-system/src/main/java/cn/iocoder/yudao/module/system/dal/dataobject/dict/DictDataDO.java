@@ -62,4 +62,10 @@ public class DictDataDO extends BaseDO {
      */
     private String remark;
 
+    /**
+     * 业务属性JSON
+     * 用于存储扩展的业务配置信息，如费用类型的特殊属性
+     */
+    private String bizAttributes;
+
 }

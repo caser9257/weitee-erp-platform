@@ -2,3 +2,12 @@
 $namespace: v;
 // el命名空间
 $elNamespace: el;
+
+// ── ERP 设计系统 Token 全局注入 ─────────────────────────────
+// 通过 vite.config.ts 的 additionalData 配置，所有 .scss 文件
+// 自动可用以下 Token，无需在每个文件中手动 @use
+@use 'tokens/colors' as *;
+@use 'tokens/spacing' as *;
+@use 'tokens/radius' as *;
+@use 'tokens/shadows' as *;
+@use 'tokens/typography' as *;

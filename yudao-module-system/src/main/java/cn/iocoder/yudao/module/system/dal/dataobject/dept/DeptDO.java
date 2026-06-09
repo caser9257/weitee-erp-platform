@@ -62,5 +62,11 @@ public class DeptDO extends BaseDO {
      * 枚举 {@link CommonStatusEnum}
      */
     private Integer status;
+    /**
+     * 成本类型
+     *
+     * 0=不归集, 1=制造费用, 2=管理费用, 3=销售费用, 4=研发支出
+     */
+    private Integer costType;
 
 }

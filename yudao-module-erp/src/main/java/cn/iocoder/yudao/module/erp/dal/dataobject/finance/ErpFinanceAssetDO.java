@@ -51,4 +51,16 @@ public class ErpFinanceAssetDO extends BaseDO {
     private Integer status;
     private String lastDepreciationPeriod;
     private String remark;
+    /**
+     * 资产类型
+     *
+     * 0=固定资产, 1=无形资产
+     */
+    private Integer assetType;
+    /**
+     * 子分类
+     *
+     * 无形资产的细分类型，如：专利权、软件著作权、商标权等
+     */
+    private String subCategory;
 }

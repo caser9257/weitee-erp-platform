@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.out.ErpStockOutPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.out.ErpStockOutSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockOutDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockOutItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockOutItemMapper;
@@ -16,6 +17,9 @@ import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockBatchAllocationService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.springframework.stereotype.Service;
@@ -60,6 +64,8 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
     private ErpCustomerService customerService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
     @Resource
     private ErpStockBatchAllocationService stockBatchAllocationService;
 
@@ -140,9 +146,14 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
         }
         stockOutItems.forEach(stockOutItem -> {
             BigDecimal count = approve ? stockOutItem.getCount().negate() : stockOutItem.getCount();
+            // 获取加权平均成本作为出库价格
+            ErpStockDO stock = stockService.getStock(stockOutItem.getProductId(), stockOutItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockOutItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     stockOutItem.getProductId(), stockOutItem.getWarehouseId(), count,
-                    bizType, stockOutItem.getOutId(), stockOutItem.getId(), stockOut.getNo()));
+                    bizType, stockOutItem.getOutId(), stockOutItem.getId(), stockOut.getNo(),
+                    price, amount));
         });
     }
 

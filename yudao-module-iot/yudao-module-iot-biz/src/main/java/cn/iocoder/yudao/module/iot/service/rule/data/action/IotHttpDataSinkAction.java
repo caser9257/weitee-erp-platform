@@ -18,7 +18,7 @@ import jakarta.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.HEADER_TENANT_ID;
+
 
 /**
  * HTTP 的 {@link IotDataRuleAction} 实现类
@@ -52,7 +52,6 @@ public class IotHttpDataSinkAction implements IotDataRuleAction {
             if (CollUtil.isNotEmpty(config.getHeaders())) {
                 config.getHeaders().putAll(config.getHeaders());
             }
-            headers.add(HEADER_TENANT_ID, message.getTenantId().toString());
             // 1.2 构建 URL
             UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(config.getUrl());
             if (CollUtil.isNotEmpty(config.getQuery())) {

@@ -35,6 +35,8 @@ public class ErpFinanceAssetRespVO {
     private Integer status;
     private String lastDepreciationPeriod;
     private String remark;
+    private Integer assetType;
+    private String subCategory;
     private String creator;
     private LocalDateTime createTime;
 }

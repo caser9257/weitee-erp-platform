@@ -59,5 +59,13 @@ public class ErpStockCheckDO extends BaseDO {
      * 附件 URL
      */
     private String fileUrl;
+    /**
+     * 快照时间（盘点开始时的库存快照时间）
+     */
+    private LocalDateTime snapshotTime;
+    /**
+     * 是否盲盘模式
+     */
+    private Boolean blindCount;
 
 }

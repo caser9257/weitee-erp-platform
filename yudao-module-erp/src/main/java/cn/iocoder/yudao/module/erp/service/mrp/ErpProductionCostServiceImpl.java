@@ -549,6 +549,17 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         return ObjectUtil.defaultIfNull(amount, BigDecimal.ZERO).setScale(6, RoundingMode.HALF_UP);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createProductionCostEntryFromCheck(ErpProductionCostEntryDO costEntry) {
+        // 设置默认值
+        if (costEntry.getAccountingMonth() == null) {
+            costEntry.setAccountingMonth(java.time.YearMonth.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM")));
+        }
+        erpProductionCostEntryMapper.insert(costEntry);
+        return costEntry.getId();
+    }
+
     private Set<Long> filterNotNull(Set<Long> ids) {
         Set<Long> result = new LinkedHashSet<>();
         if (ids == null) {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="stock-check-item">
     <div class="stock-check-item__table-shell">
       <el-form
@@ -63,13 +63,13 @@
                 </el-select>
               </el-form-item>
               <div class="stock-check-item__meta">
-                <span class="stock-check-item__meta-item">账面 {{ formatCount(row.stockCount) }}</span>
+                <span v-if="!blindCount" class="stock-check-item__meta-item">账面 {{ formatCount(row.stockCount) }}</span>
                 <span class="stock-check-item__meta-item">条码 {{ row.productBarCode || '-' }}</span>
                 <span class="stock-check-item__meta-item">单位 {{ row.productUnitName || '-' }}</span>
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="账面库存" min-width="140" align="right">
+          <el-table-column v-if="!blindCount" label="账面库存" min-width="140" align="right">
             <template #default="{ row }">
               <div class="stock-check-item__readonly">
                 {{ formatCount(row.stockCount) }}
@@ -92,7 +92,7 @@
               </el-form-item>
             </template>
           </el-table-column>
-          <el-table-column label="盈亏数量" prop="count" min-width="140" align="right">
+          <el-table-column v-if="!blindCount" label="盈亏数量" prop="count" min-width="140" align="right">
             <template #default="{ row }">
               <div class="stock-check-item__readonly stock-check-item__readonly--amount">
                 {{ formatCount(row.count) }}
@@ -112,7 +112,7 @@
               </el-form-item>
             </template>
           </el-table-column>
-          <el-table-column label="合计金额" prop="totalPrice" min-width="140" align="right">
+          <el-table-column v-if="!blindCount" label="合计金额" prop="totalPrice" min-width="140" align="right">
             <template #default="{ row }">
               <div class="stock-check-item__readonly stock-check-item__readonly--amount">
                 {{ formatCurrency(row.totalPrice) }}
@@ -178,6 +178,7 @@ type StockCheckItemRow = {
 const props = defineProps<{
   items: StockCheckItemRow[]
   disabled: boolean
+  blindCount?: boolean
 }>()
 
 const formData = ref<StockCheckItemRow[]>([])
@@ -244,11 +245,11 @@ const getSummaries = ({ columns, data }: SummaryMethodProps<StockCheckItemRow>) 
       sums[index] = '合计'
       return
     }
-    if (column.property === 'count') {
+    if (!props.blindCount && column.property === 'count') {
       sums[index] = formatCount(getSumValue(data.map((item) => Number(item.count || 0))))
       return
     }
-    if (column.property === 'totalPrice') {
+    if (!props.blindCount && column.property === 'totalPrice') {
       sums[index] = formatCurrency(getSumValue(data.map((item) => Number(item.totalPrice || 0))))
       return
     }
@@ -280,6 +281,11 @@ const handleDelete = (index: number) => {
 
 const setStockCount = async (row: StockCheckItemRow) => {
   if (!row.productId || !row.warehouseId) {
+    row.stockCount = undefined
+    row.actualCount = undefined
+    return
+  }
+  if (props.blindCount) {
     row.stockCount = undefined
     row.actualCount = undefined
     return
@@ -367,7 +373,7 @@ onMounted(async () => {
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(226, 232, 240, 0.75);
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
 }
@@ -384,7 +390,7 @@ onMounted(async () => {
   padding: 0 10px;
   border-radius: 10px;
   background: rgba(248, 250, 252, 0.96);
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-variant-numeric: tabular-nums;
 }
 

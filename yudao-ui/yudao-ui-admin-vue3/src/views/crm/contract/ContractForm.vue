@@ -151,6 +151,126 @@
               :disabled="disabled"
             />
           </el-tab-pane>
+          <el-tab-pane label="商业条款" name="commercialTerms">
+            <div class="commercial-terms-form">
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="发货放行规则" prop="shipmentReleaseRule">
+                    <el-select v-model="formData.shipmentReleaseRule" placeholder="请选择发货放行规则" class="!w-1/1">
+                      <el-option label="签约即发" value="SIGN_AND_SHIP" />
+                      <el-option label="到账后发" value="AFTER_PAYMENT" />
+                      <el-option label="达到预付款比例后发" value="AFTER_PREPAYMENT" />
+                      <el-option label="财务审核后发" value="FINANCE_APPROVAL" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="开票触发条件" prop="invoiceTrigger">
+                    <el-select v-model="formData.invoiceTrigger" placeholder="请选择开票触发条件" class="!w-1/1">
+                      <el-option label="预付款全额开票" value="PREPAYMENT_FULL" />
+                      <el-option label="预付款部分开票" value="PREPAYMENT_PARTIAL" />
+                      <el-option label="仅预付款开票" value="PREPAYMENT_ONLY" />
+                      <el-option label="发货后开票" value="AFTER_SHIPMENT" />
+                      <el-option label="交付收款后开票" value="AFTER_DELIVERY_RECEIPT" />
+                      <el-option label="手工决定" value="MANUAL" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="收款规则" prop="collectionRule">
+                    <el-select v-model="formData.collectionRule" placeholder="请选择收款规则" class="!w-1/1">
+                      <el-option label="发货前付款" value="BEFORE_SHIPMENT" />
+                      <el-option label="发货时付款" value="ON_SHIPMENT" />
+                      <el-option label="发货后约定期限付款" value="AFTER_SHIPMENT" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="预付款金额" prop="prepaymentAmount">
+                    <el-input-number
+                      v-model="formData.prepaymentAmount"
+                      placeholder="请输入预付款金额"
+                      :min="0"
+                      :precision="2"
+                      controls-position="right"
+                      class="!w-1/1"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="预付款比例（%）" prop="prepaymentRatio">
+                    <el-input-number
+                      v-model="formData.prepaymentRatio"
+                      placeholder="请输入预付款比例"
+                      :min="0"
+                      :max="100"
+                      :precision="2"
+                      controls-position="right"
+                      class="!w-1/1"
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="6">
+                  <el-form-item label="需要财务审核" prop="financeApprovalRequired">
+                    <el-switch
+                      v-model="formData.financeApprovalRequired"
+                      :active-value="1"
+                      :inactive-value="0"
+                    />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="6">
+                  <el-form-item label="需要验收" prop="acceptanceRequired">
+                    <el-switch
+                      v-model="formData.acceptanceRequired"
+                      :active-value="1"
+                      :inactive-value="0"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="付款条件说明" prop="paymentTerms">
+                    <el-input
+                      v-model="formData.paymentTerms"
+                      placeholder="请输入付款条件说明"
+                      type="textarea"
+                      :rows="2"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="发货条件说明" prop="shipmentConditions">
+                    <el-input
+                      v-model="formData.shipmentConditions"
+                      placeholder="请输入发货条件说明"
+                      type="textarea"
+                      :rows="2"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="开票条件说明" prop="invoiceConditions">
+                    <el-input
+                      v-model="formData.invoiceConditions"
+                      placeholder="请输入开票条件说明"
+                      type="textarea"
+                      :rows="2"
+                    />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </el-tab-pane>
         </el-tabs>
       </ContentWrap>
       <el-row>
@@ -225,7 +345,18 @@ const formData = ref<any>({
   discountPercent: 0,
   totalProductPrice: undefined,
   remark: undefined,
-  products: []
+  products: [],
+  // 商业条款字段
+  shipmentReleaseRule: 'SIGN_AND_SHIP',
+  invoiceTrigger: 'AFTER_SHIPMENT',
+  collectionRule: 'BEFORE_SHIPMENT',
+  prepaymentAmount: undefined,
+  prepaymentRatio: undefined,
+  financeApprovalRequired: 1,
+  acceptanceRequired: 0,
+  paymentTerms: undefined,
+  shipmentConditions: undefined,
+  invoiceConditions: undefined
 })
 const formRules = reactive({
   name: [{ required: true, message: '合同名称不能为空', trigger: 'blur' }],
@@ -337,7 +468,18 @@ const resetForm = () => {
     discountPercent: 0,
     totalProductPrice: undefined,
     remark: undefined,
-    products: []
+    products: [],
+    // 商业条款字段
+    shipmentReleaseRule: 'SIGN_AND_SHIP',
+    invoiceTrigger: 'AFTER_SHIPMENT',
+    collectionRule: 'BEFORE_SHIPMENT',
+    prepaymentAmount: undefined,
+    prepaymentRatio: undefined,
+    financeApprovalRequired: 1,
+    acceptanceRequired: 0,
+    paymentTerms: undefined,
+    shipmentConditions: undefined,
+    invoiceConditions: undefined
   }
   formRef.value?.resetFields()
 }

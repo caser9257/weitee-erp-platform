@@ -1,5 +1,4 @@
-import request from '@/utils/axios'
-import { PageResult } from '@/types'
+import request from '@/config/axios'
 
 export interface LogPageReq {
   projectId?: number
@@ -21,6 +20,6 @@ export interface LogResp {
   createTime: string
 }
 
-export const getLogPage = (params: LogPageReq): Promise<PageResult<LogResp>> => {
+export const getLogPage = (params: LogPageReq) => {
   return request.get({ url: '/project/log/page', params })
 }

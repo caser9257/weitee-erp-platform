@@ -96,7 +96,8 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
         }
         stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getInboundQty(),
-                ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(), inbound.getId(), inbound.getId(), inbound.getNo()));
+                ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(), inbound.getId(), inbound.getId(), inbound.getNo(),
+                inbound.getUnitCost(), inbound.getTotalCost()));
         LocalDateTime now = LocalDateTime.now();
         erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
                 .setId(id)
@@ -128,7 +129,8 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
         }
         stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getInboundQty().negate(),
-                ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(), inbound.getId(), inbound.getId(), inbound.getNo()));
+                ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(), inbound.getId(), inbound.getId(), inbound.getNo(),
+                inbound.getUnitCost(), inbound.getTotalCost()));
         erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
                 .setId(id)
                 .setStatus(ErpProductionInboundStatusEnum.PENDING.getStatus())

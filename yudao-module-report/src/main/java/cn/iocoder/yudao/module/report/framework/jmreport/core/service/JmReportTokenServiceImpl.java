@@ -113,7 +113,7 @@ public class JmReportTokenServiceImpl implements JmReportTokenServiceI {
                 return null;
             }
             user = new LoginUser().setId(accessToken.getUserId()).setUserType(accessToken.getUserType())
-                    .setTenantId(accessToken.getTenantId()).setScopes(accessToken.getScopes());
+                    .setScopes(accessToken.getScopes());
         } catch (ServiceException ignored) {
             // do nothing：如果报错，说明认证失败，则返回 false 即可
         }
@@ -144,12 +144,7 @@ public class JmReportTokenServiceImpl implements JmReportTokenServiceI {
 
     @Override
     public String getTenantId() {
-        // 补充说明：不能直接通过 TenantContext 获取，因为 jimu 报表前端请求时，没有带上 tenant-id Header
-        LoginUser loginUser = SecurityFrameworkUtils.getLoginUser();
-        if (loginUser == null) {
-            return null;
-        }
-        return StrUtil.toStringOrNull(loginUser.getTenantId());
+        return null;
     }
 
     @Override

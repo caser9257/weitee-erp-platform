@@ -96,16 +96,18 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
 
     private void handleApprove(BpmApprovalInstanceSnapshotDO snapshot, ApprovalResultHandler handler,
                                Long bizId, String processInstanceId, String reason) {
-        // 1. 更新快照状态
-        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
-                BpmApprovalInstanceSnapshotStatusEnum.APPROVE.getStatus(), reason);
-
-        // 2. 调用结果处理器
+        // 1. 先调用结果处理器（业务状态回写）
+        //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
             handler.onApprove(bizId, processInstanceId, reason);
         } catch (Exception e) {
-            log.error("[handleApprove][场景({}) 业务({}) 结果处理器异常]", snapshot.getSceneCode(), bizId, e);
+            log.error("[handleApprove][场景({}) 业务({}) 结果处理器异常，快照状态未更新]", snapshot.getSceneCode(), bizId, e);
+            return; // 处理器失败，不更新快照状态，保持"审批中"
         }
+
+        // 2. 处理器成功后，更新快照状态为"通过"
+        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
+                BpmApprovalInstanceSnapshotStatusEnum.APPROVE.getStatus(), reason);
 
         // 3. 发送站内信通知
         try {
@@ -121,16 +123,18 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
 
     private void handleReject(BpmApprovalInstanceSnapshotDO snapshot, ApprovalResultHandler handler,
                               Long bizId, String processInstanceId, String reason) {
-        // 1. 更新快照状态
-        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
-                BpmApprovalInstanceSnapshotStatusEnum.REJECT.getStatus(), reason);
-
-        // 2. 调用结果处理器
+        // 1. 先调用结果处理器（业务状态回写）
+        //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
             handler.onReject(bizId, processInstanceId, reason);
         } catch (Exception e) {
-            log.error("[handleReject][场景({}) 业务({}) 结果处理器异常]", snapshot.getSceneCode(), bizId, e);
+            log.error("[handleReject][场景({}) 业务({}) 结果处理器异常，快照状态未更新]", snapshot.getSceneCode(), bizId, e);
+            return; // 处理器失败，不更新快照状态，保持"审批中"
         }
+
+        // 2. 处理器成功后，更新快照状态为"驳回"
+        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
+                BpmApprovalInstanceSnapshotStatusEnum.REJECT.getStatus(), reason);
 
         // 3. 发送站内信通知
         try {

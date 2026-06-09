@@ -35,10 +35,7 @@ public class LoginUser {
      * 额外的用户信息
      */
     private Map<String, String> info;
-    /**
-     * 租户编号
-     */
-    private Long tenantId;
+
     /**
      * 授权范围
      */
@@ -56,10 +53,7 @@ public class LoginUser {
      */
     @JsonIgnore
     private Map<String, Object> context;
-    /**
-     * 访问的租户编号
-     */
-    private Long visitTenantId;
+
 
     public void setContext(String key, Object value) {
         if (context == null) {

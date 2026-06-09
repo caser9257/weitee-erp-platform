@@ -40,10 +40,7 @@ public class IotDeviceMessageDO {
      * 关联 {@link IotDeviceDO#getId()}
      */
     private Long deviceId;
-    /**
-     * 租户编号
-     */
-    private Long tenantId;
+
 
     /**
      * 服务编号，该消息由哪个 server 发送

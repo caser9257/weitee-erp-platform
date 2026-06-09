@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOutItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOutItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOutMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
@@ -22,6 +23,7 @@ import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockBatchAllocationService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
@@ -70,6 +72,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
     private ErpAccountService accountService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
     @Resource
     private ErpStockBatchAllocationService stockBatchAllocationService;
     @Resource
@@ -205,9 +209,14 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         }
         saleOutItems.forEach(saleOutItem -> {
             BigDecimal count = approve ? saleOutItem.getCount().negate() : saleOutItem.getCount();
+            // 获取加权平均成本作为出库价格
+            ErpStockDO stock = stockService.getStock(saleOutItem.getProductId(), saleOutItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(saleOutItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     saleOutItem.getProductId(), saleOutItem.getWarehouseId(), count,
-                    bizType, saleOutItem.getOutId(), saleOutItem.getId(), saleOut.getNo()));
+                    bizType, saleOutItem.getOutId(), saleOutItem.getId(), saleOut.getNo(),
+                    price, amount));
         });
         if (approve) {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,
@@ -340,6 +349,11 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
     @Override
     public PageResult<ErpSaleOutDO> getSaleOutPage(ErpSaleOutPageReqVO pageReqVO) {
         return erpSaleOutMapper.selectPage(pageReqVO);
+    }
+
+    @Override
+    public List<ErpSaleOutDO> getSaleOutListByOrderId(Long orderId) {
+        return erpSaleOutMapper.selectListByOrderId(orderId);
     }
 
     // ==================== 销售出库项 ====================

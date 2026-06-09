@@ -1,5 +1,4 @@
-import request from '@/utils/axios'
-import type { PageResult } from '@/types/api'
+import request from '@/config/axios'
 
 export interface DualProductCostVO {
   id?: number
@@ -47,21 +46,21 @@ export interface DualProductCostRebuildReqVO {
 
 export const DualProductCostApi = {
   getProductDualCostPage(params: DualProductCostPageReqVO) {
-    return request.get<PageResult<DualProductCostVO>>('/erp/finance-dual-product-cost/page', { params })
+    return request.get({ url: '/erp/finance-dual-product-cost/page', params })
   },
   getProductDualCost(id: number) {
-    return request.get<DualProductCostVO>('/erp/finance-dual-product-cost/get', { params: { id } })
+    return request.get({ url: '/erp/finance-dual-product-cost/get', params: { id } })
   },
   getProductDualCostItems(resultId: number) {
-    return request.get<DualProductCostVO[]>('/erp/finance-dual-product-cost/items', { params: { resultId } })
+    return request.get({ url: '/erp/finance-dual-product-cost/items', params: { resultId } })
   },
   rebuildProductDualCost(data: DualProductCostRebuildReqVO) {
-    return request.post<boolean>('/erp/finance-dual-product-cost/rebuild', data)
+    return request.post({ url: '/erp/finance-dual-product-cost/rebuild', data })
   },
   exportExternalProductCost(params: DualProductCostPageReqVO) {
-    return request.get('/erp/finance-dual-product-cost/export-external', { params, responseType: 'blob' })
+    return request.get({ url: '/erp/finance-dual-product-cost/export-external', params, responseType: 'blob' })
   },
   exportInternalProductCost(params: DualProductCostPageReqVO) {
-    return request.get('/erp/finance-dual-product-cost/export-internal', { params, responseType: 'blob' })
+    return request.get({ url: '/erp/finance-dual-product-cost/export-internal', params, responseType: 'blob' })
   }
 }

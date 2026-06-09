@@ -1,0 +1,67 @@
+﻿# 浠ｇ爜瀹℃煡璁板綍 - 2026-05-28
+
+瀹℃煡鑼冨洿锛歝odex/backend-frontend-fusion 鍒嗘敮鍏ㄩ儴鏈彁浜ゅ彉鏇达紙94涓枃浠讹級
+瀹℃煡鏃堕棿锛?026-05-28
+
+## 涓€銆佸彉鏇存瑙?
+| 绫诲埆 | 鏂囦欢鏁?| 璇存槑 |
+|------|--------|------|
+| FastExcel 杩佺Щ | ~80 | cn.idev.excel 鈫?org.apache.fesod.sheet |
+| BPM 瀹℃壒鍦烘櫙 | ~15 | 鏂板瀹℃壒鍦烘櫙銆佸揩鐓с€佽繍琛屾椂鏈嶅姟 |
+| 鍓嶇鐧诲綍閲嶆瀯 | 6 | Login.vue 鍙婂瓙缁勪欢閲嶆瀯 |
+| 鍙岃处濂楁湇鍔?| 1 | ErpFinanceDualLedgerResultServiceImpl |
+| 渚濊禆鍙樻洿 | 2 | pom.xml 渚濊禆鐗堟湰鏇存柊 |
+
+## 浜屻€佷富瑕佸彉鏇村唴瀹?
+1. **FastExcel 杩佺Щ**锛氫粠 `cn.idev.excel:fastexcel:1.3.0` 杩佺Щ鍒?`org.apache.fesod:fesod-sheet:2.0.1-incubating`
+2. **BPM 瀹℃壒鍦烘櫙骞冲彴**锛氭柊澧炲鎵瑰満鏅紙Scene锛夈€佸鎵规柟妗堢増鏈紙SchemeVersion锛夈€佸鎵硅鍒欙紙Rule锛夈€佽繍琛屾椂蹇収锛圫napshot锛夊畬鏁撮摼璺?3. **鍓嶇鐧诲綍椤甸噸鏋?*锛歀ogin.vue 鍏ㄩ潰閲嶅啓锛屾柊澧炴殫榛戞ā寮忋€佸搧鐗屽姩鐢诲尯銆佹诞鍔ㄥ崱鐗?4. **鍙岃处濂楁湇鍔?*锛欵xcel 瀵煎嚭鐩稿叧 import 鍚屾杩佺Щ
+
+---
+
+## 涓夈€侀棶棰樿褰?
+### P1 - 闇€瑕佸叧娉?
+#### 3.1 FastExcel 浣跨敤 incubating 鐗堟湰
+- **鏂囦欢**锛歚yudao-dependencies/pom.xml`
+- **鎻忚堪**锛歚fesod-sheet` 鐗堟湰涓?`2.0.1-incubating`锛宨ncubating 鐗堟湰琛ㄧず璇ュ簱灏氬湪瀛靛寲闃舵锛孉PI 鍜岀ǔ瀹氭€ф湭缁忔寮忓彂甯冮獙璇併€?- **椋庨櫓**锛氱敓浜х幆澧冧娇鐢ㄥ鍖栫増鏈彲鑳介亣鍒版湭鍙戠幇鐨?bug 鎴?API 鍙樻洿銆?- **寤鸿**锛氱‘璁ゆ槸鍚︽湁姝ｅ紡鍙戝竷鐗堟湰鍙敤锛涘蹇呴』浣跨敤 incubating 鐗堟湰锛岄渶鍋氬ソ鍥炲綊娴嬭瘯瑕嗙洊銆?
+#### 3.2 `BpmApprovalRuntimeServiceImpl.submit()` 涓?`getSceneByCode` 宸叉姏寮傚父锛屽悗缁?null 妫€鏌ヤ负姝讳唬鐮?- **鏂囦欢**锛歚BpmApprovalRuntimeServiceImpl.java`锛堢 80-83 琛岋級
+- **鎻忚堪**锛歚approvalSceneService.getSceneByCode(sceneCode)` 鍦ㄥ満鏅笉瀛樺湪鏃跺凡鐩存帴鎶涘嚭 `APPROVAL_SCENE_NOT_EXISTS` 寮傚父锛岀 81-83 琛岀殑 `if (scene == null)` 妫€鏌ユ案杩滀笉浼氫负 true銆?- **椋庨櫓**锛氭棤鍔熻兘椋庨櫓锛屼絾姝讳唬鐮佷細璇鍚庣画缁存姢鑰呫€?- **寤鸿**锛氱Щ闄ょ 81-83 琛岀殑 null 妫€鏌ワ紝鎴栨敼涓哄湪 `getSceneByCode` 涓繑鍥?null 鑰岄潪鎶涘紓甯革紙闇€缁熶竴椋庢牸锛夈€?
+#### 3.3 `BpmApprovalInstanceSnapshotDO.processJson` 绫诲瀷璁捐涓嶄竴鑷?- **鏂囦欢**锛歚BpmApprovalInstanceSnapshotDO.java`锛堢 76-77 琛岋級/ `BpmApprovalRuntimeServiceImpl.java`锛堢 128 琛岋級
+- **鎻忚堪**锛歚processJson` 瀛楁绫诲瀷涓?`Map<String, Object>`锛屼絾鍦?`submit()` 涓璁剧疆涓?`Map.of("json", hitRule.getProcessJson())`锛屽嵆鎶婁竴涓?JSON 瀛楃涓插寘瑁呭湪 Map 涓€俙hitRule.getProcessJson()` 鏈韩鍙兘灏辨槸 JSON 瀛楃涓层€?- **椋庨櫓**锛氬簭鍒楀寲/鍙嶅簭鍒楀寲鏃跺彲鑳藉嚭鐜伴鏈熷鐨勫祵濂楃粨鏋勩€傚鏋?`processJson` 鏈剰鏄瓨鍌ㄦ祦绋嬪畾涔?JSON锛岀洿鎺ュ瓨瀛楃涓叉垨鍙嶅簭鍒楀寲涓?POJO 鏇存竻鏅般€?- **寤鸿**锛氭槑纭?`processJson` 鐨勮涔夆€斺€旀槸瀛樺師濮?JSON 瀛楃涓茶繕鏄凡瑙ｆ瀽鐨?Map銆傚鏋滄槸瀛楃涓诧紝瀛楁绫诲瀷搴旀敼涓?`String`锛涘鏋滄槸 Map锛屽簲鍦ㄥ啓鍏ユ椂鍋?JSON 瑙ｆ瀽銆?
+#### 3.4 `BpmApprovalRuntimeServiceImpl.cancel()` 涓粨鏋滃鐞嗗櫒寮傚父琚潤榛樺悶娌?- **鏂囦欢**锛歚BpmApprovalRuntimeServiceImpl.java`锛堢 183-190 琛岋級
+- **鎻忚堪**锛歚cancel()` 鏂规硶鍦ㄨ皟鐢?`handler.onCancel()` 鏃?catch Exception 鍚庝粎 log.error锛屼笉鎶涘嚭銆傝繖鏄槻寰℃€ц璁★紙瀹℃壒鎾ゅ洖涓嶅簲鍥犲鐞嗗櫒寮傚父鑰屽け璐ワ級锛屼絾濡傛灉澶勭悊鍣ㄨ礋璐ｅ洖婊氫笟鍔＄姸鎬侊紙濡傛仮澶嶅崟鎹鎵圭姸鎬侊級锛岄潤榛樺け璐ュ彲鑳藉鑷翠笟鍔℃暟鎹笉涓€鑷淬€?- **椋庨櫓**锛氬鏋?`onCancel` 璐熻矗鍏抽敭涓氬姟鐘舵€佸洖婊氾紝寮傚父琚悶鎺変細瀵艰嚧鍗曟嵁鍗″湪"瀹℃壒涓?鐘舵€併€?- **寤鸿**锛氱‘璁?`onCancel` 鐨勮亴璐ｃ€傚鏋滄秹鍙婂叧閿姸鎬佸洖婊氾紝搴旀姏鍑哄紓甯歌浜嬪姟鍥炴粴锛涘鏋滀粎鍋氶€氱煡绫绘搷浣滐紝褰撳墠璁捐鍙帴鍙楋紝浣嗗缓璁湪鏃ュ織涓鍔犳洿澶氫笂涓嬫枃锛堝 snapshotId锛夈€?
+#### 3.5 `BpmApprovalSceneDO` 缂哄皯 `activeSchemeId` 鐨勫閿害鏉熸垨鏍￠獙
+- **鏂囦欢**锛歚BpmApprovalSceneDO.java`锛堢 57 琛岋級
+- **鎻忚堪**锛歚activeSchemeId` 瀛楁鐩存帴瀛樺偍鏂规 ID锛屼絾娌℃湁澶栭敭绾︽潫鎴栧簲鐢ㄥ眰鏍￠獙纭繚璇?ID 瀵瑰簲鐨勬柟妗堢‘瀹炲瓨鍦ㄤ笖灞炰簬褰撳墠鍦烘櫙銆?- **椋庨櫓**锛氬鏋滄柟妗堣鍒犻櫎浣嗗満鏅殑 `activeSchemeId` 鏈竻鐞嗭紝`submit()` 鏃朵細鏌ヤ笉鍒扮敓鏁堢増鏈€屾姤閿欍€?- **寤鸿**锛氬湪鏂规鍒犻櫎鏃舵鏌ユ槸鍚︽湁鍏宠仈鍦烘櫙寮曠敤锛屾垨鍦?`submit()` 涓鍔犳洿鍙嬪ソ鐨勯敊璇彁绀恒€?
+#### 3.6 鍓嶇鐧诲綍椤靛ぇ閲忕‖缂栫爜棰滆壊鍊?- **鏂囦欢**锛歚Login.vue`銆乣LoginForm.vue`銆乣LoginFormTitle.vue`銆乣ForgetPasswordForm.vue`銆乣SSOLogin.vue`
+- **鎻忚堪**锛氱櫥褰曢〉閲嶆瀯鍚庡ぇ閲忎娇鐢ㄧ‖缂栫爜鍗佸叚杩涘埗棰滆壊鍊硷紙濡?`#ff5500`銆乣#15213b`銆乣#7f8da8`銆乣#dfe6f2`銆乣#e9edf4` 绛夛級锛屾湭浣跨敤 CSS 鍙橀噺鎴?Tailwind 璇箟绫汇€?- **椋庨櫓**锛氫笌椤圭洰 AGENTS.md 涓?棰滆壊绯荤粺浼樺厛浣跨敤 `slate`"銆?涓昏壊榛樿浣跨敤 `#1677FF`"鐨勮姹備笉涓€鑷淬€傜‖缂栫爜棰滆壊涓嶅埄浜庝富棰樺垏鎹㈠拰缁存姢銆?- **寤鸿**锛氬皢棰滆壊鏇挎崲涓?CSS 鍙橀噺鎴?Tailwind 绫诲悕銆備富鑹插簲缁熶竴涓?`blue-600`锛坄#2563eb`锛夋垨椤圭洰绾﹀畾鐨?`#1677FF`锛岃€岄潪鑷畾涔夌殑 `#ff5500`锛堟鑹诧級銆?
+#### 3.7 鐧诲綍椤典富鑹蹭娇鐢ㄦ鑹茶€岄潪椤圭洰鏍囧噯钃濊壊
+- **鏂囦欢**锛歚Login.vue`銆乣LoginForm.vue`
+- **鎻忚堪**锛氱櫥褰曢〉鎸夐挳銆侀珮浜€佺劍鐐圭姸鎬佺瓑浣跨敤 `#ff5500`锛堟鑹诧級浣滀负涓昏壊锛屼笌 AGENTS.md 涓?ERP 椤甸潰涓诲熀璋冮粯璁ら噰鐢ㄧ粡鍏哥鎶€钃濓細涓诲搧鐗岃壊浼樺厛 `blue-600`"鐨勮姹傚啿绐併€?- **椋庨櫓**锛氱櫥褰曢〉涓庣郴缁熷唴鍏朵粬椤甸潰瑙嗚椋庢牸涓嶄竴鑷淬€?- **寤鸿**锛氱‘璁ゆ槸鍚︿负璁捐鎰忓浘锛堢櫥褰曢〉鐗规畩澶勭悊锛夈€傚闈炶璁℃剰鍥撅紝搴旂粺涓€涓鸿摑鑹茬郴銆?
+### P2 - 鍙帴鍙椾絾鍊煎緱娉ㄦ剰
+
+#### 3.8 `BpmApprovalSceneMapper.selectBySceneCode` 浣跨敤 `LIMIT 1` 纭紪鐮?- **鏂囦欢**锛歚BpmApprovalSceneMapper.java`锛堢 17 琛岋級
+- **鎻忚堪**锛氫娇鐢?`.last("LIMIT 1")` 闄愬埗鏌ヨ缁撴灉銆傝繖鏄?MyBatis Plus 涓父瑙佺殑鍋氭硶锛屼絾 `.last()` 浼氬皢 SQL 鐗囨鐩存帴鎷兼帴鍒版渶缁?SQL 涓€?- **椋庨櫓**锛氫綆銆俙sceneCode` 搴旇鏄敮涓€鐨勶紝LIMIT 1 鏄悎鐞嗙殑闃插尽鎬ф帾鏂姐€?- **寤鸿**锛氬彲鎺ュ彈銆傚闇€鏇翠弗璋紝鍙湪 `sceneCode` 瀛楁涓婃坊鍔犲敮涓€绱㈠紩銆?
+#### 3.9 `BpmApprovalInstanceSnapshotDO.bizId` 浣跨敤 String 绫诲瀷
+- **鏂囦欢**锛歚BpmApprovalInstanceSnapshotDO.java`锛堢 40 琛岋級
+- **鎻忚堪**锛歚bizId` 瀛楁绫诲瀷涓?`String`锛屼絾鍦?`BpmApprovalRuntimeServiceImpl.submit()` 涓紶鍏ョ殑鏄?`Long bizId`锛岄€氳繃 `String.valueOf(bizId)` 杞崲銆?- **椋庨櫓**锛氫綆銆備娇鐢?String 鍙互鍏煎涓嶅悓涓氬姟绯荤粺鐨?ID 绫诲瀷锛圠ong銆丼tring 绛夛級锛岃璁′笂鏄悎鐞嗙殑銆?- **寤鸿**锛氬彲鎺ュ彈銆備絾闇€纭繚鏌ヨ鏃剁被鍨嬩竴鑷达紝閬垮厤闅愬紡绫诲瀷杞崲闂銆?
+#### 3.10 `BpmApprovalRuntimeServiceImpl` 涓?`contextProviderMap` 鍜?`resultHandlerMap` 闈炵嚎绋嬪畨鍏?- **鏂囦欢**锛歚BpmApprovalRuntimeServiceImpl.java`锛堢 57-58 琛岋級
+- **鎻忚堪**锛歚contextProviderMap` 鍜?`resultHandlerMap` 浣跨敤鏅€?`HashMap`锛岄€氳繃 `@Resource` setter 鏂规硶鍦?Spring 鍒濆鍖栨椂濉厖銆?- **椋庨櫓**锛氭瀬浣庛€係pring 鍗曚緥 bean 鍒濆鍖栧畬鎴愬悗锛岃繖涓や釜 Map 涓嶄細鍐嶈淇敼锛屽疄闄呮槸涓嶅彲鍙樼殑銆?- **寤鸿**锛氬彲鎺ュ彈銆傚闇€鏇翠弗璋紝鍙娇鐢?`Collections.unmodifiableMap()` 鍖呰銆?
+#### 3.11 鍓嶇 `useLoginCopy.ts` 鏂板鏂囦欢鏈瀹屾暣鍐呭
+- **鏂囦欢**锛歚yudao-ui/yudao-ui-admin-vue3/src/views/Login/components/useLoginCopy.ts`
+- **鎻忚堪**锛氭柊澧炵殑 composable 鏂囦欢锛屼粠 LoginForm.vue 涓紩鍏ヤ簡 `loginText` 鍑芥暟銆?- **椋庨櫓**锛氭湭璇诲彇瀹屾暣鍐呭锛屾棤娉曠‘璁ゆ槸鍚︽湁闂銆?- **寤鸿**锛氬悗缁ˉ鍏呭鏌ユ鏂囦欢銆?
+### P3 - 鏃犻棶棰?
+#### 3.12 FastExcel 娉ㄨВ杩佺Щ涓€鑷存€?- **鎻忚堪**锛氭墍鏈?RespVO 绫荤殑 `@ExcelProperty`銆乣@ExcelIgnoreUnannotated` 绛夋敞瑙ｅ凡缁熶竴浠?`cn.idev.excel.annotation` 杩佺Щ鍒?`org.apache.fesod.sheet.annotation`锛岃縼绉诲畬鏁淬€?- **鐘舵€?*锛氣渽 鏃犻棶棰?
+#### 3.13 ExcelUtils 宸ュ叿绫昏縼绉?- **鎻忚堪**锛歚ExcelUtils.java` 涓殑 `FastExcel`銆乣LongStringConverter` 绛?import 宸叉纭縼绉诲埌 `org.apache.fesod.sheet` 鍖呫€?- **鐘舵€?*锛氣渽 鏃犻棶棰?
+#### 3.14 BPM 瀹℃壒鍦烘櫙閿欒鐮佸畾涔?- **鎻忚堪**锛氭柊澧炵殑閿欒鐮侊紙1-009-016-000 鍒?1-009-018-003锛夌紪鍙疯繛缁€佸懡鍚嶆竻鏅般€佹秷鎭ā鏉垮悎鐞嗐€?- **鐘舵€?*锛氣渽 鏃犻棶棰?
+---
+
+## 鍥涖€佹€荤粨
+
+| 绾у埆 | 鏁伴噺 | 璇存槑 |
+|------|------|------|
+| P1 | 7 | 闇€瑕佸叧娉細incubating 鐗堟湰銆佹浠ｇ爜銆佺被鍨嬭璁°€侀鑹茬‖缂栫爜绛?|
+| P2 | 4 | 鍙帴鍙椾絾鍊煎緱娉ㄦ剰 |
+| P3 | 4 | 鏃犻棶棰?|
+
+**鏍稿績椋庨櫓鐐?*锛?1. `fesod-sheet:2.0.1-incubating` 鏄鍖栫増鏈紝鐢熶骇绋冲畾鎬у緟楠岃瘉
+2. 鐧诲綍椤甸鑹蹭綋绯讳笌椤圭洰瑙勮寖涓嶄竴鑷达紙姗欒壊 vs 钃濊壊锛?3. BPM 瀹℃壒杩愯鏃舵湇鍔″瓨鍦ㄦ浠ｇ爜鍜岀被鍨嬭璁′笉涓€鑷?

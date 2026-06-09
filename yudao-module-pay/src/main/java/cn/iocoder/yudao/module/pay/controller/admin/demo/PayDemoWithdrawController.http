@@ -1,8 +1,7 @@
-### 请求 /pay/demo-withdraw/create 接口（支付宝）
+### 请求 /pay/demo-withdraw/create 接口（支付宝�?
 POST {{baseUrl}}/pay/demo-withdraw/create
 Authorization: Bearer {{token}}
 Content-Type: application/json
-tenant-id: {{adminTenantId}}
 
 {
   "type": 1,
@@ -16,7 +15,6 @@ tenant-id: {{adminTenantId}}
 POST {{baseUrl}}/pay/demo-withdraw/create
 Authorization: Bearer {{token}}
 Content-Type: application/json
-tenant-id: {{adminTenantId}}
 
 {
   "type": 2,
@@ -30,7 +28,6 @@ tenant-id: {{adminTenantId}}
 POST {{baseUrl}}/pay/demo-withdraw/create
 Authorization: Bearer {{token}}
 Content-Type: application/json
-tenant-id: {{adminTenantId}}
 
 {
   "type": 3,
@@ -42,7 +39,6 @@ tenant-id: {{adminTenantId}}
 ### 请求 /pay/demo-withdraw/transfer 接口（发起转账）
 POST {{baseUrl}}/pay/demo-withdraw/transfer?id=1
 Authorization: Bearer {{token}}
-tenant-id: {{adminTenantId}}
 
 ### 请求 /pay/demo-withdraw/page 接口（查询分页）
 GET {{baseUrl}}/pay/demo-withdraw/page?pageNo=1&pageSize=10

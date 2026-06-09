@@ -947,16 +947,28 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
     }
 
     private void createExecuteStockRecords(ErpPurchaseInDO purchaseIn, List<ErpPurchaseInStockExecuteItemDO> executeItems) {
-        executeItems.forEach(item -> stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
-                item.getProductId(), item.getWarehouseId(), item.getCount(),
-                ErpStockRecordBizTypeEnum.PURCHASE_IN.getType(),
-                purchaseIn.getId(), item.getPurchaseInItemId(), purchaseIn.getNo())));
+        // 获取采购入库项的价格信息
+        List<ErpPurchaseInItemDO> purchaseInItems = erpPurchaseInItemMapper.selectListByInId(purchaseIn.getId());
+        Map<Long, ErpPurchaseInItemDO> purchaseInItemMap = convertMap(purchaseInItems, ErpPurchaseInItemDO::getId);
+        executeItems.forEach(item -> {
+            ErpPurchaseInItemDO purchaseInItem = purchaseInItemMap.get(item.getPurchaseInItemId());
+            BigDecimal price = purchaseInItem != null ? purchaseInItem.getProductPrice() : null;
+            BigDecimal amount = price != null ? price.multiply(item.getCount()) : null;
+            stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
+                    item.getProductId(), item.getWarehouseId(), item.getCount(),
+                    ErpStockRecordBizTypeEnum.PURCHASE_IN.getType(),
+                    purchaseIn.getId(), item.getPurchaseInItemId(), purchaseIn.getNo(),
+                    price, amount));
+        });
     }
 
     private void reverseExecutedStockRecords(ErpPurchaseInDO purchaseIn) {
         List<ErpPurchaseInStockExecuteDO> executeList = erpPurchaseInStockExecuteMapper.selectListByPurchaseInId(purchaseIn.getId());
         Map<Long, ErpPurchaseInStockExecuteDO> executeMap = convertMap(executeList, ErpPurchaseInStockExecuteDO::getId);
         List<ErpPurchaseInStockExecuteItemDO> executeItems = erpPurchaseInStockExecuteItemMapper.selectListByPurchaseInId(purchaseIn.getId());
+        // 获取采购入库项的价格信息
+        List<ErpPurchaseInItemDO> purchaseInItems = erpPurchaseInItemMapper.selectListByInId(purchaseIn.getId());
+        Map<Long, ErpPurchaseInItemDO> purchaseInItemMap = convertMap(purchaseInItems, ErpPurchaseInItemDO::getId);
         Map<Long, List<ErpPurchaseInStockExecuteItemBatchDO>> batchMap = convertMultiMap(
                 erpPurchaseInStockExecuteItemBatchMapper.selectListByExecuteItemIds(
                         convertSet(executeItems, ErpPurchaseInStockExecuteItemDO::getId)),
@@ -967,10 +979,15 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
                     return execute != null && ErpPurchaseInStockExecuteStatusEnum.EXECUTED.getStatus().equals(execute.getStatus());
                 })
                 .forEach(item -> {
+                    // 获取采购入库项的价格信息
+                    ErpPurchaseInItemDO purchaseInItem = purchaseInItemMap.get(item.getPurchaseInItemId());
+                    BigDecimal price = purchaseInItem != null ? purchaseInItem.getProductPrice() : null;
+                    BigDecimal amount = price != null ? price.multiply(item.getCount()) : null;
                     stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                             item.getProductId(), item.getWarehouseId(), item.getCount().negate(),
                             ErpStockRecordBizTypeEnum.PURCHASE_IN_CANCEL.getType(),
-                            purchaseIn.getId(), item.getPurchaseInItemId(), purchaseIn.getNo()));
+                            purchaseIn.getId(), item.getPurchaseInItemId(), purchaseIn.getNo(),
+                            price, amount));
                     List<ErpPurchaseInStockExecuteItemBatchDO> executeItemBatches = batchMap.get(item.getId());
                     if (CollUtil.isNotEmpty(executeItemBatches)) {
                         executeItemBatches.forEach(batch -> stockBatchService.decreaseBatch(new ErpStockBatchChangeReqBO(

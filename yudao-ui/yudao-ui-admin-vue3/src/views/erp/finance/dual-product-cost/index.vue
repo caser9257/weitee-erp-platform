@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="finance-shell finance-shell__stack product-dual-cost-page">
     <!-- 页头 -->
     <ContentWrap class="finance-shell__header-card">
@@ -191,6 +191,9 @@
             <span class="finance-shell__page-chip">{{ detailData?.period || '-' }}</span>
             <span class="finance-shell__page-chip">{{ detailData?.productionOrderNo || '-' }}</span>
           </div>
+          <el-button class="finance-shell__context-close" link @click="detailDrawerVisible = false">
+            <Icon icon="ep:close" />
+          </el-button>
         </div>
 
         <div v-if="loadingDetail" class="product-dual-cost-page__drawer-loading">
@@ -276,7 +279,24 @@
     <el-dialog v-model="rebuildDialogVisible" title="产品级重跑" width="480px" destroy-on-close>
       <el-form ref="rebuildFormRef" :model="rebuildForm" label-width="88px">
         <el-form-item label="产品" required>
-          <el-input :model-value="rebuildForm.productName" disabled />
+          <el-select
+            v-model="rebuildForm.productId"
+            placeholder="请选择产品"
+            filterable
+            clearable
+            class="!w-full"
+            @change="handleRebuildProductChange"
+          >
+            <el-option
+              v-for="item in rebuildProductOptions"
+              :key="item.productId"
+              :label="item.productName || item.productNo || '-'"
+              :value="item.productId"
+            >
+              <span>{{ item.productName || '-' }}</span>
+              <span style="float: right; color: var(--erp-slate-400); font-size: 12px">{{ item.productNo }}</span>
+            </el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="期间" required>
           <el-date-picker v-model="rebuildForm.period" type="month" placeholder="选择月份" value-format="YYYY-MM" class="!w-full" />
@@ -346,6 +366,30 @@ const rebuildForm = reactive({
   remark: ''
 })
 
+// 重跑产品选项：从当前列表中提取去重的产品
+const rebuildProductOptions = computed(() => {
+  const seen = new Set<number>()
+  return list.value.filter(item => {
+    if (!item.productId || seen.has(item.productId)) return false
+    seen.add(item.productId)
+    return true
+  })
+})
+
+const handleRebuildProductChange = (productId: number | undefined) => {
+  const row = list.value.find(item => item.productId === productId)
+  if (row) {
+    rebuildForm.productName = row.productName || ''
+    rebuildForm.productionOrderId = row.productionOrderId
+    rebuildForm.productBatchNo = row.productBatchNo || ''
+    if (!rebuildForm.period) rebuildForm.period = row.period || ''
+  } else {
+    rebuildForm.productName = ''
+    rebuildForm.productionOrderId = undefined
+    rebuildForm.productBatchNo = ''
+  }
+}
+
 const formatAmount = (value?: number) =>
   value == null ? '-' : Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
@@ -401,12 +445,12 @@ const handleRebuildAll = () => {
     message.warning('暂无数据可重跑')
     return
   }
-  const first = list.value[0]
-  rebuildForm.productId = first.productId
-  rebuildForm.productName = first.productName || ''
-  rebuildForm.productionOrderId = first.productionOrderId
-  rebuildForm.productBatchNo = first.productBatchNo || ''
-  rebuildForm.period = first.period || ''
+  // 重置表单，让用户手动选择产品
+  rebuildForm.productId = undefined
+  rebuildForm.productName = ''
+  rebuildForm.productionOrderId = undefined
+  rebuildForm.productBatchNo = ''
+  rebuildForm.period = queryParams.period || ''
   rebuildForm.remark = ''
   rebuildDialogVisible.value = true
 }
@@ -472,9 +516,9 @@ onMounted(() => {
 }
 
 .product-dual-cost-page__empty {
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--erp-slate-300);
   border-radius: 16px;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
   padding: 8px;
 }
 
@@ -486,7 +530,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
 }
 
 .product-dual-cost-page__drawer-loading,
@@ -508,8 +552,20 @@ onMounted(() => {
   justify-content: flex-end;
   gap: 8px;
   padding: 12px 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--erp-slate-200);
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(8px);
+}
+
+.finance-shell__context-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--erp-slate-400);
+  font-size: 18px;
+}
+
+.finance-shell__context-close:hover {
+  color: var(--erp-slate-200);
 }
 </style>

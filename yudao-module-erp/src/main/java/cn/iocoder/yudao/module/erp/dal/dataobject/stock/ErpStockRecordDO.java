@@ -78,5 +78,13 @@ public class ErpStockRecordDO extends BaseDO {
      * 例如说：{@link ErpStockInDO#getNo()}
      */
     private String bizNo;
+    /**
+     * 单价
+     */
+    private BigDecimal price;
+    /**
+     * 金额
+     */
+    private BigDecimal amount;
 
 }

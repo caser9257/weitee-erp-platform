@@ -31,4 +31,12 @@ public interface ErpProductionCostService {
 
     List<ErpProductionCostProjectSummaryRespVO> getProjectSummary(String accountingMonth);
 
+    /**
+     * 从盘点盘亏创建生产成本条目
+     *
+     * @param costEntry 成本条目
+     * @return 条目编号
+     */
+    Long createProductionCostEntryFromCheck(ErpProductionCostEntryDO costEntry);
+
 }

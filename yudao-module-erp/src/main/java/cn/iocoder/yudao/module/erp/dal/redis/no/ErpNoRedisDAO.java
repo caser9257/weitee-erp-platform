@@ -110,6 +110,10 @@ public class ErpNoRedisDAO {
     public static final String FINANCE_RECEIPT_NO_PREFIX = "SKD";
     public static final String FINANCE_EXPENSE_NO_PREFIX = "LSBX";
     public static final String FINANCE_VOUCHER_NO_PREFIX = "CWPZ";
+    /**
+     * 销项发票 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpInvoiceDO}
+     */
+    public static final String INVOICE_NO_PREFIX = "XPF";
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;

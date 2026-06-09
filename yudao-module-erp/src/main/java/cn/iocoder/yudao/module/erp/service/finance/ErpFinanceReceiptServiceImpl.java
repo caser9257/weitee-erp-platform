@@ -270,4 +270,22 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         return erpFinanceReceiptItemMapper.selectListByReceiptIds(receiptIds);
     }
 
+    @Override
+    public BigDecimal getReceivedAmountByOrderId(Long orderId) {
+        // 1. 查询该订单关联的所有销售出库单
+        List<ErpSaleOutDO> saleOutList = saleOutService.getSaleOutListByOrderId(orderId);
+        if (CollUtil.isEmpty(saleOutList)) {
+            return BigDecimal.ZERO;
+        }
+
+        // 2. 汇总所有出库单的已收款金额
+        BigDecimal totalReceived = BigDecimal.ZERO;
+        for (ErpSaleOutDO saleOut : saleOutList) {
+            if (saleOut.getReceiptPrice() != null) {
+                totalReceived = totalReceived.add(saleOut.getReceiptPrice());
+            }
+        }
+        return totalReceived;
+    }
+
 }

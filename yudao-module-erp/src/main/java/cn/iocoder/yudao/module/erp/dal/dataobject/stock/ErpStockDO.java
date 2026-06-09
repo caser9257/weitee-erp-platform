@@ -45,5 +45,13 @@ public class ErpStockDO extends BaseDO {
      * 库存数量
      */
     private BigDecimal count;
+    /**
+     * 加权平均单价
+     */
+    private BigDecimal averageCost;
+    /**
+     * 库存总金额
+     */
+    private BigDecimal totalCost;
 
 }

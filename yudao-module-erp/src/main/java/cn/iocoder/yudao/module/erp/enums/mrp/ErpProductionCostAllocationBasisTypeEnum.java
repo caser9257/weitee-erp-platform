@@ -12,7 +12,8 @@ public enum ErpProductionCostAllocationBasisTypeEnum implements ArrayValuable<In
 
     MAN_HOUR(10, "人工工时"),
     OUTPUT(20, "产量"),
-    WEIGHT(30, "重量");
+    WEIGHT(30, "重量"),
+    MACHINE_HOUR(40, "机器工时");
 
     public static final Integer[] ARRAYS = Arrays.stream(values())
             .map(ErpProductionCostAllocationBasisTypeEnum::getType)

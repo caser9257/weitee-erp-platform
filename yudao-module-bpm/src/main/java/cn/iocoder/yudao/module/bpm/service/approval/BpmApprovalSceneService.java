@@ -50,4 +50,12 @@ public interface BpmApprovalSceneService {
      */
     void updateSceneStatus(Long id, Integer status);
 
+    /**
+     * 绑定审批方案到场景
+     *
+     * @param id            场景编号
+     * @param activeSchemeId 生效方案编号，传 null 表示解绑
+     */
+    void bindScheme(Long id, Long activeSchemeId);
+
 }

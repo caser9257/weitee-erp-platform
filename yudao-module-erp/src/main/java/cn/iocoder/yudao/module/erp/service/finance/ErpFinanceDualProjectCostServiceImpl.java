@@ -120,13 +120,20 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
         rebuildLogMapper.insert(rebuildLog);
 
         try {
-            // 2. 删除该范围的旧结果和明细
-            projectCostResultMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
-                    .eq(ErpFinanceDualProjectCostResultDO::getProjectId, projectId)
-                    .eq(ErpFinanceDualProjectCostResultDO::getPeriod, period));
-            projectCostItemMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostItemDO>()
-                    .eq(ErpFinanceDualProjectCostItemDO::getProjectId, projectId)
-                    .eq(ErpFinanceDualProjectCostItemDO::getPeriod, period));
+            // 2. 删除该范围的旧结果和明细（先查出结果 ID，再按 resultId 关联删除明细，确保数据对齐）
+            List<ErpFinanceDualProjectCostResultDO> oldResults = projectCostResultMapper.selectList(
+                    new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
+                            .eq(ErpFinanceDualProjectCostResultDO::getProjectId, projectId)
+                            .eq(ErpFinanceDualProjectCostResultDO::getPeriod, period));
+            if (!oldResults.isEmpty()) {
+                List<Long> oldResultIds = oldResults.stream()
+                        .map(ErpFinanceDualProjectCostResultDO::getId)
+                        .collect(Collectors.toList());
+                projectCostItemMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostItemDO>()
+                        .in(ErpFinanceDualProjectCostItemDO::getResultId, oldResultIds));
+                projectCostResultMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
+                        .in(ErpFinanceDualProjectCostResultDO::getId, oldResultIds));
+            }
 
             // 3. 查询该期间已审核的费用报销单（绑定该项目）
             List<ErpFinanceExpenseDO> expenses = expenseMapper.selectList(

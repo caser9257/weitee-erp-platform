@@ -24,4 +24,9 @@ public interface ErrorCodeConstantsExpense {
     ErrorCode EXPENSE_RD_ACCOUNTING_TYPE_REQUIRED = new ErrorCode(1_030_607_014, "研发费用必须选择费用化或资本化口径");
     ErrorCode EXPENSE_RD_ACCOUNTING_TYPE_INVALID = new ErrorCode(1_030_607_015, "当前费用类型不允许设置研发费用化/资本化口径");
 
+    // 费用类型混合方案相关错误码
+    ErrorCode EXPENSE_TYPE_NOT_EXISTS = new ErrorCode(1_030_607_016, "费用类型不存在");
+    ErrorCode EXPENSE_COST_CENTER_REQUIRED = new ErrorCode(1_030_607_017, "当前费用类型必须选择成本中心");
+    ErrorCode EXPENSE_LEASE_CONTRACT_REQUIRED = new ErrorCode(1_030_607_018, "当前费用类型必须选择租赁合同");
+
 }

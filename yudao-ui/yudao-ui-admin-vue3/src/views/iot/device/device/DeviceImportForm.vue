@@ -85,7 +85,7 @@
 <script lang="ts" setup>
 import type { UploadInstance, UploadProps, UploadUserFile } from 'element-plus'
 import { DeviceApi } from '@/api/iot/device/device'
-import { getAccessToken, getTenantId } from '@/utils/auth'
+import { getAccessToken } from '@/utils/auth'
 import download from '@/utils/download'
 
 defineOptions({ name: 'IoTDeviceImportForm' })
@@ -109,10 +109,7 @@ const buildUploadHeaders = () => {
   const headers: Record<string, string> = {
     Authorization: 'Bearer ' + getAccessToken()
   }
-  const tenantId = getTenantId()
-  if (tenantId !== undefined && tenantId !== null && tenantId !== '') {
-    headers['tenant-id'] = String(tenantId)
-  }
+
   return headers
 }
 

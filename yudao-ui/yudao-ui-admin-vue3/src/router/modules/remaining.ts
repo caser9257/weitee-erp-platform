@@ -307,6 +307,78 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'sale/shipment-release',
+        component: () => import('@/views/erp/sale/shipment-release/index.vue'),
+        name: 'ErpShipmentReleasePage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '发货放行审核',
+          activeMenu: '/sales/shipment-release'
+        }
+      },
+      {
+        path: 'sale/market-ledger',
+        component: () => import('@/views/erp/sale/market-ledger/index.vue'),
+        name: 'ErpMarketLedgerPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '市场执行台账',
+          activeMenu: '/sales/market-ledger'
+        }
+      },
+      {
+        path: 'project/lifecycle',
+        component: () => import('@/views/erp/project/lifecycle/index.vue'),
+        name: 'ErpProjectLifecyclePage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '项目生命周期追踪',
+          activeMenu: '/project/lifecycle'
+        }
+      },
+      {
+        path: 'finance/invoice',
+        component: () => import('@/views/erp/finance/invoice/index.vue'),
+        name: 'ErpInvoicePage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '销项发票管理',
+          activeMenu: '/finance/invoice'
+        }
+      },
+      {
+        path: 'sale/market-alert',
+        component: () => import('@/views/erp/sale/market-alert/index.vue'),
+        name: 'ErpMarketAlertPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '市场预警与统计',
+          activeMenu: '/sale/market-alert'
+        }
+      },
+      {
+        path: 'crm/contract/import',
+        component: () => import('@/views/crm/contract/import/index.vue'),
+        name: 'CrmContractImportPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '合同导入',
+          activeMenu: '/crm/contract'
+        }
+      },
+      {
         path: 'sale/order/purchase-trace',
         component: () => import('@/views/erp/purchase/order/index.vue'),
         name: 'ErpSaleOrderPurchaseOrderTracePage',

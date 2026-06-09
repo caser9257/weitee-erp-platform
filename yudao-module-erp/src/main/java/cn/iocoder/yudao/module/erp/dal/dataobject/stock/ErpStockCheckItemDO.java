@@ -79,5 +79,17 @@ public class ErpStockCheckItemDO extends BaseDO {
      * 备注
      */
     private String remark;
+    /**
+     * 初盘数量
+     */
+    private BigDecimal firstCount;
+    /**
+     * 复盘数量
+     */
+    private BigDecimal recount;
+    /**
+     * 复盘差异
+     */
+    private BigDecimal recountDiff;
 
 }

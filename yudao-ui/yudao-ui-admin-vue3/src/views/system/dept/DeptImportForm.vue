@@ -74,8 +74,7 @@ const submitForm = async () => {
     return
   }
   uploadHeaders.value = {
-    Authorization: 'Bearer ' + getAccessToken(),
-    'tenant-id':()
+    Authorization: 'Bearer ' + getAccessToken()
   }
   formLoading.value = true
   uploadRef.value?.submit()

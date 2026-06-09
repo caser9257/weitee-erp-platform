@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.framework.web.core.util.WebFrameworkUtils.HEADER_TENANT_ID;
+
 import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.PROCESS_INSTANCE_HTTP_CALL_ERROR;
 
 /**
@@ -83,10 +83,6 @@ public class BpmHttpRequestUtils {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         BpmProcessInstanceService processInstanceService = SpringUtils.getBean(BpmProcessInstanceService.class);
-        ProcessInstance processInstance = processInstanceService.getProcessInstance(event.getId());
-        if (processInstance != null && StrUtil.isNotEmpty(processInstance.getTenantId())) {
-            headers.add(HEADER_TENANT_ID, processInstance.getTenantId());
-        }
         // 1.2 设置请求体
 //        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
 //        body.add("id", event.getId());
@@ -120,7 +116,6 @@ public class BpmHttpRequestUtils {
     public static MultiValueMap<String, String> buildHttpHeaders(ProcessInstance processInstance,
                                                                  List<BpmSimpleModelNodeVO.HttpRequestParam> headerSettings) {
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
-        headers.add(HEADER_TENANT_ID, processInstance.getTenantId());
         Map<String, Object> processVariables = processInstance.getProcessVariables();
         addHttpRequestParam(headers, headerSettings, processVariables);
         return headers;

@@ -125,4 +125,48 @@ public class ErpProjectDO extends BaseDO {
      */
     private String remark;
 
+    // ========== 生命周期字段（销售执行闭环） ==========
+
+    /**
+     * 当前生命周期阶段
+     *
+     * 枚举值：
+     * - CONTRACT: 合同
+     * - ORDER: 订单
+     * - PAYMENT: 收款
+     * - SHIPMENT: 发货
+     * - OUTBOUND: 出库
+     * - INVOICE: 开票
+     * - CLOSED: 关闭
+     * - CONTRACT_REJECTED: 合同驳回
+     * - BLOCKED: 阻塞
+     * - RETURNED: 退货
+     * - DISPUTED: 争议
+     */
+    private String lifecycleStage;
+    /**
+     * 当前阻塞项
+     */
+    private String currentBlocker;
+    /**
+     * 当前待办角色
+     */
+    private String currentPendingRole;
+    /**
+     * 合同执行状态
+     */
+    private String contractExecStatus;
+    /**
+     * 收款执行状态
+     */
+    private String receiptExecStatus;
+    /**
+     * 发货执行状态
+     */
+    private String shipmentExecStatus;
+    /**
+     * 开票执行状态
+     */
+    private String invoiceExecStatus;
+
 }

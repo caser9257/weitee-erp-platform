@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseReturnItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseReturnItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
@@ -24,6 +25,7 @@ import cn.iocoder.yudao.module.erp.service.finance.ErpApStatementService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -78,6 +80,8 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     private ErpFinancePaymentAllocateMapper erpFinancePaymentAllocateMapper;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -194,9 +198,14 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
                 : ErpStockRecordBizTypeEnum.PURCHASE_RETURN_CANCEL.getType();
         purchaseReturnItems.forEach(purchaseReturnItem -> {
             BigDecimal count = approve ? purchaseReturnItem.getCount().negate() : purchaseReturnItem.getCount();
+            // 获取加权平均成本作为出库价格
+            ErpStockDO stock = stockService.getStock(purchaseReturnItem.getProductId(), purchaseReturnItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(purchaseReturnItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     purchaseReturnItem.getProductId(), purchaseReturnItem.getWarehouseId(), count,
-                    bizType, purchaseReturnItem.getReturnId(), purchaseReturnItem.getId(), purchaseReturn.getNo()));
+                    bizType, purchaseReturnItem.getReturnId(), purchaseReturnItem.getId(), purchaseReturn.getNo(),
+                    price, amount));
         });
         if (!approve) {
             apStatementService.closeStatementByBiz(ErpBizTypeEnum.PURCHASE_RETURN.getType(), id, "采购退货反审核关闭台账");

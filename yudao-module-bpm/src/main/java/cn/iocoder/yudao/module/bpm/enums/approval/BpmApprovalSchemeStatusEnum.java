@@ -8,6 +8,8 @@ import java.util.Arrays;
 
 /**
  * 审批方案版本状态枚举
+ *
+ * 状态流转：DRAFT(10) → PENDING_PUBLISH(20) → ACTIVE(30) ↔ DISABLED(40)
  */
 @Getter
 @AllArgsConstructor

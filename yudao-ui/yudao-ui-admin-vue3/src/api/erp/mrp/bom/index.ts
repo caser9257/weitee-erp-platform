@@ -1,6 +1,6 @@
 ﻿import request from '@/config/axios'
 import { config } from '@/config/axios/config'
-import { getAccessToken, getTenantId, getVisitTenantId } from '@/utils/auth'
+import { getAccessToken } from '@/utils/auth'
 
 export interface BomItemVO {
   id?: number
@@ -196,16 +196,7 @@ export const BomApi = {
     if (accessToken) {
       headers.set('Authorization', 'Bearer ' + accessToken)
     }
-    if (import.meta.env.VITE_APP_TENANT_ENABLE === 'true') {
-      const tenantId = getTenantId()
-      if (tenantId) {
-        headers.set('tenant-id', String(tenantId))
-      }
-      const visitTenantId = getVisitTenantId()
-      if (accessToken && visitTenantId) {
-        headers.set('visit-tenant-id', String(visitTenantId))
-      }
-    }
+
 
     const response = await fetch(`${config.base_url}/erp/bom/pricing-preview?productId=${productId}`, {
       method: 'GET',

@@ -48,6 +48,8 @@ public class ErpProductionOrderDO extends BaseDO {
 
     private Long sourceItemId;
 
+    private BigDecimal machineHour;
+
     private String remark;
 
 }

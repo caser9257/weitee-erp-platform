@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProduc
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.*;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockBatchDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.*;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
@@ -24,6 +25,7 @@ import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpSupplierService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockBatchService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpWarehouseService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchInboundReqBO;
@@ -88,6 +90,8 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
     private ErpStockBatchService stockBatchService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
     @Resource
@@ -219,9 +223,13 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                 BigDecimal batchAmount = calculateIssueAmount(stockBatch, batch.getIssueQty(), purchaseInItemMap);
                 stockBatchService.decreaseBatch(new ErpStockBatchChangeReqBO(stockBatch.getId(), batch.getIssueQty(),
                         ErpStockRecordBizTypeEnum.OUTSOURCE_ISSUE.getType(), issue.getId(), issueItem.getId(), issue.getIssueNo(), item.getRemark()));
+                // 获取加权平均成本作为发料价格
+                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                BigDecimal price = stock != null ? stock.getAverageCost() : null;
+                BigDecimal amount = price != null ? price.multiply(batch.getIssueQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(item.getMaterialId(), item.getWarehouseId(),
                         batch.getIssueQty().negate(), ErpStockRecordBizTypeEnum.OUTSOURCE_ISSUE.getType(), issue.getId(),
-                        issueItem.getId(), issue.getIssueNo()));
+                        issueItem.getId(), issue.getIssueNo(), price, amount));
                 erpOutsourceIssueBatchMapper.insert(new ErpOutsourceIssueBatchDO()
                         .setIssueItemId(issueItem.getId())
                         .setStockBatchId(stockBatch.getId())
@@ -339,9 +347,13 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                 stockBatchService.increaseBatch(new ErpStockBatchChangeReqBO(batch.getStockBatchId(), batch.getReturnQty(),
                         ErpStockRecordBizTypeEnum.OUTSOURCE_RETURN.getType(), returning.getId(), returnItem.getId(),
                         returning.getReturnNo(), item.getRemark()));
+                // 获取加权平均成本作为退料价格
+                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                BigDecimal price = stock != null ? stock.getAverageCost() : null;
+                BigDecimal amount = price != null ? price.multiply(batch.getReturnQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(item.getMaterialId(), item.getWarehouseId(),
                         batch.getReturnQty(), ErpStockRecordBizTypeEnum.OUTSOURCE_RETURN.getType(), returning.getId(),
-                        returnItem.getId(), returning.getReturnNo()));
+                        returnItem.getId(), returning.getReturnNo(), price, amount));
                 erpOutsourceReturnBatchMapper.insert(new ErpOutsourceReturnBatchDO()
                         .setReturnItemId(returnItem.getId())
                         .setIssueBatchId(issueBatch.getId())
@@ -420,7 +432,8 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                 reqVO.getInboundQty(), Boolean.FALSE, ErpStockRecordBizTypeEnum.OUTSOURCE_INBOUND.getType(),
                 inbound.getId(), inbound.getId(), inbound.getInboundNo(), OUTSOURCE_INBOUND_SOURCE_BIZ_TYPE, null, null, reqVO.getRemark()));
         stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(order.getProductId(), reqVO.getWarehouseId(),
-                reqVO.getInboundQty(), ErpStockRecordBizTypeEnum.OUTSOURCE_INBOUND.getType(), inbound.getId(), inbound.getId(), inbound.getInboundNo()));
+                reqVO.getInboundQty(), ErpStockRecordBizTypeEnum.OUTSOURCE_INBOUND.getType(), inbound.getId(), inbound.getId(), inbound.getInboundNo(),
+                unitCost, totalCost));
         BigDecimal newFinishedQty = ObjectUtil.defaultIfNull(order.getFinishedQty(), BigDecimal.ZERO).add(reqVO.getInboundQty());
         erpOutsourceOrderMapper.updateById(new ErpOutsourceOrderDO().setId(order.getId())
                 .setFinishedQty(newFinishedQty)

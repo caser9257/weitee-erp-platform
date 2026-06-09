@@ -9,26 +9,12 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
--- 获取工作流程父菜单 ID
-SET @bpm_parent_id := (
-    SELECT `id` FROM `system_menu`
-    WHERE `name` = '工作流程' AND `deleted` = b'0'
-    ORDER BY `id` LIMIT 1
+-- 获取工作流程父菜单 ID（优先"工作流程"，其次"流程管理"，兜底 0）
+SET @bpm_parent_id := COALESCE(
+    (SELECT `id` FROM `system_menu` WHERE `name` = '工作流程' AND `deleted` = b'0' ORDER BY `id` LIMIT 1),
+    (SELECT `id` FROM `system_menu` WHERE `name` = '流程管理' AND `deleted` = b'0' ORDER BY `id` LIMIT 1),
+    0
 );
-
--- 如果找不到"工作流程"，尝试查找"流程管理"
-IF @bpm_parent_id IS NULL THEN
-    SET @bpm_parent_id := (
-        SELECT `id` FROM `system_menu`
-        WHERE `name` = '流程管理' AND `deleted` = b'0'
-        ORDER BY `id` LIMIT 1
-    );
-END IF;
-
--- 如果还是找不到，使用 0（顶级菜单）
-IF @bpm_parent_id IS NULL THEN
-    SET @bpm_parent_id := 0;
-END IF;
 
 -- 创建审批场景目录菜单
 INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)

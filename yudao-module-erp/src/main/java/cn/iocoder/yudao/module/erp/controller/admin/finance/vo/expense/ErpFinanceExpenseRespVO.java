@@ -106,6 +106,10 @@ public class ErpFinanceExpenseRespVO {
     @ExcelProperty("备注")
     private String remark;
 
+    @Schema(description = "租赁合同编号", example = "LEASE-2026-001")
+    @ExcelProperty("租赁合同编号")
+    private String leaseContractNo;
+
     @Schema(description = "创建人", example = "1")
     private String creator;
 

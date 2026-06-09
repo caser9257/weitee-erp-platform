@@ -6,14 +6,21 @@ import cn.iocoder.yudao.framework.common.util.number.MoneyUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.check.ErpStockCheckPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.check.ErpStockCheckSaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.warehouse.ErpWarehouseSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockCheckItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockCheckItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
+import cn.iocoder.yudao.module.erp.enums.mrp.ErpProductionCostSourceTypeEnum;
+import cn.iocoder.yudao.module.erp.enums.mrp.ErpProductionCostTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
+import cn.iocoder.yudao.module.erp.service.mrp.ErpProductionCostService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.springframework.stereotype.Service;
@@ -22,10 +29,13 @@ import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.*;
@@ -56,6 +66,10 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     private ErpWarehouseService warehouseService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
+    @Resource
+    private ErpProductionCostService productionCostService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,6 +88,9 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
                 .setTotalCount(getSumValue(stockCheckItems, ErpStockCheckItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockCheckItems, ErpStockCheckItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockCheckMapper.insert(stockCheck);
+        // 记录快照时间
+        stockCheck.setSnapshotTime(LocalDateTime.now());
+        erpStockCheckMapper.updateById(new ErpStockCheckDO().setId(stockCheck.getId()).setSnapshotTime(stockCheck.getSnapshotTime()));
         // 2.2 插入盘点单项
         stockCheckItems.forEach(o -> o.setCheckId(stockCheck.getId()));
         erpStockCheckItemMapper.insertBatch(stockCheckItems);
@@ -135,10 +152,55 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
                 bizType = count.compareTo(BigDecimal.ZERO) > 0 ? ErpStockRecordBizTypeEnum.CHECK_MORE_IN_CANCEL.getType()
                         : ErpStockRecordBizTypeEnum.CHECK_LESS_OUT_CANCEL.getType();
             }
+            // 获取加权平均成本作为盘点价格
+            ErpStockDO stock = stockService.getStock(stockCheckItem.getProductId(), stockCheckItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockCheckItem.getCount().abs()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     stockCheckItem.getProductId(), stockCheckItem.getWarehouseId(), count,
-                    bizType, stockCheckItem.getCheckId(), stockCheckItem.getId(), stockCheck.getNo()));
+                    bizType, stockCheckItem.getCheckId(), stockCheckItem.getId(), stockCheck.getNo(),
+                    price, amount));
         });
+
+        // 4. 盘亏结转至制造费用
+        if (approve) {
+            stockCheckItems.forEach(stockCheckItem -> {
+                // 只处理盘亏（count < 0 表示账面 > 实际，即盘亏）
+                if (stockCheckItem.getCount().compareTo(BigDecimal.ZERO) >= 0) {
+                    return;
+                }
+                // 计算盘亏金额
+                BigDecimal lossAmount = stockCheckItem.getCount().abs().multiply(
+                        defaultAmount(stockCheckItem.getProductPrice()));
+                if (lossAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                    return;
+                }
+                // 创建生产成本条目（制造费用-OTHER）
+                ErpProductionCostEntryDO costEntry = ErpProductionCostEntryDO.builder()
+                        .costType(ErpProductionCostTypeEnum.OTHER.getType())
+                        .sourceType(ErpProductionCostSourceTypeEnum.SYSTEM.getType())
+                        .amount(lossAmount)
+                        .sourceId(stockCheckItem.getCheckId())
+                        .sourceNo(stockCheck.getNo())
+                        .remark("盘点盘亏自动结转")
+                        .build();
+                productionCostService.createProductionCostEntryFromCheck(costEntry);
+            });
+        }
+
+        // 盘点完成后自动解冻关联仓库
+        if (approve) {
+            Set<Long> warehouseIds = stockCheckItems.stream()
+                    .map(ErpStockCheckItemDO::getWarehouseId)
+                    .collect(Collectors.toSet());
+            warehouseIds.forEach(warehouseId -> {
+                ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
+                if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
+                    warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
+                            .setId(warehouseId).setFrozen(false));
+                }
+            });
+        }
     }
 
     private List<ErpStockCheckItemDO> validateStockCheckItems(List<ErpStockCheckSaveReqVO.Item> list) {
@@ -194,6 +256,10 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             // 2.2 删除盘点单项
             erpStockCheckItemMapper.deleteByCheckId(stockCheck.getId());
         });
+    }
+
+    private BigDecimal defaultAmount(BigDecimal amount) {
+        return amount != null ? amount : BigDecimal.ZERO;
     }
 
     private ErpStockCheckDO validateStockCheckExists(Long id) {

@@ -2,6 +2,7 @@
 @use './FormCreate/index.scss';
 @use './theme.scss';
 @use 'element-plus/theme-chalk/dark/css-vars.css';
+@use './erp-overrides';
 
 .reset-margin [class*='el-icon'] + span {
   margin-left: 2px !important;
@@ -36,40 +37,132 @@
   }
 }
 
-/* ==============================================================
-   [Wave Technic Deep UI Optimization]
-   Tame the table row action links. Instead of screaming the 
-   bright primary theme color constantly, they look like sleek, 
-   neutral corporate text and illuminate their semantic colors on hover.
-   ============================================================== */
-.el-table .el-button.is-link {
-  /* Secondary actions should remain calm (dark grey text) */
-  color: var(--el-text-color-regular);
-  font-weight: 500;
-  transition: all 0.2s ease;
+/* ── ERP 设计系统：金额高亮工具类 ────────────────────────── */
+.text-erp-amount {
+  color: var(--erp-amount-color);
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+  font-weight: 600;
+}
 
-  /* Use a calm B2B blue for standard text-links instead of the aggressive branding orange */
-  &.el-button--primary:hover,
-  &:not(.el-button--success):not(.el-button--warning):not(.el-button--danger):hover {
-    color: #1677ff;
-    background-color: rgba(22, 119, 255, 0.08);
-  }
-  
-  /* Illuminate semantic colors on hover if they are success/warning */
-  &.el-button--success:hover {
-    color: var(--el-color-success);
-    background-color: var(--el-color-success-light-9);
-  }
-  &.el-button--warning:hover {
-    color: var(--el-color-warning);
-    background-color: var(--el-color-warning-light-9);
-  }
-  
-  /* Danger buttons (like delete) should always communicate risk */
-  &.el-button--danger {
-    color: var(--el-color-danger);
-    &:hover {
-      background-color: var(--el-color-danger-light-9);
-    }
+.bg-erp-amount {
+  background-color: var(--erp-amount-bg);
+}
+
+/* ── ERP 设计系统：等宽字体工具类 ────────────────────────── */
+.font-erp-mono {
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'SF Mono', monospace;
+}
+
+/* ── ERP 设计系统：语义化 Badge 工具类 ───────────────────── */
+.badge-primary {
+  background-color: var(--erp-primary-50);
+  color: var(--erp-primary-600);
+  border: 1px solid var(--erp-primary-200);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-success {
+  background-color: var(--erp-success-50);
+  color: var(--erp-success-600);
+  border: 1px solid var(--erp-success-200);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-warning {
+  background-color: var(--erp-warning-50);
+  color: var(--erp-warning-600);
+  border: 1px solid var(--erp-warning-200);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-danger {
+  background-color: var(--erp-danger-50);
+  color: var(--erp-danger-600);
+  border: 1px solid var(--erp-danger-200);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-neutral {
+  background-color: var(--erp-slate-50);
+  color: var(--erp-slate-600);
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── ERP 设计系统：卡片容器工具类 ────────────────────────── */
+.erp-card {
+  background: #fff;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 12px;
+  box-shadow: var(--erp-shadow-sm);
+  padding: 20px;
+}
+
+.erp-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--erp-slate-100);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--erp-slate-800);
+}
+
+/* ── ERP 设计系统：上下文卡片（深色）────────────────────── */
+.erp-context-card {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.erp-context-card__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.erp-context-card__subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.erp-context-card__metric {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fff;
+}
+
+/* ── ERP 设计系统：微型进度条 ────────────────────────────── */
+.erp-micro-progress {
+  height: 4px;
+  background-color: var(--erp-slate-100);
+  border-radius: 2px;
+  overflow: hidden;
+
+  &__bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+
+    &--primary  { background-color: var(--erp-primary-600); }
+    &--success  { background-color: var(--erp-success-600); }
+    &--warning  { background-color: var(--erp-warning-600); }
+    &--danger   { background-color: var(--erp-danger-600); }
   }
 }

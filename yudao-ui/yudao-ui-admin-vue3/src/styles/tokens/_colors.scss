@@ -1,0 +1,75 @@
+// ============================================================
+//  ERP 设计系统 — 颜色 Token
+//  所有颜色值统一在此定义，禁止在业务代码中硬编码色值
+// ============================================================
+
+// ── 品牌色（Brand）───────────────────────────────────────────
+//  主色调：经典科技蓝，用于主按钮、链接、选中态、Tab 激活等
+$erp-primary-50:  #EBF5FF;
+$erp-primary-100: #D6EBFF;
+$erp-primary-200: #ADD6FF;
+$erp-primary-300: #85C1FF;
+$erp-primary-400: #5CACFF;
+$erp-primary-500: #3396FF;
+$erp-primary-600: #1677FF;  // ← 默认主色
+$erp-primary-700: #0D66E0;
+$erp-primary-800: #0A52B8;
+$erp-primary-900: #073D8F;
+
+// ── 语义色：成功（Success）───────────────────────────────────
+//  用于：已完成、已入库、审核通过、资金到账
+$erp-success-50:  #ECFDF5;
+$erp-success-100: #D1FAE5;
+$erp-success-200: #A7F3D0;
+$erp-success-300: #6EE7B7;
+$erp-success-400: #34D399;
+$erp-success-500: #10B981;
+$erp-success-600: #059669;  // ← 默认成功色
+$erp-success-700: #047857;
+$erp-success-800: #065F46;
+$erp-success-900: #064E3B;
+
+// ── 语义色：警告 / 待办（Warning）───────────────────────────
+//  用于：待审核、库存预警、逾期风险、设备维护中
+$erp-warning-50:  #FFFBEB;
+$erp-warning-100: #FEF3C7;
+$erp-warning-200: #FDE68A;
+$erp-warning-300: #FCD34D;
+$erp-warning-400: #FBBF24;
+$erp-warning-500: #F59E0B;
+$erp-warning-600: #D97706;  // ← 默认警告色
+$erp-warning-700: #B45309;
+$erp-warning-800: #92400E;
+$erp-warning-900: #78350F;
+
+// ── 语义色：危险 / 异常（Danger）────────────────────────────
+//  用于：驳回、删除、异常终止、设备报警
+$erp-danger-50:  #FFF1F2;
+$erp-danger-100: #FFE4E6;
+$erp-danger-200: #FECDD3;
+$erp-danger-300: #FDA4AF;
+$erp-danger-400: #FB7185;
+$erp-danger-500: #F43F5E;
+$erp-danger-600: #E11D48;  // ← 默认危险色（玫瑰红，非刺眼纯红）
+$erp-danger-700: #BE123C;
+$erp-danger-800: #9F1239;
+$erp-danger-900: #881337;
+
+// ── 中性色（Neutral / Slate）────────────────────────────────
+//  用于：页面背景、边框、文本层级、表头、分隔线
+$erp-slate-50:  #F8FAFC;   // 页面背景
+$erp-slate-100: #F1F5F9;   // 表头底色、浅灰背景
+$erp-slate-200: #E2E8F0;   // 边框
+$erp-slate-300: #CBD5E1;   // 禁用态边框
+$erp-slate-400: #94A3B8;   // 占位符文本
+$erp-slate-500: #64748B;   // 次要文本
+$erp-slate-600: #475569;   // 辅助正文
+$erp-slate-700: #334155;   // 次级标题
+$erp-slate-800: #1E293B;   // 正文主色
+$erp-slate-900: #0F172A;   // 标题、深色上下文卡文字
+
+// ── 业务专用色 ──────────────────────────────────────────────
+//  金额高亮：深红，用于应收/应付/尾款等醒目数字
+$erp-amount-color: #DC2626;
+//  金额背景：极浅红底
+$erp-amount-bg:    #FEF2F2;

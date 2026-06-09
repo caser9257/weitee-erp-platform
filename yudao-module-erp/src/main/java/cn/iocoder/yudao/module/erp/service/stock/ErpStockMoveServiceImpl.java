@@ -7,6 +7,7 @@ import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.move.ErpStockMovePageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.move.ErpStockMoveSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockMoveDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockMoveItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockMoveItemMapper;
@@ -57,6 +58,8 @@ public class ErpStockMoveServiceImpl implements ErpStockMoveService {
     private ErpWarehouseService warehouseService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -128,12 +131,18 @@ public class ErpStockMoveServiceImpl implements ErpStockMoveService {
         stockMoveItems.forEach(stockMoveItem -> {
             BigDecimal fromCount = approve ? stockMoveItem.getCount().negate() : stockMoveItem.getCount();
             BigDecimal toCount = approve ? stockMoveItem.getCount() : stockMoveItem.getCount().negate();
+            // 获取加权平均成本作为移库价格
+            ErpStockDO stock = stockService.getStock(stockMoveItem.getProductId(), stockMoveItem.getFromWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockMoveItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     stockMoveItem.getProductId(), stockMoveItem.getFromWarehouseId(), fromCount,
-                    fromBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo()));
+                    fromBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo(),
+                    price, amount));
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     stockMoveItem.getProductId(), stockMoveItem.getToWarehouseId(), toCount,
-                    toBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo()));
+                    toBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo(),
+                    price, amount));
         });
     }
 

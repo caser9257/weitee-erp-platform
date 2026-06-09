@@ -60,26 +60,4 @@ export const removeLoginForm = () => {
   wsCache.delete(CACHE_KEY.LoginForm)
 }
 
-const TenantIdKey = 'tenantId'
-const VisitTenantIdKey = 'visitTenantId'
 
-export const getTenantId = () => {
-  return wsCache.get((CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey)
-}
-
-export const setTenantId = (tenantId: number | string) => {
-  wsCache.set((CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey, tenantId)
-}
-
-export const getVisitTenantId = () => {
-  return wsCache.get(
-    (CACHE_KEY as typeof CACHE_KEY & { VisitTenantId?: string }).VisitTenantId || VisitTenantIdKey
-  )
-}
-
-export const setVisitTenantId = (visitTenantId: number | string) => {
-  wsCache.set(
-    (CACHE_KEY as typeof CACHE_KEY & { VisitTenantId?: string }).VisitTenantId || VisitTenantIdKey,
-    visitTenantId
-  )
-}

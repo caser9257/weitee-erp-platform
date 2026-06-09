@@ -92,4 +92,15 @@ public class BpmApprovalSceneController {
         return success(true);
     }
 
+    @PutMapping("/bind-scheme")
+    @Operation(summary = "绑定审批方案")
+    @Parameter(name = "id", description = "场景编号", required = true, example = "1")
+    @Parameter(name = "activeSchemeId", description = "方案编号，传空表示解绑", example = "1")
+    @PreAuthorize("@ss.hasPermission('bpm:approval-scene:update')")
+    public CommonResult<Boolean> bindScheme(@RequestParam("id") Long id,
+                                            @RequestParam(value = "activeSchemeId", required = false) Long activeSchemeId) {
+        approvalSceneService.bindScheme(id, activeSchemeId);
+        return success(true);
+    }
+
 }

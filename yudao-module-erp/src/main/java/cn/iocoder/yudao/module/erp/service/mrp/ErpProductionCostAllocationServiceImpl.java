@@ -291,6 +291,9 @@ public class ErpProductionCostAllocationServiceImpl implements ErpProductionCost
         if (orderMap.isEmpty()) {
             return Collections.emptyMap();
         }
+        if (ErpProductionCostAllocationBasisTypeEnum.MACHINE_HOUR.getType().equals(basisType)) {
+            return summarizeMachineHourBasis(accountingMonth, new ArrayList<>(orderMap.keySet()));
+        }
         if (ErpProductionCostAllocationBasisTypeEnum.OUTPUT.getType().equals(basisType)) {
             return summarizeOutputBasis(orderMap.values());
         }
@@ -403,6 +406,33 @@ public class ErpProductionCostAllocationServiceImpl implements ErpProductionCost
         }
         return StrUtil.format("{}-{}", allocation.getAllocationNo(),
                 rule == null ? "分摊生成" : rule.getRuleName());
+    }
+
+    /**
+     * 汇总机器工时分摊基准
+     *
+     * @param accountingMonth 会计月份
+     * @param productionOrderIds 生产工单编号列表
+     * @return 分摊基准数据（工单ID -> 工时数值）
+     */
+    public Map<Long, BigDecimal> summarizeMachineHourBasis(String accountingMonth, List<Long> productionOrderIds) {
+        // 查询生产工单的机器工时数据
+        if (CollUtil.isEmpty(productionOrderIds)) {
+            return Collections.emptyMap();
+        }
+        List<ErpProductionOrderDO> orders = productionOrderService.getProductionOrderList(productionOrderIds);
+        if (CollUtil.isEmpty(orders)) {
+            return Collections.emptyMap();
+        }
+        Map<Long, BigDecimal> basisMap = new LinkedHashMap<>();
+        for (ErpProductionOrderDO order : orders) {
+            if (order.getId() == null || order.getMachineHour() == null
+                    || order.getMachineHour().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            basisMap.put(order.getId(), order.getMachineHour().setScale(6, RoundingMode.HALF_UP));
+        }
+        return basisMap;
     }
 
 }

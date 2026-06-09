@@ -1,0 +1,17 @@
+{
+  "id": "p0-1-scene-bind-scheme",
+  "title": "P0-1 审批场景页增加方案绑定与切换能力",
+  "status": "completed",
+  "phase": "完成",
+  "gate": null,
+  "description": "让管理员可以在场景页直接绑定 activeSchemeId。涉及后端 RespVO 增加 activeSchemeName、前端场景表单增加方案选择器、场景列表显示方案名称。",
+  "files": [
+    "yudao-module-bpm/src/main/java/cn/iocoder/yudao/module/bpm/controller/admin/approval/vo/scene/BpmApprovalSceneRespVO.java",
+    "yudao-module-bpm/src/main/java/cn/iocoder/yudao/module/bpm/service/approval/BpmApprovalSceneServiceImpl.java",
+    "yudao-ui/yudao-ui-admin-vue3/src/api/bpm/approval/scene.ts",
+    "yudao-ui/yudao-ui-admin-vue3/src/views/bpm/approval/scene/index.vue",
+    "yudao-ui/yudao-ui-admin-vue3/src/views/bpm/approval/scene/ApprovalSceneForm.vue"
+  ],
+  "created_at": "2026-06-01T02:46:39.946Z",
+  "updated_at": "2026-06-01T04:42:37.281Z"
+}

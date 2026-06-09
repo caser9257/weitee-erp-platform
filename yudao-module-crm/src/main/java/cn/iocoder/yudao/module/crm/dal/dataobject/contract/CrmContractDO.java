@@ -120,4 +120,71 @@ public class CrmContractDO extends BaseDO {
      */
     private String remark;
 
+    // ========== 商业条款字段（销售执行闭环） ==========
+
+    /**
+     * 发货放行规则
+     *
+     * 枚举值：
+     * - SIGN_AND_SHIP: 签约即发
+     * - AFTER_PAYMENT: 到账后发
+     * - AFTER_PREPAYMENT: 达到预付款比例后发
+     * - FINANCE_APPROVAL: 财务审核后发
+     */
+    private String shipmentReleaseRule;
+    /**
+     * 开票触发条件
+     *
+     * 枚举值：
+     * - PREPAYMENT_FULL: 预付款全额开票
+     * - PREPAYMENT_PARTIAL: 预付款部分开票
+     * - PREPAYMENT_ONLY: 仅预付款开票
+     * - AFTER_SHIPMENT: 发货后开票
+     * - AFTER_DELIVERY_RECEIPT: 交付收款后开票
+     * - MANUAL: 手工决定
+     */
+    private String invoiceTrigger;
+    /**
+     * 收款规则
+     *
+     * 枚举值：
+     * - BEFORE_SHIPMENT: 发货前付款
+     * - ON_SHIPMENT: 发货时付款
+     * - AFTER_SHIPMENT: 发货后约定期限付款
+     */
+    private String collectionRule;
+    /**
+     * 预付款金额，单位：元
+     */
+    private BigDecimal prepaymentAmount;
+    /**
+     * 预付款比例，单位：%
+     */
+    private BigDecimal prepaymentRatio;
+    /**
+     * 是否需要财务审核放行
+     *
+     * 枚举值：0-否，1-是
+     * 业务确认：所有发货都需要财务审核，默认为1
+     */
+    private Integer financeApprovalRequired;
+    /**
+     * 是否需要验收
+     *
+     * 枚举值：0-否，1-是
+     */
+    private Integer acceptanceRequired;
+    /**
+     * 付款条件说明
+     */
+    private String paymentTerms;
+    /**
+     * 发货条件说明
+     */
+    private String shipmentConditions;
+    /**
+     * 开票条件说明
+     */
+    private String invoiceConditions;
+
 }

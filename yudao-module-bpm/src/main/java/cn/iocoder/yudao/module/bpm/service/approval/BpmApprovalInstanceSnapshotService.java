@@ -37,4 +37,9 @@ public interface BpmApprovalInstanceSnapshotService {
      */
     void updateSnapshotProcessInstanceId(Long id, String processInstanceId);
 
+    /**
+     * 删除快照（用于重新提交时清理已完结的旧快照）
+     */
+    void deleteSnapshot(Long id);
+
 }

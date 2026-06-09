@@ -114,6 +114,7 @@ public interface ErrorCodeConstants {
     ErrorCode APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS = new ErrorCode(1_009_017_000, "审批运行时快照不存在");
     ErrorCode APPROVAL_INSTANCE_NOT_PROCESSING = new ErrorCode(1_009_017_001, "审批实例不在审批中状态");
     ErrorCode APPROVAL_PROCESS_INSTANCE_NOT_EXISTS = new ErrorCode(1_009_017_002, "流程实例不存在");
+    ErrorCode APPROVAL_INSTANCE_ALREADY_PROCESSING = new ErrorCode(1_009_017_003, "场景【{}】业务【{}】已有审批中的实例，不允许重复提交");
 
     // ========== BPM 运行时 1-009-018-000 ==========
     ErrorCode APPROVAL_CONTEXT_PROVIDER_NOT_FOUND = new ErrorCode(1_009_018_000, "场景【{}】找不到上下文提供者");

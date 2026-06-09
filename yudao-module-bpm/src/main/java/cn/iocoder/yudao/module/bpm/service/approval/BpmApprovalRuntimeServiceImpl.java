@@ -90,19 +90,32 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_SCENE_DISABLED);
         }
 
-        // 2. 获取上下文提供者
+        // 2. 防重检查：同一业务单据在同一场景下不允许重复提交
+        BpmApprovalInstanceSnapshotDO existingSnapshot = approvalInstanceSnapshotService
+                .getSnapshotBySceneCodeAndBizId(sceneCode, String.valueOf(bizId));
+        if (existingSnapshot != null) {
+            if (ObjectUtil.equal(existingSnapshot.getStatus(),
+                    BpmApprovalInstanceSnapshotStatusEnum.PROCESSING.getStatus())) {
+                // 审批中，拒绝重复提交
+                throw exception(APPROVAL_INSTANCE_ALREADY_PROCESSING, sceneCode, bizId);
+            }
+            // 已完结（通过/驳回/撤回），清理旧快照后允许重新提交
+            approvalInstanceSnapshotService.deleteSnapshot(existingSnapshot.getId());
+        }
+
+        // 3. 获取上下文提供者
         ApprovalContextProvider contextProvider = contextProviderMap.get(sceneCode);
         if (contextProvider == null) {
             throw exception(APPROVAL_CONTEXT_PROVIDER_NOT_FOUND, sceneCode);
         }
 
-        // 3. 获取业务上下文
+        // 4. 获取业务上下文
         ApprovalContext context = contextProvider.getContext(bizId);
         if (context == null) {
             throw exception(APPROVAL_CONTEXT_IS_NULL, sceneCode, bizId);
         }
 
-        // 4. 获取当前正式审批方案
+        // 5. 获取当前正式审批方案
         Long activeSchemeId = scene.getActiveSchemeId();
         if (activeSchemeId == null) {
             throw exception(APPROVAL_SCHEME_NOT_ACTIVE, sceneCode);
@@ -113,7 +126,7 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_SCHEME_VERSION_NOT_ACTIVE, activeSchemeId);
         }
 
-        // 5. 命中规则（暂时使用默认规则）
+        // 6. 命中规则（暂时使用默认规则）
         List<BpmApprovalRuleDO> rules = approvalRuleMapper.selectListBySchemeVersionId(activeVersion.getId());
         BpmApprovalRuleDO hitRule = rules.stream()
                 .filter(rule -> Boolean.TRUE.equals(rule.getDefaultRule()) && Boolean.TRUE.equals(rule.getEnabled()))
@@ -123,7 +136,7 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_RULE_NOT_FOUND, activeVersion.getId());
         }
 
-        // 6. 创建运行时快照
+        // 7. 创建运行时快照
         // processDefinitionKey：BPM 启动所需流程定义 Key，取自规则的 processJson 字段
         // processJson：快照留存的流程配置 JSON，当前仅存 Key；未来扩展节点配置时在此追加
         String processKey = hitRule.getProcessJson();
@@ -141,20 +154,20 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 .build();
         Long snapshotId = approvalInstanceSnapshotService.createSnapshot(snapshot);
 
-        // 7. 生成 BPM 启动参数
+        // 8. 生成 BPM 启动参数
         Map<String, Object> variables = new HashMap<>(context.getVariables());
         variables.put("sceneCode", sceneCode);
         variables.put("bizId", String.valueOf(bizId));
         variables.put("snapshotId", snapshotId);
 
-        // 8. 启动 BPM 实例
+        // 9. 启动 BPM 实例
         String processInstanceId = processInstanceApi.createProcessInstance(userId,
                 new BpmProcessInstanceCreateReqDTO()
                         .setProcessDefinitionKey(processKey)
                         .setBusinessKey(String.valueOf(bizId))
                         .setVariables(variables));
 
-        // 9. 更新快照流程实例 ID
+        // 10. 更新快照流程实例 ID
         approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(snapshotId, processInstanceId);
 
         return processInstanceId;

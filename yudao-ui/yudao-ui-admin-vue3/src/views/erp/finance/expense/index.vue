@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="finance-shell finance-shell__stack">
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
@@ -45,9 +45,7 @@
             />
           </el-form-item>
           <el-form-item label="费用类型" prop="expenseType">
-            <el-select v-model="queryParams.expenseType" placeholder="请选择费用类型" clearable class="!w-full" :loading="typeLoading">
-              <el-option v-for="item in expenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
+            <ExpenseTypeSelect v-model="queryParams.expenseType" placeholder="请选择费用类型" />
           </el-form-item>
           <el-form-item label="部门" prop="deptId">
             <el-select v-model="queryParams.deptId" placeholder="请选择部门" clearable filterable :loading="deptLoading" class="!w-full">
@@ -261,11 +259,12 @@
               <el-date-picker v-model="formModel.expenseTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择报销时间" class="!w-full" />
             </el-form-item>
             <el-form-item label="费用类型" prop="expenseType">
-              <el-select v-model="formModel.expenseType" placeholder="请选择费用类型" clearable class="!w-full" :loading="typeLoading">
-                <el-option v-for="item in expenseTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
+              <ExpenseTypeSelect v-model="formModel.expenseType" placeholder="请选择费用类型" @change="handleExpenseTypeChange" />
             </el-form-item>
-            <el-form-item label="部门" prop="deptId">
+            <el-form-item v-if="leaseContractRequired" label="租赁合同编号" prop="leaseContractNo">
+              <el-input v-model="formModel.leaseContractNo" placeholder="请输入租赁合同编号" />
+            </el-form-item>
+            <el-form-item :label="costCenterRequired ? '成本中心/部门' : '部门'" prop="deptId">
               <el-select v-model="formModel.deptId" placeholder="请选择部门" clearable filterable class="!w-full" :loading="deptLoading">
                 <el-option v-for="item in deptOptions" :key="item.id" :label="item.name" :value="item.id" />
               </el-select>
@@ -525,7 +524,6 @@ import {
   type ErpFinanceExpenseProjectSummaryVO,
   type ErpFinanceExpenseSaveReqVO,
   type ErpFinanceExpenseTraceVO,
-  type ErpFinanceExpenseTypeVO,
   type ErpFinanceExpenseVO
 } from '@/api/erp/finance/expense'
 import { SupplierApi, type SupplierVO } from '@/api/erp/purchase/supplier'
@@ -533,6 +531,7 @@ import { AccountApi, type AccountVO } from '@/api/erp/finance/account'
 import { ProjectApi, type ProjectSimpleVO } from '@/api/erp/project'
 import { getSimpleDeptList, type DeptVO } from '@/api/system/dept'
 import { getSimpleUserList, type SimpleUserVO } from '@/api/system/user'
+import ExpenseTypeSelect from '@/components/ExpenseTypeSelect/index.vue'
 defineOptions({ name: 'ErpFinanceExpense' })
 
 type ExpenseFormItem = {
@@ -580,18 +579,16 @@ const projectOptions = ref<ProjectSimpleVO[]>([])
 const supplierOptions = ref<SupplierVO[]>([])
 const accountOptions = ref<AccountVO[]>([])
 const userOptions = ref<SimpleUserVO[]>([])
-const expenseTypeOptions = ref<ErpFinanceExpenseTypeVO[]>([])
 
 const deptLoading = ref(false)
 const projectLoading = ref(false)
 const supplierLoading = ref(false)
 const accountLoading = ref(false)
 const userLoading = ref(false)
-const typeLoading = ref(false)
 
 const formDialogVisible = ref(false)
 const editingId = ref<number | null>(null)
-const formModel = reactive<ErpFinanceExpenseSaveReqVO & { no?: string; status?: number; items: ExpenseFormItem[] }>({
+const formModel = reactive<ErpFinanceExpenseSaveReqVO & { no?: string; status?: number; items: ExpenseFormItem[]; leaseContractNo?: string }>({
   expenseTime: '',
   expenseType: undefined,
   rdAccountingType: undefined,
@@ -602,6 +599,7 @@ const formModel = reactive<ErpFinanceExpenseSaveReqVO & { no?: string; status?: 
   accountId: undefined,
   expensePrice: undefined,
   remark: '',
+  leaseContractNo: '',
   items: []
 })
 
@@ -627,10 +625,10 @@ const isLocalDemoHost = () => {
 }
 const isDemoMode = computed(() => isLocalDemoHost())
 
-const demoExpenseTypes: ErpFinanceExpenseTypeVO[] = [
-  { value: 10, label: '研发差旅', projectRequired: true },
-  { value: 20, label: '办公采购', projectRequired: false },
-  { value: 30, label: '打样费用', projectRequired: true }
+const demoExpenseTypes = [
+  { value: 10, label: '研发差旅', core: true, projectRequired: true, costCenterRequired: false, leaseContractRequired: false, assetCandidateFlag: false, category: 'RD', autoGenerateVoucher: false, voucherBizType: null },
+  { value: 20, label: '办公采购', core: false, projectRequired: false, costCenterRequired: true, leaseContractRequired: false, assetCandidateFlag: false, category: 'ADMIN', autoGenerateVoucher: false, voucherBizType: null },
+  { value: 30, label: '打样费用', core: true, projectRequired: true, costCenterRequired: false, leaseContractRequired: false, assetCandidateFlag: false, category: 'RD', autoGenerateVoucher: false, voucherBizType: null }
 ]
 
 const demoLists = {
@@ -937,6 +935,13 @@ const actionBusy = computed(() => listLoading.value || formSubmitting.value || e
 const itemTotal = computed(() => (formModel.items || []).reduce((sum, item) => sum + Number(item.amount || 0), 0))
 const canSubmitForm = computed(() => !formSubmitting.value && itemTotal.value > 0)
 const isResearchExpenseType = (value?: number) => Number(value || 0) === 10
+const currentExpenseTypeConfig = ref<any>(null)
+const leaseContractRequired = computed(() => {
+  return currentExpenseTypeConfig.value?.leaseContractRequired ?? false
+})
+const costCenterRequired = computed(() => {
+  return currentExpenseTypeConfig.value?.costCenterRequired ?? false
+})
 const formDialogTitle = computed(() => (editingId.value ? '编辑费用单' : '新建费用单'))
 const formRules: FormRules = {
   expenseTime: [{ required: true, message: '请选择报销时间', trigger: 'change' }],
@@ -990,7 +995,11 @@ const resolveStatusLabel = (status?: number) => {
   return '未审核'
 }
 
-const getExpenseTypeLabel = (value?: number) => expenseTypeOptions.value.find((item) => item.value === value)?.label || '-'
+const getExpenseTypeLabel = (value?: number) => {
+  if (value === undefined || value === null) return '-'
+  const demoLabel = demoExpenseTypes.find((item) => item.value === value)?.label
+  return demoLabel || '-'
+}
 const getRdAccountingTypeLabel = (value?: number) =>
   ERP_FINANCE_EXPENSE_RD_ACCOUNTING_TYPE_OPTIONS.find((item) => item.value === value)?.label || '-'
 
@@ -1030,6 +1039,7 @@ const clearRouteNoFilter = async () => {
 }
 
 const resetFormModel = () => {
+  currentExpenseTypeConfig.value = null
   Object.assign(formModel, {
     expenseTime: '',
     expenseType: undefined,
@@ -1041,6 +1051,7 @@ const resetFormModel = () => {
     accountId: undefined,
     expensePrice: undefined,
     remark: '',
+    leaseContractNo: '',
     status: undefined,
     no: undefined,
     items: [
@@ -1060,6 +1071,19 @@ const syncExpensePriceFromItems = () => {
   formModel.expensePrice = Number(itemTotal.value.toFixed(2))
 }
 
+const handleExpenseTypeChange = (value: number, config?: { projectRequired?: boolean; leaseContractRequired?: boolean; costCenterRequired?: boolean }) => {
+  currentExpenseTypeConfig.value = config || null
+  if (config?.projectRequired === false) {
+    formModel.projectId = undefined
+  }
+  if (!isResearchExpenseType(value)) {
+    formModel.rdAccountingType = undefined
+  }
+  if (!config?.leaseContractRequired) {
+    formModel.leaseContractNo = ''
+  }
+}
+
 watch(
   () => formModel.items,
   () => {
@@ -1071,10 +1095,6 @@ watch(
 watch(
   () => formModel.expenseType,
   (value) => {
-    const currentType = expenseTypeOptions.value.find((item) => item.value === value)
-    if (currentType?.projectRequired === false) {
-      formModel.projectId = undefined
-    }
     if (!isResearchExpenseType(value)) {
       formModel.rdAccountingType = undefined
     }
@@ -1140,22 +1160,19 @@ const loadQueryOptions = async () => {
   supplierLoading.value = true
   accountLoading.value = true
   userLoading.value = true
-  typeLoading.value = true
   try {
-    const [depts, projects, suppliers, accounts, users, types] = await Promise.all([
+    const [depts, projects, suppliers, accounts, users] = await Promise.all([
       getSimpleDeptList(),
       ProjectApi.getProjectSimpleList(),
       SupplierApi.getSupplierSimpleList(),
       AccountApi.getAccountSimpleList(),
-      getSimpleUserList(),
-      FinanceExpenseApi.getFinanceExpenseTypeList()
+      getSimpleUserList()
     ])
     deptOptions.value = depts?.length ? depts : isDemoMode.value ? demoLists.depts : []
     projectOptions.value = projects?.length ? projects : isDemoMode.value ? demoLists.projects : []
     supplierOptions.value = suppliers?.length ? suppliers : isDemoMode.value ? demoLists.suppliers : []
     accountOptions.value = accounts?.length ? accounts : isDemoMode.value ? demoLists.accounts : []
     userOptions.value = users?.length ? users : isDemoMode.value ? demoLists.users : []
-    expenseTypeOptions.value = types?.length ? types : isDemoMode.value ? demoExpenseTypes : []
   } catch (error: any) {
     if (isLocalDemoHost()) {
       deptOptions.value = demoLists.depts
@@ -1163,7 +1180,6 @@ const loadQueryOptions = async () => {
       supplierOptions.value = demoLists.suppliers
       accountOptions.value = demoLists.accounts
       userOptions.value = demoLists.users
-      expenseTypeOptions.value = demoExpenseTypes
     } else {
       message.error(error?.message || '基础选项加载失败')
     }
@@ -1173,7 +1189,6 @@ const loadQueryOptions = async () => {
     supplierLoading.value = false
     accountLoading.value = false
     userLoading.value = false
-    typeLoading.value = false
   }
 }
 
@@ -1198,6 +1213,8 @@ const openFormDialog = async (id?: number) => {
   try {
     const demoExpense = isLocalDemoHost() ? findDemoExpense(id) : undefined
     if (demoExpense) {
+      const expenseTypeConfig = demoExpenseTypes.find(t => t.value === demoExpense.expenseType)
+      currentExpenseTypeConfig.value = expenseTypeConfig || null
       Object.assign(formModel, {
         id: demoExpense.id,
         no: demoExpense.no,
@@ -1212,6 +1229,7 @@ const openFormDialog = async (id?: number) => {
         accountId: demoExpense.accountId,
         expensePrice: demoExpense.expensePrice,
         remark: demoExpense.remark || '',
+        leaseContractNo: (demoExpense as any).leaseContractNo || '',
         items:
           demoExpense.items?.length && demoExpense.items.length > 0
             ? demoExpense.items.map((item) => ({
@@ -1248,6 +1266,7 @@ const openFormDialog = async (id?: number) => {
       accountId: expense?.accountId,
       expensePrice: expense?.expensePrice,
       remark: expense?.remark || '',
+      leaseContractNo: (expense as any)?.leaseContractNo || '',
       items:
         expense?.items?.length && expense.items.length > 0
           ? expense.items.map((item) => ({
@@ -1319,6 +1338,7 @@ const submitForm = async () => {
     accountId: formModel.accountId,
     expensePrice: Number(itemTotal.value.toFixed(2)),
     remark: formModel.remark,
+    leaseContractNo: leaseContractRequired.value ? formModel.leaseContractNo : undefined,
     items: formModel.items
       .filter((item) => item.itemName && Number(item.amount || 0) > 0)
       .map((item) => ({
@@ -1546,13 +1566,13 @@ onMounted(async () => {
   gap: 16px;
   padding: 20px 24px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--erp-slate-900) 0%, var(--erp-primary-800) 100%);
+  color: var(--erp-slate-50);
   box-shadow: 0 16px 32px rgba(15, 23, 42, 0.18);
 }
 
 .finance-shell__drawer-context {
-  background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+  background: linear-gradient(135deg, var(--erp-slate-900) 0%, var(--erp-success-800) 100%);
 }
 
 .finance-shell__dialog-eyebrow,
@@ -1595,7 +1615,7 @@ onMounted(async () => {
 .finance-shell__drawer-summary-card,
 .finance-shell__info-card {
   padding: 14px 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 14px;
   background: #fff;
   box-shadow: 0 6px 18px rgba(148, 163, 184, 0.06);
@@ -1611,7 +1631,7 @@ onMounted(async () => {
 .finance-shell__dialog-summary-label,
 .finance-shell__drawer-summary-label,
 .finance-shell__info-label {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
 }
 
@@ -1623,7 +1643,7 @@ onMounted(async () => {
 .finance-shell__drawer-summary-value,
 .finance-shell__info-value {
   margin-top: 8px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 20px;
   font-weight: 700;
 }
@@ -1634,7 +1654,7 @@ onMounted(async () => {
 
 .finance-shell__info-sub {
   margin-top: 4px;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
 }
 

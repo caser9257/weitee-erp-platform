@@ -62,3 +62,8 @@ export const updateApprovalScene = async (data: ApprovalSceneSaveReqVO) => {
 export const deleteApprovalScene = async (id: number) => {
   return await request.delete({ url: '/bpm/approval-scene/delete', params: { id } })
 }
+
+// 绑定审批方案到场景
+export const bindSchemeToScene = async (id: number, activeSchemeId: number | null) => {
+  return await request.put({ url: '/bpm/approval-scene/bind-scheme', params: { id, activeSchemeId } })
+}

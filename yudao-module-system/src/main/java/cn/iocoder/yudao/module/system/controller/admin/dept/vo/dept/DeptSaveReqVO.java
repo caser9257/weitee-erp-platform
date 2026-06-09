@@ -46,4 +46,7 @@ public class DeptSaveReqVO {
     @InEnum(value = CommonStatusEnum.class, message = "修改状态必须是 {value}")
     private Integer status;
 
+    @Schema(description = "成本类型（0=不归集, 1=制造费用, 2=管理费用, 3=销售费用, 4=研发支出）", example = "0")
+    private Integer costType;
+
 }

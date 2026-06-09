@@ -94,6 +94,37 @@
 
   <!-- 表单弹窗 -->
   <ApprovalSceneForm ref="formRef" @success="getList" />
+
+  <!-- 绑定方案弹窗 -->
+  <el-dialog v-model="bindDialogVisible" title="绑定审批方案" width="500px" append-to-body>
+    <el-form label-width="80px">
+      <el-form-item label="审批方案">
+        <el-select
+          v-model="bindForm.schemeId"
+          placeholder="请选择审批方案"
+          clearable
+          filterable
+          style="width: 100%"
+        >
+          <el-option
+            v-for="item in schemeList"
+            :key="item.id"
+            :label="item.name"
+            :value="item.id"
+          >
+            <span>{{ item.name }}</span>
+            <span style="float: right; color: #8492a6; font-size: 12px">{{ item.code }}</span>
+          </el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="bindDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="handleBindSubmit" :loading="bindLoading">
+        确定
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -103,6 +134,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { useMessage } from '@/hooks/web/useMessage'
 import { DICT_TYPE } from '@/utils/dict'
 import * as ApprovalSceneApi from '@/api/bpm/approval/scene'
+import * as ApprovalSchemeApi from '@/api/bpm/approval/scheme'
 import ApprovalSceneForm from './ApprovalSceneForm.vue'
 
 defineOptions({ name: 'BpmApprovalScene' })
@@ -153,9 +185,38 @@ const openForm = (type: string, id?: number) => {
 }
 
 // 绑定方案
-const handleBindScheme = (row: ApprovalSceneApi.ApprovalSceneVO) => {
-  // TODO: 跳转到方案编辑页或弹窗选择方案
-  message.info('绑定方案功能开发中')
+const bindDialogVisible = ref(false)
+const bindLoading = ref(false)
+const bindForm = reactive<{ sceneId: number | null; schemeId: number | null }>({
+  sceneId: null,
+  schemeId: null
+})
+const schemeList = ref<ApprovalSchemeApi.ApprovalSchemeVO[]>([])
+
+const handleBindScheme = async (row: ApprovalSceneApi.ApprovalSceneVO) => {
+  bindForm.sceneId = row.id
+  bindForm.schemeId = row.activeSchemeId ?? null
+  bindDialogVisible.value = true
+  // 加载方案列表（取前 100 条）
+  try {
+    const data = await ApprovalSchemeApi.getApprovalSchemePage({ pageNo: 1, pageSize: 100 })
+    schemeList.value = data.list
+  } catch {
+    schemeList.value = []
+  }
+}
+
+const handleBindSubmit = async () => {
+  if (!bindForm.sceneId) return
+  bindLoading.value = true
+  try {
+    await ApprovalSceneApi.bindSchemeToScene(bindForm.sceneId, bindForm.schemeId)
+    message.success('绑定成功')
+    bindDialogVisible.value = false
+    getList()
+  } finally {
+    bindLoading.value = false
+  }
 }
 
 // 删除

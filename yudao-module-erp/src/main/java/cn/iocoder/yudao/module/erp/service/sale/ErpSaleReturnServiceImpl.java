@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleReturnItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleReturnItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleReturnMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
@@ -21,6 +22,7 @@ import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
+import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import org.springframework.context.annotation.Lazy;
@@ -68,6 +70,8 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
     private ErpAccountService accountService;
     @Resource
     private ErpStockRecordService stockRecordService;
+    @Resource
+    private ErpStockService stockService;
     @Resource
     @Lazy
     private ErpFinanceBizHookService financeBizHookService;
@@ -195,9 +199,14 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
                 : ErpStockRecordBizTypeEnum.SALE_RETURN_CANCEL.getType();
         saleReturnItems.forEach(saleReturnItem -> {
             BigDecimal count = approve ? saleReturnItem.getCount() : saleReturnItem.getCount().negate();
+            // 获取加权平均成本作为入库价格（退货入库）
+            ErpStockDO stock = stockService.getStock(saleReturnItem.getProductId(), saleReturnItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(saleReturnItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     saleReturnItem.getProductId(), saleReturnItem.getWarehouseId(), count,
-                    bizType, saleReturnItem.getReturnId(), saleReturnItem.getId(), saleReturn.getNo()));
+                    bizType, saleReturnItem.getReturnId(), saleReturnItem.getId(), saleReturn.getNo(),
+                    price, amount));
         });
         if (approve) {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.SALE_RETURN.getType(), id,

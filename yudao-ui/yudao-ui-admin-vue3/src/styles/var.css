@@ -1,55 +1,162 @@
 :root {
+  /* ── ERP 设计系统 CSS 变量 ─────────────────────────────── */
+  /*  品牌色 */
+  --erp-primary-50:  #EBF5FF;
+  --erp-primary-100: #D6EBFF;
+  --erp-primary-200: #ADD6FF;
+  --erp-primary-300: #85C1FF;
+  --erp-primary-400: #5CACFF;
+  --erp-primary-500: #3396FF;
+  --erp-primary-600: #1677FF;
+  --erp-primary-700: #0D66E0;
+  --erp-primary-800: #0A52B8;
+  --erp-primary-900: #073D8F;
+
+  /*  语义色：成功 */
+  --erp-success-50:  #ECFDF5;
+  --erp-success-100: #D1FAE5;
+  --erp-success-200: #A7F3D0;
+  --erp-success-300: #6EE7B7;
+  --erp-success-400: #34D399;
+  --erp-success-500: #10B981;
+  --erp-success-600: #059669;
+  --erp-success-700: #047857;
+  --erp-success-800: #065F46;
+  --erp-success-900: #064E3B;
+
+  /*  语义色：警告 */
+  --erp-warning-50:  #FFFBEB;
+  --erp-warning-100: #FEF3C7;
+  --erp-warning-200: #FDE68A;
+  --erp-warning-300: #FCD34D;
+  --erp-warning-400: #FBBF24;
+  --erp-warning-500: #F59E0B;
+  --erp-warning-600: #D97706;
+  --erp-warning-700: #B45309;
+  --erp-warning-800: #92400E;
+  --erp-warning-900: #78350F;
+
+  /*  语义色：危险 */
+  --erp-danger-50:  #FFF1F2;
+  --erp-danger-100: #FFE4E6;
+  --erp-danger-200: #FECDD3;
+  --erp-danger-300: #FDA4AF;
+  --erp-danger-400: #FB7185;
+  --erp-danger-500: #F43F5E;
+  --erp-danger-600: #E11D48;
+  --erp-danger-700: #BE123C;
+  --erp-danger-800: #9F1239;
+  --erp-danger-900: #881337;
+
+  /*  中性色 */
+  --erp-slate-50:  #F8FAFC;
+  --erp-slate-100: #F1F5F9;
+  --erp-slate-200: #E2E8F0;
+  --erp-slate-300: #CBD5E1;
+  --erp-slate-400: #94A3B8;
+  --erp-slate-500: #64748B;
+  --erp-slate-600: #475569;
+  --erp-slate-700: #334155;
+  --erp-slate-800: #1E293B;
+  --erp-slate-900: #0F172A;
+
+  /*  业务色 */
+  --erp-amount-color: #DC2626;
+  --erp-amount-bg:    #FEF2F2;
+
+  /*  阴影 */
+  --erp-shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.08), 0 1px 2px -1px rgba(0,0,0,0.05);
+  --erp-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --erp-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.05);
+
+  /* ── Element Plus 主题覆写 ─────────────────────────────── */
+  /*  让 Element Plus 组件自动继承 ERP 设计系统 */
+  --el-color-primary:        #1677FF;
+  --el-color-primary-light-3: #85C1FF;
+  --el-color-primary-light-5: #ADD6FF;
+  --el-color-primary-light-7: #D6EBFF;
+  --el-color-primary-light-8: #EBF5FF;
+  --el-color-primary-light-9: #EBF5FF;
+  --el-color-primary-dark-2:  #0D66E0;
+
+  --el-color-success:        #059669;
+  --el-color-success-light-3: #6EE7B7;
+  --el-color-success-light-5: #A7F3D0;
+  --el-color-success-light-7: #D1FAE5;
+  --el-color-success-light-8: #ECFDF5;
+  --el-color-success-light-9: #ECFDF5;
+  --el-color-success-dark-2:  #047857;
+
+  --el-color-warning:        #D97706;
+  --el-color-warning-light-3: #FCD34D;
+  --el-color-warning-light-5: #FDE68A;
+  --el-color-warning-light-7: #FEF3C7;
+  --el-color-warning-light-8: #FFFBEB;
+  --el-color-warning-light-9: #FFFBEB;
+  --el-color-warning-dark-2:  #B45309;
+
+  --el-color-danger:         #E11D48;
+  --el-color-danger-light-3: #FDA4AF;
+  --el-color-danger-light-5: #FECDD3;
+  --el-color-danger-light-7: #FFE4E6;
+  --el-color-danger-light-8: #FFF1F2;
+  --el-color-danger-light-9: #FFF1F2;
+  --el-color-danger-dark-2:  #BE123C;
+
+  --el-color-info:           #64748B;
+  --el-color-info-light-3:   #CBD5E1;
+  --el-color-info-light-5:   #E2E8F0;
+  --el-color-info-light-7:   #F1F5F9;
+  --el-color-info-light-8:   #F8FAFC;
+  --el-color-info-light-9:   #F8FAFC;
+  --el-color-info-dark-2:    #475569;
+
+  --el-bg-color:             #F8FAFC;
+  --el-bg-color-page:        #F5F7FA;
+  --el-text-color-primary:   #1E293B;
+  --el-text-color-regular:   #475569;
+  --el-text-color-secondary: #64748B;
+  --el-text-color-placeholder: #94A3B8;
+  --el-text-color-disabled:  #CBD5E1;
+  --el-border-color:         #E2E8F0;
+  --el-border-color-light:   #F1F5F9;
+  --el-border-color-lighter: #F1F5F9;
+  --el-border-color-extra-light: #F8FAFC;
+  --el-border-color-dark:    #CBD5E1;
+  --el-fill-color-blank:     #FFFFFF;
+  --el-fill-color-light:     #F8FAFC;
+  --el-fill-color-lighter:   #F1F5F9;
+  --el-fill-color-extra-light: #F8FAFC;
+  --el-fill-color-dark:      #E2E8F0;
+
+  /* ── 布局 Token（保留原有布局变量）────────────────────── */
   --login-bg-color: #293146;
-
   --left-menu-max-width: 236px;
-
   --left-menu-min-width: 72px;
-
   --left-menu-bg-color: #001529;
-
   --left-menu-bg-light-color: #0f2438;
-
   --left-menu-bg-active-color: var(--el-color-primary);
-
   --left-menu-text-color: #bfcbd9;
-
   --left-menu-text-active-color: #fff;
-
   --left-menu-collapse-bg-active-color: var(--el-color-primary);
-  /* left menu end */
 
-  /* logo start */
   --logo-height: 60px;
-
   --logo-title-text-color: #fff;
-  /* logo end */
 
-  /* header start */
   --top-header-bg-color: '#fff';
-
   --top-header-text-color: 'inherit';
-
   --top-header-hover-color: #f6f6f6;
-
   --top-tool-height: var(--logo-height);
-
   --top-tool-p-x: 0;
 
   --tags-view-height: 35px;
-  /* header start */
 
-  /* tab menu start */
   --tab-menu-max-width: 80px;
-
   --tab-menu-min-width: 30px;
-
   --tab-menu-collapse-height: 36px;
-  /* tab menu end */
 
   --app-content-padding: 20px;
-
   --app-content-bg-color: #f5f7f9;
-
   --app-footer-height: 50px;
 
   --transition-time-02: 0.2s;
@@ -63,6 +170,9 @@ html,
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+               'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+               'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 *,

@@ -11,7 +11,8 @@ import java.util.Arrays;
 public enum ErpProductionCostSourceTypeEnum implements ArrayValuable<Integer> {
 
     MANUAL(10, "手工录入"),
-    ALLOCATION(20, "分摊生成");
+    ALLOCATION(20, "分摊生成"),
+    SYSTEM(30, "系统生成");
 
     public static final Integer[] ARRAYS = Arrays.stream(values())
             .map(ErpProductionCostSourceTypeEnum::getType)

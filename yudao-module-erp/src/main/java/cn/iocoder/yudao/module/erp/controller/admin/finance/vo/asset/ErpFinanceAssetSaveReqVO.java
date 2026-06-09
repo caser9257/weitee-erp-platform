@@ -76,4 +76,10 @@ public class ErpFinanceAssetSaveReqVO {
 
     @Schema(description = "备注")
     private String remark;
+
+    @Schema(description = "资产类型（0=固定资产, 1=无形资产）", example = "0")
+    private Integer assetType;
+
+    @Schema(description = "子分类", example = "专利权")
+    private String subCategory;
 }
