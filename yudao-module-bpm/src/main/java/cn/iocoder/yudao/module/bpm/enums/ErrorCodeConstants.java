@@ -109,6 +109,7 @@ public interface ErrorCodeConstants {
     ErrorCode APPROVAL_SCENE_CODE_DUPLICATE = new ErrorCode(1_009_016_001, "审批场景编码【{}】已存在");
     ErrorCode APPROVAL_SCENE_DISABLED = new ErrorCode(1_009_016_002, "审批场景已禁用");
     ErrorCode APPROVAL_SCHEME_BIND_TO_SCENE = new ErrorCode(1_009_016_003, "审批方案已被场景引用，不能操作");
+    ErrorCode APPROVAL_SCENE_NO_PERMISSION = new ErrorCode(1_009_016_004, "没有权限操作该审批场景");
 
     // ========== BPM 运行时快照 1-009-017-000 ==========
     ErrorCode APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS = new ErrorCode(1_009_017_000, "审批运行时快照不存在");

@@ -24,4 +24,7 @@ public class BpmApprovalScenePageReqVO extends PageParam {
     @Schema(description = "状态", example = "1")
     private Integer status;
 
+    @Schema(description = "归属用户ID（配置管理员）", example = "1024")
+    private Long ownerUserId;
+
 }

@@ -80,6 +80,8 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         if (createReqVO.getId() == null) {
             validateSchemeCodeUnique(null, createReqVO.getCode());
             BpmApprovalSchemeDO scheme = BeanUtils.toBean(createReqVO, BpmApprovalSchemeDO.class);
+            // 设置归属用户ID为当前登录用户
+            scheme.setOwnerUserId(SecurityFrameworkUtils.getLoginUserId());
             scheme.setActiveVersionId(null);
             scheme.setLatestVersionId(null);
             bpmApprovalSchemeMapper.insert(scheme);
@@ -91,6 +93,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         }
 
         BpmApprovalSchemeDO scheme = validateSchemeExists(createReqVO.getId());
+        validateSchemeOwnership(scheme);
         validateSchemeCodeUnique(scheme.getId(), createReqVO.getCode());
         if (createReqVO.getVersionId() != null) {
             BpmApprovalSchemeVersionDO sourceVersion = validateVersionExists(createReqVO.getVersionId());
@@ -112,6 +115,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
     @Transactional(rollbackFor = Exception.class)
     public void updateDraft(BpmApprovalSchemeSaveReqVO updateReqVO) {
         BpmApprovalSchemeDO scheme = validateSchemeExists(updateReqVO.getId());
+        validateSchemeOwnership(scheme);
         BpmApprovalSchemeVersionDO version = validateVersionExists(updateReqVO.getVersionId());
         if (!ObjUtil.equal(version.getSchemeId(), scheme.getId())) {
             throw exception(APPROVAL_SCHEME_VERSION_NOT_EXISTS);
@@ -131,6 +135,8 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
     @Transactional(rollbackFor = Exception.class)
     public void submit(BpmApprovalSchemeSubmitReqVO submitReqVO) {
         BpmApprovalSchemeVersionDO version = validateVersionExists(submitReqVO.getVersionId());
+        BpmApprovalSchemeDO scheme = validateSchemeExists(version.getSchemeId());
+        validateSchemeOwnership(scheme);
         validateVersionStatus(version, BpmApprovalSchemeStatusEnum.DRAFT, APPROVAL_SCHEME_VERSION_NOT_DRAFT);
         validateDefaultRule(version.getId());
         bpmApprovalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
@@ -145,6 +151,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         validateVersionStatus(version, BpmApprovalSchemeStatusEnum.PENDING_PUBLISH, APPROVAL_SCHEME_VERSION_NOT_PENDING_PUBLISH);
         validateDefaultRule(version.getId());
         BpmApprovalSchemeDO scheme = validateSchemeExists(version.getSchemeId());
+        validateSchemeOwnership(scheme);
 
         if (scheme.getActiveVersionId() != null && !ObjUtil.equal(scheme.getActiveVersionId(), version.getId())) {
             bpmApprovalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
@@ -170,6 +177,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         BpmApprovalSchemeVersionDO version = validateVersionExists(versionId);
         validateVersionStatus(version, BpmApprovalSchemeStatusEnum.ACTIVE, APPROVAL_SCHEME_VERSION_NOT_ACTIVE);
         BpmApprovalSchemeDO scheme = validateSchemeExists(version.getSchemeId());
+        validateSchemeOwnership(scheme);
         validateSchemeNotBoundToScene(scheme.getId());
 
         bpmApprovalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
@@ -189,6 +197,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         BpmApprovalSchemeVersionDO version = validateVersionExists(versionId);
         validateVersionStatus(version, BpmApprovalSchemeStatusEnum.ACTIVE, APPROVAL_SCHEME_VERSION_NOT_ACTIVE);
         BpmApprovalSchemeDO scheme = validateSchemeExists(version.getSchemeId());
+        validateSchemeOwnership(scheme);
 
         bpmApprovalSchemeMapper.updateById(new BpmApprovalSchemeDO()
                 .setId(scheme.getId())
@@ -266,6 +275,24 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
             throw exception(APPROVAL_SCHEME_NOT_EXISTS);
         }
         return scheme;
+    }
+
+    /**
+     * 校验当前用户是否有权限操作该方案
+     * 
+     * 流程配置管理员只能操作自己配置的方案
+     * 
+     * @param scheme 审批方案
+     */
+    private void validateSchemeOwnership(BpmApprovalSchemeDO scheme) {
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        // 如果 ownerUserId 为空或者是当前用户，则允许操作
+        if (scheme.getOwnerUserId() == null || scheme.getOwnerUserId().equals(currentUserId)) {
+            return;
+        }
+        // TODO: 这里可以添加更复杂的权限校验逻辑，如检查用户角色
+        // 暂时简单校验：只有归属用户才能操作
+        throw exception(APPROVAL_SCENE_NO_PERMISSION);
     }
 
     private BpmApprovalSchemeVersionDO validateVersionExists(Long id) {

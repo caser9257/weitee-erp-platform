@@ -2,6 +2,7 @@ package cn.iocoder.yudao.module.bpm.service.approval;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprovalScenePageReqVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprovalSceneRespVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprovalSceneSaveReqVO;
@@ -58,6 +59,8 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
         validateSceneCodeUnique(null, createReqVO.getSceneCode());
         validateActiveSchemeExists(createReqVO.getActiveSchemeId());
         BpmApprovalSceneDO scene = BeanUtils.toBean(createReqVO, BpmApprovalSceneDO.class);
+        // 设置归属用户ID为当前登录用户
+        scene.setOwnerUserId(SecurityFrameworkUtils.getLoginUserId());
         approvalSceneMapper.insert(scene);
         return scene.getId();
     }
@@ -66,6 +69,7 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
     @Transactional(rollbackFor = Exception.class)
     public void updateScene(BpmApprovalSceneSaveReqVO updateReqVO) {
         BpmApprovalSceneDO scene = validateSceneExists(updateReqVO.getId());
+        validateSceneOwnership(scene);
         validateSceneCodeUnique(scene.getId(), updateReqVO.getSceneCode());
         validateActiveSchemeExists(updateReqVO.getActiveSchemeId());
         BpmApprovalSceneDO updateObj = BeanUtils.toBean(updateReqVO, BpmApprovalSceneDO.class);
@@ -75,7 +79,8 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteScene(Long id) {
-        validateSceneExists(id);
+        BpmApprovalSceneDO scene = validateSceneExists(id);
+        validateSceneOwnership(scene);
         approvalSceneMapper.deleteById(id);
     }
 
@@ -83,6 +88,7 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
     @Transactional(rollbackFor = Exception.class)
     public void updateSceneStatus(Long id, Integer status) {
         BpmApprovalSceneDO scene = validateSceneExists(id);
+        validateSceneOwnership(scene);
         approvalSceneMapper.updateById(new BpmApprovalSceneDO()
                 .setId(id)
                 .setStatus(status));
@@ -91,7 +97,8 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void bindScheme(Long id, Long activeSchemeId) {
-        validateSceneExists(id);
+        BpmApprovalSceneDO scene = validateSceneExists(id);
+        validateSceneOwnership(scene);
         validateActiveSchemeExists(activeSchemeId);
         approvalSceneMapper.updateById(new BpmApprovalSceneDO()
                 .setId(id)
@@ -104,6 +111,24 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
             throw exception(APPROVAL_SCENE_NOT_EXISTS);
         }
         return scene;
+    }
+
+    /**
+     * 校验当前用户是否有权限操作该场景
+     * 
+     * 流程配置管理员只能操作自己配置的场景
+     * 
+     * @param scene 审批场景
+     */
+    private void validateSceneOwnership(BpmApprovalSceneDO scene) {
+        Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
+        // 如果 ownerUserId 为空或者是当前用户，则允许操作
+        if (scene.getOwnerUserId() == null || scene.getOwnerUserId().equals(currentUserId)) {
+            return;
+        }
+        // TODO: 这里可以添加更复杂的权限校验逻辑，如检查用户角色
+        // 暂时简单校验：只有归属用户才能操作
+        throw exception(APPROVAL_SCENE_NO_PERMISSION);
     }
 
     private void validateSceneCodeUnique(Long id, String sceneCode) {

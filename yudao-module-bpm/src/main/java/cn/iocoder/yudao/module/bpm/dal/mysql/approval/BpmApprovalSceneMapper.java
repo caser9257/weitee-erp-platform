@@ -19,6 +19,7 @@ public interface BpmApprovalSceneMapper extends BaseMapperX<BpmApprovalSceneDO> 
                 .eqIfPresent(BpmApprovalSceneDO::getModuleCode, reqVO.getModuleCode())
                 .eqIfPresent(BpmApprovalSceneDO::getBizType, reqVO.getBizType())
                 .eqIfPresent(BpmApprovalSceneDO::getStatus, reqVO.getStatus())
+                .eqIfPresent(BpmApprovalSceneDO::getOwnerUserId, reqVO.getOwnerUserId())
                 .orderByDesc(BpmApprovalSceneDO::getId));
     }
 

@@ -30,6 +30,11 @@ public class BpmApprovalInstanceSnapshotDO extends BaseDO {
     private Long id;
 
     /**
+     * 审批ID（业务唯一标识）
+     */
+    private String approvalId;
+
+    /**
      * 场景编码
      */
     private String sceneCode;
@@ -91,5 +96,20 @@ public class BpmApprovalInstanceSnapshotDO extends BaseDO {
      * 审批结果原因
      */
     private String resultReason;
+
+    /**
+     * 发起人ID
+     */
+    private Long startUserId;
+
+    /**
+     * 发起时间
+     */
+    private java.util.Date startTime;
+
+    /**
+     * 结束时间
+     */
+    private java.util.Date endTime;
 
 }

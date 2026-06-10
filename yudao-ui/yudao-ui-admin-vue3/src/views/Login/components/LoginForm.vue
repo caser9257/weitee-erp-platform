@@ -254,10 +254,15 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 30px 28px 26px;
-  border: 1px solid rgba(206, 216, 229, 0.92);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 34px rgba(148, 163, 184, 0.24);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.88) 0%, rgba(51, 65, 85, 0.85) 100%);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.06),
+    0 20px 40px rgba(0, 0, 0, 0.18),
+    0 6px 16px rgba(148, 163, 184, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 
   &__content {
     display: flex;
@@ -274,10 +279,12 @@ onMounted(() => {
   &__label {
     display: inline-flex;
     margin-bottom: 10px;
-    color: #5f708c;
+    color: #94a3b8;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
   }
 
   &__password {
@@ -328,101 +335,152 @@ onMounted(() => {
 
 :deep(.el-input__wrapper) {
   min-height: 46px;
-  border-radius: 12px;
-  background: #dfe6f2;
-  box-shadow: none;
-  border: 1px solid rgba(191, 203, 221, 0.88);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.6) 0%, rgba(51, 65, 85, 0.7) 100%);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.12),
+    0 2px 6px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.18);
   padding: 0 14px;
 }
 
 :deep(.el-input__prefix-inner),
 :deep(.el-input__suffix-inner) {
-  color: #91a0b7;
+  color: #64748b;
 }
 
 :deep(.el-input__inner) {
-  color: #1b253b;
+  color: #f8fafc;
   font-size: 14px;
-  font-weight: 700;
-}
-
-:deep(.el-input__inner::placeholder) {
-  color: #9cabc0;
   font-weight: 600;
 }
 
+:deep(.el-input__inner::placeholder) {
+  color: #475569;
+  font-weight: 500;
+}
+
 :deep(.el-input.is-focus .el-input__wrapper) {
-  background: #f4f7fb;
-  border-color: rgba(37, 99, 235, 0.32);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.7) 0%, rgba(51, 65, 85, 0.8) 100%);
+  border-color: rgba(96, 165, 250, 0.4);
+  box-shadow: 
+    0 0 0 3px rgba(96, 165, 250, 0.1),
+    0 0 0 1px rgba(96, 165, 250, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 :deep(.el-checkbox) {
-  color: #7787a0;
+  color: #64748b;
   font-size: 13px;
 }
 
 :deep(.el-checkbox__inner) {
-  border-color: #bfcadc;
+  border-color: rgba(59, 130, 246, 0.3);
   border-radius: 4px;
+  background: rgba(30, 41, 59, 0.8);
 }
 
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background-color: #69a9ff;
-  border-color: #69a9ff;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-color: #3b82f6;
+  box-shadow: 
+    0 0 0 1px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 :deep(.el-link) {
-  color: #7b8aa2;
+  color: #64748b;
 }
 
 :deep(.el-link:hover) {
-  color: #2563eb;
+  color: #3b82f6;
 }
 
 :deep(.x-button.el-button--primary),
 :deep(.el-button--primary) {
   border: 0;
-  border-radius: 14px;
-  background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
-  box-shadow: 0 18px 28px rgba(37, 99, 235, 0.18);
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  box-shadow: 
+    0 0 0 1px rgba(59, 130, 246, 0.3),
+    0 12px 28px rgba(59, 130, 246, 0.35),
+    0 4px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    box-shadow: 
+      0 0 0 1px rgba(37, 99, 235, 0.4),
+      0 16px 32px rgba(37, 99, 235, 0.4),
+      0 6px 12px rgba(0, 0, 0, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 
+      0 0 0 1px rgba(37, 99, 235, 0.3),
+      0 8px 20px rgba(37, 99, 235, 0.3),
+      0 2px 6px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  }
 }
 
 .login-auth-form--dark {
-  border-color: rgba(53, 66, 96, 0.9);
-  background: rgba(17, 24, 40, 0.96);
-  box-shadow: none;
+  border-color: rgba(148, 163, 184, 0.15);
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.9) 0%, rgba(51, 65, 85, 0.88) 100%);
+  box-shadow: 
+    0 0 0 1px rgba(148, 163, 184, 0.05),
+    0 20px 40px rgba(0, 0, 0, 0.2),
+    0 6px 16px rgba(148, 163, 184, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
 }
 
 .login-auth-form--dark .login-auth-form__label,
 .login-auth-form--dark .login-auth-form__meta,
 .login-auth-form--dark :deep(.el-link) {
-  color: #8d99ad;
+  color: #94a3b8;
 }
 
 .login-auth-form--dark .login-auth-form__password-toggle,
 .login-auth-form--dark :deep(.el-input__prefix-inner),
 .login-auth-form--dark :deep(.el-input__suffix-inner) {
-  color: #73829b;
+  color: #64748b;
 }
 
 .login-auth-form--dark :deep(.el-input__wrapper) {
-  background: #1a2337;
-  border-color: rgba(61, 74, 104, 0.92);
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.7) 0%, rgba(51, 65, 85, 0.8) 100%);
+  border-color: rgba(148, 163, 184, 0.18);
 }
 
 .login-auth-form--dark :deep(.el-input__inner) {
-  color: #ffffff;
+  color: #f8fafc;
 }
 
 .login-auth-form--dark :deep(.el-input__inner::placeholder) {
-  color: #73829b;
+  color: #475569;
 }
 
 .login-auth-form--dark :deep(.el-input.is-focus .el-input__wrapper) {
-  background: #1d273d;
-  border-color: rgba(37, 99, 235, 0.42);
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  background: linear-gradient(180deg, rgba(71, 85, 105, 0.75) 0%, rgba(51, 65, 85, 0.85) 100%);
+  border-color: rgba(96, 165, 250, 0.35);
+  box-shadow: 
+    0 0 0 3px rgba(96, 165, 250, 0.08),
+    0 0 0 1px rgba(96, 165, 250, 0.18),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 @media (max-width: 767px) {

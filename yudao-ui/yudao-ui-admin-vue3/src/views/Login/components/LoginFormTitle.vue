@@ -42,19 +42,20 @@ const getFormTitle = computed(() => {
 
   &__eyebrow {
     margin: 0;
-    color: #2563eb;
+    color: #3b82f6;
     font-size: 12px;
-    font-weight: 900;
-    letter-spacing: 0;
+    font-weight: 800;
+    letter-spacing: 1px;
     text-transform: uppercase;
   }
 
   &__title {
     margin: 0;
-    color: #18233c;
+    color: #f8fafc;
     font-size: 23px;
     font-weight: 900;
     line-height: 1.25;
+    letter-spacing: 0.5px;
   }
 }
 

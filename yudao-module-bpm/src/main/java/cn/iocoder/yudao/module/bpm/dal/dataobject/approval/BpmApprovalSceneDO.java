@@ -57,6 +57,13 @@ public class BpmApprovalSceneDO extends BaseDO {
     private Long activeSchemeId;
 
     /**
+     * 归属用户ID（配置管理员）
+     * 
+     * 用于数据权限控制：流程配置管理员只能操作自己配置的流程
+     */
+    private Long ownerUserId;
+
+    /**
      * 状态，1-启用 0-禁用
      */
     private Integer status;

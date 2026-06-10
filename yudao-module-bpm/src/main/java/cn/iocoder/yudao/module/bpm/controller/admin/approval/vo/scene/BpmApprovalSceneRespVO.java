@@ -30,6 +30,9 @@ public class BpmApprovalSceneRespVO {
     @Schema(description = "当前生效方案编号", example = "1")
     private Long activeSchemeId;
 
+    @Schema(description = "归属用户ID（配置管理员）", example = "1024")
+    private Long ownerUserId;
+
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 

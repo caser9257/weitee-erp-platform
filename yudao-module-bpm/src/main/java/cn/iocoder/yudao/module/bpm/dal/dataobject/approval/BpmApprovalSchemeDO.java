@@ -31,10 +31,22 @@ public class BpmApprovalSchemeDO extends BaseDO {
 
     private String bizType;
 
+    /**
+     * 关联场景ID
+     */
+    private Long sceneId;
+
     private String remark;
 
     private Long activeVersionId;
 
     private Long latestVersionId;
+
+    /**
+     * 归属用户ID（配置管理员）
+     * 
+     * 用于数据权限控制：流程配置管理员只能操作自己配置的方案
+     */
+    private Long ownerUserId;
 
 }
