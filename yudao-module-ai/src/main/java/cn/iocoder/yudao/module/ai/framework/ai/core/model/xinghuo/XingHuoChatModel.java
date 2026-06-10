@@ -9,7 +9,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import reactor.core.publisher.Flux;
 
 /**
- * 讯飞星火 {@link ChatModel} 实现类
+ * 讯飞星火 {@link ChatModel} 实现�?
  *
  * @author fansili
  */
@@ -23,12 +23,12 @@ public class XingHuoChatModel implements ChatModel {
     public static final String BASE_COMPLETIONS_PATH_V2 = "/v2/chat/completions";
 
     /**
-     * 已知模型名列表：x1、4.0Ultra、generalv3.5、max-32k、generalv3、pro-128k、lite
+     * 已知模型名列表：x1�?.0Ultra、generalv3.5、max-32k、generalv3、pro-128k、lite
      */
     public static final String MODEL_DEFAULT = "4.0Ultra";
 
     /**
-     * v1 兼容 OpenAI 接口，进行复用
+     * v1 兼容 OpenAI 接口，进行复�?
      */
     private final ChatModel openAiChatModelV1;
 

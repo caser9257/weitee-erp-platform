@@ -10,10 +10,10 @@ import org.springframework.ai.image.ImageResponse;
 
 import static cn.iocoder.yudao.module.ai.framework.ai.core.model.image.StabilityAiImageModelTests.viewImage;
 
-// TODO @芋艿：百度千帆 API 提供了 V2 版本，目前 Spring AI 不兼容，可关键 <https://github.com/spring-projects/spring-ai/issues/2179> 进展
+// TODO @芋艿：百度千�?API 提供�?V2 版本，目�?Spring AI 不兼容，可关�?<https://github.com/spring-projects/spring-ai/issues/2179> 进展
 
 /**
- * {@link QianFanImageModel} 集成测试类
+ * {@link QianFanImageModel} 集成测试�?
  */
 public class QianFanImageTests {
 
@@ -24,7 +24,7 @@ public class QianFanImageTests {
     @Disabled
     public void testCall() {
         // 准备参数
-        // 只支持 1024x1024、768x768、768x1024、1024x768、576x1024、1024x576
+        // 只支�?1024x1024�?68x768�?68x1024�?024x768�?76x1024�?024x576
         QianFanImageOptions imageOptions = QianFanImageOptions.builder()
                 .model(QianFanImageApi.ImageModel.Stable_Diffusion_XL.getValue())
                 .width(1024).height(1024)

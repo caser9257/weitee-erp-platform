@@ -12,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * AI 知识库文档 Mapper
+ * AI 知识库文�?Mapper
  *
  * @author xiaoxin
  */

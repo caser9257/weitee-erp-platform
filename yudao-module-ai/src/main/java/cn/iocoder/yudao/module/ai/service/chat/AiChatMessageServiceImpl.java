@@ -71,7 +71,7 @@ import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.CHAT_CONVERSAT
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.CHAT_MESSAGE_NOT_EXIST;
 
 /**
- * AI 聊天消息 Service 实现类
+ * AI 聊天消息 Service 实现�?
  *
  * @author fansili
  */
@@ -84,26 +84,26 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
      */
     private static final Integer WEB_SEARCH_COUNT = 10;
 
-    // TODO @芋艿：后续优化下对话的 Prompt 整体结构
+    // TODO @芋艿：后续优化下对话�?Prompt 整体结构
 
     /**
-     * 知识库转 {@link UserMessage} 的内容模版
+     * 知识库转 {@link UserMessage} 的内容模�?
      */
-    private static final String KNOWLEDGE_USER_MESSAGE_TEMPLATE = "使用 <Reference></Reference> 标记中的内容作为本次对话的参考:\n\n" +
-            "%s\n\n" + // 多个 <Reference></Reference> 的拼接
-            "回答要求：\n- 避免提及你是从 <Reference></Reference> 获取的知识。";
+    private static final String KNOWLEDGE_USER_MESSAGE_TEMPLATE = "使用 <Reference></Reference> 标记中的内容作为本次对话的参�?\n\n" +
+            "%s\n\n" + // 多个 <Reference></Reference> 的拼�?
+            "回答要求：\n- 避免提及你是�?<Reference></Reference> 获取的知识�?;
 
-    private static final String WEB_SEARCH_USER_MESSAGE_TEMPLATE = "使用 <WebSearch></WebSearch> 标记中的内容作为本次对话的参考:\n\n" +
-            "%s\n\n" + // 多个 <WebSearch></WebSearch> 的拼接
-            "回答要求：\n- 避免提及你是从 <WebSearch></WebSearch> 获取的知识。";
+    private static final String WEB_SEARCH_USER_MESSAGE_TEMPLATE = "使用 <WebSearch></WebSearch> 标记中的内容作为本次对话的参�?\n\n" +
+            "%s\n\n" + // 多个 <WebSearch></WebSearch> 的拼�?
+            "回答要求：\n- 避免提及你是�?<WebSearch></WebSearch> 获取的知识�?;
 
     /**
-     * 附件转 ${@link UserMessage} 的内容模版
+     * 附件�?${@link UserMessage} 的内容模�?
      */
     @SuppressWarnings("TextBlockMigration")
-    private static final String Attachment_USER_MESSAGE_TEMPLATE = "使用 <Attachment></Attachment> 标记用户对话上传的附件内容:\n\n" +
-            "%s\n\n" + // 多个 <Attachment></Attachment> 的拼接
-            "回答要求：\n- 避免提及 <Attachment></Attachment> 附件的编码格式。";
+    private static final String Attachment_USER_MESSAGE_TEMPLATE = "使用 <Attachment></Attachment> 标记用户对话上传的附件内�?\n\n" +
+            "%s\n\n" + // 多个 <Attachment></Attachment> 的拼�?
+            "回答要求：\n- 避免提及 <Attachment></Attachment> 附件的编码格式�?;
 
     @Resource
     private AiChatMessageMapper aiChatMessageMapper;
@@ -149,7 +149,7 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
         AiModelDO model = modalService.validateModel(conversation.getModelId());
         ChatModel chatModel = modalService.getChatModel(model.getId());
 
-        // 2.1 知识库召回
+        // 2.1 知识库召�?
         List<AiKnowledgeSegmentSearchRespBO> knowledgeSegments = recallKnowledgeSegment(
                 sendReqVO.getContent(), conversation);
 
@@ -158,7 +158,7 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
                 webSearchClient.search(new AiWebSearchRequest().setQuery(sendReqVO.getContent())
                         .setSummary(true).setCount(WEB_SEARCH_COUNT)) : null;
 
-        // 3. 插入 user 发送消息
+        // 3. 插入 user 发送消�?
         AiChatMessageDO userMessage = createChatMessage(conversation.getId(), null, model,
                 userId, conversation.getRoleId(), MessageType.USER, sendReqVO.getContent(), sendReqVO.getUseContext(),
                 null, sendReqVO.getAttachmentUrls(), null);
@@ -206,7 +206,7 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
         AiModelDO model = modalService.validateModel(conversation.getModelId());
         StreamingChatModel chatModel = modalService.getChatModel(model.getId());
 
-        // 2.1 知识库找回
+        // 2.1 知识库找�?
         List<AiKnowledgeSegmentSearchRespBO> knowledgeSegments = recallKnowledgeSegment(
                 sendReqVO.getContent(), conversation);
 
@@ -215,7 +215,7 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
                 webSearchClient.search(new AiWebSearchRequest().setQuery(sendReqVO.getContent())
                         .setSummary(true).setCount(WEB_SEARCH_COUNT)) : null;
 
-        // 3. 插入 user 发送消息
+        // 3. 插入 user 发送消�?
         AiChatMessageDO userMessage = createChatMessage(conversation.getId(), null, model,
                 userId, conversation.getRoleId(), MessageType.USER, sendReqVO.getContent(), sendReqVO.getUseContext(),
                 null, sendReqVO.getAttachmentUrls(), null);
@@ -238,9 +238,9 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
         AtomicReference<List<AiChatMessageRespVO.KnowledgeSegment>> cacheSegments = new AtomicReference<>();
         AtomicReference<List<AiWebSearchResponse.WebPage>> cacheWebSearchPages = new AtomicReference<>();
         return streamResponse.map(chunk -> {
-            // 仅首次：返回知识库、联网搜索
+            // 仅首次：返回知识库、联网搜�?
             if (StrUtil.isEmpty(contentBuffer)) {
-                if (firstExecuteFlag.compareAndSet(true, false)) { // CAS 操作，确保仅执行一次
+                if (firstExecuteFlag.compareAndSet(true, false)) { // CAS 操作，确保仅执行一�?
                     Map<Long, AiKnowledgeDocumentDO> documentMap = knowledgeDocumentService.getKnowledgeDocumentMap(
                             convertSet(knowledgeSegments, AiKnowledgeSegmentSearchRespBO::getDocumentId));
                     cacheSegments.set(BeanUtils.toBean(knowledgeSegments, AiChatMessageRespVO.KnowledgeSegment.class, segment -> {
@@ -264,18 +264,18 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
             return success(new AiChatMessageSendRespVO()
                     .setSend(BeanUtils.toBean(userMessage, AiChatMessageSendRespVO.Message.class))
                     .setReceive(BeanUtils.toBean(assistantMessage, AiChatMessageSendRespVO.Message.class)
-                            .setContent(StrUtil.nullToDefault(newContent, "")) // 避免 null 的 情况
-                            .setReasoningContent(StrUtil.nullToDefault(newReasoningContent, "")) // 避免 null 的 情况
-                            .setSegments(cacheSegments.get()).setWebSearchPages(cacheWebSearchPages.get()))); // 知识库 + 联网搜索
+                            .setContent(StrUtil.nullToDefault(newContent, "")) // 避免 null �?情况
+                            .setReasoningContent(StrUtil.nullToDefault(newReasoningContent, "")) // 避免 null �?情况
+                            .setSegments(cacheSegments.get()).setWebSearchPages(cacheWebSearchPages.get()))); // 知识�?+ 联网搜索
         }).doOnComplete(() -> {
-            // 忽略租户，因为 Flux 异步无法透传租户
+            // 忽略租户，因�?Flux 异步无法透传租户
             aiChatMessageMapper.updateById(new AiChatMessageDO().setId(assistantMessage.getId()).setContent(contentBuffer.toString())
                     .setReasoningContent(reasoningContentBuffer.toString()));
         }).doOnError(throwable -> {
             log.error("[sendChatMessageStream][userId({}) sendReqVO({}) 发生异常]", userId, sendReqVO, throwable);
-            // 忽略租户，因为 Flux 异步无法透传租户
+            // 忽略租户，因�?Flux 异步无法透传租户
             {
-                // 如果有内容，则更新内容
+                // 如果有内容，则更新内�?
                 if (StrUtil.isNotEmpty(contentBuffer)) {
                     aiChatMessageMapper.updateById(new AiChatMessageDO().setId(assistantMessage.getId())
                             .setContent(contentBuffer.toString()).setReasoningContent(reasoningContentBuffer.toString()));
@@ -286,9 +286,9 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
             }
         }).doOnCancel(() -> {
             log.info("[sendChatMessageStream][userId({}) sendReqVO({}) 取消请求]", userId, sendReqVO);
-            // 忽略租户，因为 Flux 异步无法透传租户
+            // 忽略租户，因�?Flux 异步无法透传租户
             {
-                // 如果有内容，则更新内容
+                // 如果有内容，则更新内�?
                 if (StrUtil.isNotEmpty(contentBuffer)) {
                     aiChatMessageMapper.updateById(new AiChatMessageDO().setId(assistantMessage.getId())
                             .setContent(contentBuffer.toString()).setReasoningContent(reasoningContentBuffer.toString()));
@@ -341,7 +341,7 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
             // TODO @芋艿：历史的知识库；历史的搜索，要不要拼接？
         });
 
-        // 1.3 当前 user message 新发送消息
+        // 1.3 当前 user message 新发送消�?
         chatMessages.add(new UserMessage(sendReqVO.getContent()));
 
         // 1.4 知识库，通过 UserMessage 实现
@@ -407,9 +407,9 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
         // 2. 通过 mcpClients
         if (CollUtil.isNotEmpty(mcpClients) && CollUtil.isNotEmpty(chatRole.getMcpClientNames())) {
             chatRole.getMcpClientNames().forEach(mcpClientName -> {
-                // 2.1 标准化名字，参考 McpClientAutoConfiguration 的 connectedClientName 方法
+                // 2.1 标准化名字，参�?McpClientAutoConfiguration �?connectedClientName 方法
                 String finalMcpClientName = mcpClientCommonProperties.getName() + " - " + mcpClientName;
-                // 2.2 匹配对应的 McpSyncClient
+                // 2.2 匹配对应�?McpSyncClient
                 mcpClients.forEach(mcpClient -> {
                     if (ObjUtil.notEqual(mcpClient.getClientInfo().name(), finalMcpClientName)) {
                         return;
@@ -423,14 +423,14 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
     }
 
     /**
-     * 从历史消息中，获得倒序的 n 组消息作为消息上下文
+     * 从历史消息中，获得倒序�?n 组消息作为消息上下文
      * <p>
-     * n 组：指的是 user + assistant 形成一组
+     * n 组：指的�?user + assistant 形成一�?
      *
      * @param messages     消息列表
      * @param conversation 对话
-     * @param sendReqVO    发送请求
-     * @return 消息上下文
+     * @param sendReqVO    发送请�?
+     * @return 消息上下�?
      */
     private List<AiChatMessageDO> filterContextMessages(List<AiChatMessageDO> messages,
             AiChatConversationDO conversation,
@@ -450,10 +450,10 @@ public class AiChatMessageServiceImpl implements AiChatMessageService {
                     || StrUtil.isEmpty(assistantMessage.getContent())) {
                 continue;
             }
-            // 由于后续要 reverse 反转，所以先添加 assistantMessage
+            // 由于后续�?reverse 反转，所以先添加 assistantMessage
             contextMessages.add(assistantMessage);
             contextMessages.add(userMessage);
-            // 超过最大上下文，结束
+            // 超过最大上下文，结�?
             if (contextMessages.size() >= conversation.getMaxContexts() * 2) {
                 break;
             }

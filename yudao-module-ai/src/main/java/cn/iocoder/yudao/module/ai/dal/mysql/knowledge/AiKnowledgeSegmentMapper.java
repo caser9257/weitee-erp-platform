@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * AI 知识库分片 Mapper
+ * AI 知识库分�?Mapper
  *
  * @author xiaoxin
  */

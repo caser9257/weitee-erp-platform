@@ -33,7 +33,7 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.*;
 
 /**
- * AI 模型 Service 实现类
+ * AI 模型 Service 实现�?
  *
  * @author fansili
  */
@@ -123,7 +123,7 @@ public class AiModelServiceImpl implements AiModelService {
         return aiChatMapper.selectListByStatusAndType(status, type, platform);
     }
 
-    // ========== 与 Spring AI 集成 ==========
+    // ========== �?Spring AI 集成 ==========
 
     @Override
     public ChatModel getChatModel(Long id) {
@@ -162,18 +162,18 @@ public class AiModelServiceImpl implements AiModelService {
         AiApiKeyDO apiKey = apiKeyService.validateApiKey(model.getKeyId());
         AiPlatformEnum platform = AiPlatformEnum.validatePlatform(apiKey.getPlatform());
 
-        // 创建或获取 EmbeddingModel 对象
+        // 创建或获�?EmbeddingModel 对象
         EmbeddingModel embeddingModel = modelFactory.getOrCreateEmbeddingModel(
                 platform, apiKey.getApiKey(), apiKey.getUrl(), model.getModel());
 
-        // 创建或获取 VectorStore 对象
+        // 创建或获�?VectorStore 对象
          return modelFactory.getOrCreateVectorStore(SimpleVectorStore.class, embeddingModel, metadataFields);
 //         return modelFactory.getOrCreateVectorStore(QdrantVectorStore.class, embeddingModel, metadataFields);
 //         return modelFactory.getOrCreateVectorStore(RedisVectorStore.class, embeddingModel, metadataFields);
 //         return modelFactory.getOrCreateVectorStore(MilvusVectorStore.class, embeddingModel, metadataFields);
     }
 
-    // TODO @lesan：是不是返回 Llm 对象会好点哈？
+    // TODO @lesan：是不是返回 Llm 对象会好点哈�?
     @Override
     public void getLLmProvider4Tinyflow(Tinyflow tinyflow, Long modelId) {
         AiModelDO model = validateModel(modelId);
@@ -181,12 +181,12 @@ public class AiModelServiceImpl implements AiModelService {
         AiPlatformEnum platform = AiPlatformEnum.validatePlatform(apiKey.getPlatform());
         switch (platform) {
             // TODO @lesan 考虑到未来不需要使用agents-flex 现在仅测试通义千问
-            // TODO @lesan：【重要】是不是可以实现一个 SpringAiLlm，这样的话，内部全部用它就好了。只实现 chat 部分；这样，就把 flex 作为一个 agent 框架，内部调用，还是 spring ai 相关的。成本可能低一点？！
+            // TODO @lesan：【重要】是不是可以实现一�?SpringAiLlm，这样的话，内部全部用它就好了。只实现 chat 部分；这样，就把 flex 作为一�?agent 框架，内部调用，还是 spring ai 相关的。成本可能低一点？�?
             case TONG_YI:
                 QwenLlmConfig qwenLlmConfig = new QwenLlmConfig();
                 qwenLlmConfig.setApiKey(apiKey.getApiKey());
                 qwenLlmConfig.setModel(model.getModel());
-                // TODO @lesan：这个有点奇怪。。。如果一个链式里，有多个模型，咋整呀。。。
+                // TODO @lesan：这个有点奇怪。。。如果一个链式里，有多个模型，咋整呀。。�?
                 tinyflow.setLlmProvider(id -> new QwenLlm(qwenLlmConfig));
                 break;
             case OLLAMA:

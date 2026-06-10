@@ -20,25 +20,25 @@ import java.util.Map;
 public interface AiChatMessageService {
 
     /**
-     * 发送消息
+     * 发送消�?
      *
-     * @param sendReqVO 发送信息
+     * @param sendReqVO 发送信�?
      * @param userId 用户编号
-     * @return 发送结果
+     * @return 发送结�?
      */
     AiChatMessageSendRespVO sendMessage(AiChatMessageSendReqVO sendReqVO, Long userId);
 
     /**
-     * 发送消息
+     * 发送消�?
      *
-     * @param sendReqVO 发送信息
+     * @param sendReqVO 发送信�?
      * @param userId 用户编号
-     * @return 发送结果
+     * @return 发送结�?
      */
     Flux<CommonResult<AiChatMessageSendRespVO>> sendChatMessageStream(AiChatMessageSendReqVO sendReqVO, Long userId);
 
     /**
-     * 获得指定对话的消息列表
+     * 获得指定对话的消息列�?
      *
      * @param conversationId 对话编号
      * @return 消息列表
@@ -54,7 +54,7 @@ public interface AiChatMessageService {
     void deleteChatMessage(Long id, Long userId);
 
     /**
-     * 删除指定对话的消息
+     * 删除指定对话的消�?
      *
      * @param conversationId 对话编号
      * @param userId 用户编号
@@ -62,14 +62,14 @@ public interface AiChatMessageService {
     void deleteChatMessageByConversationId(Long conversationId, Long userId);
 
     /**
-     * 【管理员】删除消息
+     * 【管理员】删除消�?
      *
      * @param id 消息编号
      */
     void deleteChatMessageByAdmin(Long id);
 
     /**
-     * 获得聊天对话的消息数量 Map
+     * 获得聊天对话的消息数�?Map
      *
      * @param conversationIds 对话编号数组
      * @return 消息数量 Map
@@ -77,10 +77,10 @@ public interface AiChatMessageService {
     Map<Long, Integer> getChatMessageCountMap(Collection<Long> conversationIds);
 
     /**
-     * 获得聊天消息的分页
+     * 获得聊天消息的分�?
      *
      * @param pageReqVO 分页查询
-     * @return 聊天消息的分页
+     * @return 聊天消息的分�?
      */
     PageResult<AiChatMessageDO> getChatMessagePage(AiChatMessagePageReqVO pageReqVO);
 

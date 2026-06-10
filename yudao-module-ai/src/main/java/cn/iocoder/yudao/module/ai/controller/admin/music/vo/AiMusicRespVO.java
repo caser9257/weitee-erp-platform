@@ -16,10 +16,10 @@ public class AiMusicRespVO {
     @Schema(description = "用户编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "12212")
     private Long userId;
 
-    @Schema(description = "音乐名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "夜空中最亮的星")
+    @Schema(description = "音乐名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "夜空中最亮的�?)
     private String title;
 
-    @Schema(description = "歌词", example = "oh~卖糕的")
+    @Schema(description = "歌词", example = "oh~卖糕�?)
     private String lyric;
 
     @Schema(description = "图片地址", example = "https://www.iocoder.cn")
@@ -31,13 +31,13 @@ public class AiMusicRespVO {
     @Schema(description = "视频地址", example = "https://www.iocoder.cn")
     private String videoUrl;
 
-    @Schema(description = "音乐状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "20")
+    @Schema(description = "音乐状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "20")
     private Integer status;
 
-    @Schema(description = "描述词", example = "一首轻快的歌曲")
+    @Schema(description = "描述�?, example = "一首轻快的歌曲")
     private String gptDescriptionPrompt;
 
-    @Schema(description = "提示词", example = "创作一首带有轻松吉他旋律的流行歌曲，[verse] 描述夏日海滩的宁静，[chorus] 节奏加快，表达对自由的向往。")
+    @Schema(description = "提示�?, example = "创作一首带有轻松吉他旋律的流行歌曲，[verse] 描述夏日海滩的宁静，[chorus] 节奏加快，表达对自由的向往�?)
     private String prompt;
 
     @Schema(description = "模型平台", requiredMode = Schema.RequiredMode.REQUIRED, example = "Suno")

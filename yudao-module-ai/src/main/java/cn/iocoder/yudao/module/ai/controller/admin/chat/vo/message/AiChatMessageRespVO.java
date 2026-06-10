@@ -21,7 +21,7 @@ public class AiChatMessageRespVO {
     private Long replyId;
 
     @Schema(description = "消息类型", requiredMode = Schema.RequiredMode.REQUIRED, example = "role")
-    private String type; // 参见 MessageType 枚举类
+    private String type; // 参见 MessageType 枚举�?
 
     @Schema(description = "用户编号", example = "4096")
     private Long userId;
@@ -38,19 +38,19 @@ public class AiChatMessageRespVO {
     @Schema(description = "聊天内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "你好，你好啊")
     private String content;
 
-    @Schema(description = "推理内容", example = "要达到这个目标，你需要...")
+    @Schema(description = "推理内容", example = "要达到这个目标，你需�?..")
     private String reasoningContent;
 
-    @Schema(description = "是否携带上下文", requiredMode = Schema.RequiredMode.REQUIRED, example = "true")
+    @Schema(description = "是否携带上下�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "true")
     private Boolean useContext;
 
-    @Schema(description = "知识库段落编号数组", example = "[1,2,3]")
+    @Schema(description = "知识库段落编号数�?, example = "[1,2,3]")
     private List<Long> segmentIds;
 
-    @Schema(description = "知识库段落数组")
+    @Schema(description = "知识库段落数�?)
     private List<KnowledgeSegment> segments;
 
-    @Schema(description = "联网搜索的网页内容数组")
+    @Schema(description = "联网搜索的网页内容数�?)
     private List<AiWebSearchResponse.WebPage> webSearchPages;
 
     @Schema(description = "附件 URL 数组", example = "https://www.iocoder.cn/1.png")
@@ -64,14 +64,14 @@ public class AiChatMessageRespVO {
     @Schema(description = "角色名字", example = "小黄")
     private String roleName;
 
-    @Schema(description = "知识库段落", example = "Java 开发手册")
+    @Schema(description = "知识库段�?, example = "Java 开发手�?)
     @Data
     public static class KnowledgeSegment {
 
         @Schema(description = "段落编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
         private Long id;
 
-        @Schema(description = "切片内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "Java 开发手册")
+        @Schema(description = "切片内容", requiredMode = Schema.RequiredMode.REQUIRED, example = "Java 开发手�?)
         private String content;
 
         @Schema(description = "文档编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "24790")

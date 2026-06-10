@@ -9,7 +9,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import reactor.core.publisher.Flux;
 
 /**
- * Grok {@link ChatModel} 实现类
+ * Grok {@link ChatModel} 实现�?
  *
  *
  */
@@ -22,7 +22,7 @@ public class GrokChatModel implements ChatModel {
     public static final String MODEL_DEFAULT = "grok-4-fast-reasoning";
 
     /**
-     * 兼容 OpenAI 接口，进行复用
+     * 兼容 OpenAI 接口，进行复�?
      */
     private final ChatModel openAiChatModel;
 

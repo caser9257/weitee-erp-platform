@@ -32,7 +32,7 @@ import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.CHAT_CONVERSAT
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.CHAT_CONVERSATION_NOT_EXISTS;
 
 /**
- * AI 聊天对话 Service 实现类
+ * AI 聊天对话 Service 实现�?
  *
  * @author fansili
  */
@@ -61,7 +61,7 @@ public class AiChatConversationServiceImpl implements AiChatConversationService 
         Assert.notNull(model, "必须找到默认模型");
         validateChatModel(model);
 
-        // 1.3 校验知识库
+        // 1.3 校验知识�?
         if (Objects.nonNull(createReqVO.getKnowledgeId())) {
             knowledgeService.validateKnowledgeExists(createReqVO.getKnowledgeId());
         }
@@ -86,13 +86,13 @@ public class AiChatConversationServiceImpl implements AiChatConversationService 
         if (ObjUtil.notEqual(conversation.getUserId(), userId)) {
             throw exception(CHAT_CONVERSATION_NOT_EXISTS);
         }
-        // 1.2 校验模型是否存在（修改模型的情况）
+        // 1.2 校验模型是否存在（修改模型的情况�?
         AiModelDO model = null;
         if (updateReqVO.getModelId() != null) {
             model = modalService.validateModel(updateReqVO.getModelId());
         }
 
-        // 1.3 校验知识库是否存在
+        // 1.3 校验知识库是否存�?
         if (updateReqVO.getKnowledgeId() != null) {
             knowledgeService.validateKnowledgeExists(updateReqVO.getKnowledgeId());
         }

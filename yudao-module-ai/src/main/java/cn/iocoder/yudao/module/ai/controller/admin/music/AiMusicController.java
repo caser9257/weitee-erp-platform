@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +29,7 @@ public class AiMusicController {
     private AiMusicService musicService;
 
     @GetMapping("/my-page")
-    @Operation(summary = "获得【我的】音乐分页")
+    @Operation(summary = "获得【我的】音乐分�?)
     public CommonResult<PageResult<AiMusicRespVO>> getMusicMyPage(@Valid AiMusicPageReqVO pageReqVO) {
         PageResult<AiMusicDO> pageResult = musicService.getMusicMyPage(pageReqVO, getLoginUserId());
         return success(BeanUtils.toBean(pageResult, AiMusicRespVO.class));
@@ -41,7 +41,7 @@ public class AiMusicController {
         return success(musicService.generateMusic(getLoginUserId(), reqVO));
     }
 
-    @Operation(summary = "删除【我的】音乐记录")
+    @Operation(summary = "删除【我的】音乐记�?)
     @DeleteMapping("/delete-my")
     @Parameter(name = "id", required = true, description = "音乐编号", example = "1024")
     public CommonResult<Boolean> deleteMusicMy(@RequestParam("id") Long id) {
@@ -50,7 +50,7 @@ public class AiMusicController {
     }
 
     @GetMapping("/get-my")
-    @Operation(summary = "获取【我的】音乐")
+    @Operation(summary = "获取【我的】音�?)
     @Parameter(name = "id", required = true, description = "音乐编号", example = "1024")
     public CommonResult<AiMusicRespVO> getMusicMy(@RequestParam("id") Long id) {
         AiMusicDO music = musicService.getMusic(id);
@@ -61,8 +61,8 @@ public class AiMusicController {
     }
 
     @PostMapping("/update-my")
-    @Operation(summary = "修改【我的】音乐 目前只支持修改标题")
-    @Parameter(name = "title", required = true, description = "音乐名称", example = "夜空中最亮的星")
+    @Operation(summary = "修改【我的】音�?目前只支持修改标�?)
+    @Parameter(name = "title", required = true, description = "音乐名称", example = "夜空中最亮的�?)
     public CommonResult<Boolean> updateMy(AiMusicUpdateMyReqVO updateReqVO) {
         musicService.updateMyMusic(updateReqVO, getLoginUserId());
         return success(true);

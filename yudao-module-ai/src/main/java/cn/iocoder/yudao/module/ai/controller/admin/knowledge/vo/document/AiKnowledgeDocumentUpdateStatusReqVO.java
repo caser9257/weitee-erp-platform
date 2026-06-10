@@ -3,10 +3,10 @@ package cn.iocoder.yudao.module.ai.controller.admin.knowledge.vo.document;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.validation.InEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-@Schema(description = "管理后台 - AI 知识库文档更新状态 Request VO")
+@Schema(description = "管理后台 - AI 知识库文档更新状�?Request VO")
 @Data
 public class AiKnowledgeDocumentUpdateStatusReqVO {
 
@@ -14,8 +14,8 @@ public class AiKnowledgeDocumentUpdateStatusReqVO {
     @NotNull(message = "编号不能为空")
     private Long id;
 
-    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
-    @NotNull(message = "状态不能为空")
+    @Schema(description = "状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "0")
+    @NotNull(message = "状态不能为�?)
     @InEnum(CommonStatusEnum.class)
     private Integer status;
 

@@ -20,7 +20,7 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.KNOWLEDGE_NOT_EXISTS;
 
 /**
- * AI 知识库-基础信息 Service 实现类
+ * AI 知识�?基础信息 Service 实现�?
  *
  * @author xiaoxin
  */
@@ -43,7 +43,7 @@ public class AiKnowledgeServiceImpl implements AiKnowledgeService {
         // 1. 校验模型配置
         AiModelDO model = modelService.validateModel(createReqVO.getEmbeddingModelId());
 
-        // 2. 插入知识库
+        // 2. 插入知识�?
         AiKnowledgeDO knowledge = BeanUtils.toBean(createReqVO, AiKnowledgeDO.class)
                 .setEmbeddingModel(model.getModel());
         aiKnowledgeMapper.insert(knowledge);
@@ -52,17 +52,17 @@ public class AiKnowledgeServiceImpl implements AiKnowledgeService {
 
     @Override
     public void updateKnowledge(AiKnowledgeSaveReqVO updateReqVO) {
-        // 1.1 校验知识库存在
+        // 1.1 校验知识库存�?
         AiKnowledgeDO oldKnowledge = validateKnowledgeExists(updateReqVO.getId());
         // 1.2 校验模型配置
         AiModelDO model = modelService.validateModel(updateReqVO.getEmbeddingModelId());
 
-        // 2. 更新知识库
+        // 2. 更新知识�?
         AiKnowledgeDO updateObj = BeanUtils.toBean(updateReqVO, AiKnowledgeDO.class)
                 .setEmbeddingModel(model.getModel());
         aiKnowledgeMapper.updateById(updateObj);
 
-        // 3. 如果模型变化，需要 reindex 所有的文档
+        // 3. 如果模型变化，需�?reindex 所有的文档
         if (ObjUtil.notEqual(oldKnowledge.getEmbeddingModelId(), updateReqVO.getEmbeddingModelId())) {
             knowledgeSegmentService.reindexByKnowledgeIdAsync(updateReqVO.getId());
         }
@@ -77,8 +77,8 @@ public class AiKnowledgeServiceImpl implements AiKnowledgeService {
         // 2. 删除知识库下的所有文档及段落
         knowledgeDocumentService.deleteKnowledgeDocumentByKnowledgeId(id);
 
-        // 3. 删除知识库
-        // 特殊：知识库需要最后删除，不然相关的配置会找不到
+        // 3. 删除知识�?
+        // 特殊：知识库需要最后删除，不然相关的配置会找不�?
         aiKnowledgeMapper.deleteById(id);
     }
 

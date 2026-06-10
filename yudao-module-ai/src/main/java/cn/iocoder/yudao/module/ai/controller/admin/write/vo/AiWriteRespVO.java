@@ -24,25 +24,25 @@ public class AiWriteRespVO {
     @Schema(description = "模型", requiredMode = Schema.RequiredMode.REQUIRED, example = "qwen")
     private String model;
 
-    @Schema(description = "生成内容提示", requiredMode = Schema.RequiredMode.REQUIRED, example = "撰写：田忌赛马")
+    @Schema(description = "生成内容提示", requiredMode = Schema.RequiredMode.REQUIRED, example = "撰写：田忌赛�?)
     private String prompt;
 
-    @Schema(description = "生成的内容", example = "你非常不错")
+    @Schema(description = "生成的内�?, example = "你非常不�?)
     private String generatedContent;
 
     @Schema(description = "原文", example = "真的么？")
     private String originalContent;
 
-    @Schema(description = "长度提示词", example = "1")
+    @Schema(description = "长度提示�?, example = "1")
     private Integer length;
 
-    @Schema(description = "格式提示词", example = "2")
+    @Schema(description = "格式提示�?, example = "2")
     private Integer format;
 
-    @Schema(description = "语气提示词", example = "3")
+    @Schema(description = "语气提示�?, example = "3")
     private Integer tone;
 
-    @Schema(description = "语言提示词", example = "4")
+    @Schema(description = "语言提示�?, example = "4")
     private Integer language;
 
     @Schema(description = "错误信息")

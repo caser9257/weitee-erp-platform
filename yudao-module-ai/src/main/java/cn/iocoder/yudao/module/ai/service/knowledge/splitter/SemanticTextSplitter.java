@@ -14,12 +14,12 @@ import java.util.regex.Pattern;
 /**
  * 语义化文本切片器
  *
- * <p>功能特点：
+ * <p>功能特点�?
  * <ul>
- *   <li>优先在段落边界（双换行）处切分</li>
+ *   <li>优先在段落边界（双换行）处切�?/li>
  *   <li>其次在句子边界（句号、问号、感叹号）处切分</li>
- *   <li>避免在句子中间截断，保持语义完整性</li>
- *   <li>支持中英文标点符号识别</li>
+ *   <li>避免在句子中间截断，保持语义完整�?/li>
+ *   <li>支持中英文标点符号识�?/li>
  * </ul>
  *
  * @author runzhen
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 public class SemanticTextSplitter extends TextSplitter {
 
     /**
-     * 分段的最大 Token 数
+     * 分段的最�?Token �?
      */
     private final int chunkSize;
 
@@ -38,34 +38,34 @@ public class SemanticTextSplitter extends TextSplitter {
     private final int chunkOverlap;
 
     /**
-     * 段落分隔符（按优先级排序）
+     * 段落分隔符（按优先级排序�?
      */
     private static final List<String> PARAGRAPH_SEPARATORS = Arrays.asList(
             "\n\n\n",    // 三个换行
-            "\n\n",      // 双换行
-            "\n"         // 单换行
+            "\n\n",      // 双换�?
+            "\n"         // 单换�?
     );
 
     /**
-     * 句子结束标记（中英文标点）
+     * 句子结束标记（中英文标点�?
      */
     private static final Pattern SENTENCE_END_PATTERN = Pattern.compile(
-            "[。！？.!?]+[\\s\"'）)】\\]]*"
+            "[。！�?!?]+[\\s\"'�?】\\]]*"
     );
 
     /**
-     * Token 估算器
+     * Token 估算�?
      */
     private final MarkdownQaSplitter.TokenEstimator tokenEstimator;
 
     public SemanticTextSplitter(int chunkSize, int chunkOverlap) {
         this.chunkSize = chunkSize;
-        this.chunkOverlap = Math.min(chunkOverlap, chunkSize / 2); // 重叠不超过一半
+        this.chunkOverlap = Math.min(chunkOverlap, chunkSize / 2); // 重叠不超过一�?
         this.tokenEstimator = new SimpleTokenEstimator();
     }
 
     public SemanticTextSplitter(int chunkSize) {
-        this(chunkSize, 50); // 默认重叠 50 个 Token
+        this(chunkSize, 50); // 默认重叠 50 �?Token
     }
 
     @Override
@@ -77,10 +77,10 @@ public class SemanticTextSplitter extends TextSplitter {
     }
 
     /**
-     * 切分文本（递归策略）
+     * 切分文本（递归策略�?
      *
-     * @param text 待切分文本
-     * @return 切分后的文本块列表
+     * @param text 待切分文�?
+     * @return 切分后的文本块列�?
      */
     private List<String> splitTextRecursive(String text) {
         List<String> chunks = new ArrayList<>();
@@ -103,25 +103,25 @@ public class SemanticTextSplitter extends TextSplitter {
             }
         }
 
-        // 如果没有找到段落分隔符，按句子切分
+        // 如果没有找到段落分隔符，按句子切�?
         if (splits == null || splits.size() == 1) {
             splits = splitBySentences(text);
             usedSeparator = ""; // 句子切分不需要分隔符
         }
 
-        // 合并小片段
+        // 合并小片�?
         chunks = mergeSplits(splits, usedSeparator);
         return chunks;
     }
 
     /**
-     * 按句子切分
+     * 按句子切�?
      *
-     * @param text 待切分文本
+     * @param text 待切分文�?
      * @return 句子列表
      */
     private List<String> splitBySentences(String text) {
-        // 使用正则表达式匹配句子结束位置
+        // 使用正则表达式匹配句子结束位�?
         List<String> sentences = new ArrayList<>();
         int lastEnd = 0;
         Matcher matcher = SENTENCE_END_PATTERN.matcher(text);
@@ -144,11 +144,11 @@ public class SemanticTextSplitter extends TextSplitter {
     }
 
     /**
-     * 合并切分后的小片段
+     * 合并切分后的小片�?
      *
      * @param splits 切分后的片段列表
-     * @param separator 片段间的分隔符
-     * @return 合并后的文本块列表
+     * @param separator 片段间的分隔�?
+     * @return 合并后的文本块列�?
      */
     private List<String> mergeSplits(List<String> splits, String separator) {
         List<String> chunks = new ArrayList<>();
@@ -162,32 +162,32 @@ public class SemanticTextSplitter extends TextSplitter {
             int splitTokens = tokenEstimator.estimate(split);
             // 如果单个片段就超过限制，进一步递归切分
             if (splitTokens > chunkSize) {
-                // 先保存当前累积的块
+                // 先保存当前累积的�?
                 if (!currentChunks.isEmpty()) {
                     String chunkText = String.join(separator, currentChunks);
                     chunks.add(chunkText.trim());
                     currentChunks.clear();
                     currentLength = 0;
                 }
-                // 递归切分大片段
+                // 递归切分大片�?
                 if (!separator.isEmpty()) {
                     // 如果是段落分隔符，尝试按句子切分
                     chunks.addAll(splitTextRecursive(split));
                 } else {
-                    // 如果已经是句子级别，强制按字符切分
+                    // 如果已经是句子级别，强制按字符切�?
                     chunks.addAll(forceSplitLongText(split));
                 }
                 continue;
             }
-            // 计算加上分隔符的 Token 数
+            // 计算加上分隔符的 Token �?
             int separatorTokens = StrUtil.isEmpty(separator) ? 0 : tokenEstimator.estimate(separator);
-            // 如果加上这个片段会超过限制
+            // 如果加上这个片段会超过限�?
             if (!currentChunks.isEmpty() && currentLength + splitTokens + separatorTokens > chunkSize) {
-                // 保存当前块
+                // 保存当前�?
                 String chunkText = String.join(separator, currentChunks);
                 chunks.add(chunkText.trim());
 
-                // 处理重叠：保留最后几个片段
+                // 处理重叠：保留最后几个片�?
                 currentChunks = getOverlappingChunks(currentChunks, separator);
                 currentLength = estimateTokens(currentChunks, separator);
             }
@@ -196,7 +196,7 @@ public class SemanticTextSplitter extends TextSplitter {
             currentLength += splitTokens + separatorTokens;
         }
 
-        // 添加最后一块
+        // 添加最后一�?
         if (!currentChunks.isEmpty()) {
             String chunkText = String.join(separator, currentChunks);
             chunks.add(chunkText.trim());
@@ -208,15 +208,15 @@ public class SemanticTextSplitter extends TextSplitter {
      * 获取重叠的片段（用于保持上下文）
      *
      * @param chunks 当前片段列表
-     * @param separator 片段间的分隔符
-     * @return 重叠的片段列表
+     * @param separator 片段间的分隔�?
+     * @return 重叠的片段列�?
      */
     private List<String> getOverlappingChunks(List<String> chunks, String separator) {
         if (chunkOverlap == 0 || chunks.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // 从后往前取片段，直到达到重叠大小
+        // 从后往前取片段，直到达到重叠大�?
         List<String> overlapping = new ArrayList<>();
         int tokens = 0;
         for (int i = chunks.size() - 1; i >= 0; i--) {
@@ -225,7 +225,7 @@ public class SemanticTextSplitter extends TextSplitter {
             if (tokens + chunkTokens > chunkOverlap) {
                 break;
             }
-            // 添加到重叠列表前端
+            // 添加到重叠列表前�?
             overlapping.add(0, chunk);
             tokens += chunkTokens + (StrUtil.isEmpty(separator) ? 0 : tokenEstimator.estimate(separator));
         }
@@ -233,11 +233,11 @@ public class SemanticTextSplitter extends TextSplitter {
     }
 
     /**
-     * 估算片段列表的总 Token 数
+     * 估算片段列表的�?Token �?
      *
      * @param chunks 片段列表
-     * @param separator 片段间的分隔符
-     * @return 总 Token 数
+     * @param separator 片段间的分隔�?
+     * @return �?Token �?
      */
     private int estimateTokens(List<String> chunks, String separator) {
         int total = 0;
@@ -251,10 +251,10 @@ public class SemanticTextSplitter extends TextSplitter {
     }
 
     /**
-     * 强制切分长文本（当语义切分失败时）
+     * 强制切分长文本（当语义切分失败时�?
      *
-     * @param text 待切分文本
-     * @return 切分后的文本块列表
+     * @param text 待切分文�?
+     * @return 切分后的文本块列�?
      */
     private List<String> forceSplitLongText(String text) {
         List<String> chunks = new ArrayList<>();
@@ -264,12 +264,12 @@ public class SemanticTextSplitter extends TextSplitter {
             String chunk = text.substring(i, end);
             chunks.add(chunk.trim());
         }
-        log.warn("文本过长，已强制按字符切分，可能影响语义完整性");
+        log.warn("文本过长，已强制按字符切分，可能影响语义完整�?);
         return chunks;
     }
 
     /**
-     * 简单的 Token 估算器实现
+     * 简单的 Token 估算器实�?
      */
     private static class SimpleTokenEstimator implements MarkdownQaSplitter.TokenEstimator {
 

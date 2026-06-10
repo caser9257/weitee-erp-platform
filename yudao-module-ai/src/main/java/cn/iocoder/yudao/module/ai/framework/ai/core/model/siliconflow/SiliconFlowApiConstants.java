@@ -17,7 +17,7 @@
 package cn.iocoder.yudao.module.ai.framework.ai.core.model.siliconflow;
 
 /**
- * SiliconFlow API 枚举类
+ * SiliconFlow API 枚举�?
  *
  * @author zzt
  */

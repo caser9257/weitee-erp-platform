@@ -20,7 +20,7 @@ import java.util.List;
  * @since 2024/4/24 19:39
  */
 @TableName(value = "ai_chat_role", autoResultMap = true)
-@KeySequence("ai_chat_role_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_chat_role_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 @Builder
 @NoArgsConstructor
@@ -56,7 +56,7 @@ public class AiChatRoleDO extends BaseDO {
     /**
      * 用户编号
      *
-     * 关联 AdminUserDO 的 userId 字段
+     * 关联 AdminUserDO �?userId 字段
      */
     private Long userId;
 
@@ -75,14 +75,14 @@ public class AiChatRoleDO extends BaseDO {
     @TableField(typeHandler = LongListTypeHandler.class)
     private List<Long> knowledgeIds;
     /**
-     * 引用的工具编号列表
+     * 引用的工具编号列�?
      *
      * 关联 {@link AiToolDO#getId()} 字段
      */
     @TableField(typeHandler = LongListTypeHandler.class)
     private List<Long> toolIds;
     /**
-     * 引用的 MCP Client 名字列表
+     * 引用�?MCP Client 名字列表
      *
      * 关联 spring.ai.mcp.client 下的名字
      */
@@ -98,11 +98,11 @@ public class AiChatRoleDO extends BaseDO {
     private Boolean publicStatus;
 
     /**
-     * 排序值
+     * 排序�?
      */
     private Integer sort;
     /**
-     * 状态
+     * 状�?
      *
      * 枚举 {@link CommonStatusEnum}
      */

@@ -16,7 +16,7 @@ import lombok.Data;
  * @author xiaoxin
  */
 @TableName("ai_write")
-@KeySequence("ai_write_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_write_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiWriteDO extends BaseDO {
 
@@ -29,7 +29,7 @@ public class AiWriteDO extends BaseDO {
     /**
      * 用户编号
      *
-     * 关联 AdminUserDO 的 userId 字段
+     * 关联 AdminUserDO �?userId 字段
      */
     private Long userId;
 
@@ -63,7 +63,7 @@ public class AiWriteDO extends BaseDO {
     private String prompt;
 
     /**
-     * 生成的内容
+     * 生成的内�?
      */
     private String generatedContent;
     /**
@@ -72,25 +72,25 @@ public class AiWriteDO extends BaseDO {
     private String originalContent;
 
     /**
-     * 长度提示词
+     * 长度提示�?
      *
      * 字典：{@link DictTypeConstants#AI_WRITE_LENGTH}
      */
     private Integer length;
     /**
-     * 格式提示词
+     * 格式提示�?
      *
      * 字典：{@link DictTypeConstants#AI_WRITE_FORMAT}
      */
     private Integer format;
     /**
-     * 语气提示词
+     * 语气提示�?
      *
      * 字典：{@link DictTypeConstants#AI_WRITE_TONE}
      */
     private Integer tone;
     /**
-     * 语言提示词
+     * 语言提示�?
      *
      * 字典：{@link DictTypeConstants#AI_WRITE_LANGUAGE}
      */

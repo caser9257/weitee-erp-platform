@@ -7,7 +7,7 @@ import lombok.Getter;
 import java.util.Arrays;
 
 /**
- * AI 音乐生成模式的枚举
+ * AI 音乐生成模式的枚�?
  *
  * @author xiaoxin
  */
@@ -23,7 +23,7 @@ public enum AiMusicGenerateModeEnum implements ArrayValuable<Integer> {
      */
     private final Integer mode;
     /**
-     * 模式名
+     * 模式�?
      */
     private final String name;
 

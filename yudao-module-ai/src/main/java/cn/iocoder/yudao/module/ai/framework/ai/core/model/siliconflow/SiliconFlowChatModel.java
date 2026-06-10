@@ -10,9 +10,9 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import reactor.core.publisher.Flux;
 
 /**
- * 硅基流动 {@link ChatModel} 实现类
+ * 硅基流动 {@link ChatModel} 实现�?
  *
- * 1. API 文档：<a href="https://docs.siliconflow.cn/cn/api-reference/chat-completions/chat-completions">API 文档</a>
+ * 1. API 文档�?a href="https://docs.siliconflow.cn/cn/api-reference/chat-completions/chat-completions">API 文档</a>
  *
  * @author fansili
  */
@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux;
 public class SiliconFlowChatModel implements ChatModel {
 
     /**
-     * 兼容 OpenAI 接口，进行复用
+     * 兼容 OpenAI 接口，进行复�?
      */
     private final ChatModel openAiChatModel;
 

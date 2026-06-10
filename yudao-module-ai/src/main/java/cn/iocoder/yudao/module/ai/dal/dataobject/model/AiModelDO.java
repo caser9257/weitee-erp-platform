@@ -18,7 +18,7 @@ import lombok.*;
  * @since 2024/4/24 19:39
  */
 @TableName("ai_model")
-@KeySequence("ai_model_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_model_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 @Builder
 @NoArgsConstructor
@@ -58,11 +58,11 @@ public class AiModelDO extends BaseDO {
     private Integer type;
 
     /**
-     * 排序值
+     * 排序�?
      */
     private Integer sort;
     /**
-     * 状态
+     * 状�?
      *
      * 枚举 {@link CommonStatusEnum}
      */
@@ -73,15 +73,15 @@ public class AiModelDO extends BaseDO {
     /**
      * 温度参数
      *
-     * 用于调整生成回复的随机性和多样性程度：较低的温度值会使输出更收敛于高频词汇，较高的则增加多样性
+     * 用于调整生成回复的随机性和多样性程度：较低的温度值会使输出更收敛于高频词汇，较高的则增加多样�?
      */
     private Double temperature;
     /**
-     * 单条回复的最大 Token 数量
+     * 单条回复的最�?Token 数量
      */
     private Integer maxTokens;
     /**
-     * 上下文的最大 Message 数量
+     * 上下文的最�?Message 数量
      */
     private Integer maxContexts;
 

@@ -34,7 +34,7 @@ import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.*;
 
 /**
- * AI 知识库文档 Service 实现类
+ * AI 知识库文�?Service 实现�?
  *
  * @author xiaoxin
  */
@@ -51,7 +51,7 @@ public class AiKnowledgeDocumentServiceImpl implements AiKnowledgeDocumentServic
     @Resource
     private AiKnowledgeSegmentService knowledgeSegmentService;
     @Resource
-    @Lazy // 延迟加载，避免循环依赖
+    @Lazy // 延迟加载，避免循环依�?
     private AiKnowledgeService knowledgeService;
 
     @Override
@@ -120,7 +120,7 @@ public class AiKnowledgeDocumentServiceImpl implements AiKnowledgeDocumentServic
         AiKnowledgeDocumentDO document = BeanUtils.toBean(reqVO, AiKnowledgeDocumentDO.class);
         aiKnowledgeDocumentMapper.updateById(document);
 
-        // 3. 如果处于开启状态，并且最大 tokens 发生变化，则 segment 需要重新索引
+        // 3. 如果处于开启状态，并且最�?tokens 发生变化，则 segment 需要重新索�?
         if (CommonStatusEnum.isEnable(oldDocument.getStatus())
                 && reqVO.getSegmentMaxTokens() != null
                 && ObjUtil.notEqual(reqVO.getSegmentMaxTokens(), oldDocument.getSegmentMaxTokens())) {
@@ -136,7 +136,7 @@ public class AiKnowledgeDocumentServiceImpl implements AiKnowledgeDocumentServic
         // 1. 校验存在
         AiKnowledgeDocumentDO document = validateKnowledgeDocumentExists(reqVO.getId());
 
-        // 2. 更新状态
+        // 2. 更新状�?
         aiKnowledgeDocumentMapper.updateById(new AiKnowledgeDocumentDO()
                 .setId(reqVO.getId()).setStatus(reqVO.getStatus()));
 
@@ -157,7 +157,7 @@ public class AiKnowledgeDocumentServiceImpl implements AiKnowledgeDocumentServic
         // 2. 删除
         aiKnowledgeDocumentMapper.deleteById(id);
 
-        // 3. 删除对应的段落
+        // 3. 删除对应的段�?
         knowledgeSegmentService.deleteKnowledgeSegmentByDocumentId(id);
     }
 
@@ -211,13 +211,13 @@ public class AiKnowledgeDocumentServiceImpl implements AiKnowledgeDocumentServic
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteKnowledgeDocumentByKnowledgeId(Long knowledgeId) {
-        // 1. 获取该知识库下的所有文档
+        // 1. 获取该知识库下的所有文�?
         List<AiKnowledgeDocumentDO> documents = aiKnowledgeDocumentMapper.selectListByKnowledgeId(knowledgeId);
         if (CollUtil.isEmpty(documents)) {
             return;
         }
 
-        // 2. 逐个删除文档及其对应的段落
+        // 2. 逐个删除文档及其对应的段�?
         for (AiKnowledgeDocumentDO document : documents) {
             deleteKnowledgeDocument(document.getId());
         }

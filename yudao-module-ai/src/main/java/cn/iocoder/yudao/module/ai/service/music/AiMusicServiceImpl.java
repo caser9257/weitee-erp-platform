@@ -32,7 +32,7 @@ import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.IMAGE_NOT_EXIS
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.MUSIC_NOT_EXISTS;
 
 /**
- * AI 音乐 Service 实现类
+ * AI 音乐 Service 实现�?
  *
  * @author xiaoxin
  */
@@ -69,7 +69,7 @@ public class AiMusicServiceImpl implements AiMusicService {
             throw new IllegalArgumentException(StrUtil.format("未知生成模式({})", reqVO));
         }
 
-        // 2. 插入数据库
+        // 2. 插入数据�?
         if (CollUtil.isEmpty(musicDataList)) {
             return Collections.emptyList();
         }
@@ -85,7 +85,7 @@ public class AiMusicServiceImpl implements AiMusicService {
         if (CollUtil.isEmpty(streamingTask)) {
             return 0;
         }
-        log.info("[syncMusic][Suno 开始同步, 共 ({}) 个任务]", streamingTask.size());
+        log.info("[syncMusic][Suno 开始同�? �?({}) 个任务]", streamingTask.size());
 
         // GET 请求，为避免参数过长，分批次处理
         SunoApi sunoApi = modelService.getSunoApi();
@@ -184,7 +184,7 @@ public class AiMusicServiceImpl implements AiMusicService {
     /**
      * 音乐生成好后，将音频文件上传到文件服务器
      *
-     * @param status 音乐状态
+     * @param status 音乐状�?
      * @param url    音频文件地址
      * @return 内部文件地址
      */

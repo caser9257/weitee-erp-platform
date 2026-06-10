@@ -8,17 +8,17 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * AI 知识库-文档分段 DO
+ * AI 知识�?文档分段 DO
  *
  * @author xiaoxin
  */
 @TableName(value = "ai_knowledge_segment")
-@KeySequence("ai_knowledge_segment_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_knowledge_segment_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiKnowledgeSegmentDO extends BaseDO {
 
     /**
-     * 向量库的编号 - 空值
+     * 向量库的编号 - 空�?
      */
     public static final String VECTOR_ID_EMPTY = "";
 
@@ -28,7 +28,7 @@ public class AiKnowledgeSegmentDO extends BaseDO {
     @TableId
     private Long id;
     /**
-     * 知识库编号
+     * 知识库编�?
      * <p>
      * 关联 {@link AiKnowledgeDO#getId()}
      */
@@ -63,7 +63,7 @@ public class AiKnowledgeSegmentDO extends BaseDO {
     private Integer retrievalCount;
 
     /**
-     * 状态
+     * 状�?
      * <p>
      * 枚举 {@link CommonStatusEnum}
      */

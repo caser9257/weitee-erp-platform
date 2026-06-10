@@ -18,9 +18,9 @@ import org.springframework.stereotype.Component;
 import java.util.function.BiFunction;
 
 /**
- * 工具：用户信息查询
+ * 工具：用户信息查�?
  *
- * 同时，也是展示 ToolContext 上下文的使用
+ * 同时，也是展�?ToolContext 上下文的使用
  *
  * @author Ren
  */
@@ -39,7 +39,7 @@ public class UserProfileQueryToolFunction
          * 用户编号
          */
         @JsonProperty(value = "id")
-        @JsonPropertyDescription("用户编号，例如说：1。如果查询自己，则 id 为空")
+        @JsonPropertyDescription("用户编号，例如说�?。如果查询自己，�?id 为空")
         private Long id;
 
     }

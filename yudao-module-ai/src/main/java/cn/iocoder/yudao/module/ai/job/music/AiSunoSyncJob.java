@@ -23,7 +23,7 @@ public class AiSunoSyncJob implements JobHandler {
     public String execute(String param) {
         Integer count = musicService.syncMusic();
         log.info("[execute][同步 Suno ({}) 个]", count);
-        return String.format("同步 Suno %s 个", count);
+        return String.format("同步 Suno %s �?, count);
     }
 
 }

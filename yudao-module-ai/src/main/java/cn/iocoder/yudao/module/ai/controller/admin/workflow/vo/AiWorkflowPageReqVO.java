@@ -11,17 +11,17 @@ import java.time.LocalDateTime;
 
 import static cn.iocoder.yudao.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
 
-@Schema(description = "管理后台 - AI 工作流分页 Request VO")
+@Schema(description = "管理后台 - AI 工作流分�?Request VO")
 @Data
 public class AiWorkflowPageReqVO extends PageParam {
 
-    @Schema(description = "名称", example = "工作流")
+    @Schema(description = "名称", example = "工作�?)
     private String name;
 
     @Schema(description = "标识", example = "FLOW")
     private String code;
 
-    @Schema(description = "状态", example = "1")
+    @Schema(description = "状�?, example = "1")
     @InEnum(CommonStatusEnum.class)
     private Integer status;
 

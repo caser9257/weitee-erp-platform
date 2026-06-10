@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.ai.controller.admin.image.vo.*;
 import cn.iocoder.yudao.module.ai.controller.admin.image.vo.midjourney.AiMidjourneyActionReqVO;
 import cn.iocoder.yudao.module.ai.controller.admin.image.vo.midjourney.AiMidjourneyImagineReqVO;
 import cn.iocoder.yudao.module.ai.dal.dataobject.image.AiImageDO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,7 +18,7 @@ import java.util.List;
 public interface AiImageService {
 
     /**
-     * 获取【我的】绘图分页
+     * 获取【我的】绘图分�?
      *
      * @param userId 用户编号
      * @param pageReqVO 分页条件
@@ -27,7 +27,7 @@ public interface AiImageService {
     PageResult<AiImageDO> getImagePageMy(Long userId, AiImagePageReqVO pageReqVO);
 
     /**
-     * 获取公开的绘图分页
+     * 获取公开的绘图分�?
      *
      * @param pageReqVO 分页条件
      * @return 绘图分页
@@ -60,7 +60,7 @@ public interface AiImageService {
     Long drawImage(Long userId, AiImageDrawReqVO drawReqVO);
 
     /**
-     * 删除【我的】绘画记录
+     * 删除【我的】绘画记�?
      *
      * @param id 绘画编号
      * @param userId 用户编号
@@ -92,7 +92,7 @@ public interface AiImageService {
     // ================ midjourney 专属 ================
 
     /**
-     * 【Midjourney】生成图片
+     * 【Midjourney】生成图�?
      *
      * @param userId 用户编号
      * @param reqVO 绘制请求
@@ -101,7 +101,7 @@ public interface AiImageService {
     Long midjourneyImagine(Long userId, AiMidjourneyImagineReqVO reqVO);
 
     /**
-     * 【Midjourney】同步图片进展
+     * 【Midjourney】同步图片进�?
      *
      * @return 同步成功数量
      */

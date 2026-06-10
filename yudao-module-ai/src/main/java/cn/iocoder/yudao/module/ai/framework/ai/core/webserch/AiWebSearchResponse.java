@@ -8,7 +8,7 @@ import java.util.List;
 public class AiWebSearchResponse {
 
     /**
-     * 总数（总共匹配的网页数）
+     * 总数（总共匹配的网页数�?
      */
     private Long total;
 
@@ -26,7 +26,7 @@ public class AiWebSearchResponse {
         /**
          * 名称
          *
-         * 例如说：搜狐网
+         * 例如说：搜狐�?
          */
         private String name;
         /**
@@ -37,7 +37,7 @@ public class AiWebSearchResponse {
         /**
          * 标题
          *
-         * 例如说：186页|阿里巴巴：2024年环境、社会和治理（ESG）报告
+         * 例如说：186页|阿里巴巴�?024年环境、社会和治理（ESG）报�?
          */
         private String title;
         /**
@@ -49,11 +49,11 @@ public class AiWebSearchResponse {
         private String url;
 
         /**
-         * 内容的简短描述
+         * 内容的简短描�?
          */
         private String snippet;
         /**
-         * 内容的文本摘要
+         * 内容的文本摘�?
          */
         private String summary;
 

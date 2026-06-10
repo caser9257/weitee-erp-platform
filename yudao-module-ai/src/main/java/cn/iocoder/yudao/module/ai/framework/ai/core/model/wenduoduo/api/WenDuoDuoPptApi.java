@@ -26,7 +26,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * 文多多 API
+ * 文多�?API
  *
  * @author xiaoxin
  * @see <a href="https://docmee.cn/open-platform/api">PPT 生成 API</a>
@@ -44,9 +44,9 @@ public class WenDuoDuoPptApi {
     private final Function<Object, Function<ClientResponse, Mono<? extends Throwable>>> EXCEPTION_FUNCTION =
             reqParam -> response -> response.bodyToMono(String.class).handle((responseBody, sink) -> {
                 HttpRequest request = response.request();
-                log.error("[WenDuoDuoPptApi] 调用失败！请求方式:[{}]，请求地址:[{}]，请求参数:[{}]，响应数据: [{}]",
+                log.error("[WenDuoDuoPptApi] 调用失败！请求方�?[{}]，请求地址:[{}]，请求参�?[{}]，响应数�? [{}]",
                         request.getMethod(), request.getURI(), reqParam, responseBody);
-                sink.error(new IllegalStateException("[WenDuoDuoPptApi] 调用失败！"));
+                sink.error(new IllegalStateException("[WenDuoDuoPptApi] 调用失败�?));
             });
 
     public WenDuoDuoPptApi(String token) {
@@ -76,7 +76,7 @@ public class WenDuoDuoPptApi {
                 .bodyToMono(ApiResponse.class)
                 .<String>handle((response, sink) -> {
                     if (response.code != 0) {
-                        sink.error(new IllegalStateException("创建 token 异常，" + response.message));
+                        sink.error(new IllegalStateException("创建 token 异常�? + response.message));
                         return;
                     }
                     sink.next(response.data.get("token").toString());
@@ -133,7 +133,7 @@ public class WenDuoDuoPptApi {
                 })
                 .<Map<String, Object>>handle((response, sink) -> {
                     if (response.code != 0) {
-                        sink.error(new IllegalStateException("获取生成选项异常，" + response.message));
+                        sink.error(new IllegalStateException("获取生成选项异常�? + response.message));
                         return;
                     }
                     sink.next(response.data);
@@ -145,7 +145,7 @@ public class WenDuoDuoPptApi {
      * 分页查询 PPT 模板
      *
      * @param token   令牌
-     * @param request 请求体
+     * @param request 请求�?
      * @return 模板列表
      */
     public PagePptTemplateInfo getTemplatePage(TemplateQueryRequest request) {
@@ -162,7 +162,7 @@ public class WenDuoDuoPptApi {
     /**
      * 生成大纲内容
      *
-     * @return 大纲内容流
+     * @return 大纲内容�?
      */
     public Flux<Map<String, Object>> createOutline(CreateOutlineRequest request) {
         return this.webClient.post()
@@ -177,8 +177,8 @@ public class WenDuoDuoPptApi {
     /**
      * 修改大纲内容
      *
-     * @param request 请求体
-     * @return 大纲内容流
+     * @param request 请求�?
+     * @return 大纲内容�?
      */
     public Flux<Map<String, Object>> updateOutline(UpdateOutlineRequest request) {
         return this.webClient.post()
@@ -204,7 +204,7 @@ public class WenDuoDuoPptApi {
                 .bodyToMono(ApiResponse.class)
                 .<PptInfo>handle((response, sink) -> {
                     if (response.code != 0) {
-                        sink.error(new IllegalStateException("生成 PPT 异常，" + response.message));
+                        sink.error(new IllegalStateException("生成 PPT 异常�? + response.message));
                         return;
                     }
                     sink.next(Objects.requireNonNull(JsonUtils.parseObject(JsonUtils.toJsonString(response.data.get("pptInfo")), PptInfo.class)));

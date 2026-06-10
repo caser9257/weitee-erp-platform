@@ -44,7 +44,6 @@
         <!-- Test 测试相关 -->
         <podam.version>8.0.2.RELEASE</podam.version>
         <jedis-mock.version>1.1.12</jedis-mock.version>
-        <mockito-inline.version>5.2.0</mockito-inline.version>
         <!-- Bpm 工作流相关 -->
         <flowable.version>7.2.0</flowable.version>
         <!-- 工具类相关 -->
@@ -399,12 +398,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-inline</artifactId>
-                <version>${mockito-inline.version}</version> <!-- 支持 Mockito 的 final 类与 static 方法的 mock -->
-            </dependency>
-
-            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-test</artifactId>
                 <version>${spring.boot.version}</version>
@@ -412,10 +405,6 @@
                     <exclusion>
                         <artifactId>asm</artifactId>
                         <groupId>org.ow2.asm</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.mockito</groupId>
-                        <artifactId>mockito-core</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

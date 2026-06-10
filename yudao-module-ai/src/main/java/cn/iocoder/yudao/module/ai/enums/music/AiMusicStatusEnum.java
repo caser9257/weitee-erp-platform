@@ -15,12 +15,12 @@ import java.util.Arrays;
 @Getter
 public enum AiMusicStatusEnum implements ArrayValuable<Integer> {
 
-    IN_PROGRESS(10, "进行中"),
-    SUCCESS(20, "已完成"),
-    FAIL(30, "已失败");
+    IN_PROGRESS(10, "进行�?),
+    SUCCESS(20, "已完�?),
+    FAIL(30, "已失�?);
 
     /**
-     * 状态
+     * 状�?
      */
     private final Integer status;
 

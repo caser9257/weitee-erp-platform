@@ -5,8 +5,8 @@ import cn.iocoder.yudao.module.ai.enums.model.AiPlatformEnum;
 import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.validation.InEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Schema(description = "管理后台 - API 模型新增/修改 Request VO")
@@ -42,18 +42,18 @@ public class AiModelSaveReqVO {
     @NotNull(message = "排序不能为空")
     private Integer sort;
 
-    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @InEnum(CommonStatusEnum.class)
-    @NotNull(message = "状态不能为空")
+    @NotNull(message = "状态不能为�?)
     private Integer status;
 
     @Schema(description = "温度参数", example = "1")
     private Double temperature;
 
-    @Schema(description = "单条回复的最大 Token 数量", example = "4096")
+    @Schema(description = "单条回复的最�?Token 数量", example = "4096")
     private Integer maxTokens;
 
-    @Schema(description = "上下文的最大 Message 数量", example = "8192")
+    @Schema(description = "上下文的最�?Message 数量", example = "8192")
     private Integer maxContexts;
 
 }

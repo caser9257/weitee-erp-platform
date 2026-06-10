@@ -1,8 +1,8 @@
 package cn.iocoder.yudao.module.ai.controller.admin.knowledge.vo.knowledge;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.URL;
 
@@ -11,8 +11,8 @@ import org.hibernate.validator.constraints.URL;
 @Data
 public class AiKnowledgeDocumentCreateReqVO {
 
-    @Schema(description = "知识库编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1204")
-    @NotNull(message = "知识库编号不能为空")
+    @Schema(description = "知识库编�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "1204")
+    @NotNull(message = "知识库编号不能为�?)
     private Long knowledgeId;
 
     @Schema(description = "文档名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "三方登陆")
@@ -20,11 +20,11 @@ public class AiKnowledgeDocumentCreateReqVO {
     private String name;
 
     @Schema(description = "文档 URL", requiredMode = Schema.RequiredMode.REQUIRED, example = "https://doc.iocoder.cn")
-    @URL(message = "文档 URL 格式不正确")
+    @URL(message = "文档 URL 格式不正�?)
     private String url;
 
-    @Schema(description = "分段的最大 Token 数", requiredMode = Schema.RequiredMode.REQUIRED, example = "800")
-    @NotNull(message = "分段的最大 Token 数不能为空")
+    @Schema(description = "分段的最�?Token �?, requiredMode = Schema.RequiredMode.REQUIRED, example = "800")
+    @NotNull(message = "分段的最�?Token 数不能为�?)
     private Integer segmentMaxTokens;
 
 }

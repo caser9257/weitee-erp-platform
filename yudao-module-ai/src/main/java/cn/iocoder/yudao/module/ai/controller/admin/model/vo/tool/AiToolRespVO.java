@@ -18,7 +18,7 @@ public class AiToolRespVO {
     @Schema(description = "工具描述", example = "你猜")
     private String description;
 
-    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

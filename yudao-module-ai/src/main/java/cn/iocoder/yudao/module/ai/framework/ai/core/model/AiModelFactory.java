@@ -18,9 +18,9 @@ import java.util.Map;
 public interface AiModelFactory {
 
     /**
-     * 基于指定配置，获得 ChatModel 对象
+     * 基于指定配置，获�?ChatModel 对象
      *
-     * 如果不存在，则进行创建
+     * 如果不存在，则进行创�?
      *
      * @param platform 平台
      * @param apiKey API KEY
@@ -30,9 +30,9 @@ public interface AiModelFactory {
     ChatModel getOrCreateChatModel(AiPlatformEnum platform, String apiKey, String url);
 
     /**
-     * 基于默认配置，获得 ChatModel 对象
+     * 基于默认配置，获�?ChatModel 对象
      *
-     * 默认配置，指的是在 application.yaml 配置文件中的 spring.ai 相关的配置
+     * 默认配置，指的是�?application.yaml 配置文件中的 spring.ai 相关的配�?
      *
      * @param platform 平台
      * @return ChatModel 对象
@@ -40,9 +40,9 @@ public interface AiModelFactory {
     ChatModel getDefaultChatModel(AiPlatformEnum platform);
 
     /**
-     * 基于默认配置，获得 ImageModel 对象
+     * 基于默认配置，获�?ImageModel 对象
      *
-     * 默认配置，指的是在 application.yaml 配置文件中的 spring.ai 相关的配置
+     * 默认配置，指的是�?application.yaml 配置文件中的 spring.ai 相关的配�?
      *
      * @param platform 平台
      * @return ImageModel 对象
@@ -50,9 +50,9 @@ public interface AiModelFactory {
     ImageModel getDefaultImageModel(AiPlatformEnum platform);
 
     /**
-     * 基于指定配置，获得 ImageModel 对象
+     * 基于指定配置，获�?ImageModel 对象
      *
-     * 如果不存在，则进行创建
+     * 如果不存在，则进行创�?
      *
      * @param platform 平台
      * @param apiKey API KEY
@@ -62,9 +62,9 @@ public interface AiModelFactory {
     ImageModel getOrCreateImageModel(AiPlatformEnum platform, String apiKey, String url);
 
     /**
-     * 基于指定配置，获得 MidjourneyApi 对象
+     * 基于指定配置，获�?MidjourneyApi 对象
      *
-     * 如果不存在，则进行创建
+     * 如果不存在，则进行创�?
      *
      * @param apiKey API KEY
      * @param url API URL
@@ -73,9 +73,9 @@ public interface AiModelFactory {
     MidjourneyApi getOrCreateMidjourneyApi(String apiKey, String url);
 
     /**
-     * 基于指定配置，获得 SunoApi 对象
+     * 基于指定配置，获�?SunoApi 对象
      *
-     * 如果不存在，则进行创建
+     * 如果不存在，则进行创�?
      *
      * @param apiKey API KEY
      * @param url API URL
@@ -84,9 +84,9 @@ public interface AiModelFactory {
     SunoApi getOrCreateSunoApi(String apiKey, String url);
 
     /**
-     * 基于指定配置，获得 EmbeddingModel 对象
+     * 基于指定配置，获�?EmbeddingModel 对象
      *
-     * 如果不存在，则进行创建
+     * 如果不存在，则进行创�?
      *
      * @param platform 平台
      * @param apiKey   API KEY
@@ -97,13 +97,13 @@ public interface AiModelFactory {
     EmbeddingModel getOrCreateEmbeddingModel(AiPlatformEnum platform, String apiKey, String url, String model);
 
     /**
-     * 基于指定配置，获得 VectorStore 对象
+     * 基于指定配置，获�?VectorStore 对象
      *
-     * 如果不存在，则进行创建
+     * 如果不存在，则进行创�?
      *
      * @param type           向量存储类型
      * @param embeddingModel 向量模型
-     * @param metadataFields 元数据字段
+     * @param metadataFields 元数据字�?
      * @return VectorStore 对象
      */
     VectorStore getOrCreateVectorStore(Class<? extends VectorStore> type,

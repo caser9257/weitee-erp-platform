@@ -48,8 +48,8 @@ public class XunFeiPptApi {
 
     private final Function<Object, Function<ClientResponse, Mono<? extends Throwable>>> EXCEPTION_FUNCTION =
             reqParam -> response -> response.bodyToMono(String.class).handle((responseBody, sink) -> {
-                log.error("[XunFeiPptApi] 调用失败！请求参数:[{}]，响应数据: [{}]", reqParam, responseBody);
-                sink.error(new IllegalStateException("[XunFeiPptApi] 调用失败！"));
+                log.error("[XunFeiPptApi] 调用失败！请求参�?[{}]，响应数�? [{}]", reqParam, responseBody);
+                sink.error(new IllegalStateException("[XunFeiPptApi] 调用失败�?));
             });
 
     public XunFeiPptApi(String appId, String apiSecret) {
@@ -115,7 +115,7 @@ public class XunFeiPptApi {
     }
 
     /**
-     * 创建大纲（通过文本）
+     * 创建大纲（通过文本�?
      *
      * @param query 查询文本
      * @return 大纲创建响应
@@ -138,7 +138,7 @@ public class XunFeiPptApi {
 
 
     /**
-     * 直接创建 PPT（简化版 - 通过文本）
+     * 直接创建 PPT（简化版 - 通过文本�?
      *
      * @param query 查询文本
      * @return 创建响应
@@ -151,10 +151,10 @@ public class XunFeiPptApi {
     }
 
     /**
-     * 直接创建 PPT（简化版 - 通过文件）
+     * 直接创建 PPT（简化版 - 通过文件�?
      *
      * @param file     文件
-     * @param fileName 文件名
+     * @param fileName 文件�?
      * @return 创建响应
      */
     public CreateResponse create(MultipartFile file, String fileName) {
@@ -164,7 +164,7 @@ public class XunFeiPptApi {
     }
 
     /**
-     * 直接创建 PPT（完整版）
+     * 直接创建 PPT（完整版�?
      *
      * @param request 请求参数
      * @return 创建响应
@@ -186,7 +186,7 @@ public class XunFeiPptApi {
 
 
     /**
-     * 通过大纲创建 PPT（简化版）
+     * 通过大纲创建 PPT（简化版�?
      *
      * @param outline 大纲内容
      * @param query   查询文本
@@ -201,7 +201,7 @@ public class XunFeiPptApi {
     }
 
     /**
-     * 通过大纲创建 PPT（完整版）
+     * 通过大纲创建 PPT（完整版�?
      *
      * @param request 请求参数
      * @return 创建响应
@@ -221,7 +221,7 @@ public class XunFeiPptApi {
     }
 
     /**
-     * 检查 PPT 生成进度
+     * 检�?PPT 生成进度
      *
      * @param sid 任务 ID
      * @return 进度响应
@@ -347,9 +347,9 @@ public class XunFeiPptApi {
         }
 
         /**
-         * 将大纲对象转换为JSON字符串
+         * 将大纲对象转换为JSON字符�?
          *
-         * @return 大纲JSON字符串
+         * @return 大纲JSON字符�?
          */
         public String toJsonString() {
             return JsonUtils.toJsonString(this);
@@ -404,9 +404,9 @@ public class XunFeiPptApi {
         }
 
         /**
-         * 获取进度百分比
+         * 获取进度百分�?
          *
-         * @return 进度百分比
+         * @return 进度百分�?
          */
         public int getProgressPercent() {
             if (totalPages == null || totalPages == 0 || donePages == null) {
@@ -423,17 +423,17 @@ public class XunFeiPptApi {
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @Builder
     public record CreatePptByOutlineRequest(
-            String query,                // 用户生成PPT要求（最多8000字）
+            String query,                // 用户生成PPT要求（最�?000字）
             String outlineSid,           // 已生成大纲后，响应返回的请求大纲唯一id
             OutlineData outline,         // 大纲内容
             String templateId,           // 模板ID
-            String businessId,           // 业务ID（非必传）
+            String businessId,           // 业务ID（非必传�?
             String author,               // PPT作者名
             Boolean isCardNote,          // 是否生成PPT演讲备注
             Boolean search,              // 是否联网搜索
             String language,             // 语种
             String fileUrl,              // 文件地址
-            String fileName,             // 文件名(带文件名后缀)
+            String fileName,             // 文件�?带文件名后缀)
             Boolean isFigure,            // 是否自动配图
             String aiImage               // ai配图类型：normal、advanced
     ) {
@@ -441,7 +441,7 @@ public class XunFeiPptApi {
 
 
     /**
-     * 构建创建 PPT 的表单数据
+     * 构建创建 PPT 的表单数�?
      *
      * @param request 请求参数
      * @return 表单数据
@@ -488,7 +488,7 @@ public class XunFeiPptApi {
                 // 字符串：需要有实际内容
                 isPresent = StringUtils.hasText((String) value);
             } else {
-                // 其他类型：非 null 即视为存在
+                // 其他类型：非 null 即视为存�?
                 isPresent = true;
             }
         }
@@ -503,12 +503,12 @@ public class XunFeiPptApi {
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     @Builder
     public record CreatePptRequest(
-            String query,                // 用户生成PPT要求（最多8000字）
+            String query,                // 用户生成PPT要求（最�?000字）
             MultipartFile file,          // 上传文件
             String fileUrl,              // 文件地址
-            String fileName,             // 文件名(带文件名后缀)
+            String fileName,             // 文件�?带文件名后缀)
             String templateId,           // 模板ID
-            String businessId,           // 业务ID（非必传）
+            String businessId,           // 业务ID（非必传�?
             String author,               // PPT作者名
             Boolean isCardNote,          // 是否生成PPT演讲备注
             Boolean search,              // 是否联网搜索

@@ -16,7 +16,7 @@ import java.awt.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * {@link StabilityAiImageModel} 集成测试类
+ * {@link StabilityAiImageModel} 集成测试�?
  *
  * @author fansili
  */
@@ -45,16 +45,16 @@ public class StabilityAiImageModelTests {
     }
 
     public static void viewImage(String b64Json) {
-        // 创建一个 JFrame
+        // 创建一�?JFrame
         JFrame frame = new JFrame("Byte Image Display");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);
 
-        // 创建一个 JLabel 来显示图片
+        // 创建一�?JLabel 来显示图�?
         byte[] imageBytes = Base64.decode(b64Json);
         JLabel label = new JLabel(new ImageIcon(imageBytes));
 
-        // 将 JLabel 添加到 JFrame
+        // �?JLabel 添加�?JFrame
         frame.getContentPane().add(label, BorderLayout.CENTER);
 
         // 显示 JFrame

@@ -26,7 +26,7 @@ import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.CHAT_ROLE_DISA
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.CHAT_ROLE_NOT_EXISTS;
 
 /**
- * AI 聊天角色 Service 实现类
+ * AI 聊天角色 Service 实现�?
  *
  * @author fansili
  */
@@ -101,9 +101,9 @@ public class AiChatRoleServiceImpl implements AiChatRoleService {
     }
 
     /**
-     * 校验知识库是否存在
+     * 校验知识库是否存�?
      *
-     * @param knowledgeIds 知识库编号列表
+     * @param knowledgeIds 知识库编号列�?
      */
     private void validateDocuments(List<Long> knowledgeIds) {
         if (CollUtil.isEmpty(knowledgeIds)) {

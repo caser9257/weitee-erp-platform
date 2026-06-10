@@ -1,9 +1,9 @@
 package cn.iocoder.yudao.module.ai.controller.admin.image.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.ai.stabilityai.api.StabilityAiImageOptions;
@@ -18,14 +18,14 @@ public class AiImageDrawReqVO {
     @NotNull(message = "模型编号不能为空")
     private Long modelId;
 
-    @Schema(description = "提示词", requiredMode = Schema.RequiredMode.REQUIRED, example = "画一个长城")
-    @NotEmpty(message = "提示词不能为空")
-    @Size(max = 1200, message = "提示词最大 1200")
+    @Schema(description = "提示�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "画一个长�?)
+    @NotEmpty(message = "提示词不能为�?)
+    @Size(max = 1200, message = "提示词最�?1200")
     private String prompt;
 
     /**
-     * 1. dall-e-2 模型：256x256、512x512、1024x1024
-     * 2. dall-e-3 模型：1024x1024, 1792x1024, 或 1024x1792
+     * 1. dall-e-2 模型�?56x256�?12x512�?024x1024
+     * 2. dall-e-3 模型�?024x1024, 1792x1024, �?1024x1792
      */
     @Schema(description = "图片高度")
     @NotNull(message = "图片高度不能为空")
@@ -38,7 +38,7 @@ public class AiImageDrawReqVO {
     // ========== 各平台绘画的拓展参数 ==========
 
     /**
-     * 绘制参数，不同 platform 的不同参数
+     * 绘制参数，不�?platform 的不同参�?
      *
      * 1. {@link OpenAiImageOptions}
      * 2. {@link StabilityAiImageOptions}

@@ -27,7 +27,7 @@ import java.util.List;
  * @since 2024/4/14 17:35
  */
 @TableName(value = "ai_chat_message", autoResultMap = true)
-@KeySequence("ai_chat_message_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_chat_message_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 @Builder
 @NoArgsConstructor
@@ -35,7 +35,7 @@ import java.util.List;
 public class AiChatMessageDO extends BaseDO {
 
     /**
-     * 编号，作为每条聊天记录的唯一标识符
+     * 编号，作为每条聊天记录的唯一标识�?
      */
     @TableId
     private Long id;
@@ -58,7 +58,7 @@ public class AiChatMessageDO extends BaseDO {
     /**
      * 消息类型
      *
-     * 也等价于 OpenAPI 的 role 字段
+     * 也等价于 OpenAPI �?role 字段
      *
      * 枚举 {@link MessageType}
      */
@@ -66,7 +66,7 @@ public class AiChatMessageDO extends BaseDO {
     /**
      * 用户编号
      *
-     * 关联 AdminUserDO 的 userId 字段
+     * 关联 AdminUserDO �?userId 字段
      */
     private Long userId;
     /**
@@ -99,12 +99,12 @@ public class AiChatMessageDO extends BaseDO {
     private String reasoningContent;
 
     /**
-     * 是否携带上下文
+     * 是否携带上下�?
      */
     private Boolean useContext;
 
     /**
-     * 知识库段落编号数组
+     * 知识库段落编号数�?
      *
      * 关联 {@link AiKnowledgeSegmentDO#getId()} 字段
      */
@@ -112,7 +112,7 @@ public class AiChatMessageDO extends BaseDO {
     private List<Long> segmentIds;
 
     /**
-     * 联网搜索的网页内容数组
+     * 联网搜索的网页内容数�?
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private List<AiWebSearchResponse.WebPage> webSearchPages;

@@ -49,7 +49,7 @@ public enum AiPlatformEnum implements ArrayValuable<String> {
      */
     private final String platform;
     /**
-     * 平台名
+     * 平台�?
      */
     private final String name;
 
@@ -61,7 +61,7 @@ public enum AiPlatformEnum implements ArrayValuable<String> {
                 return platformEnum;
             }
         }
-        throw new IllegalArgumentException("非法平台： " + platform);
+        throw new IllegalArgumentException("非法平台�?" + platform);
     }
 
     @Override

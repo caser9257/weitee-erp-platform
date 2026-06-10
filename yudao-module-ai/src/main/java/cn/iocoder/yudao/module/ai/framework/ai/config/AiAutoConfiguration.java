@@ -68,7 +68,7 @@ public class AiAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ObservationRegistry observationRegistry() {
-        // 特殊：兜底有 ObservationRegistry Bean，避免相关的 ChatModel 创建报错。相关 issue：https://t.zsxq.com/CuPu4
+        // 特殊：兜底有 ObservationRegistry Bean，避免相关的 ChatModel 创建报错。相�?issue：https://t.zsxq.com/CuPu4
         return ObservationRegistry.NOOP;
     }
 
@@ -168,7 +168,7 @@ public class AiAutoConfiguration {
         if (StrUtil.isEmpty(properties.getModel())) {
             properties.setModel(HunYuanChatModel.MODEL_DEFAULT);
         }
-        // 特殊：由于混元大模型不提供 deepseek，而是通过知识引擎，所以需要区分下 URL
+        // 特殊：由于混元大模型不提�?deepseek，而是通过知识引擎，所以需要区分下 URL
         if (StrUtil.isEmpty(properties.getBaseUrl())) {
             properties.setBaseUrl(
                     StrUtil.startWithIgnoreCase(properties.getModel(), "deepseek") ? HunYuanChatModel.DEEP_SEEK_BASE_URL
@@ -218,7 +218,7 @@ public class AiAutoConfiguration {
                         .maxTokens(properties.getMaxTokens())
                         .topP(properties.getTopP())
                         .build())
-                // TODO @芋艿：星火的 function call 有 bug，会报 ToolResponseMessage must have an id 错误！！！
+                // TODO @芋艿：星火的 function call �?bug，会�?ToolResponseMessage must have an id 错误！！�?
                 .toolCallingManager(getToolCallingManager())
                 .build();
         return new XingHuoChatModel(openAiChatModel);

@@ -20,7 +20,7 @@ public class AiChatConversationRespVO implements VO {
     @Schema(description = "用户编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "2048")
     private Long userId;
 
-    @Schema(description = "对话标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "我是一个标题")
+    @Schema(description = "对话标题", requiredMode = Schema.RequiredMode.REQUIRED, example = "我是一个标�?)
     private String title;
 
     @Schema(description = "是否置顶", requiredMode = Schema.RequiredMode.REQUIRED, example = "true")
@@ -40,16 +40,16 @@ public class AiChatConversationRespVO implements VO {
     @Schema(description = "模型名字", requiredMode = Schema.RequiredMode.REQUIRED, example = "张三")
     private String modelName;
 
-    @Schema(description = "角色设定", example = "一个快乐的程序员")
+    @Schema(description = "角色设定", example = "一个快乐的程序�?)
     private String systemMessage;
 
     @Schema(description = "温度参数", requiredMode = Schema.RequiredMode.REQUIRED, example = "0.8")
     private Double temperature;
 
-    @Schema(description = "单条回复的最大 Token 数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "4096")
+    @Schema(description = "单条回复的最�?Token 数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "4096")
     private Integer maxTokens;
 
-    @Schema(description = "上下文的最大 Message 数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
+    @Schema(description = "上下文的最�?Message 数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     private Integer maxContexts;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

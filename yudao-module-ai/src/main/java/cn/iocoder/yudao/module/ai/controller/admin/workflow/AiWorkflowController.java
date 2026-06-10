@@ -10,14 +10,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 
-@Tag(name = "管理后台 - AI 工作流")
+@Tag(name = "管理后台 - AI 工作�?)
 @RestController
 @RequestMapping("/ai/workflow")
 @Slf4j
@@ -27,14 +27,14 @@ public class AiWorkflowController {
     private AiWorkflowService workflowService;
 
     @PostMapping("/create")
-    @Operation(summary = "创建 AI 工作流")
+    @Operation(summary = "创建 AI 工作�?)
     @PreAuthorize("@ss.hasPermission('ai:workflow:create')")
     public CommonResult<Long> createWorkflow(@Valid @RequestBody AiWorkflowSaveReqVO createReqVO) {
         return success(workflowService.createWorkflow(createReqVO));
     }
 
     @PutMapping("/update")
-    @Operation(summary = "更新 AI 工作流")
+    @Operation(summary = "更新 AI 工作�?)
     @PreAuthorize("@ss.hasPermission('ai:workflow:update')")
     public CommonResult<Boolean> updateWorkflow(@Valid @RequestBody AiWorkflowSaveReqVO updateReqVO) {
         workflowService.updateWorkflow(updateReqVO);
@@ -42,7 +42,7 @@ public class AiWorkflowController {
     }
 
     @DeleteMapping("/delete")
-    @Operation(summary = "删除 AI 工作流")
+    @Operation(summary = "删除 AI 工作�?)
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('ai:workflow:delete')")
     public CommonResult<Boolean> deleteWorkflow(@RequestParam("id") Long id) {
@@ -51,7 +51,7 @@ public class AiWorkflowController {
     }
 
     @GetMapping("/get")
-    @Operation(summary = "获得 AI 工作流")
+    @Operation(summary = "获得 AI 工作�?)
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('ai:workflow:query')")
     public CommonResult<AiWorkflowRespVO> getWorkflow(@RequestParam("id") Long id) {
@@ -60,7 +60,7 @@ public class AiWorkflowController {
     }
 
     @GetMapping("/page")
-    @Operation(summary = "获得 AI 工作流分页")
+    @Operation(summary = "获得 AI 工作流分�?)
     @PreAuthorize("@ss.hasPermission('ai:workflow:query')")
     public CommonResult<PageResult<AiWorkflowRespVO>> getWorkflowPage(@Valid AiWorkflowPageReqVO pageReqVO) {
         PageResult<AiWorkflowDO> pageResult = workflowService.getWorkflowPage(pageReqVO);
@@ -68,7 +68,7 @@ public class AiWorkflowController {
     }
 
     @PostMapping("/test")
-    @Operation(summary = "测试 AI 工作流")
+    @Operation(summary = "测试 AI 工作�?)
     @PreAuthorize("@ss.hasPermission('ai:workflow:test')")
     public CommonResult<Object> testWorkflow(@Valid @RequestBody AiWorkflowTestReqVO testReqVO) {
         return success(workflowService.testWorkflow(testReqVO));

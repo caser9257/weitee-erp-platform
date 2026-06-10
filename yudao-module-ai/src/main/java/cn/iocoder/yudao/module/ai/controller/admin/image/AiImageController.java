@@ -15,7 +15,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.annotation.security.PermitAll;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -36,21 +36,21 @@ public class AiImageController {
     private AiImageService imageService;
 
     @GetMapping("/my-page")
-    @Operation(summary = "获取【我的】绘图分页")
+    @Operation(summary = "获取【我的】绘图分�?)
     public CommonResult<PageResult<AiImageRespVO>> getImagePageMy(@Validated AiImagePageReqVO pageReqVO) {
         PageResult<AiImageDO> pageResult = imageService.getImagePageMy(getLoginUserId(), pageReqVO);
         return success(BeanUtils.toBean(pageResult, AiImageRespVO.class));
     }
 
     @GetMapping("/public-page")
-    @Operation(summary = "获取公开的绘图分页")
+    @Operation(summary = "获取公开的绘图分�?)
     public CommonResult<PageResult<AiImageRespVO>> getImagePagePublic(AiImagePublicPageReqVO pageReqVO) {
         PageResult<AiImageDO> pageResult = imageService.getImagePagePublic(pageReqVO);
         return success(BeanUtils.toBean(pageResult, AiImageRespVO.class));
     }
 
     @GetMapping("/get-my")
-    @Operation(summary = "获取【我的】绘图记录")
+    @Operation(summary = "获取【我的】绘图记�?)
     @Parameter(name = "id", required = true, description = "绘画编号", example = "1024")
     public CommonResult<AiImageRespVO> getImageMy(@RequestParam("id") Long id) {
         AiImageDO image = imageService.getImage(id);
@@ -61,7 +61,7 @@ public class AiImageController {
     }
 
     @GetMapping("/my-list-by-ids")
-    @Operation(summary = "获取【我的】绘图记录列表")
+    @Operation(summary = "获取【我的】绘图记录列�?)
     @Parameter(name = "ids", required = true, description = "绘画编号数组", example = "1024,2048")
     public CommonResult<List<AiImageRespVO>> getImageListMyByIds(@RequestParam("ids") List<Long> ids) {
         List<AiImageDO> imageList = imageService.getImageList(ids);
@@ -75,7 +75,7 @@ public class AiImageController {
         return success(imageService.drawImage(getLoginUserId(), drawReqVO));
     }
 
-    @Operation(summary = "删除【我的】绘画记录")
+    @Operation(summary = "删除【我的】绘画记�?)
     @DeleteMapping("/delete-my")
     @Parameter(name = "id", required = true, description = "绘画编号", example = "1024")
     public CommonResult<Boolean> deleteImageMy(@RequestParam("id") Long id) {
@@ -85,22 +85,22 @@ public class AiImageController {
 
     // ================ midjourney 专属 ================
 
-    @Operation(summary = "【Midjourney】生成图片")
+    @Operation(summary = "【Midjourney】生成图�?)
     @PostMapping("/midjourney/imagine")
     public CommonResult<Long> midjourneyImagine(@Valid @RequestBody AiMidjourneyImagineReqVO reqVO) {
         Long imageId = imageService.midjourneyImagine(getLoginUserId(), reqVO);
         return success(imageId);
     }
 
-    @Operation(summary = "【Midjourney】通知图片进展", description = "由 Midjourney Proxy 回调")
-    @PostMapping("/midjourney/notify") // 必须是 POST 方法，否则会报错
+    @Operation(summary = "【Midjourney】通知图片进展", description = "�?Midjourney Proxy 回调")
+    @PostMapping("/midjourney/notify") // 必须�?POST 方法，否则会报错
     @PermitAll
     public CommonResult<Boolean> midjourneyNotify(@Valid @RequestBody MidjourneyApi.Notify notify) {
         imageService.midjourneyNotify(notify);
         return success(true);
     }
 
-    @Operation(summary = "【Midjourney】Action 操作（二次生成图片）", description = "例如说：放大、缩小、U1、U2 等")
+    @Operation(summary = "【Midjourney】Action 操作（二次生成图片）", description = "例如说：放大、缩小、U1、U2 �?)
     @PostMapping("/midjourney/action")
     public CommonResult<Long> midjourneyAction(@Valid @RequestBody AiMidjourneyActionReqVO reqVO) {
         Long imageId = imageService.midjourneyAction(getLoginUserId(), reqVO);

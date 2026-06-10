@@ -10,7 +10,7 @@ import org.springframework.ai.image.ImagePrompt;
 import org.springframework.ai.image.ImageResponse;
 
 /**
- * {@link DashScopeImageModel} 集成测试类
+ * {@link DashScopeImageModel} 集成测试�?
  *
  * @author fansili
  */

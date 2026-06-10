@@ -1,7 +1,7 @@
 package cn.iocoder.yudao.module.ai.framework.ai.core.webserch;
 
 /**
- * 网络搜索客户端接口
+ * 网络搜索客户端接�?
  *
  * @author 芋道源码
  */

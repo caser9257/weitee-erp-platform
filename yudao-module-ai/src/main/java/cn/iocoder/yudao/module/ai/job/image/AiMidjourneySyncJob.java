@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Midjourney 同步 Job：定时拉去 midjourney 绘制状态
+ * Midjourney 同步 Job：定时拉�?midjourney 绘制状�?
  *
  * @author fansili
  */
@@ -22,7 +22,7 @@ public class AiMidjourneySyncJob implements JobHandler {
     public String execute(String param) {
         Integer count = imageService.midjourneySync();
         log.info("[execute][同步 Midjourney ({}) 个]", count);
-        return String.format("同步 Midjourney %s 个", count);
+        return String.format("同步 Midjourney %s �?, count);
     }
 
 }

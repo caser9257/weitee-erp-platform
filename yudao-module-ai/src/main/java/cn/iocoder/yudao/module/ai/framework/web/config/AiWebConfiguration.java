@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * ai 模块的 web 组件的 Configuration
+ * ai 模块�?web 组件�?Configuration
  *
  * @author 芋道源码
  */
@@ -14,7 +14,7 @@ import org.springframework.context.annotation.Configuration;
 public class AiWebConfiguration {
 
     /**
-     * ai 模块的 API 分组
+     * ai 模块�?API 分组
      */
     @Bean
     public GroupedOpenApi aiGroupedOpenApi() {

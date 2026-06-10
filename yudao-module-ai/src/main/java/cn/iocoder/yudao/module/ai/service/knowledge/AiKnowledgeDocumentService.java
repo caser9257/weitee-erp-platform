@@ -15,7 +15,7 @@ import java.util.Map;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertMap;
 
 /**
- * AI 知识库文档 Service 接口
+ * AI 知识库文�?Service 接口
  *
  * @author xiaoxin
  */
@@ -61,9 +61,9 @@ public interface AiKnowledgeDocumentService {
     void updateKnowledgeDocument(AiKnowledgeDocumentUpdateReqVO reqVO);
 
     /**
-     * 更新文档状态
+     * 更新文档状�?
      *
-     * @param reqVO 更新状态信息
+     * @param reqVO 更新状态信�?
      */
     void updateKnowledgeDocumentStatus(AiKnowledgeDocumentUpdateStatusReqVO reqVO);
 
@@ -77,7 +77,7 @@ public interface AiKnowledgeDocumentService {
     /**
      * 根据知识库编号，批量删除文档
      *
-     * @param knowledgeId 知识库编号
+     * @param knowledgeId 知识库编�?
      */
     void deleteKnowledgeDocumentByKnowledgeId(Long knowledgeId);
 
@@ -106,9 +106,9 @@ public interface AiKnowledgeDocumentService {
     List<AiKnowledgeDocumentDO> getKnowledgeDocumentList(Collection<Long> ids);
 
     /**
-     * 根据知识库编号获取文档列表
+     * 根据知识库编号获取文档列�?
      *
-     * @param knowledgeId 知识库编号
+     * @param knowledgeId 知识库编�?
      * @return 文档列表
      */
     List<AiKnowledgeDocumentDO> getKnowledgeDocumentListByKnowledgeId(Long knowledgeId);

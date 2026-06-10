@@ -10,7 +10,7 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import reactor.core.publisher.Flux;
 
 /**
- * 百川 {@link ChatModel} 实现类
+ * 百川 {@link ChatModel} 实现�?
  *
  * @author 芋道源码
  */
@@ -23,7 +23,7 @@ public class BaiChuanChatModel implements ChatModel {
     public static final String MODEL_DEFAULT = "Baichuan4-Turbo";
 
     /**
-     * 兼容 OpenAI 接口，进行复用
+     * 兼容 OpenAI 接口，进行复�?
      */
     private final OpenAiChatModel openAiChatModel;
 

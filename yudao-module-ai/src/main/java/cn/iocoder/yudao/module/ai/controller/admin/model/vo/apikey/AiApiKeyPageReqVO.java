@@ -19,7 +19,7 @@ public class AiApiKeyPageReqVO extends PageParam {
     @Schema(description = "平台", example = "OpenAI")
     private String platform;
 
-    @Schema(description = "状态", example = "1")
+    @Schema(description = "状�?, example = "1")
     private Integer status;
 
 }

@@ -52,7 +52,7 @@ import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.*;
 
 /**
- * AI 绘画 Service 实现类
+ * AI 绘画 Service 实现�?
  *
  * @author fansili
  */
@@ -97,13 +97,13 @@ public class AiImageServiceImpl implements AiImageService {
         // 1. 校验模型
         AiModelDO model = modelService.validateModel(drawReqVO.getModelId());
 
-        // 2. 保存数据库
+        // 2. 保存数据�?
         AiImageDO image = BeanUtils.toBean(drawReqVO, AiImageDO.class).setUserId(userId)
                 .setPlatform(model.getPlatform()).setModelId(model.getId()).setModel(model.getModel())
                 .setPublicStatus(false).setStatus(AiImageStatusEnum.IN_PROGRESS.getStatus());
         aiImageMapper.insert(image);
 
-        // 3. 异步绘制，后续前端通过返回的 id 进行轮询结果
+        // 3. 异步绘制，后续前端通过返回�?id 进行轮询结果
         getSelf().executeDrawImage(image, drawReqVO, model);
         return image.getId();
     }
@@ -120,13 +120,13 @@ public class AiImageServiceImpl implements AiImageService {
                 throw new IllegalArgumentException("生成结果为空");
             }
 
-            // 2. 上传到文件服务
+            // 2. 上传到文件服�?
             String b64Json = response.getResult().getOutput().getB64Json();
             byte[] fileContent = StrUtil.isNotEmpty(b64Json) ? Base64.decode(b64Json)
                     : HttpUtil.downloadBytes(response.getResult().getOutput().getUrl());
             String filePath = fileApi.createFile(fileContent);
 
-            // 3. 更新数据库
+            // 3. 更新数据�?
             aiImageMapper.updateById(new AiImageDO().setId(image.getId()).setStatus(AiImageStatusEnum.SUCCESS.getStatus())
                     .setPicUrl(filePath).setFinishTime(LocalDateTime.now()));
         } catch (Exception ex) {
@@ -177,7 +177,7 @@ public class AiImageServiceImpl implements AiImageService {
                     .model(model.getModel())
                     .build();
         }
-        throw new IllegalArgumentException("不支持的 AI 平台：" + model.getPlatform());
+        throw new IllegalArgumentException("不支持的 AI 平台�? + model.getPlatform());
     }
 
     @Override
@@ -200,7 +200,7 @@ public class AiImageServiceImpl implements AiImageService {
     public void updateImage(AiImageUpdateReqVO updateReqVO) {
         // 1. 校验存在
         validateImageExists(updateReqVO.getId());
-        // 2. 更新发布状态
+        // 2. 更新发布状�?
         aiImageMapper.updateById(BeanUtils.toBean(updateReqVO, AiImageDO.class));
     }
 
@@ -227,10 +227,10 @@ public class AiImageServiceImpl implements AiImageService {
     public Long midjourneyImagine(Long userId, AiMidjourneyImagineReqVO drawReqVO) {
         // 1. 校验模型
         AiModelDO model = modelService.validateModel(drawReqVO.getModelId());
-        Assert.equals(model.getPlatform(), AiPlatformEnum.MIDJOURNEY.getPlatform(), "平台不匹配");
+        Assert.equals(model.getPlatform(), AiPlatformEnum.MIDJOURNEY.getPlatform(), "平台不匹�?);
         MidjourneyApi midjourneyApi = modelService.getMidjourneyApi(model.getId());
 
-        // 2. 保存数据库
+        // 2. 保存数据�?
         AiImageDO image = BeanUtils.toBean(drawReqVO, AiImageDO.class).setUserId(userId).setPublicStatus(false)
                 .setStatus(AiImageStatusEnum.IN_PROGRESS.getStatus())
                 .setPlatform(AiPlatformEnum.MIDJOURNEY.getPlatform()).setModelId(model.getId()).setModel(model.getName());
@@ -252,7 +252,7 @@ public class AiImageServiceImpl implements AiImageService {
             throw exception(IMAGE_MIDJOURNEY_SUBMIT_FAIL, description);
         }
 
-        // 4.2 情况二【成功】：更新 taskId 和参数
+        // 4.2 情况二【成功】：更新 taskId 和参�?
         aiImageMapper.updateById(new AiImageDO().setId(image.getId())
                 .setTaskId(imagineResponse.result()).setOptions(BeanUtil.beanToMap(drawReqVO)));
         return image.getId();
@@ -260,7 +260,7 @@ public class AiImageServiceImpl implements AiImageService {
 
     @Override
     public Integer midjourneySync() {
-        // 1.1 获取 Midjourney 平台，状态在 “进行中” 的 image
+        // 1.1 获取 Midjourney 平台，状态在 “进行中�?�?image
         List<AiImageDO> images = aiImageMapper.selectListByStatusAndPlatform(
                 AiImageStatusEnum.IN_PROGRESS.getStatus(), AiPlatformEnum.MIDJOURNEY.getPlatform());
         if (CollUtil.isEmpty(images)) {
@@ -271,7 +271,7 @@ public class AiImageServiceImpl implements AiImageService {
         List<MidjourneyApi.Notify> taskList = midjourneyApi.getTaskList(convertSet(images, AiImageDO::getTaskId));
         Map<String, MidjourneyApi.Notify> taskMap = convertMap(taskList, MidjourneyApi.Notify::id);
 
-        // 2. 逐个处理，更新进展
+        // 2. 逐个处理，更新进�?
         int count = 0;
         for (AiImageDO image : images) {
             MidjourneyApi.Notify notify = taskMap.get(image.getTaskId());
@@ -293,12 +293,12 @@ public class AiImageServiceImpl implements AiImageService {
             log.warn("[midjourneyNotify][回调任务({}) 不存在]", notify.id());
             return;
         }
-        // 2. 更新状态
+        // 2. 更新状�?
         updateMidjourneyStatus(image, notify);
     }
 
     private void updateMidjourneyStatus(AiImageDO image, MidjourneyApi.Notify notify) {
-        // 1. 转换状态
+        // 1. 转换状�?
         Integer status = null;
         LocalDateTime finishTime = null;
         if (StrUtil.isNotBlank(notify.status())) {
@@ -323,7 +323,7 @@ public class AiImageServiceImpl implements AiImageService {
             }
         }
 
-        // 3. 更新 image 状态
+        // 3. 更新 image 状�?
         aiImageMapper.updateById(new AiImageDO().setId(image.getId()).setStatus(status)
                 .setPicUrl(picUrl).setButtons(notify.buttons()).setErrorMessage(notify.failReason())
                 .setFinishTime(finishTime));
@@ -331,13 +331,13 @@ public class AiImageServiceImpl implements AiImageService {
 
     @Override
     public Long midjourneyAction(Long userId, AiMidjourneyActionReqVO reqVO) {
-        // 1.1 检查 image
+        // 1.1 检�?image
         AiImageDO image = validateImageExists(reqVO.getId());
         if (ObjUtil.notEqual(userId, image.getUserId())) {
             throw exception(IMAGE_NOT_EXISTS);
         }
         MidjourneyApi midjourneyApi = modelService.getMidjourneyApi(image.getModelId());
-        // 1.2 检查 customId
+        // 1.2 检�?customId
         MidjourneyApi.Button button = CollUtil.findOne(image.getButtons(),
                 buttonX -> buttonX.customId().equals(reqVO.getCustomId()));
         if (button == null) {

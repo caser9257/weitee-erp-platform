@@ -19,7 +19,7 @@ import java.util.List;
  * @author xiaoxin
  */
 @TableName(value = "ai_music", autoResultMap = true)
-@KeySequence("ai_music_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_music_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiMusicDO extends BaseDO {
 
@@ -32,7 +32,7 @@ public class AiMusicDO extends BaseDO {
     /**
      * 用户编号
      * <p>
-     * 关联 AdminUserDO 的 userId 字段
+     * 关联 AdminUserDO �?userId 字段
      */
     private Long userId;
 
@@ -60,7 +60,7 @@ public class AiMusicDO extends BaseDO {
     private String videoUrl;
 
     /**
-     * 音乐状态
+     * 音乐状�?
      * <p>
      * 枚举 {@link AiMusicStatusEnum}
      */
@@ -74,7 +74,7 @@ public class AiMusicDO extends BaseDO {
     private Integer generateMode;
 
     /**
-     * 描述词
+     * 描述�?
      */
     private String description;
 
@@ -84,7 +84,7 @@ public class AiMusicDO extends BaseDO {
      * 枚举 {@link AiPlatformEnum}
      */
     private String platform;
-    // TODO @芋艿：modelId？
+    // TODO @芋艿：modelId�?
     /**
      * 模型
      */

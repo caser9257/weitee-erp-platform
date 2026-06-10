@@ -10,7 +10,7 @@ import org.springframework.ai.openai.OpenAiImageOptions;
 import org.springframework.ai.openai.api.OpenAiImageApi;
 
 /**
- * {@link OpenAiImageModel} 集成测试类
+ * {@link OpenAiImageModel} 集成测试�?
  *
  * @author fansili
  */

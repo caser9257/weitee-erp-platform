@@ -8,12 +8,12 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * AI 知识库-文档 DO
+ * AI 知识�?文档 DO
  *
  * @author xiaoxin
  */
 @TableName(value = "ai_knowledge_document")
-@KeySequence("ai_knowledge_document_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_knowledge_document_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiKnowledgeDocumentDO extends BaseDO {
 
@@ -23,7 +23,7 @@ public class AiKnowledgeDocumentDO extends BaseDO {
     @TableId
     private Long id;
     /**
-     * 知识库编号
+     * 知识库编�?
      * <p>
      * 关联 {@link AiKnowledgeDO#getId()}
      */
@@ -50,7 +50,7 @@ public class AiKnowledgeDocumentDO extends BaseDO {
      */
     private Integer tokens;
     /**
-     * 分片最大 Token 数
+     * 分片最�?Token �?
      */
     private Integer segmentMaxTokens;
 
@@ -60,7 +60,7 @@ public class AiKnowledgeDocumentDO extends BaseDO {
     private Integer retrievalCount;
 
     /**
-     * 状态
+     * 状�?
      * <p>
      * 枚举 {@link CommonStatusEnum}
      */

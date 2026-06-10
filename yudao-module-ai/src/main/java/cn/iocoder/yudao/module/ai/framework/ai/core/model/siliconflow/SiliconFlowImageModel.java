@@ -38,9 +38,9 @@ import org.springframework.util.Assert;
 import java.util.List;
 
 /**
- * 硅基流动 {@link ImageModel} 实现类
+ * 硅基流动 {@link ImageModel} 实现�?
  *
- * 参考 {@link OpenAiImageModel} 实现
+ * 参�?{@link OpenAiImageModel} 实现
  *
  * @author zzt
  */

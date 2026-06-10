@@ -24,7 +24,7 @@ public class AiImageRespVO {
     @Schema(description = "模型", requiredMode = Schema.RequiredMode.REQUIRED, example = "stable-diffusion-v1-6")
     private String model;
 
-    @Schema(description = "提示词", requiredMode = Schema.RequiredMode.REQUIRED, example = "南极的小企鹅")
+    @Schema(description = "提示�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "南极的小企鹅")
     private String prompt;
 
     @Schema(description = "图片宽度", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
@@ -33,7 +33,7 @@ public class AiImageRespVO {
     @Schema(description = "图片高度", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
     private Integer height;
 
-    @Schema(description = "绘画状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
+    @Schema(description = "绘画状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "10")
     private Integer status;
 
     @Schema(description = "是否发布", requiredMode = Schema.RequiredMode.REQUIRED, example = "public")

@@ -23,7 +23,7 @@ public class AiToolPageReqVO extends PageParam {
     @Schema(description = "工具描述", example = "你猜")
     private String description;
 
-    @Schema(description = "状态", example = "1")
+    @Schema(description = "状�?, example = "1")
     @InEnum(CommonStatusEnum.class)
     private Integer status;
 

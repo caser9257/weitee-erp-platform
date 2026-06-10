@@ -47,7 +47,7 @@ import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.*;
 import static org.springframework.ai.vectorstore.SearchRequest.SIMILARITY_THRESHOLD_ACCEPT_ALL;
 
 /**
- * AI 知识库分片 Service 实现类
+ * AI 知识库分�?Service 实现�?
  *
  * @author xiaoxin
  */
@@ -65,7 +65,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
             VECTOR_STORE_METADATA_SEGMENT_ID, String.class);
 
     /**
-     * Rerank 在向量检索时，检索数量 * 该系数，目的是为了提升 Rerank 的效果
+     * Rerank 在向量检索时，检索数�?* 该系数，目的是为了提�?Rerank 的效�?
      */
     private static final Integer RERANK_RETRIEVAL_FACTOR = 4;
 
@@ -75,7 +75,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
     @Resource
     private AiKnowledgeService knowledgeService;
     @Resource
-    @Lazy // 延迟加载，避免循环依赖
+    @Lazy // 延迟加载，避免循环依�?
     private AiKnowledgeDocumentService knowledgeDocumentService;
     @Resource
     private AiModelService modelService;
@@ -114,7 +114,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
                     .setStatus(CommonStatusEnum.ENABLE.getStatus());
         });
         aiKnowledgeSegmentMapper.insertBatch(segmentDOs);
-        // 3.2 切片向量化
+        // 3.2 切片向量�?
         for (int i = 0; i < documentSegments.size(); i++) {
             Document segment = documentSegments.get(i);
             AiKnowledgeSegmentDO segmentDO = segmentDOs.get(i);
@@ -134,7 +134,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
         // 3.1 更新切片
         AiKnowledgeSegmentDO newSegment = BeanUtils.toBean(reqVO, AiKnowledgeSegmentDO.class);
         aiKnowledgeSegmentMapper.updateById(newSegment);
-        // 3.2 重新向量化，必须开启状态
+        // 3.2 重新向量化，必须开启状�?
         if (CommonStatusEnum.isEnable(oldSegment.getStatus())) {
             newSegment.setKnowledgeId(oldSegment.getKnowledgeId()).setDocumentId(oldSegment.getDocumentId());
             writeVectorStore(vectorStore, newSegment, new Document(newSegment.getContent()));
@@ -162,10 +162,10 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
         // 1. 校验
         AiKnowledgeSegmentDO segment = validateKnowledgeSegmentExists(reqVO.getId());
 
-        // 2. 获取知识库向量实例
+        // 2. 获取知识库向量实�?
         VectorStore vectorStore = getVectorStoreById(segment.getKnowledgeId());
 
-        // 3. 更新状态
+        // 3. 更新状�?
         aiKnowledgeSegmentMapper.updateById(new AiKnowledgeSegmentDO().setId(reqVO.getId()).setStatus(reqVO.getStatus()));
 
         // 4. 更新向量
@@ -178,9 +178,9 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
 
     @Override
     public void reindexKnowledgeSegmentByKnowledgeId(Long knowledgeId) {
-        // 1.1 校验知识库存在
+        // 1.1 校验知识库存�?
         AiKnowledgeDO knowledge = knowledgeService.validateKnowledgeExists(knowledgeId);
-        // 1.2 获取知识库向量实例
+        // 1.2 获取知识库向量实�?
         VectorStore vectorStore = getVectorStoreById(knowledge);
 
         // 2.1 查询知识库下的所有启用状态的段落
@@ -196,7 +196,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
             // 重新创建向量
             writeVectorStore(vectorStore, segment, new Document(segment.getContent()));
         }
-        log.info("[reindexKnowledgeSegmentByKnowledgeId][知识库({}) 重新索引完成，共处理 {} 个段落]",
+        log.info("[reindexKnowledgeSegmentByKnowledgeId][知识�?{}) 重新索引完成，共处理 {} 个段落]",
                 knowledgeId, segments.size());
     }
 
@@ -229,7 +229,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
         // 1. 校验
         AiKnowledgeDO knowledge = knowledgeService.validateKnowledgeExists(reqBO.getKnowledgeId());
 
-        // 2. 检索
+        // 2. 检�?
         List<Document> documents = searchDocument(knowledge, reqBO);
         if (CollUtil.isEmpty(documents)) {
             return ListUtil.empty();
@@ -246,7 +246,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
 
         // 4. 构建结果
         List<AiKnowledgeSegmentSearchRespBO> result = convertList(segments, segment -> {
-            Document document = CollUtil.findOne(documents, // 找到对应的文档
+            Document document = CollUtil.findOne(documents, // 找到对应的文�?
                     doc -> Objects.equals(doc.getId(), segment.getVectorId()));
             if (document == null) {
                 return null;
@@ -261,8 +261,8 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
     /**
      * 基于 Embedding + Rerank Model，检索知识库中的文档
      *
-     * @param knowledge 知识库
-     * @param reqBO 检索请求
+     * @param knowledge 知识�?
+     * @param reqBO 检索请�?
      * @return 文档列表
      */
     private List<Document> searchDocument(AiKnowledgeDO knowledge, AiKnowledgeSegmentSearchReqBO reqBO) {
@@ -270,7 +270,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
         Integer topK = ObjUtil.defaultIfNull(reqBO.getTopK(), knowledge.getTopK());
         Double similarityThreshold = ObjUtil.defaultIfNull(reqBO.getSimilarityThreshold(), knowledge.getSimilarityThreshold());
 
-        // 1. 向量检索
+        // 1. 向量检�?
         int searchTopK = rerankModel != null ? topK * RERANK_RETRIEVAL_FACTOR : topK;
         double searchSimilarityThreshold = rerankModel != null ? SIMILARITY_THRESHOLD_ACCEPT_ALL : similarityThreshold;
         SearchRequest.Builder searchRequestBuilder = SearchRequest.builder()
@@ -283,7 +283,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
             return documents;
         }
 
-        // 2. Rerank 重排序
+        // 2. Rerank 重排�?
         if (rerankModel != null) {
             RerankResponse rerankResponse = rerankModel.call(new RerankRequest(reqBO.getContent(), documents,
                     DashScopeRerankOptions.builder().withTopN(topK).build()));
@@ -304,7 +304,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
         // 2.2 文档切片
         List<Document> documentSegments = splitContentByStrategy(content, segmentMaxTokens, strategy, url);
 
-        // 3. 转换为段落对象
+        // 3. 转换为段落对�?
         return convertList(documentSegments, segment -> {
             if (StrUtil.isEmpty(segment.getText())) {
                 return null;
@@ -343,7 +343,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
      * 根据策略切分内容
      *
      * @param content 文档内容
-     * @param segmentMaxTokens 分段的最大 Token 数
+     * @param segmentMaxTokens 分段的最�?Token �?
      * @param strategy 切片策略
      * @param url 文档 URL（用于自动检测文件类型）
      * @return 切片后的文档列表
@@ -351,7 +351,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
     @SuppressWarnings("EnhancedSwitchMigration")
     private List<Document> splitContentByStrategy(String content, Integer segmentMaxTokens,
                                                   AiDocumentSplitStrategyEnum strategy, String url) {
-        // 自动检测策略
+        // 自动检测策�?
         if (strategy == AiDocumentSplitStrategyEnum.AUTO) {
             strategy = detectDocumentStrategy(content, url);
             log.info("[splitContentByStrategy][自动检测到文档策略: {}]", strategy.getName());
@@ -382,17 +382,17 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
      *
      * @param content 文档内容
      * @param url 文档 URL
-     * @return 推荐的切片策略
+     * @return 推荐的切片策�?
      */
     private AiDocumentSplitStrategyEnum detectDocumentStrategy(String content, String url) {
         if (StrUtil.isEmpty(content)) {
             return AiDocumentSplitStrategyEnum.TOKEN;
         }
-        // 1. 检测 Markdown QA 格式
+        // 1. 检�?Markdown QA 格式
         if (isMarkdownQaFormat(content, url)) {
             return AiDocumentSplitStrategyEnum.MARKDOWN_QA;
         }
-        // 2. 检测普通 Markdown 文档
+        // 2. 检测普�?Markdown 文档
         if (isMarkdownDocument(url)) {
             return AiDocumentSplitStrategyEnum.SEMANTIC;
         }
@@ -402,10 +402,10 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
 
     /**
      * 检测是否为 Markdown QA 格式
-     * 特征：包含多个二级标题（## ）且标题后紧跟答案内容
+     * 特征：包含多个二级标题（## ）且标题后紧跟答案内�?
      */
     private boolean isMarkdownQaFormat(String content, String url) {
-        // 文件扩展名判断
+        // 文件扩展名判�?
         if (StrUtil.isNotEmpty(url) && !url.toLowerCase().endsWith(".md")) {
             return false;
         }
@@ -415,7 +415,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
                 .filter(line -> line.trim().startsWith("## "))
                 .count();
 
-        // 要求一：至少包含 2 个二级标题才认为是 QA 格式
+        // 要求一：至少包�?2 个二级标题才认为�?QA 格式
         if (h2Count < 2) {
             return false;
         }
@@ -434,15 +434,15 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
     }
 
     /**
-     * 构建基于 Token 的文本切片器（原有逻辑保留）
+     * 构建基于 Token 的文本切片器（原有逻辑保留�?
      */
     private static TextSplitter buildTokenTextSplitter(Integer segmentMaxTokens) {
         return TokenTextSplitter.builder()
                 .withChunkSize(segmentMaxTokens)
-                .withMinChunkSizeChars(Integer.MAX_VALUE) // 忽略字符的截断
-                .withMinChunkLengthToEmbed(1) // 允许的最小有效分段长度
+                .withMinChunkSizeChars(Integer.MAX_VALUE) // 忽略字符的截�?
+                .withMinChunkLengthToEmbed(1) // 允许的最小有效分段长�?
                 .withMaxNumChunks(Integer.MAX_VALUE)
-                .withKeepSeparator(true) // 保留分隔符
+                .withKeepSeparator(true) // 保留分隔�?
                 .build();
     }
 
@@ -459,7 +459,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
         // 1.1 校验文档是否存在
         AiKnowledgeDocumentDO document = knowledgeDocumentService
                 .validateKnowledgeDocumentExists(createReqVO.getDocumentId());
-        // 1.2 获取知识库信息
+        // 1.2 获取知识库信�?
         AiKnowledgeDO knowledge = knowledgeService.validateKnowledgeExists(document.getKnowledgeId());
         // 1.3 校验 token 熟练
         Integer tokens = tokenCountEstimator.estimate(createReqVO.getContent());
@@ -475,7 +475,7 @@ public class AiKnowledgeSegmentServiceImpl implements AiKnowledgeSegmentService 
                 .setRetrievalCount(0).setStatus(CommonStatusEnum.ENABLE.getStatus());
         aiKnowledgeSegmentMapper.insert(segment);
 
-        // 3. 向量化
+        // 3. 向量�?
         writeVectorStore(getVectorStoreById(knowledge), segment, new Document(segment.getContent()));
         return segment.getId();
     }

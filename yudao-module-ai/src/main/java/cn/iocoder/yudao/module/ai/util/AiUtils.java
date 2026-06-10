@@ -23,7 +23,7 @@ import org.springframework.ai.zhipuai.ZhiPuAiChatOptions;
 import java.util.*;
 
 /**
- * Spring AI 工具类
+ * Spring AI 工具�?
  *
  * @author 芋道源码
  */
@@ -43,15 +43,15 @@ public class AiUtils {
         switch (platform) {
             case TONG_YI:
                 return DashScopeChatOptions.builder().withModel(model).withTemperature(temperature).withMaxToken(maxTokens)
-                        .withEnableThinking(true) // TODO 芋艿：默认都开启 thinking 模式，后续可以让用户配置
+                        .withEnableThinking(true) // TODO 芋艿：默认都开�?thinking 模式，后续可以让用户配置
                         .withToolCallbacks(toolCallbacks).withToolContext(toolContext).build();
             case YI_YAN:
                 return QianFanChatOptions.builder().model(model).temperature(temperature).maxTokens(maxTokens).build();
             case DEEP_SEEK:
-            case DOU_BAO: // 复用 DeepSeek 客户端
-            case HUN_YUAN: // 复用 DeepSeek 客户端
-            case SILICON_FLOW: // 复用 DeepSeek 客户端
-            case XING_HUO: // 复用 DeepSeek 客户端
+            case DOU_BAO: // 复用 DeepSeek 客户�?
+            case HUN_YUAN: // 复用 DeepSeek 客户�?
+            case SILICON_FLOW: // 复用 DeepSeek 客户�?
+            case XING_HUO: // 复用 DeepSeek 客户�?
                 return DeepSeekChatOptions.builder().model(model).temperature(temperature).maxTokens(maxTokens)
                         .toolCallbacks(toolCallbacks).toolContext(toolContext).build();
             case ZHI_PU:
@@ -64,9 +64,9 @@ public class AiUtils {
                 return MoonshotChatOptions.builder().model(model).temperature(temperature).maxTokens(maxTokens)
                         .toolCallbacks(toolCallbacks).toolContext(toolContext).build();
             case OPENAI:
-            case GEMINI: // 复用 OpenAI 客户端
-            case BAI_CHUAN: // 复用 OpenAI 客户端
-            case GROK: // 复用 OpenAI 客户端
+            case GEMINI: // 复用 OpenAI 客户�?
+            case BAI_CHUAN: // 复用 OpenAI 客户�?
+            case GROK: // 复用 OpenAI 客户�?
                 return OpenAiChatOptions.builder().model(model).temperature(temperature).maxTokens(maxTokens)
                         .toolCallbacks(toolCallbacks).toolContext(toolContext).build();
             case AZURE_OPENAI:
@@ -94,7 +94,7 @@ public class AiUtils {
             return new SystemMessage(content);
         }
         if (MessageType.TOOL.getValue().equals(type)) {
-            throw new UnsupportedOperationException("暂不支持 tool 消息：" + content);
+            throw new UnsupportedOperationException("暂不支持 tool 消息�? + content);
         }
         throw new IllegalArgumentException(StrUtil.format("未知消息类型({})", type));
     }

@@ -13,14 +13,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Markdown QA 格式专用切片器
+ * Markdown QA 格式专用切片�?
  *
- * <p>功能特点：
+ * <p>功能特点�?
  * <ul>
- *   <li>识别二级标题（## ）作为问题标记</li>
- *   <li>短 QA 对保持完整（不超过 Token 限制）</li>
- *   <li>长答案智能切分，每个片段保留完整问题作为上下文</li>
- *   <li>支持自定义 Token 估算器</li>
+ *   <li>识别二级标题�?# ）作为问题标�?/li>
+ *   <li>�?QA 对保持完整（不超�?Token 限制�?/li>
+ *   <li>长答案智能切分，每个片段保留完整问题作为上下�?/li>
+ *   <li>支持自定�?Token 估算�?/li>
  * </ul>
  *
  * @author runzhen
@@ -30,22 +30,22 @@ import java.util.regex.Pattern;
 public class MarkdownQaSplitter extends TextSplitter {
 
     /**
-     * 二级标题正则：匹配 "## " 开头的行
+     * 二级标题正则：匹�?"## " 开头的�?
      */
     private static final Pattern H2_PATTERN = Pattern.compile("^##\\s+(.+)$", Pattern.MULTILINE);
 
     /**
-     * 段落分隔符：双换行
+     * 段落分隔符：双换�?
      */
     private static final String PARAGRAPH_SEPARATOR = "\n\n";
 
     /**
-     * 句子分隔符
+     * 句子分隔�?
      */
-    private static final Pattern SENTENCE_PATTERN = Pattern.compile("[。！？.!?]\\s*");
+    private static final Pattern SENTENCE_PATTERN = Pattern.compile("[。！�?!?]\\s*");
 
     /**
-     * 分段的最大 Token 数
+     * 分段的最�?Token �?
      */
     private final int chunkSize;
 
@@ -65,14 +65,14 @@ public class MarkdownQaSplitter extends TextSplitter {
             return Collections.emptyList();
         }
 
-        // 解析 QA 对
+        // 解析 QA �?
         List<QaPair> qaPairs = parseQaPairs(text);
         if (CollUtil.isEmpty(qaPairs)) {
-            // 如果没有识别到 QA 格式，按段落切分
+            // 如果没有识别�?QA 格式，按段落切分
             return fallbackSplit(text);
         }
 
-        // 处理每个 QA 对
+        // 处理每个 QA �?
         List<String> result = new ArrayList<>();
         for (QaPair qaPair : qaPairs) {
             result.addAll(splitQaPair(qaPair));
@@ -81,13 +81,13 @@ public class MarkdownQaSplitter extends TextSplitter {
     }
 
     /**
-     * 解析 Markdown QA 对
+     * 解析 Markdown QA �?
      *
      * @param content 文本内容
-     * @return QA 对列表
+     * @return QA 对列�?
      */
     private List<QaPair> parseQaPairs(String content) {
-        // 找到所有二级标题位置
+        // 找到所有二级标题位�?
         List<QaPair> qaPairs = new ArrayList<>();
         List<Integer> headingPositions = new ArrayList<>();
         List<String> questions = new ArrayList<>();
@@ -100,7 +100,7 @@ public class MarkdownQaSplitter extends TextSplitter {
             return qaPairs;
         }
 
-        // 提取每个 QA 对
+        // 提取每个 QA �?
         for (int i = 0; i < headingPositions.size(); i++) {
             int start = headingPositions.get(i);
             int end = (i + 1 < headingPositions.size())
@@ -116,13 +116,13 @@ public class MarkdownQaSplitter extends TextSplitter {
     }
 
     /**
-     * 切分单个 QA 对
+     * 切分单个 QA �?
      *
-     * @param qaPair QA 对
+     * @param qaPair QA �?
      * @return 切分后的文本片段列表
      */
     private List<String> splitQaPair(QaPair qaPair) {
-        // 如果整个 QA 对不超过限制，保持完整
+        // 如果整个 QA 对不超过限制，保持完�?
         List<String> chunks = new ArrayList<>();
         String fullQa = qaPair.fullText;
         int qaTokens = tokenEstimator.estimate(fullQa);
@@ -131,11 +131,11 @@ public class MarkdownQaSplitter extends TextSplitter {
             return chunks;
         }
 
-        // 长答案需要切分
-        log.debug("QA 对超过 Token 限制 ({} > {})，开始智能切分: {}", qaTokens, chunkSize, qaPair.question);
+        // 长答案需要切�?
+        log.debug("QA 对超�?Token 限制 ({} > {})，开始智能切�? {}", qaTokens, chunkSize, qaPair.question);
         List<String> answerChunks = splitLongAnswer(qaPair.answer, qaPair.question);
         for (String answerChunk : answerChunks) {
-            // 每个片段都包含完整问题
+            // 每个片段都包含完整问�?
             String chunkText = "## " + qaPair.question + "\n" + answerChunk;
             chunks.add(chunkText);
         }
@@ -143,7 +143,7 @@ public class MarkdownQaSplitter extends TextSplitter {
     }
 
     /**
-     * 切分长答案
+     * 切分长答�?
      *
      * @param answer 答案文本
      * @param question 问题文本
@@ -151,10 +151,10 @@ public class MarkdownQaSplitter extends TextSplitter {
      */
     private List<String> splitLongAnswer(String answer, String question) {
         List<String> chunks = new ArrayList<>();
-        // 预留问题的 Token 空间
+        // 预留问题�?Token 空间
         String questionHeader = "## " + question + "\n";
         int questionTokens = tokenEstimator.estimate(questionHeader);
-        int availableTokens = chunkSize - questionTokens - 10; // 预留 10 个 Token 的缓冲
+        int availableTokens = chunkSize - questionTokens - 10; // 预留 10 �?Token 的缓�?
 
         // 先按段落切分
         String[] paragraphs = answer.split(PARAGRAPH_SEPARATOR);
@@ -177,7 +177,7 @@ public class MarkdownQaSplitter extends TextSplitter {
                 chunks.addAll(splitLongParagraph(paragraph, availableTokens));
                 continue;
             }
-            // 如果加上这个段落会超过限制
+            // 如果加上这个段落会超过限�?
             if (currentTokens + paragraphTokens > availableTokens && currentChunk.length() > 0) {
                 chunks.add(currentChunk.toString().trim());
                 currentChunk = new StringBuilder();
@@ -191,7 +191,7 @@ public class MarkdownQaSplitter extends TextSplitter {
             currentTokens += paragraphTokens;
         }
 
-        // 添加最后一块
+        // 添加最后一�?
         if (currentChunk.length() > 0) {
             chunks.add(currentChunk.toString().trim());
         }
@@ -202,15 +202,15 @@ public class MarkdownQaSplitter extends TextSplitter {
      * 切分长段落（按句子）
      *
      * @param paragraph 段落文本
-     * @param availableTokens 可用的 Token 数
+     * @param availableTokens 可用�?Token �?
      * @return 切分后的文本片段列表
      */
     private List<String> splitLongParagraph(String paragraph, int availableTokens) {
-        // 按句子切分
+        // 按句子切�?
         List<String> chunks = new ArrayList<>();
         String[] sentences = SENTENCE_PATTERN.split(paragraph);
 
-        // 按句子累积切分
+        // 按句子累积切�?
         StringBuilder currentChunk = new StringBuilder();
         int currentTokens = 0;
         for (String sentence : sentences) {
@@ -228,7 +228,7 @@ public class MarkdownQaSplitter extends TextSplitter {
                 chunks.add(sentence.trim());
                 continue;
             }
-            // 如果加上这个句子会超过限制
+            // 如果加上这个句子会超过限�?
             if (currentTokens + sentenceTokens > availableTokens && currentChunk.length() > 0) {
                 chunks.add(currentChunk.toString().trim());
                 currentChunk = new StringBuilder();
@@ -239,7 +239,7 @@ public class MarkdownQaSplitter extends TextSplitter {
             currentTokens += sentenceTokens;
         }
 
-        // 添加最后一块
+        // 添加最后一�?
         if (currentChunk.length() > 0) {
             chunks.add(currentChunk.toString().trim());
         }
@@ -253,11 +253,11 @@ public class MarkdownQaSplitter extends TextSplitter {
      * @return 切分后的文本片段列表
      */
     private List<String> fallbackSplit(String content) {
-        // 按段落切分
+        // 按段落切�?
         List<String> chunks = new ArrayList<>();
         String[] paragraphs = content.split(PARAGRAPH_SEPARATOR);
 
-        // 按段落累积切分
+        // 按段落累积切�?
         StringBuilder currentChunk = new StringBuilder();
         int currentTokens = 0;
         for (String paragraph : paragraphs) {
@@ -265,7 +265,7 @@ public class MarkdownQaSplitter extends TextSplitter {
                 continue;
             }
             int paragraphTokens = tokenEstimator.estimate(paragraph);
-            // 如果加上这个段落会超过限制
+            // 如果加上这个段落会超过限�?
             if (currentTokens + paragraphTokens > chunkSize && currentChunk.length() > 0) {
                 chunks.add(currentChunk.toString().trim());
                 currentChunk = new StringBuilder();
@@ -279,7 +279,7 @@ public class MarkdownQaSplitter extends TextSplitter {
             currentTokens += paragraphTokens;
         }
 
-        // 添加最后一块
+        // 添加最后一�?
         if (currentChunk.length() > 0) {
             chunks.add(currentChunk.toString().trim());
         }
@@ -287,7 +287,7 @@ public class MarkdownQaSplitter extends TextSplitter {
     }
 
     /**
-     * QA 对数据结构
+     * QA 对数据结�?
      */
     @AllArgsConstructor
     private static class QaPair {
@@ -299,7 +299,7 @@ public class MarkdownQaSplitter extends TextSplitter {
     }
 
     /**
-     * Token 估算器接口
+     * Token 估算器接�?
      */
     public interface TokenEstimator {
 
@@ -308,9 +308,9 @@ public class MarkdownQaSplitter extends TextSplitter {
     }
 
     /**
-     * 简单的 Token 估算器实现
-     * 中文：1 字符 ≈ 1 Token
-     * 英文：1 单词 ≈ 1.3 Token
+     * 简单的 Token 估算器实�?
+     * 中文�? 字符 �?1 Token
+     * 英文�? 单词 �?1.3 Token
      */
     private static class SimpleTokenEstimator implements TokenEstimator {
 

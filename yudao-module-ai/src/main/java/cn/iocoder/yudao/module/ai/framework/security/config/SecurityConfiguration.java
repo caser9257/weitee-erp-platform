@@ -12,7 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AuthorizeH
 import java.util.Optional;
 
 /**
- * AI 模块的 Security 配置
+ * AI 模块�?Security 配置
  */
 @Configuration(proxyBeanMethods = false, value = "aiSecurityConfiguration")
 public class SecurityConfiguration {

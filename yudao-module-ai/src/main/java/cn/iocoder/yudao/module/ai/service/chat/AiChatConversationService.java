@@ -17,7 +17,7 @@ import java.util.List;
 public interface AiChatConversationService {
 
     /**
-     * 创建【我的】聊天对话
+     * 创建【我的】聊天对�?
      *
      * @param createReqVO 创建信息
      * @param userId 用户编号
@@ -26,7 +26,7 @@ public interface AiChatConversationService {
     Long createChatConversationMy(AiChatConversationCreateMyReqVO createReqVO, Long userId);
 
     /**
-     * 更新【我的】聊天对话
+     * 更新【我的】聊天对�?
      *
      * @param updateReqVO 更新信息
      * @param userId 用户编号
@@ -34,7 +34,7 @@ public interface AiChatConversationService {
     void updateChatConversationMy(AiChatConversationUpdateMyReqVO updateReqVO, Long userId);
 
     /**
-     * 获得【我的】聊天对话列表
+     * 获得【我的】聊天对话列�?
      *
      * @param userId 用户编号
      * @return 聊天对话列表
@@ -50,7 +50,7 @@ public interface AiChatConversationService {
     AiChatConversationDO getChatConversation(Long id);
 
     /**
-     * 删除【我的】聊天对话
+     * 删除【我的】聊天对�?
      *
      * @param id 编号
      * @param userId 用户编号
@@ -58,7 +58,7 @@ public interface AiChatConversationService {
     void deleteChatConversationMy(Long id, Long userId);
 
     /**
-     * 【管理员】删除聊天对话
+     * 【管理员】删除聊天对�?
      *
      * @param id 编号
      */
@@ -73,17 +73,17 @@ public interface AiChatConversationService {
     AiChatConversationDO validateChatConversationExists(Long id);
 
     /**
-     * 删除【我的】 + 非置顶的聊天对话
+     * 删除【我的�?+ 非置顶的聊天对话
      *
      * @param userId 用户编号
      */
     void deleteChatConversationMyByUnpinned(Long userId);
 
     /**
-     * 获得聊天对话的分页列表
+     * 获得聊天对话的分页列�?
      *
      * @param pageReqVO 分页查询
-     * @return 聊天对话的分页列表
+     * @return 聊天对话的分页列�?
      */
     PageResult<AiChatConversationDO> getChatConversationPage(AiChatConversationPageReqVO pageReqVO);
 

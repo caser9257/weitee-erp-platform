@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.ai.controller.admin.model.vo.apikey.AiApiKeyPageReqVO;
 import cn.iocoder.yudao.module.ai.controller.admin.model.vo.apikey.AiApiKeySaveReqVO;
 import cn.iocoder.yudao.module.ai.dal.dataobject.model.AiApiKeyDO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -48,7 +48,7 @@ public interface AiApiKeyService {
     /**
      * 校验 API 密钥
      *
-     * @param id 比那好
+     * @param id 比那�?
      * @return API 密钥
      */
     AiApiKeyDO validateApiKey(Long id);
@@ -69,10 +69,10 @@ public interface AiApiKeyService {
     List<AiApiKeyDO> getApiKeyList();
 
     /**
-     * 获得默认的 API 密钥
+     * 获得默认�?API 密钥
      *
      * @param platform 平台
-     * @param status 状态
+     * @param status 状�?
      * @return API 密钥
      */
     AiApiKeyDO getRequiredDefaultApiKey(String platform, Integer status);

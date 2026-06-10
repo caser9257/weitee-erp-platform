@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.hibernate.validator.constraints.URL;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -30,7 +30,7 @@ import java.util.Map;
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertSet;
 
-@Tag(name = "管理后台 - AI 知识库段落")
+@Tag(name = "管理后台 - AI 知识库段�?)
 @RestController
 @RequestMapping("/ai/knowledge/segment")
 @Validated
@@ -75,7 +75,7 @@ public class AiKnowledgeSegmentController {
     }
 
     @PutMapping("/update-status")
-    @Operation(summary = "启禁用段落内容")
+    @Operation(summary = "启禁用段落内�?)
     @PreAuthorize("@ss.hasPermission('ai:knowledge:update')")
     public CommonResult<Boolean> updateKnowledgeSegmentStatus(
             @Valid @RequestBody AiKnowledgeSegmentUpdateStatusReqVO reqVO) {
@@ -87,7 +87,7 @@ public class AiKnowledgeSegmentController {
     @Operation(summary = "切片内容")
     @Parameters({
             @Parameter(name = "url", description = "文档 URL", required = true),
-            @Parameter(name = "segmentMaxTokens", description = "分段的最大 Token 数", required = true)
+            @Parameter(name = "segmentMaxTokens", description = "分段的最�?Token �?, required = true)
     })
     @PreAuthorize("@ss.hasPermission('ai:knowledge:query')")
     public CommonResult<List<AiKnowledgeSegmentRespVO>> splitContent(

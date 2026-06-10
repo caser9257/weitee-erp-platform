@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.Arrays;
 
 /**
- * AI 模型类型的枚举
+ * AI 模型类型的枚�?
  *
  * @author 芋道源码
  */
@@ -20,14 +20,14 @@ public enum AiModelTypeEnum implements ArrayValuable<Integer> {
     VOICE(3, "语音"),
     VIDEO(4, "视频"),
     EMBEDDING(5, "向量"),
-    RERANK(6, "重排序");
+    RERANK(6, "重排�?);
 
     /**
      * 类型
      */
     private final Integer type;
     /**
-     * 类型名
+     * 类型�?
      */
     private final String name;
 

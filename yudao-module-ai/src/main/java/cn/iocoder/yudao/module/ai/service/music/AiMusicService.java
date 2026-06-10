@@ -3,7 +3,7 @@ package cn.iocoder.yudao.module.ai.service.music;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.ai.controller.admin.music.vo.*;
 import cn.iocoder.yudao.module.ai.dal.dataobject.music.AiMusicDO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ public interface AiMusicService {
     Integer syncMusic();
 
     /**
-     * 更新音乐发布状态
+     * 更新音乐发布状�?
      *
      * @param updateReqVO 更新信息
      */
@@ -52,7 +52,7 @@ public interface AiMusicService {
     void deleteMusic(Long id);
 
     /**
-     * 删除【我的】音乐记录
+     * 删除【我的】音乐记�?
      *
      * @param id     音乐编号
      * @param userId 用户编号
@@ -76,7 +76,7 @@ public interface AiMusicService {
     PageResult<AiMusicDO> getMusicPage(AiMusicPageReqVO pageReqVO);
 
     /**
-     * 获得【我的】音乐分页
+     * 获得【我的】音乐分�?
      *
      * @param pageReqVO 分页查询
      * @param userId    用户编号

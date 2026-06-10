@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.enums.CommonStatusEnum;
 import cn.iocoder.yudao.framework.common.validation.InEnum;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-import javax.validation.constraints.*;
+import jakarta.validation.constraints.*;
 import org.hibernate.validator.constraints.URL;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public class AiChatRoleSaveReqVO {
 
     @Schema(description = "角色头像", requiredMode = Schema.RequiredMode.REQUIRED, example = "https://www.iocoder.cn/1.png")
     @NotEmpty(message = "角色头像不能为空")
-    @URL(message = "角色头像必须是 URL 格式")
+    @URL(message = "角色头像必须�?URL 格式")
     private String avatar;
 
     @Schema(description = "角色类别", requiredMode = Schema.RequiredMode.REQUIRED, example = "创作")
@@ -40,25 +40,25 @@ public class AiChatRoleSaveReqVO {
     @NotEmpty(message = "角色描述不能为空")
     private String description;
 
-    @Schema(description = "角色设定", requiredMode = Schema.RequiredMode.REQUIRED, example = "现在开始你扮演一位程序员，你是一名优秀的程序员，具有很强的逻辑思维能力，总能高效的解决问题")
+    @Schema(description = "角色设定", requiredMode = Schema.RequiredMode.REQUIRED, example = "现在开始你扮演一位程序员，你是一名优秀的程序员，具有很强的逻辑思维能力，总能高效的解决问�?)
     @NotEmpty(message = "角色设定不能为空")
     private String systemMessage;
 
     @Schema(description = "引用的知识库编号列表", example = "1,2,3")
     private List<Long> knowledgeIds;
 
-    @Schema(description = "引用的工具编号列表", example = "1,2,3")
+    @Schema(description = "引用的工具编号列�?, example = "1,2,3")
     private List<Long> toolIds;
 
-    @Schema(description = "引用的 MCP Client 名字列表", example = "filesystem")
+    @Schema(description = "引用�?MCP Client 名字列表", example = "filesystem")
     private List<String> mcpClientNames;
 
     @Schema(description = "是否公开", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @NotNull(message = "是否公开不能为空")
     private Boolean publicStatus;
 
-    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    @NotNull(message = "状态不能为空")
+    @Schema(description = "状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @NotNull(message = "状态不能为�?)
     @InEnum(CommonStatusEnum.class)
     private Integer status;
 

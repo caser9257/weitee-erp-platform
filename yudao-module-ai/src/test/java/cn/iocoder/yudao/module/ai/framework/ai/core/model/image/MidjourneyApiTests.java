@@ -24,7 +24,7 @@ public class MidjourneyApiTests {
     public void testImagine() {
         // 准备参数
         MidjourneyApi.ImagineRequest request = new MidjourneyApi.ImagineRequest(null,
-                "生成一个小猫，可爱的", null,
+                "生成一个小猫，可爱�?, null,
                 MidjourneyApi.ImagineRequest.buildState(512, 512, "6.0", MidjourneyApi.ModelEnum.MIDJOURNEY.getModel()));
 
         // 方法调用
@@ -49,7 +49,7 @@ public class MidjourneyApiTests {
     @Test
     @Disabled
     public void testGetTaskList() {
-        // 准备参数。该参数可以通过 MidjourneyApi.SubmitResponse 的 result 获取
+        // 准备参数。该参数可以通过 MidjourneyApi.SubmitResponse �?result 获取
 //        String taskId = "1720277033455953";
         String taskId = "1720277214045971";
 

@@ -35,9 +35,9 @@ public class MidjourneyApi {
     private final Function<Object, Function<ClientResponse, Mono<? extends Throwable>>> EXCEPTION_FUNCTION =
             reqParam -> response -> response.bodyToMono(String.class).handle((responseBody, sink) -> {
                 HttpRequest request = response.request();
-                log.error("[midjourney-api] 调用失败！请求方式:[{}]，请求地址:[{}]，请求参数:[{}]，响应数据: [{}]",
+                log.error("[midjourney-api] 调用失败！请求方�?[{}]，请求地址:[{}]，请求参�?[{}]，响应数�? [{}]",
                         request.getMethod(), request.getURI(), reqParam, responseBody);
-                sink.error(new IllegalStateException("[midjourney-api] 调用失败！"));
+                sink.error(new IllegalStateException("[midjourney-api] 调用失败�?));
             });
 
     private final WebClient webClient;
@@ -59,7 +59,7 @@ public class MidjourneyApi {
     }
 
     /**
-     * imagine - 根据提示词提交绘画任务
+     * imagine - 根据提示词提交绘画任�?
      *
      * @param request 请求
      * @return 提交结果
@@ -120,7 +120,7 @@ public class MidjourneyApi {
          */
         private List<String> base64Array;
         /**
-         * 提示词
+         * 提示�?
          */
         private String prompt;
         /**
@@ -128,7 +128,7 @@ public class MidjourneyApi {
          */
         private String notifyHook;
         /**
-         * 自定义参数
+         * 自定义参�?
          */
         private String state;
 
@@ -141,7 +141,7 @@ public class MidjourneyApi {
 
         public static String buildState(Integer width, Integer height, String version, String model) {
             StringBuilder params = new StringBuilder();
-            //  --ar 来设置尺寸
+            //  --ar 来设置尺�?
             params.append(String.format(" --ar %s:%s ", width, height));
             // --niji 模型
             if (ModelEnum.NIJI.getModel().equals(model)) {
@@ -175,7 +175,7 @@ public class MidjourneyApi {
     /**
      * Submit 统一返回
      *
-     * @param code 状态码: 1(提交成功), 21(已存在), 22(排队中), other(错误)
+     * @param code 状态码: 1(提交成功), 21(已存�?, 22(排队�?, other(错误)
      * @param description 描述
      * @param properties 扩展字段
      * @param result 任务ID
@@ -191,18 +191,18 @@ public class MidjourneyApi {
      *
      * @param id job id
      * @param action 任务类型 {@link TaskActionEnum}
-     * @param status 任务状态 {@link TaskStatusEnum}
-     * @param prompt 提示词
-     * @param promptEn 提示词-英文
+     * @param status 任务状�?{@link TaskStatusEnum}
+     * @param prompt 提示�?
+     * @param promptEn 提示�?英文
      * @param description 任务描述
-     * @param state 自定义参数
+     * @param state 自定义参�?
      * @param submitTime 提交时间
-     * @param startTime 开始执行时间
+     * @param startTime 开始执行时�?
      * @param finishTime 结束时间
      * @param imageUrl 图片url
      * @param progress 任务进度
      * @param failReason 失败原因
-     * @param buttons 任务完成后的可执行按钮
+     * @param buttons 任务完成后的可执行按�?
      */
     public record Notify(String id,
                          String action,
@@ -231,8 +231,8 @@ public class MidjourneyApi {
      * @param customId MJ::JOB::upsample::1::85a4b4c1-8835-46c5-a15c-aea34fad1862 动作标识
      * @param emoji 图标 emoji
      * @param label Make Variations 文本
-     * @param type 类型，系统内部使用
-     * @param style 样式: 2（Primary）、3（Green）
+     * @param type 类型，系统内部使�?
+     * @param style 样式: 2（Primary）�?（Green�?
      */
     public record Button(String customId,
                          String emoji,
@@ -260,15 +260,15 @@ public class MidjourneyApi {
     }
 
     /**
-     * 提交返回的状态码的枚举
+     * 提交返回的状态码的枚�?
      */
     @Getter
     @AllArgsConstructor
     public enum SubmitCodeEnum {
 
         SUBMIT_SUCCESS("1", "提交成功"),
-        ALREADY_EXISTS("21", "已存在"),
-        QUEUING("22", "排队中"),
+        ALREADY_EXISTS("21", "已存�?),
+        QUEUING("22", "排队�?),
         ;
 
         public static final List<String> SUCCESS_CODES = Lists.newArrayList(
@@ -317,22 +317,22 @@ public class MidjourneyApi {
     }
 
     /**
-     * 任务状态枚举
+     * 任务状态枚�?
      */
     @Getter
     @AllArgsConstructor
     public enum TaskStatusEnum {
 
         /**
-         * 未启动
+         * 未启�?
          */
         NOT_START(0),
         /**
-         * 已提交
+         * 已提�?
          */
         SUBMITTED(1),
         /**
-         * 执行中
+         * 执行�?
          */
         IN_PROGRESS(3),
         /**

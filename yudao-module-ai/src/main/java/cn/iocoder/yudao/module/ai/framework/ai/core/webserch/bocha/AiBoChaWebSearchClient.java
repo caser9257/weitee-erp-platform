@@ -22,9 +22,9 @@ import java.util.function.Predicate;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertList;
 
 /**
- * 博查 {@link AiWebSearchClient} 实现类
+ * 博查 {@link AiWebSearchClient} 实现�?
  *
- * @see <a href="https://open.bochaai.com/overview">博查 AI 开放平台</a>
+ * @see <a href="https://open.bochaai.com/overview">博查 AI 开放平�?/a>
  *
  * @author 芋道源码
  */
@@ -41,8 +41,8 @@ public class AiBoChaWebSearchClient implements AiWebSearchClient {
 
     private final Function<Object, Function<ClientResponse, Mono<? extends Throwable>>> EXCEPTION_FUNCTION =
             reqParam -> response -> response.bodyToMono(String.class).handle((responseBody, sink) -> {
-                log.error("[AiBoChaWebSearchClient] 调用失败！请求参数:[{}]，响应数据: [{}]", reqParam, responseBody);
-                sink.error(new IllegalStateException("[AiBoChaWebSearchClient] 调用失败！"));
+                log.error("[AiBoChaWebSearchClient] 调用失败！请求参�?[{}]，响应数�? [{}]", reqParam, responseBody);
+                sink.error(new IllegalStateException("[AiBoChaWebSearchClient] 调用失败�?));
             });
 
     public AiBoChaWebSearchClient(String apiKey) {
@@ -127,7 +127,7 @@ public class AiBoChaWebSearchClient implements AiWebSearchClient {
     ) {
 
         /**
-         * 网页结果值
+         * 网页结果�?
          */
         @JsonInclude(value = JsonInclude.Include.NON_NULL)
         public record WebPageValue(

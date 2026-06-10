@@ -2,12 +2,12 @@ package cn.iocoder.yudao.module.ai.service.knowledge.bo;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
-import javax.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotEmpty;
 
 /**
- * AI 知识库段落搜索 Request BO
+ * AI 知识库段落搜�?Request BO
  *
  * @author 芋道源码
  */
@@ -15,9 +15,9 @@ import javax.validation.constraints.NotEmpty;
 public class AiKnowledgeSegmentSearchReqBO {
 
     /**
-     * 知识库编号
+     * 知识库编�?
      */
-    @NotNull(message = "知识库编号不能为空")
+    @NotNull(message = "知识库编号不能为�?)
     private Long knowledgeId;
 
     /**
@@ -27,12 +27,12 @@ public class AiKnowledgeSegmentSearchReqBO {
     private String content;
 
     /**
-     * 最大返回数量
+     * 最大返回数�?
      */
     private Integer topK;
 
     /**
-     * 相似度阈值
+     * 相似度阈�?
      */
     private Double similarityThreshold;
 

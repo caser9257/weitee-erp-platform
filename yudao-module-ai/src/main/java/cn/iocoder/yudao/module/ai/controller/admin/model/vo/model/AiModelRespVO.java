@@ -30,16 +30,16 @@ public class AiModelRespVO {
     @Schema(description = "排序", example = "1")
     private Integer sort;
 
-    @Schema(description = "状态", example = "2")
+    @Schema(description = "状�?, example = "2")
     private Integer status;
 
     @Schema(description = "温度参数", example = "1")
     private Double temperature;
 
-    @Schema(description = "单条回复的最大 Token 数量", example = "4096")
+    @Schema(description = "单条回复的最�?Token 数量", example = "4096")
     private Integer maxTokens;
 
-    @Schema(description = "上下文的最大 Message 数量", example = "8192")
+    @Schema(description = "上下文的最�?Message 数量", example = "8192")
     private Integer maxContexts;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

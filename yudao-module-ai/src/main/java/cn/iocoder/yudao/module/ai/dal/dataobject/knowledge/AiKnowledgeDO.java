@@ -9,12 +9,12 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * AI 知识库 DO
+ * AI 知识�?DO
  *
  * @author xiaoxin
  */
 @TableName(value = "ai_knowledge", autoResultMap = true)
-@KeySequence("ai_knowledge_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_knowledge_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiKnowledgeDO extends BaseDO {
 
@@ -24,11 +24,11 @@ public class AiKnowledgeDO extends BaseDO {
     @TableId
     private Long id;
     /**
-     * 知识库名称
+     * 知识库名�?
      */
     private String name;
     /**
-     * 知识库描述
+     * 知识库描�?
      */
     private String description;
 
@@ -50,12 +50,12 @@ public class AiKnowledgeDO extends BaseDO {
      */
     private Integer topK;
     /**
-     * 相似度阈值
+     * 相似度阈�?
      */
     private Double similarityThreshold;
 
     /**
-     * 状态
+     * 状�?
      * <p>
      * 枚举 {@link CommonStatusEnum}
      */

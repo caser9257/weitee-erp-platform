@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -41,20 +41,20 @@ public class AiChatConversationController {
     private AiChatMessageService chatMessageService;
 
     @PostMapping("/create-my")
-    @Operation(summary = "创建【我的】聊天对话")
+    @Operation(summary = "创建【我的】聊天对�?)
     public CommonResult<Long> createChatConversationMy(@RequestBody @Valid AiChatConversationCreateMyReqVO createReqVO) {
         return success(chatConversationService.createChatConversationMy(createReqVO, getLoginUserId()));
     }
 
     @PutMapping("/update-my")
-    @Operation(summary = "更新【我的】聊天对话")
+    @Operation(summary = "更新【我的】聊天对�?)
     public CommonResult<Boolean> updateChatConversationMy(@RequestBody @Valid AiChatConversationUpdateMyReqVO updateReqVO) {
         chatConversationService.updateChatConversationMy(updateReqVO, getLoginUserId());
         return success(true);
     }
 
     @GetMapping("/my-list")
-    @Operation(summary = "获得【我的】聊天对话列表")
+    @Operation(summary = "获得【我的】聊天对话列�?)
     @TransMethodResult
     public CommonResult<List<AiChatConversationRespVO>> getChatConversationMyList() {
         List<AiChatConversationDO> list = chatConversationService.getChatConversationListByUserId(getLoginUserId());
@@ -62,7 +62,7 @@ public class AiChatConversationController {
     }
 
     @GetMapping("/get-my")
-    @Operation(summary = "获得【我的】聊天对话")
+    @Operation(summary = "获得【我的】聊天对�?)
     @Parameter(name = "id", required = true, description = "对话编号", example = "1024")
     @TransMethodResult
     public CommonResult<AiChatConversationRespVO> getChatConversationMy(@RequestParam("id") Long id) {
@@ -91,7 +91,7 @@ public class AiChatConversationController {
     // ========== 对话管理 ==========
 
     @GetMapping("/page")
-    @Operation(summary = "获得对话分页", description = "用于【对话管理】菜单")
+    @Operation(summary = "获得对话分页", description = "用于【对话管理】菜�?)
     @PreAuthorize("@ss.hasPermission('ai:chat-conversation:query')")
     @TransMethodResult
     public CommonResult<PageResult<AiChatConversationRespVO>> getChatConversationPage(AiChatConversationPageReqVO pageReqVO) {
@@ -106,7 +106,7 @@ public class AiChatConversationController {
                 conversation -> conversation.setMessageCount(messageCountMap.getOrDefault(conversation.getId(), 0))));
     }
 
-    @Operation(summary = "管理员删除对话")
+    @Operation(summary = "管理员删除对�?)
     @DeleteMapping("/delete-by-admin")
     @Parameter(name = "id", required = true, description = "对话编号", example = "1024")
     @PreAuthorize("@ss.hasPermission('ai:chat-conversation:delete')")

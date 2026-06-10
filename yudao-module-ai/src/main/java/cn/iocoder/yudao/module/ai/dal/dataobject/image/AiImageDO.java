@@ -25,7 +25,7 @@ import java.util.Map;
  * @author fansili
  */
 @TableName(value = "ai_image", autoResultMap = true)
-@KeySequence("ai_image_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_image_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiImageDO extends BaseDO {
 
@@ -43,7 +43,7 @@ public class AiImageDO extends BaseDO {
     private Long userId;
 
     /**
-     * 提示词
+     * 提示�?
      */
     private String prompt;
 
@@ -76,7 +76,7 @@ public class AiImageDO extends BaseDO {
     private Integer height;
 
     /**
-     * 生成状态
+     * 生成状�?
      *
      * 枚举 {@link AiImageStatusEnum}
      */
@@ -102,7 +102,7 @@ public class AiImageDO extends BaseDO {
     private Boolean publicStatus;
 
     /**
-     * 绘制参数，不同 platform 的不同参数
+     * 绘制参数，不�?platform 的不同参�?
      *
      * 1. {@link OpenAiImageOptions}
      * 2. {@link StabilityAiImageOptions}

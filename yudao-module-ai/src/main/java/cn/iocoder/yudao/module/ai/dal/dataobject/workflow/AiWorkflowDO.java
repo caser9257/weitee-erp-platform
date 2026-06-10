@@ -8,12 +8,12 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 /**
- * AI 工作流 DO
+ * AI 工作�?DO
  *
  * @author lesan
  */
 @TableName(value = "ai_workflow", autoResultMap = true)
-@KeySequence("ai_workflow") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_workflow") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiWorkflowDO extends BaseDO {
 
@@ -23,16 +23,16 @@ public class AiWorkflowDO extends BaseDO {
     @TableId
     private Long id;
     /**
-     * 工作流名称
+     * 工作流名�?
      */
     private String name;
     /**
-     * 工作流标识
+     * 工作流标�?
      */
     private String code;
 
     /**
-     * 工作流模型 JSON 数据
+     * 工作流模�?JSON 数据
      */
     private String graph;
 
@@ -42,7 +42,7 @@ public class AiWorkflowDO extends BaseDO {
     private String remark;
 
     /**
-     * 状态
+     * 状�?
      *
      * 枚举 {@link CommonStatusEnum}
      */

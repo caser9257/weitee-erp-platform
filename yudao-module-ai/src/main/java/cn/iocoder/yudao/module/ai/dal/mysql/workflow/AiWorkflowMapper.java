@@ -8,7 +8,7 @@ import cn.iocoder.yudao.module.ai.dal.dataobject.workflow.AiWorkflowDO;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * AI 工作流 Mapper
+ * AI 工作�?Mapper
  *
  * @author lesan
  */

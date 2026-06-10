@@ -4,7 +4,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.ai.controller.admin.model.vo.tool.AiToolPageReqVO;
 import cn.iocoder.yudao.module.ai.controller.admin.model.vo.tool.AiToolSaveReqVO;
 import cn.iocoder.yudao.module.ai.dal.dataobject.model.AiToolDO;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 
 import java.util.Collection;
 import java.util.List;
@@ -72,7 +72,7 @@ public interface AiToolService {
     /**
      * 获得工具列表
      *
-     * @param status 状态
+     * @param status 状�?
      * @return 工具列表
      */
     List<AiToolDO> getToolListByStatus(Integer status);

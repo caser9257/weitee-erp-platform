@@ -6,8 +6,8 @@ import cn.iocoder.yudao.module.erp.enums.ErpFinanceExpenseTypeEnum;
 import cn.iocoder.yudao.module.system.api.dept.DeptApi;
 import cn.iocoder.yudao.module.system.dal.dataobject.dict.DictDataDO;
 import cn.iocoder.yudao.module.system.service.dict.DictDataService;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +30,8 @@ public class ErpFinanceExpenseTypeService {
     private DictDataService dictDataService;
     @Resource
     private DeptApi deptApi;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * 核心类型集合（硬编码，保证类型安全）
@@ -62,18 +64,18 @@ public class ErpFinanceExpenseTypeService {
 
         // 2. 转换为VO
         for (DictDataDO dict : dictList) {
-            JSONObject attrs = parseBizAttributes(dict.getBizAttributes());
+            JsonNode attrs = parseBizAttributes(dict.getBizAttributes());
             result.add(ExpenseTypeVO.builder()
                 .value(Integer.parseInt(dict.getValue()))
                 .label(dict.getLabel())
-                .core(attrs.getBooleanValue("core"))
-                .projectRequired(attrs.getBooleanValue("projectRequired"))
-                .costCenterRequired(attrs.getBooleanValue("costCenterRequired"))
-                .leaseContractRequired(attrs.getBooleanValue("leaseContractRequired"))
-                .assetCandidateFlag(attrs.getBooleanValue("assetCandidateFlag"))
-                .category(attrs.getString("category"))
-                .autoGenerateVoucher(attrs.getBooleanValue("autoGenerateVoucher"))
-                .voucherBizType(attrs.getInteger("voucherBizType"))
+                .core(attrs.path("core").asBoolean(false))
+                .projectRequired(attrs.path("projectRequired").asBoolean(false))
+                .costCenterRequired(attrs.path("costCenterRequired").asBoolean(false))
+                .leaseContractRequired(attrs.path("leaseContractRequired").asBoolean(false))
+                .assetCandidateFlag(attrs.path("assetCandidateFlag").asBoolean(false))
+                .category(attrs.path("category").asText(null))
+                .autoGenerateVoucher(attrs.path("autoGenerateVoucher").asBoolean(false))
+                .voucherBizType(attrs.path("voucherBizType").isInt() ? attrs.path("voucherBizType").asInt() : null)
                 .build());
         }
 
@@ -143,33 +145,33 @@ public class ErpFinanceExpenseTypeService {
             return null;
         }
 
-        JSONObject attrs = parseBizAttributes(dict.getBizAttributes());
+        JsonNode attrs = parseBizAttributes(dict.getBizAttributes());
         return ExpenseTypeVO.builder()
             .value(Integer.parseInt(dict.getValue()))
             .label(dict.getLabel())
-            .core(attrs.getBooleanValue("core"))
-            .projectRequired(attrs.getBooleanValue("projectRequired"))
-            .costCenterRequired(attrs.getBooleanValue("costCenterRequired"))
-            .leaseContractRequired(attrs.getBooleanValue("leaseContractRequired"))
-            .assetCandidateFlag(attrs.getBooleanValue("assetCandidateFlag"))
-            .category(attrs.getString("category"))
-            .autoGenerateVoucher(attrs.getBooleanValue("autoGenerateVoucher"))
-            .voucherBizType(attrs.getInteger("voucherBizType"))
+            .core(attrs.path("core").asBoolean(false))
+            .projectRequired(attrs.path("projectRequired").asBoolean(false))
+            .costCenterRequired(attrs.path("costCenterRequired").asBoolean(false))
+            .leaseContractRequired(attrs.path("leaseContractRequired").asBoolean(false))
+            .assetCandidateFlag(attrs.path("assetCandidateFlag").asBoolean(false))
+            .category(attrs.path("category").asText(null))
+            .autoGenerateVoucher(attrs.path("autoGenerateVoucher").asBoolean(false))
+            .voucherBizType(attrs.path("voucherBizType").isInt() ? attrs.path("voucherBizType").asInt() : null)
             .build();
     }
 
     /**
      * 解析业务属性JSON
      */
-    private JSONObject parseBizAttributes(String bizAttributes) {
+    private JsonNode parseBizAttributes(String bizAttributes) {
         if (StrUtil.isBlank(bizAttributes)) {
-            return new JSONObject();
+            return objectMapper.createObjectNode();
         }
         try {
-            return JSON.parseObject(bizAttributes);
+            return objectMapper.readTree(bizAttributes);
         } catch (Exception e) {
             log.warn("解析费用类型业务属性失败: {}", bizAttributes, e);
-            return new JSONObject();
+            return objectMapper.createObjectNode();
         }
     }
 

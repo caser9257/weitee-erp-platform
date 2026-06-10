@@ -9,10 +9,10 @@ import org.springframework.ai.chat.prompt.Prompt;
 import reactor.core.publisher.Flux;
 
 /**
- * 腾云混元 {@link ChatModel} 实现类
+ * 腾云混元 {@link ChatModel} 实现�?
  *
  * 1. 混元大模型：基于 <a href="https://cloud.tencent.com/document/product/1729/111007">知识引擎原子能力</a> 实现
- * 2. 知识引擎原子能力：基于 <a href="https://cloud.tencent.com/document/product/1772/115969">知识引擎原子能力</a> 实现
+ * 2. 知识引擎原子能力：基�?<a href="https://cloud.tencent.com/document/product/1772/115969">知识引擎原子能力</a> 实现
  *
  * @author fansili
  */
@@ -30,7 +30,7 @@ public class HunYuanChatModel implements ChatModel {
     public static final String DEEP_SEEK_MODEL_DEFAULT = "deepseek-v3";
 
     /**
-     * 兼容 OpenAI 接口，进行复用
+     * 兼容 OpenAI 接口，进行复�?
      */
     private final ChatModel openAiChatModel;
 

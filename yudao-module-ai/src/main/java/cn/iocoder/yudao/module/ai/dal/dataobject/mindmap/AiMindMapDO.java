@@ -14,7 +14,7 @@ import lombok.Data;
  * @author xiaoxin
  */
 @TableName(value = "ai_mind_map")
-@KeySequence("ai_mind_map_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("ai_mind_map_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 public class AiMindMapDO extends BaseDO {
 
@@ -27,7 +27,7 @@ public class AiMindMapDO extends BaseDO {
     /**
      * 用户编号
      * <p>
-     * 关联 AdminUserDO 的 userId 字段
+     * 关联 AdminUserDO �?userId 字段
      */
     private Long userId;
 
@@ -54,7 +54,7 @@ public class AiMindMapDO extends BaseDO {
     private String prompt;
 
     /**
-     * 生成的内容
+     * 生成的内�?
      */
     private String generatedContent;
 

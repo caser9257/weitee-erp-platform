@@ -7,7 +7,7 @@ import cn.iocoder.yudao.module.ai.controller.admin.model.vo.model.AiModelPageReq
 import cn.iocoder.yudao.module.ai.controller.admin.model.vo.model.AiModelSaveReqVO;
 import cn.iocoder.yudao.module.ai.dal.dataobject.model.AiModelDO;
 import dev.tinyflow.core.Tinyflow;
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -55,7 +55,7 @@ public interface AiModelService {
     AiModelDO getModel(Long id);
 
     /**
-     * 获得默认的模型
+     * 获得默认的模�?
      *
      * 如果获取不到，则抛出 {@link cn.iocoder.yudao.framework.common.exception.ServiceException} 业务异常
      *
@@ -72,7 +72,7 @@ public interface AiModelService {
     PageResult<AiModelDO> getModelPage(AiModelPageReqVO pageReqVO);
 
     /**
-     * 校验模型是否可使用
+     * 校验模型是否可使�?
      *
      * @param id 编号
      * @return 模型
@@ -82,7 +82,7 @@ public interface AiModelService {
     /**
      * 获得模型列表
      *
-     * @param status 状态
+     * @param status 状�?
      * @param type 类型
      * @param platform 平台，允许空
      * @return 模型列表
@@ -90,7 +90,7 @@ public interface AiModelService {
     List<AiModelDO> getModelListByStatusAndType(Integer status, Integer type,
                                                 @Nullable String platform);
 
-    // ========== 与 Spring AI 集成 ==========
+    // ========== �?Spring AI 集成 ==========
 
     /**
      * 获得 ChatModel 对象

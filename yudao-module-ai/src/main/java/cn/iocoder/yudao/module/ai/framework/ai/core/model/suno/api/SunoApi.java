@@ -20,7 +20,7 @@ import java.util.function.Predicate;
 /**
  * Suno API
  * <p>
- * 对接 Suno Proxy：<a href="https://github.com/gcui-art/suno-api">suno-api</a>
+ * 对接 Suno Proxy�?a href="https://github.com/gcui-art/suno-api">suno-api</a>
  *
  * @author xiaoxin
  */
@@ -34,9 +34,9 @@ public class SunoApi {
     private final Function<Object, Function<ClientResponse, Mono<? extends Throwable>>> EXCEPTION_FUNCTION =
             reqParam -> response -> response.bodyToMono(String.class).handle((responseBody, sink) -> {
                 HttpRequest request = response.request();
-                log.error("[suno-api] 调用失败！请求方式:[{}]，请求地址:[{}]，请求参数:[{}]，响应数据: [{}]",
+                log.error("[suno-api] 调用失败！请求方�?[{}]，请求地址:[{}]，请求参�?[{}]，响应数�? [{}]",
                         request.getMethod(), request.getURI(), reqParam, responseBody);
-                sink.error(new IllegalStateException("[suno-api] 调用失败！"));
+                sink.error(new IllegalStateException("[suno-api] 调用失败�?));
             });
 
     public SunoApi(String baseUrl) {
@@ -103,13 +103,13 @@ public class SunoApi {
     /**
      * 根据提示生成音频
      *
-     * @param prompt           用于生成音乐音频的提示
+     * @param prompt           用于生成音乐音频的提�?
      * @param tags             音乐风格
      * @param title            音乐名称
      * @param model            模型
-     * @param waitAudio        false 表示后台模式，仅返回音频任务信息，需要调用 get API 获取详细的音频信息。
-     *                         true 表示同步模式，API 最多等待 100s，音频生成完毕后直接返回音频链接等信息，建议在 GPT 等 agent 中使用。
-     * @param makeInstrumental 指示音乐音频是否为定制，如果为 true，则从歌词生成，否则从提示生成
+     * @param waitAudio        false 表示后台模式，仅返回音频任务信息，需要调�?get API 获取详细的音频信息�?
+     *                         true 表示同步模式，API 最多等�?100s，音频生成完毕后直接返回音频链接等信息，建议�?GPT �?agent 中使用�?
+     * @param makeInstrumental 指示音乐音频是否为定制，如果�?true，则从歌词生成，否则从提示生�?
      */
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public record MusicGenerateRequest(
@@ -136,19 +136,19 @@ public class SunoApi {
     }
 
     /**
-     * Suno API 响应的音频数据
+     * Suno API 响应的音频数�?
      *
-     * @param id                   音乐数据的 ID
-     * @param title                音乐音频的标题
-     * @param imageUrl             音乐音频的图片 URL
-     * @param lyric                音乐音频的歌词
-     * @param audioUrl             音乐音频的 URL
-     * @param videoUrl             音乐视频的 URL
-     * @param createdAt            音乐音频的创建时间
+     * @param id                   音乐数据�?ID
+     * @param title                音乐音频的标�?
+     * @param imageUrl             音乐音频的图�?URL
+     * @param lyric                音乐音频的歌�?
+     * @param audioUrl             音乐音频�?URL
+     * @param videoUrl             音乐视频�?URL
+     * @param createdAt            音乐音频的创建时�?
      * @param modelName            模型名称
      * @param status               submitted、queued、streaming、complete
-     * @param gptDescriptionPrompt 描述词
-     * @param prompt               生成音乐音频的提示
+     * @param gptDescriptionPrompt 描述�?
+     * @param prompt               生成音乐音频的提�?
      * @param type                 操作类型
      * @param tags                 音乐类型标签
      * @param duration             音乐时长
@@ -173,11 +173,11 @@ public class SunoApi {
     }
 
     /**
-     * Suno API 响应的歌词数据。
+     * Suno API 响应的歌词数据�?
      *
      * @param text   歌词
      * @param title  标题
-     * @param status 状态
+     * @param status 状�?
      */
     public record LyricsData(
             String text,

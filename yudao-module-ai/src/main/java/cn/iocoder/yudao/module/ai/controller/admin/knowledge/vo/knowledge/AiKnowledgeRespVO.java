@@ -5,17 +5,17 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-@Schema(description = "管理后台 - AI 知识库 Response VO")
+@Schema(description = "管理后台 - AI 知识�?Response VO")
 @Data
 public class AiKnowledgeRespVO {
 
     @Schema(description = "编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "24790")
     private Long id;
 
-    @Schema(description = "知识库名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "ruoyi-vue-pro 用户指南")
+    @Schema(description = "知识库名�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "ruoyi-vue-pro 用户指南")
     private String name;
 
-    @Schema(description = "知识库描述", example = "帮助你快速构建系统")
+    @Schema(description = "知识库描�?, example = "帮助你快速构建系�?)
     private String description;
 
     @Schema(description = "向量模型编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "14")
@@ -27,10 +27,10 @@ public class AiKnowledgeRespVO {
     @Schema(description = "topK", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
     private Integer topK;
 
-    @Schema(description = "相似度阈值", requiredMode = Schema.RequiredMode.REQUIRED, example = "0.7")
+    @Schema(description = "相似度阈�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "0.7")
     private Double similarityThreshold;
 
-    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "状�?, requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)

@@ -51,7 +51,7 @@ public class SiliconFlowImageOptions implements ImageOptions {
     private Float guidanceScale = 0.75F;
 
     /**
-     * 如果想要每次都生成固定的图片，可以把 seed 设置为固定值
+     * 如果想要每次都生成固定的图片，可以把 seed 设置为固定�?
      *
      */
     @JsonProperty("seed")
@@ -64,12 +64,12 @@ public class SiliconFlowImageOptions implements ImageOptions {
     private String image;
 
     /**
-     * 宽
+     * �?
      */
     private Integer width;
 
     /**
-     * 高
+     * �?
      */
     private Integer height;
 

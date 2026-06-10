@@ -9,7 +9,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import reactor.core.publisher.Flux;
 
 /**
- * 字节豆包 {@link ChatModel} 实现类
+ * 字节豆包 {@link ChatModel} 实现�?
  *
  * @author fansili
  */
@@ -23,7 +23,7 @@ public class DouBaoChatModel implements ChatModel {
     public static final String MODEL_DEFAULT = "doubao-1-5-lite-32k-250115";
 
     /**
-     * 兼容 OpenAI 接口，进行复用
+     * 兼容 OpenAI 接口，进行复�?
      */
     private final ChatModel openAiChatModel;
 

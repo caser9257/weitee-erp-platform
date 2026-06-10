@@ -14,9 +14,9 @@ import reactor.core.publisher.Flux;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO @芋艿：百度千帆 API 提供了 V2 版本，目前 Spring AI 不兼容，可关键 <https://github.com/spring-projects/spring-ai/issues/2179> 进展
+// TODO @芋艿：百度千�?API 提供�?V2 版本，目�?Spring AI 不兼容，可关�?<https://github.com/spring-projects/spring-ai/issues/2179> 进展
 /**
- * {@link QianFanChatModel} 的集成测试
+ * {@link QianFanChatModel} 的集成测�?
  *
  * @author fansili
  */
@@ -34,9 +34,9 @@ public class YiYanChatModelTests {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        // TODO @芋艿：文心一言，只要带上 system message 就报错，已经各种测试，很莫名！
-//        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景。"));
-        messages.add(new UserMessage("1 + 1 = ？"));
+        // TODO @芋艿：文心一言，只要带�?system message 就报错，已经各种测试，很莫名�?
+//        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -49,9 +49,9 @@ public class YiYanChatModelTests {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        // TODO @芋艿：文心一言，只要带上 system message 就报错，已经各种测试，很莫名！
-//        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景。"));
-        messages.add(new UserMessage("1 + 1 = ？"));
+        // TODO @芋艿：文心一言，只要带�?system message 就报错，已经各种测试，很莫名�?
+//        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         Flux<ChatResponse> flux = chatModel.stream(new Prompt(messages));

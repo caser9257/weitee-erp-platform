@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * {@link AnthropicChatModel} 集成测试类
+ * {@link AnthropicChatModel} 集成测试�?
  *
  * @author 芋道源码
  */
@@ -39,8 +39,8 @@ public class AnthropicChatModelTest {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景。"));
-        messages.add(new UserMessage("1 + 1 = ？"));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -53,8 +53,8 @@ public class AnthropicChatModelTest {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景。"));
-        messages.add(new UserMessage("1 + 1 = ？"));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         Flux<ChatResponse> flux = chatModel.stream(new Prompt(messages));
@@ -68,7 +68,7 @@ public class AnthropicChatModelTest {
     public void testStream_thinking() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new UserMessage("thkinking 下，1+1 为什么等于 2 "));
+        messages.add(new UserMessage("thkinking 下，1+1 为什么等�?2 "));
         AnthropicChatOptions options = AnthropicChatOptions.builder()
                 .model(AnthropicApi.ChatModel.CLAUDE_SONNET_4_5)
                 .thinking(AnthropicApi.ThinkingType.ENABLED, 3096)

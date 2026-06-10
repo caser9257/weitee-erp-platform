@@ -10,8 +10,10 @@ import cn.iocoder.yudao.module.ai.controller.admin.workflow.vo.AiWorkflowTestReq
 import cn.iocoder.yudao.module.ai.dal.dataobject.workflow.AiWorkflowDO;
 import cn.iocoder.yudao.module.ai.dal.mysql.workflow.AiWorkflowMapper;
 import cn.iocoder.yudao.module.ai.service.model.AiModelService;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import dev.tinyflow.core.Tinyflow;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +26,7 @@ import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.WORKFLOW_CODE_
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.WORKFLOW_NOT_EXISTS;
 
 /**
- * AI 工作流 Service 实现类
+ * AI 工作�?Service 实现�?
  *
  * @author lesan
  */
@@ -38,12 +40,14 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
     @Resource
     private AiModelService apiModelService;
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     @Override
     public Long createWorkflow(AiWorkflowSaveReqVO createReqVO) {
         // 1. 参数校验
         validateCodeUnique(null, createReqVO.getCode());
 
-        // 2. 插入工作流配置
+        // 2. 插入工作流配�?
         AiWorkflowDO workflow = BeanUtils.toBean(createReqVO, AiWorkflowDO.class);
         aiWorkflowMapper.insert(workflow);
         return workflow.getId();
@@ -55,7 +59,7 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
         validateWorkflowExists(updateReqVO.getId());
         validateCodeUnique(updateReqVO.getId(), updateReqVO.getCode());
 
-        // 2. 更新工作流配置
+        // 2. 更新工作流配�?
         AiWorkflowDO workflow = BeanUtils.toBean(updateReqVO, AiWorkflowDO.class);
         aiWorkflowMapper.updateById(workflow);
     }
@@ -65,7 +69,7 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
         // 1. 校验存在
         validateWorkflowExists(id);
 
-        // 2. 删除工作流配置
+        // 2. 删除工作流配�?
         aiWorkflowMapper.deleteById(id);
     }
 
@@ -112,7 +116,7 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
         String graph = testReqVO.getGraph() != null ? testReqVO.getGraph()
                 : validateWorkflowExists(testReqVO.getId()).getGraph();
 
-        // 构建 TinyFlow 执行链
+        // 构建 TinyFlow 执行�?
         Tinyflow tinyflow = parseFlowParam(graph);
 
         // 执行
@@ -121,24 +125,28 @@ public class AiWorkflowServiceImpl implements AiWorkflowService {
     }
 
     private Tinyflow parseFlowParam(String graph) {
-        // TODO @lesan：可以使用 jackson 哇？
-        JSONObject json = JSONObject.parseObject(graph);
-        JSONArray nodeArr = json.getJSONArray("nodes");
-        Tinyflow tinyflow = new Tinyflow(json.toJSONString());
-        for (int i = 0; i < nodeArr.size(); i++) {
-            JSONObject node = nodeArr.getJSONObject(i);
-            switch (node.getString("type")) {
-                case "llmNode":
-                    JSONObject data = node.getJSONObject("data");
-                    apiModelService.getLLmProvider4Tinyflow(tinyflow, data.getLong("llmId"));
-                    break;
-                case "internalNode":
-                    break;
-                default:
-                    break;
+        try {
+            JsonNode json = objectMapper.readTree(graph);
+            ArrayNode nodeArr = (ArrayNode) json.get("nodes");
+            Tinyflow tinyflow = new Tinyflow(graph);
+            for (int i = 0; i < nodeArr.size(); i++) {
+                JsonNode node = nodeArr.get(i);
+                String type = node.get("type").asText();
+                switch (type) {
+                    case "llmNode":
+                        JsonNode data = node.get("data");
+                        apiModelService.getLLmProvider4Tinyflow(tinyflow, data.get("llmId").asLong());
+                        break;
+                    case "internalNode":
+                        break;
+                    default:
+                        break;
+                }
             }
+            return tinyflow;
+        } catch (Exception e) {
+            throw new RuntimeException("解析工作流图失败", e);
         }
-        return tinyflow;
     }
 
 }

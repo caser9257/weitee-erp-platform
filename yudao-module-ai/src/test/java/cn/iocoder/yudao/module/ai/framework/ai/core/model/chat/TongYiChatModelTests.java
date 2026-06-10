@@ -26,7 +26,7 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 /**
- * {@link DashScopeChatModel} 集成测试类
+ * {@link DashScopeChatModel} 集成测试�?
  *
  * @author fansili
  */
@@ -39,9 +39,9 @@ public class TongYiChatModelTests {
             .defaultOptions(DashScopeChatOptions.builder()
 //                    .withModel("qwen1.5-72b-chat") // 模型
                     .withModel("qwen3-235b-a22b-thinking-2507") // 模型
-//                    .withModel("deepseek-r1") // 模型（deepseek-r1）
-//                    .withModel("deepseek-v3") // 模型（deepseek-v3）
-//                    .withModel("deepseek-r1-distill-qwen-1.5b") // 模型（deepseek-r1-distill-qwen-1.5b）
+//                    .withModel("deepseek-r1") // 模型（deepseek-r1�?
+//                    .withModel("deepseek-v3") // 模型（deepseek-v3�?
+//                    .withModel("deepseek-r1-distill-qwen-1.5b") // 模型（deepseek-r1-distill-qwen-1.5b�?
 //                    .withEnableThinking(true)
                     .build())
             .build();
@@ -51,8 +51,8 @@ public class TongYiChatModelTests {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景。"));
-        messages.add(new UserMessage("1 + 1 = ？"));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -66,7 +66,7 @@ public class TongYiChatModelTests {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-//        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景。"));
+//        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
         messages.add(new UserMessage("帮我推理下，怎么实现一个用户中心！"));
 
         // 调用

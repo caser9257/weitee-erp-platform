@@ -19,10 +19,10 @@ public class AiMusicPageReqVO extends PageParam {
     @Schema(description = "用户编号", example = "12212")
     private Long userId;
 
-    @Schema(description = "音乐名称", example = "夜空中最亮的星")
+    @Schema(description = "音乐名称", example = "夜空中最亮的�?)
     private String title;
 
-    @Schema(description = "音乐状态", example = "20")
+    @Schema(description = "音乐状�?, example = "20")
     @InEnum(AiMusicStatusEnum.class)
     private Integer status;
 
