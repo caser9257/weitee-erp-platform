@@ -662,6 +662,86 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '修改流程',
           activeMenu: '/bpm/manager/model'
         }
+      },
+      {
+        path: 'approval/template',
+        component: () => import('@/views/bpm/approval/template/index.vue'),
+        name: 'BpmApprovalTemplate',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批模板',
+          activeMenu: '/bpm/approval/template'
+        }
+      },
+      {
+        path: 'approval/delegation',
+        component: () => import('@/views/bpm/approval/delegation/index.vue'),
+        name: 'BpmApprovalDelegation',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批委托',
+          activeMenu: '/bpm/approval/delegation'
+        }
+      },
+      {
+        path: 'approval/portal',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalPortal',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批门户',
+          activeMenu: '/bpm/approval/portal'
+        }
+      }
+    ]
+  },
+  {
+    path: '/approval',
+    component: Layout,
+    name: 'ApprovalCenter',
+    meta: { hidden: true },
+    children: [
+      {
+        path: 'todo',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalTodo',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '待我审批',
+          activeMenu: '/approval/todo'
+        }
+      },
+      {
+        path: 'submitted',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalSubmitted',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '我发起的',
+          activeMenu: '/approval/submitted'
+        }
+      },
+      {
+        path: 'cc',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalCc',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '抄送我的',
+          activeMenu: '/approval/cc'
+        }
       }
     ]
   },

@@ -126,9 +126,20 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
         if (scene.getOwnerUserId() == null || scene.getOwnerUserId().equals(currentUserId)) {
             return;
         }
-        // TODO: 这里可以添加更复杂的权限校验逻辑，如检查用户角色
-        // 暂时简单校验：只有归属用户才能操作
+        // 如果用户是流程管理员角色，则允许操作
+        if (isBpmAdmin(currentUserId)) {
+            return;
+        }
         throw exception(APPROVAL_SCENE_NO_PERMISSION);
+    }
+
+    /**
+     * 判断用户是否为流程管理员
+     */
+    private boolean isBpmAdmin(Long userId) {
+        // TODO: 调用权限服务判断用户是否为流程管理员角色
+        // 这里需要根据实际情况实现
+        return false;
     }
 
     private void validateSceneCodeUnique(Long id, String sceneCode) {

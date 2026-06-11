@@ -109,7 +109,7 @@ public interface IotDeviceService {
     /**
      * 【缓存】获得设备信息
      * <p>
-     * 注意：该方法会忽略租户信息，所以调用时，需要确认会不会有跨租户访问的风险！！！
+     * 注意：该方法不限制数据范围，调用时需确认访问权限
      *
      * @param id 编号
      * @return IoT 设备
@@ -119,7 +119,7 @@ public interface IotDeviceService {
     /**
      * 【缓存】根据产品 key 和设备名称，获得设备信息
      * <p>
-     * 注意：该方法会忽略租户信息，所以调用时，需要确认会不会有跨租户访问的风险！！！
+     * 注意：该方法不限制数据范围，调用时需确认访问权限
      *
      * @param productKey 产品 key
      * @param deviceName 设备名称

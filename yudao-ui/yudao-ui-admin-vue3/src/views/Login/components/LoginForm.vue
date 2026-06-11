@@ -254,15 +254,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   padding: 30px 28px 26px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(71, 85, 105, 0.88) 0%, rgba(51, 65, 85, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
   box-shadow: 
-    0 0 0 1px rgba(148, 163, 184, 0.06),
-    0 20px 40px rgba(0, 0, 0, 0.18),
-    0 6px 16px rgba(148, 163, 184, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 25px 50px rgba(0, 0, 0, 0.3),
+    0 10px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
   &__content {
     display: flex;
@@ -279,7 +278,7 @@ onMounted(() => {
   &__label {
     display: inline-flex;
     margin-bottom: 10px;
-    color: #94a3b8;
+    color: #475569;
     font-size: 13px;
     font-weight: 700;
     line-height: 1;
@@ -335,152 +334,152 @@ onMounted(() => {
 
 :deep(.el-input__wrapper) {
   min-height: 46px;
-  border-radius: 8px;
-  background: linear-gradient(180deg, rgba(71, 85, 105, 0.6) 0%, rgba(51, 65, 85, 0.7) 100%);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   box-shadow: 
-    0 0 0 1px rgba(148, 163, 184, 0.12),
-    0 2px 6px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(148, 163, 184, 0.18);
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 0 14px;
+  transition: all 0.2s ease;
 }
 
 :deep(.el-input__prefix-inner),
 :deep(.el-input__suffix-inner) {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 :deep(.el-input__inner) {
-  color: #f8fafc;
+  color: #1e293b;
   font-size: 14px;
   font-weight: 600;
 }
 
 :deep(.el-input__inner::placeholder) {
-  color: #475569;
+  color: #94a3b8;
   font-weight: 500;
 }
 
 :deep(.el-input.is-focus .el-input__wrapper) {
-  background: linear-gradient(180deg, rgba(71, 85, 105, 0.7) 0%, rgba(51, 65, 85, 0.8) 100%);
-  border-color: rgba(96, 165, 250, 0.4);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(6, 182, 212, 0.4);
   box-shadow: 
-    0 0 0 3px rgba(96, 165, 250, 0.1),
-    0 0 0 1px rgba(96, 165, 250, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 0 0 3px rgba(6, 182, 212, 0.12),
+    0 0 0 1px rgba(6, 182, 212, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 :deep(.el-checkbox) {
-  color: #64748b;
+  color: #475569;
   font-size: 13px;
 }
 
 :deep(.el-checkbox__inner) {
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: rgba(0, 0, 0, 0.15);
   border-radius: 4px;
-  background: rgba(30, 41, 59, 0.8);
+  background: #ffffff;
 }
 
 :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-  border-color: #3b82f6;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-color: #06b6d4;
   box-shadow: 
-    0 0 0 1px rgba(59, 130, 246, 0.3),
+    0 0 0 1px rgba(6, 182, 212, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 :deep(.el-link) {
-  color: #64748b;
+  color: #475569;
 }
 
 :deep(.el-link:hover) {
-  color: #3b82f6;
+  color: #06b6d4;
 }
 
 :deep(.x-button.el-button--primary),
 :deep(.el-button--primary) {
   border: 0;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 12px;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
   box-shadow: 
-    0 0 0 1px rgba(59, 130, 246, 0.3),
-    0 12px 28px rgba(59, 130, 246, 0.35),
-    0 4px 10px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+    0 0 0 1px rgba(6, 182, 212, 0.2),
+    0 12px 28px rgba(6, 182, 212, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 700;
   transition: all 0.2s ease;
 
   &:hover {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
     box-shadow: 
-      0 0 0 1px rgba(37, 99, 235, 0.4),
-      0 16px 32px rgba(37, 99, 235, 0.4),
-      0 6px 12px rgba(0, 0, 0, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+      0 0 0 1px rgba(8, 145, 178, 0.3),
+      0 16px 32px rgba(8, 145, 178, 0.35),
+      0 6px 12px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.12);
     transform: translateY(-1px);
   }
 
   &:active {
     transform: translateY(0);
     box-shadow: 
-      0 0 0 1px rgba(37, 99, 235, 0.3),
-      0 8px 20px rgba(37, 99, 235, 0.3),
-      0 2px 6px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+      0 0 0 1px rgba(8, 145, 178, 0.25),
+      0 8px 20px rgba(8, 145, 178, 0.3),
+      0 2px 6px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   }
 }
 
 .login-auth-form--dark {
-  border-color: rgba(148, 163, 184, 0.15);
-  background: linear-gradient(180deg, rgba(71, 85, 105, 0.9) 0%, rgba(51, 65, 85, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
   box-shadow: 
-    0 0 0 1px rgba(148, 163, 184, 0.05),
-    0 20px 40px rgba(0, 0, 0, 0.2),
-    0 6px 16px rgba(148, 163, 184, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 25px 50px rgba(0, 0, 0, 0.3),
+    0 10px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .login-auth-form--dark .login-auth-form__label,
 .login-auth-form--dark .login-auth-form__meta,
 .login-auth-form--dark :deep(.el-link) {
-  color: #94a3b8;
+  color: #475569;
 }
 
 .login-auth-form--dark .login-auth-form__password-toggle,
 .login-auth-form--dark :deep(.el-input__prefix-inner),
 .login-auth-form--dark :deep(.el-input__suffix-inner) {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .login-auth-form--dark :deep(.el-input__wrapper) {
-  background: linear-gradient(180deg, rgba(71, 85, 105, 0.7) 0%, rgba(51, 65, 85, 0.8) 100%);
-  border-color: rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .login-auth-form--dark :deep(.el-input__inner) {
-  color: #f8fafc;
+  color: #1e293b;
 }
 
 .login-auth-form--dark :deep(.el-input__inner::placeholder) {
-  color: #475569;
+  color: #94a3b8;
 }
 
 .login-auth-form--dark :deep(.el-input.is-focus .el-input__wrapper) {
-  background: linear-gradient(180deg, rgba(71, 85, 105, 0.75) 0%, rgba(51, 65, 85, 0.85) 100%);
-  border-color: rgba(96, 165, 250, 0.35);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(6, 182, 212, 0.4);
   box-shadow: 
-    0 0 0 3px rgba(96, 165, 250, 0.08),
-    0 0 0 1px rgba(96, 165, 250, 0.18),
-    0 4px 12px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 0 0 3px rgba(6, 182, 212, 0.12),
+    0 0 0 1px rgba(6, 182, 212, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 @media (max-width: 767px) {

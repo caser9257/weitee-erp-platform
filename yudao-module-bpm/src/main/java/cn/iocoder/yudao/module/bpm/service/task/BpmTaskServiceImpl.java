@@ -116,7 +116,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                 .taskAssignee(String.valueOf(userId)) // 分配给自己
                 .active()
                 .includeProcessVariables();
-        String tenantId = FlowableUtils.getTenantIdIfPresent();
+        String tenantId = null;
         if (tenantId != null) {
             taskQuery.taskTenantId(tenantId);
         }
@@ -263,7 +263,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
     public PageResult<HistoricTaskInstance> getTaskPage(Long userId, BpmTaskPageReqVO pageVO) {
         HistoricTaskInstanceQuery taskQuery = historyService.createHistoricTaskInstanceQuery()
                 .includeTaskLocalVariables();
-        String tenantId = FlowableUtils.getTenantIdIfPresent();
+        String tenantId = null;
         if (tenantId != null) {
             taskQuery.taskTenantId(tenantId);
         }
@@ -1564,10 +1564,8 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                     }
                 }
                 // 注意：需要基于 instance 设置租户编号，避免 Flowable 内部异步时，丢失租户编号
-                FlowableUtils.execute(processInstance.getTenantId(), () -> {
-                    AdminUserRespDTO startUser = adminUserApi.getUser(Long.valueOf(processInstance.getStartUserId()));
-                    messageService.sendMessageWhenTaskAssigned(BpmTaskConvert.INSTANCE.convert(processInstance, startUser, task));
-                });
+                AdminUserRespDTO startUser = adminUserApi.getUser(Long.valueOf(processInstance.getStartUserId()));
+                messageService.sendMessageWhenTaskAssigned(BpmTaskConvert.INSTANCE.convert(processInstance, startUser, task));
             }
 
         });
@@ -1610,7 +1608,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
             return;
         }
 
-        taskList.forEach(task -> FlowableUtils.execute(task.getTenantId(), () -> {
+        taskList.forEach(task -> {
             // 情况一：自动提醒
             if (Objects.equals(handlerType, BpmUserTaskTimeoutHandlerTypeEnum.REMINDER.getType())) {
                 messageService.sendMessageWhenTaskTimeout(new BpmMessageSendWhenTaskTimeoutReqDTO()
@@ -1631,7 +1629,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
                 rejectTask(Long.parseLong(task.getAssignee()),
                         new BpmTaskRejectReqVO().setId(task.getId()).setReason(BpmReasonEnum.REJECT_TASK.getReason()));
             }
-        }));
+        });
     }
 
     @Override
@@ -1640,8 +1638,8 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         List<ActivityInstance> activityInstances = runtimeService.createActivityInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .activityId(taskDefineKey).list();
-        activityInstances.forEach(activityInstance -> FlowableUtils.execute(activityInstance.getTenantId(),
-                () -> moveTaskToEnd(activityInstance.getCalledProcessInstanceId(), BpmReasonEnum.TIMEOUT_APPROVE.getReason())));
+        activityInstances.forEach(activityInstance ->
+                moveTaskToEnd(activityInstance.getCalledProcessInstanceId(), BpmReasonEnum.TIMEOUT_APPROVE.getReason()));
     }
 
     @Override
@@ -1656,8 +1654,7 @@ public class BpmTaskServiceImpl implements BpmTaskService {
         }
 
         // 若存在直接触发接收任务，执行后续节点
-        FlowableUtils.execute(execution.getTenantId(),
-                () -> runtimeService.trigger(execution.getId()));
+        runtimeService.trigger(execution.getId());
     }
 
     /**

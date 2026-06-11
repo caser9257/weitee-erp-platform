@@ -2,7 +2,6 @@ package cn.iocoder.yudao.module.bpm.framework.flowable.core.listener;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.candidate.BpmTaskCandidateInvoker;
-import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceCopyService;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.engine.delegate.DelegateExecution;
@@ -41,9 +40,8 @@ public class BpmCopyTaskDelegate implements JavaDelegate {
         }
         // 2. 执行抄送
         FlowElement currentFlowElement = execution.getCurrentFlowElement();
-        FlowableUtils.execute(execution.getTenantId(), () ->
-                processInstanceCopyService.createProcessInstanceCopy(userIds, null, execution.getProcessInstanceId(),
-                        currentFlowElement.getId(), currentFlowElement.getName(), null));
+        processInstanceCopyService.createProcessInstanceCopy(userIds, null, execution.getProcessInstanceId(),
+                        currentFlowElement.getId(), currentFlowElement.getName(), null);
     }
 
 }

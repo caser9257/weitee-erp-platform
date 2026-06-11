@@ -18,7 +18,6 @@ import cn.iocoder.yudao.module.bpm.enums.task.BpmReasonEnum;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.candidate.BpmTaskCandidateInvoker;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.enums.BpmTaskCandidateStrategyEnum;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.BpmnModelUtils;
-import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.SimpleModelUtils;
 import cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceCopyService;
 import cn.iocoder.yudao.module.system.api.permission.PermissionApi;
@@ -29,6 +28,7 @@ import org.flowable.bpmn.model.StartEvent;
 import org.flowable.bpmn.model.UserTask;
 import org.flowable.common.engine.impl.db.SuspensionState;
 import org.flowable.engine.HistoryService;
+import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
@@ -93,7 +93,7 @@ public class BpmModelServiceImpl implements BpmModelService {
         if (StrUtil.isNotEmpty(name)) {
             modelQuery.modelNameLike("%" + name + "%");
         }
-        modelQuery.modelTenantId(FlowableUtils.getTenantId());
+        modelQuery.modelTenantId(ProcessEngineConfiguration.NO_TENANT_ID);
         return modelQuery.list();
     }
 
@@ -101,7 +101,7 @@ public class BpmModelServiceImpl implements BpmModelService {
     public Long getModelCountByCategory(String category) {
         return repositoryService.createModelQuery()
                 .modelCategory(category)
-                .modelTenantId(FlowableUtils.getTenantId())
+                .modelTenantId(ProcessEngineConfiguration.NO_TENANT_ID)
                 .count();
     }
 
@@ -121,7 +121,7 @@ public class BpmModelServiceImpl implements BpmModelService {
         createReqVO.setSort(System.currentTimeMillis()); // Use current time as the default sort value.
         Model model = repositoryService.newModel();
         BpmModelConvert.INSTANCE.copyToModel(model, createReqVO);
-        model.setTenantId(FlowableUtils.getTenantId());
+        model.setTenantId(ProcessEngineConfiguration.NO_TENANT_ID);
 
         // 3. 淇濆瓨妯″瀷
         saveModel(model, createReqVO);
@@ -173,7 +173,7 @@ public class BpmModelServiceImpl implements BpmModelService {
     public void updateModelSortBatch(Long userId, List<String> ids) {
         // 1.1 鏍￠獙娴佺▼妯″瀷瀛樺湪
         List<Model> models = repositoryService.createModelQuery()
-                .modelTenantId(FlowableUtils.getTenantId()).list();
+                .modelTenantId(ProcessEngineConfiguration.NO_TENANT_ID).list();
         models.removeIf(model -> !ids.contains(model.getId()));
         if (ids.size() != models.size()) {
             throw exception(MODEL_NOT_EXISTS);
@@ -444,7 +444,7 @@ public class BpmModelServiceImpl implements BpmModelService {
 
     private Model getModelByKey(String key) {
         return repositoryService.createModelQuery()
-                .modelTenantId(FlowableUtils.getTenantId())
+                .modelTenantId(ProcessEngineConfiguration.NO_TENANT_ID)
                 .modelKey(key).singleResult();
     }
 

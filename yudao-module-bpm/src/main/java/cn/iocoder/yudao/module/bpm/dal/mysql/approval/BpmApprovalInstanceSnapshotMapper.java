@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 /**
  * 审批运行时快照 Mapper
  */
@@ -23,6 +25,16 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
                 .eq(BpmApprovalInstanceSnapshotDO::getBizId, bizId)
                 .orderByDesc(BpmApprovalInstanceSnapshotDO::getId)
                 .last("LIMIT 1"));
+    }
+
+    default List<BpmApprovalInstanceSnapshotDO> selectListByStatus(Integer status) {
+        return selectList(new LambdaQueryWrapperX<BpmApprovalInstanceSnapshotDO>()
+                .eq(BpmApprovalInstanceSnapshotDO::getStatus, status));
+    }
+
+    default List<BpmApprovalInstanceSnapshotDO> selectListByStartUserId(Long startUserId) {
+        return selectList(new LambdaQueryWrapperX<BpmApprovalInstanceSnapshotDO>()
+                .eq(BpmApprovalInstanceSnapshotDO::getStartUserId, startUserId));
     }
 
 }

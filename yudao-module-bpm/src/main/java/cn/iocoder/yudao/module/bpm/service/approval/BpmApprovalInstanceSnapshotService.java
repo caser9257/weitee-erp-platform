@@ -2,6 +2,8 @@ package cn.iocoder.yudao.module.bpm.service.approval;
 
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
 
+import java.util.List;
+
 /**
  * 审批运行时快照 Service 接口
  */
@@ -26,6 +28,11 @@ public interface BpmApprovalInstanceSnapshotService {
      * 根据场景编码和业务 ID 获取快照
      */
     BpmApprovalInstanceSnapshotDO getSnapshotBySceneCodeAndBizId(String sceneCode, String bizId);
+
+    /**
+     * 根据状态获取快照列表
+     */
+    List<BpmApprovalInstanceSnapshotDO> getSnapshotsByStatus(Integer status);
 
     /**
      * 更新快照状态

@@ -4,9 +4,13 @@ import cn.iocoder.yudao.framework.web.config.WebProperties;
 import cn.iocoder.yudao.module.bpm.convert.message.BpmMessageConvert;
 import cn.iocoder.yudao.module.bpm.enums.message.BpmMessageEnum;
 import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenProcessInstanceApproveReqDTO;
+import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenProcessInstanceCancelReqDTO;
 import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenProcessInstanceRejectReqDTO;
 import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskCreatedReqDTO;
+import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskDelegateReqDTO;
 import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskTimeoutReqDTO;
+import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskTransferReqDTO;
+import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskUrgeReqDTO;
 import cn.iocoder.yudao.module.system.api.notify.NotifyMessageSendApi;
 import cn.iocoder.yudao.module.system.api.notify.dto.NotifySendSingleToUserReqDTO;
 import cn.iocoder.yudao.module.system.api.sms.SmsSendApi;
@@ -41,8 +45,7 @@ public class BpmMessageServiceImpl implements BpmMessageService {
         Map<String, Object> templateParams = new HashMap<>();
         templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
         templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
-        smsSendApi.sendSingleSmsToAdmin(BpmMessageConvert.INSTANCE.convert(reqDTO.getStartUserId(),
-                BpmMessageEnum.PROCESS_INSTANCE_APPROVE.getSmsTemplateCode(), templateParams));
+        sendNotifyMessage(reqDTO.getStartUserId(), BpmMessageEnum.PROCESS_INSTANCE_APPROVE.getSmsTemplateCode(), templateParams);
     }
 
     @Override
@@ -51,8 +54,16 @@ public class BpmMessageServiceImpl implements BpmMessageService {
         templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
         templateParams.put("reason", reqDTO.getReason());
         templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
-        smsSendApi.sendSingleSmsToAdmin(BpmMessageConvert.INSTANCE.convert(reqDTO.getStartUserId(),
-                BpmMessageEnum.PROCESS_INSTANCE_REJECT.getSmsTemplateCode(), templateParams));
+        sendNotifyMessage(reqDTO.getStartUserId(), BpmMessageEnum.PROCESS_INSTANCE_REJECT.getSmsTemplateCode(), templateParams);
+    }
+
+    @Override
+    public void sendMessageWhenProcessInstanceCancel(BpmMessageSendWhenProcessInstanceCancelReqDTO reqDTO) {
+        Map<String, Object> templateParams = new HashMap<>();
+        templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
+        templateParams.put("reason", reqDTO.getReason());
+        templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
+        sendNotifyMessage(reqDTO.getStartUserId(), BpmMessageEnum.PROCESS_INSTANCE_CANCEL.getSmsTemplateCode(), templateParams);
     }
 
     @Override
@@ -62,23 +73,7 @@ public class BpmMessageServiceImpl implements BpmMessageService {
         templateParams.put("taskName", reqDTO.getTaskName());
         templateParams.put("startUserNickname", reqDTO.getStartUserNickname());
         templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
-        try {
-            smsSendApi.sendSingleSmsToAdmin(BpmMessageConvert.INSTANCE.convert(reqDTO.getAssigneeUserId(),
-                    BpmMessageEnum.TASK_ASSIGNED.getSmsTemplateCode(), templateParams));
-        } catch (Exception ex) {
-            log.error("[sendMessageWhenTaskAssigned][taskId({}) assigneeUserId({}) 钉钉发送失败]",
-                    reqDTO.getTaskId(), reqDTO.getAssigneeUserId(), ex);
-        }
-        try {
-            NotifySendSingleToUserReqDTO notifyReqDTO = new NotifySendSingleToUserReqDTO();
-            notifyReqDTO.setUserId(reqDTO.getAssigneeUserId());
-            notifyReqDTO.setTemplateCode(BpmMessageEnum.TASK_ASSIGNED.getSmsTemplateCode());
-            notifyReqDTO.setTemplateParams(templateParams);
-            notifyMessageSendApi.sendSingleMessageToAdmin(notifyReqDTO);
-        } catch (Exception ex) {
-            log.error("[sendMessageWhenTaskAssigned][taskId({}) assigneeUserId({}) 站内信发送失败]",
-                    reqDTO.getTaskId(), reqDTO.getAssigneeUserId(), ex);
-        }
+        sendNotifyMessage(reqDTO.getAssigneeUserId(), BpmMessageEnum.TASK_ASSIGNED.getSmsTemplateCode(), templateParams);
     }
 
     @Override
@@ -87,8 +82,52 @@ public class BpmMessageServiceImpl implements BpmMessageService {
         templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
         templateParams.put("taskName", reqDTO.getTaskName());
         templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
-        smsSendApi.sendSingleSmsToAdmin(BpmMessageConvert.INSTANCE.convert(reqDTO.getAssigneeUserId(),
-                BpmMessageEnum.TASK_TIMEOUT.getSmsTemplateCode(), templateParams));
+        sendNotifyMessage(reqDTO.getAssigneeUserId(), BpmMessageEnum.TASK_TIMEOUT.getSmsTemplateCode(), templateParams);
+    }
+
+    @Override
+    public void sendMessageWhenTaskUrge(BpmMessageSendWhenTaskUrgeReqDTO reqDTO) {
+        Map<String, Object> templateParams = new HashMap<>();
+        templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
+        templateParams.put("taskName", reqDTO.getTaskName());
+        templateParams.put("urgeMessage", reqDTO.getUrgeMessage());
+        templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
+        sendNotifyMessage(reqDTO.getAssigneeUserId(), BpmMessageEnum.TASK_URGE.getSmsTemplateCode(), templateParams);
+    }
+
+    @Override
+    public void sendMessageWhenTaskTransfer(BpmMessageSendWhenTaskTransferReqDTO reqDTO) {
+        Map<String, Object> templateParams = new HashMap<>();
+        templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
+        templateParams.put("taskName", reqDTO.getTaskName());
+        templateParams.put("reason", reqDTO.getReason());
+        templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
+        sendNotifyMessage(reqDTO.getNewAssigneeUserId(), BpmMessageEnum.TASK_TRANSFER.getSmsTemplateCode(), templateParams);
+    }
+
+    @Override
+    public void sendMessageWhenTaskDelegate(BpmMessageSendWhenTaskDelegateReqDTO reqDTO) {
+        Map<String, Object> templateParams = new HashMap<>();
+        templateParams.put("processInstanceName", reqDTO.getProcessInstanceName());
+        templateParams.put("taskName", reqDTO.getTaskName());
+        templateParams.put("reason", reqDTO.getReason());
+        templateParams.put("detailUrl", getProcessInstanceDetailUrl(reqDTO.getProcessInstanceId()));
+        sendNotifyMessage(reqDTO.getDelegateUserId(), BpmMessageEnum.TASK_DELEGATE.getSmsTemplateCode(), templateParams);
+    }
+
+    /**
+     * 发送站内信消息
+     */
+    private void sendNotifyMessage(Long userId, String templateCode, Map<String, Object> templateParams) {
+        try {
+            NotifySendSingleToUserReqDTO notifyReqDTO = new NotifySendSingleToUserReqDTO();
+            notifyReqDTO.setUserId(userId);
+            notifyReqDTO.setTemplateCode(templateCode);
+            notifyReqDTO.setTemplateParams(templateParams);
+            notifyMessageSendApi.sendSingleMessageToAdmin(notifyReqDTO);
+        } catch (Exception ex) {
+            log.error("[sendNotifyMessage][userId({}) templateCode({}) 站内信发送失败]", userId, templateCode, ex);
+        }
     }
 
     private String getProcessInstanceDetailUrl(String taskId) {

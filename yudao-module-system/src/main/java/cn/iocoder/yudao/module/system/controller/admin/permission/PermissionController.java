@@ -44,8 +44,6 @@ public class PermissionController {
     @Operation(summary = "赋予角色菜单")
     @PreAuthorize("@ss.hasPermission('system:permission:assign-role-menu')")
     public CommonResult<Boolean> assignRoleMenu(@Validated @RequestBody PermissionAssignRoleMenuReqVO reqVO) {
-        // 开启多租户的情况下，需要过滤掉未开通的菜单
-
         // 执行菜单的分配
         permissionService.assignRoleMenu(reqVO.getRoleId(), reqVO.getMenuIds());
         return success(true);

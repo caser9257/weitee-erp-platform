@@ -29,7 +29,7 @@ public class DataPermissionRuleHandler implements MultiDataPermissionHandler {
 
     @Override
     public Expression getSqlSegment(Table table, Expression where, String mappedStatementId) {
-        // 特殊：跨租户访问
+        // 特殊：无权限访问
         if (skipPermissionCheck()) {
             return null;
         }

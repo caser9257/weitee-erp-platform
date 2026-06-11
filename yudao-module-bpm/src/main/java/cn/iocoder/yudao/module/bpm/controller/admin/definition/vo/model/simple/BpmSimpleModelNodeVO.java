@@ -209,6 +209,15 @@ public class BpmSimpleModelNodeVO {
 
         @Schema(description = "最大提醒次数", example = "1")
         private Integer maxRemindCount;
+
+        @Schema(description = "超时转交的目标用户ID列表", example = "[100, 101]")
+        private List<Long> transferUserIds;
+
+        @Schema(description = "超时转交的目标角色ID列表", example = "[1, 2]")
+        private List<Long> transferRoleIds;
+
+        @Schema(description = "超时转交的目标部门ID列表", example = "[100, 101]")
+        private List<Long> transferDeptIds;
     }
 
     @Schema(description = "空处理策略")

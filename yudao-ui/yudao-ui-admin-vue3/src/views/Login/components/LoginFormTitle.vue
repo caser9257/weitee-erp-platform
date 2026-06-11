@@ -42,25 +42,25 @@ const getFormTitle = computed(() => {
 
   &__eyebrow {
     margin: 0;
-    color: #3b82f6;
+    color: #06b6d4;
     font-size: 12px;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
   }
 
   &__title {
     margin: 0;
-    color: #f8fafc;
+    color: #0f172a;
     font-size: 23px;
     font-weight: 900;
     line-height: 1.25;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
 }
 
 :global(.dark) .login-form-title__title {
-  color: #ffffff;
+  color: #0f172a;
 }
 
 @media (max-width: 767px) {

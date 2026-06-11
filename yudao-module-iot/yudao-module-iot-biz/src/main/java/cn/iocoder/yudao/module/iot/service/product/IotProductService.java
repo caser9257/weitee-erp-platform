@@ -54,7 +54,7 @@ public interface IotProductService {
     /**
      * 【缓存】获得产品
      * <p>
-     * 注意：该方法会忽略租户信息，所以调用时，需要确认会不会有跨租户访问的风险！！！
+     * 注意：该方法不限制数据范围，调用时需确认访问权限
      *
      * @param id 编号
      * @return 产品

@@ -44,7 +44,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.*;
 
 /**
- * AI 写作 Service 实现�?
+ * AI 写作 Service 实现�?
  *
  * @author xiaoxin
  */
@@ -62,7 +62,7 @@ public class AiWriteServiceImpl implements AiWriteService {
 
     @Override
     public Flux<CommonResult<String>> generateWriteContent(AiWriteGenerateReqVO generateReqVO, Long userId) {
-        // 1 获取写作模型。尝试获取写作助手角色，没有则使用默认模�?
+        // 1 获取写作模型。尝试获取写作助手角色，没有则使用默认模�?
         AiChatRoleDO writeRole = CollUtil.getFirst(
                 chatRoleService.getChatRoleListByName(AiChatRoleEnum.AI_WRITE_ROLE.getName()));
         // 1.1 获取写作执行模型
@@ -87,16 +87,14 @@ public class AiWriteServiceImpl implements AiWriteService {
         StringBuffer contentBuffer = new StringBuffer();
         return streamResponse.map(chunk -> {
             String newContent = chunk.getResult() != null ? chunk.getResult().getOutput().getText() : null;
-            newContent = StrUtil.nullToDefault(newContent, ""); // 避免 null �?情况
+            newContent = StrUtil.nullToDefault(newContent, ""); // 避免 null �?情况
             contentBuffer.append(newContent);
             // 响应结果
             return success(newContent);
         }).doOnComplete(() -> {
-            // 忽略租户，因�?Flux 异步无法透传租户
             aiWriteMapper.updateById(new AiWriteDO().setId(writeDO.getId()).setGeneratedContent(contentBuffer.toString()));
         }).doOnError(throwable -> {
             log.error("[generateWriteContent][generateReqVO({}) 发生异常]", generateReqVO, throwable);
-            // 忽略租户，因�?Flux 异步无法透传租户
             aiWriteMapper.updateById(new AiWriteDO().setId(writeDO.getId()).setErrorMessage(throwable.getMessage()));
         }).onErrorResume(error -> Flux.just(error(ErrorCodeConstants.WRITE_STREAM_ERROR)));
     }
@@ -144,7 +142,7 @@ public class AiWriteServiceImpl implements AiWriteService {
         String tone = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.AI_WRITE_TONE, generateReqVO.getTone());
         String language = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.AI_WRITE_LANGUAGE, generateReqVO.getLanguage());
         String length = DictFrameworkUtils.parseDictDataLabel(DictTypeConstants.AI_WRITE_LENGTH, generateReqVO.getLength());
-        // 格式�?prompt
+        // 格式�?prompt
         String prompt = generateReqVO.getPrompt();
         if (Objects.equals(generateReqVO.getType(), AiWriteTypeEnum.WRITING.getType())) {
             return StrUtil.format(AiWriteTypeEnum.WRITING.getPrompt(), prompt, format, tone, language, length);

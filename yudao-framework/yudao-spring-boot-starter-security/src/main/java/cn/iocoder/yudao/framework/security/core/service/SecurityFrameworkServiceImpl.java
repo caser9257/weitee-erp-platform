@@ -28,7 +28,7 @@ public class SecurityFrameworkServiceImpl implements SecurityFrameworkService {
 
     @Override
     public boolean hasAnyPermissions(String... permissions) {
-        // 特殊：跨租户访问
+        // 特殊：跳过权限校验
         if (skipPermissionCheck()) {
             return true;
         }
@@ -48,7 +48,7 @@ public class SecurityFrameworkServiceImpl implements SecurityFrameworkService {
 
     @Override
     public boolean hasAnyRoles(String... roles) {
-        // 特殊：跨租户访问
+        // 特殊：跳过权限校验
         if (skipPermissionCheck()) {
             return true;
         }
@@ -68,7 +68,7 @@ public class SecurityFrameworkServiceImpl implements SecurityFrameworkService {
 
     @Override
     public boolean hasAnyScopes(String... scope) {
-        // 特殊：跨租户访问
+        // 特殊：跳过权限校验
         if (skipPermissionCheck()) {
             return true;
         }

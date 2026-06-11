@@ -100,7 +100,6 @@ public class WebSocketSessionManagerImpl implements WebSocketSessionManager {
             if (CollUtil.isEmpty(sessions)) {
                 continue;
             }
-            // 特殊：如果租户不匹配，则直接排除
 
             result.addAll(sessions);
         }

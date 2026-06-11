@@ -56,7 +56,6 @@ import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionU
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.singleton;
-import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_COUNT_MAX;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_EMAIL_EXISTS;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IMPORT_INIT_PASSWORD;
 import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.USER_IMPORT_LIST_IS_EMPTY;

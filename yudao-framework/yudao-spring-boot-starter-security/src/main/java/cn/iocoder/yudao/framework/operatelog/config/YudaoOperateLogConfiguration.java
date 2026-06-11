@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Primary;
  *
  * @author HUIHUI
  */
-@EnableLogRecord(tenant = "") // 貌似用不上 tenant 这玩意给个空好啦
+@EnableLogRecord(tenant = "")
 @AutoConfiguration
 @Slf4j
 public class YudaoOperateLogConfiguration {

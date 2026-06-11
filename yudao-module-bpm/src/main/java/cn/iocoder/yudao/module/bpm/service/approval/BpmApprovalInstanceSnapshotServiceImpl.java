@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
+import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS;
@@ -41,6 +42,11 @@ public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstan
     @Override
     public BpmApprovalInstanceSnapshotDO getSnapshotBySceneCodeAndBizId(String sceneCode, String bizId) {
         return approvalInstanceSnapshotMapper.selectBySceneCodeAndBizId(sceneCode, bizId);
+    }
+
+    @Override
+    public List<BpmApprovalInstanceSnapshotDO> getSnapshotsByStatus(Integer status) {
+        return approvalInstanceSnapshotMapper.selectListByStatus(status);
     }
 
     @Override

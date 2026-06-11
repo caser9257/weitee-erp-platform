@@ -40,7 +40,7 @@ import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.module.ai.enums.ErrorCodeConstants.*;
 
 /**
- * AI 思维导图 Service 实现�?
+ * AI 思维导图 Service 实现�?
  *
  * @author xiaoxin
  */
@@ -83,16 +83,14 @@ public class AiMindMapServiceImpl implements AiMindMapService {
         StringBuffer contentBuffer = new StringBuffer();
         return streamResponse.map(chunk -> {
             String newContent = chunk.getResult() != null ? chunk.getResult().getOutput().getText() : null;
-            newContent = StrUtil.nullToDefault(newContent, ""); // 避免 null �?情况
+            newContent = StrUtil.nullToDefault(newContent, ""); // 避免 null �?情况
             contentBuffer.append(newContent);
             // 响应结果
             return success(newContent);
         }).doOnComplete(() -> {
-            // 忽略租户，因�?Flux 异步无法透传租户
             aiMindMapMapper.updateById(new AiMindMapDO().setId(mindMapDO.getId()).setGeneratedContent(contentBuffer.toString()));
         }).doOnError(throwable -> {
             log.error("[generateWriteContent][generateReqVO({}) 发生异常]", generateReqVO, throwable);
-            // 忽略租户，因�?Flux 异步无法透传租户
             aiMindMapMapper.updateById(new AiMindMapDO().setId(mindMapDO.getId()).setErrorMessage(throwable.getMessage()));
         }).onErrorResume(error -> Flux.just(error(ErrorCodeConstants.WRITE_STREAM_ERROR)));
 

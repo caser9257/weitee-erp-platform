@@ -26,6 +26,7 @@ type RequestCustomHeaders = Record<string, any> & {
   isToken?: boolean
   isEncrypt?: boolean
   isEncrypted?: boolean
+  silentError?: boolean
 }
 
 const ensureRequestHeaders = (config: InternalAxiosRequestConfig): RequestCustomHeaders => {
@@ -98,6 +99,8 @@ service.interceptors.response.use(
   async (response: AxiosResponse<any>) => {
     let { data } = response
     const config = response.config
+    const headers = ensureRequestHeaders(config)
+    const silentError = headers.silentError === true
     if (!data) {
       throw new Error()
     }
@@ -140,7 +143,6 @@ service.interceptors.response.use(
           const refreshTokenRes = await refreshToken()
           setToken(refreshTokenRes.data.data)
 
-          const headers = ensureRequestHeaders(config)
           headers.Authorization = 'Bearer ' + getAccessToken()
 
           requestList.forEach((cb) => cb())
@@ -166,29 +168,36 @@ service.interceptors.response.use(
         })
       })
     } else if (code === 500) {
-      ElMessage.error(t('sys.api.errMsg500'))
+      if (!silentError) {
+        ElMessage.error(t('sys.api.errMsg500'))
+      }
       return Promise.reject(new Error(msg))
     } else if (code === 901) {
-      ElMessage.error({
-        offset: 300,
-        dangerouslyUseHTMLString: true,
-        message:
-          '<div>' +
-          t('sys.api.errMsg901') +
-          '</div>' +
-          '<div> &nbsp; </div>' +
-          '<div>鍙傝€?https://doc.iocoder.cn/ 鏁欑▼</div>' +
-          '<div> &nbsp; </div>' +
-          '<div>5 鍒嗛挓鎼缓鏈湴鐜</div>'
-      })
+      if (!silentError) {
+        ElMessage.error({
+          offset: 300,
+          dangerouslyUseHTMLString: true,
+          message:
+            '<div>' +
+            t('sys.api.errMsg901') +
+            '</div>' +
+            '<div> &nbsp; </div>' +
+            '<div>鍙傝€?https://doc.iocoder.cn/ 鏁欑▼</div>' +
+            '<div> &nbsp; </div>' +
+            '<div>5 鍒嗛挓鎼缓鏈湴鐜</div>'
+        })
+      }
       return Promise.reject(new Error(msg))
     } else if (code !== result_code) {
       if (msg === '无效的刷新令牌') {
         console.log(msg)
         return handleAuthorized()
       }
-      ElNotification.error({ title: msg })
-      return Promise.reject('error')
+      if (!silentError) {
+        ElNotification.error({ title: msg })
+        return Promise.reject('error')
+      }
+      return Promise.reject(new Error(msg))
     }
 
     return data
@@ -197,6 +206,9 @@ service.interceptors.response.use(
     console.log('err' + error)
     let { message } = error
     const { t } = useI18n()
+    const config = error.config
+    const silentError =
+      config && ensureRequestHeaders(config as InternalAxiosRequestConfig).silentError === true
     if (message === 'Network Error') {
       message = t('sys.api.errorMessage')
     } else if (message.includes('timeout')) {
@@ -204,8 +216,11 @@ service.interceptors.response.use(
     } else if (message.includes('Request failed with status code')) {
       message = t('sys.api.apiRequestFailed') + message.substr(message.length - 3)
     }
-    ElMessage.error(message)
-    return Promise.reject(error)
+    if (!silentError) {
+      ElMessage.error(message)
+      return Promise.reject(error)
+    }
+    return Promise.reject(new Error(message))
   }
 )
 

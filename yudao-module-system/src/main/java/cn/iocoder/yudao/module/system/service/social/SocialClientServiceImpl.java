@@ -194,7 +194,7 @@ public class SocialClientServiceImpl implements SocialClientService {
     }
 
     /**
-     * 构建 AuthRequest 对象，支持多租户配置
+     * 构建 AuthRequest 对象
      *
      * @param socialType 社交类型
      * @param userType   用户类型

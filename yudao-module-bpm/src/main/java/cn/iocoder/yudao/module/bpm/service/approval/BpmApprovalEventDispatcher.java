@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.framework.common.util.collection.CollectionUtils;
 import cn.iocoder.yudao.module.bpm.api.event.BpmProcessInstanceStatusEvent;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
+import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalRecordDO;
 import cn.iocoder.yudao.module.bpm.enums.approval.BpmApprovalInstanceSnapshotStatusEnum;
 import cn.iocoder.yudao.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
 import cn.iocoder.yudao.module.bpm.service.approval.handler.ApprovalResultHandler;
@@ -30,6 +31,9 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
 
     @Resource
     private BpmApprovalInstanceSnapshotService approvalInstanceSnapshotService;
+
+    @Resource
+    private BpmApprovalRecordService approvalRecordService;
 
     @Resource
     private BpmMessageService messageService;
@@ -109,7 +113,20 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
                 BpmApprovalInstanceSnapshotStatusEnum.APPROVE.getStatus(), reason);
 
-        // 3. 发送站内信通知
+        // 3. 记录审批操作
+        try {
+            BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
+                    .approvalId(snapshot.getApprovalId())
+                    .action("APPROVE")
+                    .operatorUserId(Long.parseLong(snapshot.getCreator()))
+                    .comment(reason)
+                    .build();
+            approvalRecordService.createRecord(record);
+        } catch (Exception e) {
+            log.error("[handleApprove][场景({}) 业务({}) 记录审批操作异常]", snapshot.getSceneCode(), bizId, e);
+        }
+
+        // 4. 发送站内信通知
         try {
             messageService.sendMessageWhenProcessInstanceApprove(
                     new BpmMessageSendWhenProcessInstanceApproveReqDTO()
@@ -136,7 +153,20 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
                 BpmApprovalInstanceSnapshotStatusEnum.REJECT.getStatus(), reason);
 
-        // 3. 发送站内信通知
+        // 3. 记录审批操作
+        try {
+            BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
+                    .approvalId(snapshot.getApprovalId())
+                    .action("REJECT")
+                    .operatorUserId(Long.parseLong(snapshot.getCreator()))
+                    .comment(reason)
+                    .build();
+            approvalRecordService.createRecord(record);
+        } catch (Exception e) {
+            log.error("[handleReject][场景({}) 业务({}) 记录审批操作异常]", snapshot.getSceneCode(), bizId, e);
+        }
+
+        // 4. 发送站内信通知
         try {
             messageService.sendMessageWhenProcessInstanceReject(
                     new BpmMessageSendWhenProcessInstanceRejectReqDTO()

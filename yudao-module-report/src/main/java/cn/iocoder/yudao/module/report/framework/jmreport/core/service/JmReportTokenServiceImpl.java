@@ -122,14 +122,11 @@ public class JmReportTokenServiceImpl implements JmReportTokenServiceI {
         }
         SecurityFrameworkUtils.setLoginUser(user, WebFrameworkUtils.getRequest());
 
-        // ② 参考 TenantContextWebFilter 实现（Tenant 的上下文清理，交给 TenantContextWebFilter 完成）
-        // 目的：基于 LoginUser 获得到的租户编号，设置到 Tenant 上下文，避免查询数据库时的报错
         return user;
     }
 
     @Override
     public String[] getRoles(String token) {
-        // 设置租户上下文。原因是：/jmreport/** 纯前端地址，不会走 buildLoginUserByToken 逻辑
         LoginUser loginUser = SecurityFrameworkUtils.getLoginUser();
         if (loginUser == null) {
             return null;
@@ -149,7 +146,6 @@ public class JmReportTokenServiceImpl implements JmReportTokenServiceI {
 
     @Override
     public String[] getPermissions(String token) {
-        // 设置租户上下文
         LoginUser loginUser = SecurityFrameworkUtils.getLoginUser();
         if (loginUser == null) {
             return null;

@@ -13,6 +13,7 @@ import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.instance.BpmApproval
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.instance.BpmApprovalDetailRespVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.instance.BpmProcessInstanceCancelReqVO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
+import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalRecordDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalRuleDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalSchemeDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalSchemeVersionDO;
@@ -54,6 +55,8 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     private BpmApprovalRuleMapper approvalRuleMapper;
     @Resource
     private BpmApprovalInstanceSnapshotService approvalInstanceSnapshotService;
+    @Resource
+    private BpmApprovalRecordService approvalRecordService;
 
     @Resource
     private BpmProcessInstanceApi processInstanceApi;
@@ -140,7 +143,9 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
         // processDefinitionKey：BPM 启动所需流程定义 Key，取自规则的 processJson 字段
         // processJson：快照留存的流程配置 JSON，当前仅存 Key；未来扩展节点配置时在此追加
         String processKey = hitRule.getProcessJson();
+        String approvalId = java.util.UUID.randomUUID().toString();
         BpmApprovalInstanceSnapshotDO snapshot = BpmApprovalInstanceSnapshotDO.builder()
+                .approvalId(approvalId)
                 .sceneCode(sceneCode)
                 .bizId(String.valueOf(bizId))
                 .schemeId(activeSchemeId)
@@ -219,7 +224,16 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
         approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
                 BpmApprovalInstanceSnapshotStatusEnum.CANCEL.getStatus(), reason);
 
-        // 5. 调用结果处理器
+        // 5. 记录审批操作
+        BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
+                .approvalId(snapshot.getApprovalId())
+                .action("CANCEL")
+                .operatorUserId(userId)
+                .comment(reason)
+                .build();
+        approvalRecordService.createRecord(record);
+
+        // 6. 调用结果处理器
         // 异常不做静默吞掉：若 onCancel() 抛出异常，快照状态保持 PROCESSING，避免标记撤回但业务未回写；
         // 调用方需感知失败并做补偿。若未来确认 onCancel() 仅为通知类副作用，可在实现内自行 try-catch。
         ApprovalResultHandler handler = resultHandlerMap.get(sceneCode);

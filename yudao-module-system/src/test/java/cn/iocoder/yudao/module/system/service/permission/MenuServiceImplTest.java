@@ -160,7 +160,7 @@ public class MenuServiceImplTest extends BaseDbUnitTest {
     }
 
     @Test
-    public void testGetMenuListByTenant() {
+    public void testGetMenuListByStatus() {
         // mock 数据
         MenuDO menu100 = randomPojo(MenuDO.class, o -> o.setId(100L).setStatus(CommonStatusEnum.ENABLE.getStatus()));
         menuMapper.insert(menu100);
@@ -172,7 +172,7 @@ public class MenuServiceImplTest extends BaseDbUnitTest {
         MenuListReqVO reqVO = new MenuListReqVO().setStatus(CommonStatusEnum.ENABLE.getStatus());
 
         // 调用
-        List<MenuDO> result = menuService.getMenuListByTenant(reqVO);
+        List<MenuDO> result = menuService.getMenuList(reqVO);
         // 断言
         assertEquals(2, result.size());
         assertPojoEquals(menu100, result.get(0));

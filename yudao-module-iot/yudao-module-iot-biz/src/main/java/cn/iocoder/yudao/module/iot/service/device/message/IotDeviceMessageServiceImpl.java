@@ -307,7 +307,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
         // 1. 发送属性消息
         if (MapUtil.isNotEmpty(properties)) {
             IotDeviceMessage propertyMsg = IotDeviceMessage.requestOf(
-                    device.getId(), 0L, serverId,
+                    device.getId(), serverId,
                     IotDeviceMessageMethodEnum.PROPERTY_POST.getMethod(),
                     IotDevicePropertyPostReqDTO.of(properties));
             deviceMessageProducer.sendDeviceMessage(propertyMsg);
@@ -322,7 +322,7 @@ public class IotDeviceMessageServiceImpl implements IotDeviceMessageService {
                     continue;
                 }
                 IotDeviceMessage eventMsg = IotDeviceMessage.requestOf(
-                        device.getId(), 0L, serverId,
+                        device.getId(), serverId,
                         IotDeviceMessageMethodEnum.EVENT_POST.getMethod(),
                         IotDeviceEventPostReqDTO.of(eventId, eventValue.getValue(), eventValue.getTime()));
                 deviceMessageProducer.sendDeviceMessage(eventMsg);

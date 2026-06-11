@@ -17,7 +17,8 @@ public enum BpmUserTaskTimeoutHandlerTypeEnum implements ArrayValuable<Integer> 
 
     REMINDER(1,"自动提醒"),
     APPROVE(2, "自动同意"),
-    REJECT(3, "自动拒绝");
+    REJECT(3, "自动拒绝"),
+    TRANSFER(4, "自动转交");
 
     private final Integer type;
     private final String name;

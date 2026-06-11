@@ -45,8 +45,6 @@ logging:
 yudao:
   info:
     base-package: cn.iocoder.yudao
-  tenant: # 多租户相关配置项
-    enable: true
   xss:
     enable: false
   demo: false # 关闭演示模式

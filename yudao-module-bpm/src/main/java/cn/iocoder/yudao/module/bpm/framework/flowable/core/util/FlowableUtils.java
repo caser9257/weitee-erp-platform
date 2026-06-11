@@ -11,14 +11,12 @@ import cn.iocoder.yudao.module.bpm.controller.admin.definition.vo.form.BpmFormFi
 import cn.iocoder.yudao.module.bpm.dal.dataobject.definition.BpmProcessDefinitionInfoDO;
 import cn.iocoder.yudao.module.bpm.enums.definition.BpmModelFormTypeEnum;
 import cn.iocoder.yudao.module.bpm.framework.flowable.core.enums.BpmnVariableConstants;
-import lombok.SneakyThrows;
 import org.flowable.common.engine.api.delegate.Expression;
 import org.flowable.common.engine.api.variable.VariableContainer;
 import org.flowable.common.engine.impl.el.ExpressionManager;
 import org.flowable.common.engine.impl.identity.Authentication;
 import org.flowable.common.engine.impl.variable.MapDelegateVariableContainer;
 import org.flowable.engine.ManagementService;
-import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.flowable.engine.impl.util.CommandContextUtil;
@@ -60,29 +58,6 @@ public class FlowableUtils {
         } finally {
             clearAuthenticatedUserId();
         }
-    }
-
-    public static String getTenantId() {
-        return ProcessEngineConfiguration.NO_TENANT_ID;
-    }
-
-    /**
-     * 获取当前上下文可用的租户编号。
-     * <p>
-     * 和 {@link #getTenantId()} 不同，这个方法在没有租户时返回 {@code null}，
-     * 便于查询场景按需跳过租户过滤。
-     */
-    public static String getTenantIdIfPresent() {
-        return null;
-    }
-
-    public static void execute(String tenantIdStr, Runnable runnable) {
-        runnable.run();
-    }
-
-    @SneakyThrows
-    public static <V> V execute(String tenantIdStr, Callable<V> callable) {
-        return callable.call();
     }
 
     // ========== Execution 相关的工具方法 ==========
