@@ -53,7 +53,7 @@ import * as ApprovalSceneApi from '@/api/bpm/approval/scene'
 defineOptions({ name: 'ApprovalSceneForm' })
 
 const { t } = useI18n()
-const { message } = useMessage()
+const message = useMessage()
 
 const emit = defineEmits(['success'])
 

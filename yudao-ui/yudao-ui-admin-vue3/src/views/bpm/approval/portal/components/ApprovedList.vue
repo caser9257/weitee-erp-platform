@@ -85,8 +85,11 @@ const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalPortalApi.getApprovalDonePage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[ApprovedList] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[ApprovedList] list.value:', list.value)
   } catch (error) {
     list.value = []
     total.value = 0

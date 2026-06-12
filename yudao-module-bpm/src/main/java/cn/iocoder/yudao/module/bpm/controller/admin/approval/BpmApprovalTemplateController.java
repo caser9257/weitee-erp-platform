@@ -5,6 +5,8 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.template.BpmApprovalTemplatePageReqVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.template.BpmApprovalTemplateRespVO;
+import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.template.BpmApprovalTemplateUseReqVO;
+import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.template.BpmApprovalTemplateUseWithFlowReqVO;
 import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalTemplateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -52,11 +54,25 @@ public class BpmApprovalTemplateController {
 
     @PostMapping("/use")
     @Operation(summary = "使用模板创建审批场景和方案")
-    @Parameter(name = "templateId", description = "模板编号", required = true, example = "1")
     @PreAuthorize("@ss.hasPermission('bpm:approval-template:use')")
-    public CommonResult<Long> useTemplate(@RequestParam("templateId") Long templateId) {
+    public CommonResult<Long> useTemplate(
+            @RequestParam(value = "templateId", required = false) Long templateId,
+            @RequestBody(required = false) BpmApprovalTemplateUseReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        return success(approvalTemplateService.useTemplate(templateId, userId));
+        // 优先从请求体获取，其次从查询参数获取
+        Long tid = (reqVO != null && reqVO.getTemplateId() != null) ? reqVO.getTemplateId() : templateId;
+        if (tid == null) {
+            throw new IllegalArgumentException("templateId 不能为空");
+        }
+        return success(approvalTemplateService.useTemplate(tid, userId));
+    }
+
+    @PostMapping("/use-with-flow")
+    @Operation(summary = "使用模板创建审批场景和方案（带自定义流程配置）")
+    @PreAuthorize("@ss.hasPermission('bpm:approval-template:use')")
+    public CommonResult<Long> useTemplateWithFlow(@Valid @RequestBody BpmApprovalTemplateUseWithFlowReqVO reqVO) {
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        return success(approvalTemplateService.useTemplateWithFlow(reqVO.getTemplateId(), reqVO.getFlowConfig(), userId));
     }
 
 }

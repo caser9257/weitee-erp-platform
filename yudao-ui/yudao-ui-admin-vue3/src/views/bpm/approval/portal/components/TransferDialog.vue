@@ -49,7 +49,7 @@ import * as UserApi from '@/api/system/user'
 
 defineOptions({ name: 'TransferDialog' })
 
-const { message } = useMessage()
+const message = useMessage()
 const emit = defineEmits(['success'])
 
 const dialogVisible = ref(false)

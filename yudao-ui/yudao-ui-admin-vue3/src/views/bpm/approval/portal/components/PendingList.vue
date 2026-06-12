@@ -14,6 +14,9 @@
         <el-button type="primary" @click="handleSearch">
           <Icon icon="ep:search" class="mr-5px" /> 搜索
         </el-button>
+        <el-button @click="handleReset">
+          <Icon icon="ep:refresh" class="mr-5px" /> 重置
+        </el-button>
       </el-form-item>
     </el-form>
 
@@ -115,8 +118,11 @@ const getList = async () => {
   try {
     queryParams.name = searchKeyword.value || undefined
     const data = await ApprovalPortalApi.getApprovalTodoPage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[PendingList] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[PendingList] list.value:', list.value)
   } catch (error) {
     list.value = []
     total.value = 0
@@ -132,6 +138,13 @@ const getList = async () => {
 
 const handleSearch = () => {
   queryParams.pageNo = 1
+  getList()
+}
+
+const handleReset = () => {
+  searchKeyword.value = ''
+  queryParams.pageNo = 1
+  queryParams.name = undefined
   getList()
 }
 

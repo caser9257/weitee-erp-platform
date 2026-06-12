@@ -17,15 +17,6 @@
           class="!w-200px"
         />
       </el-form-item>
-      <el-form-item label="模块编码" prop="moduleCode">
-        <el-input
-          v-model="queryParams.moduleCode"
-          placeholder="请输入模块编码"
-          clearable
-          @keyup.enter="handleQuery"
-          class="!w-200px"
-        />
-      </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select
           v-model="queryParams.status"
@@ -40,49 +31,79 @@
       <el-form-item>
         <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button type="primary" plain @click="openForm('create')" v-hasPermi="['bpm:approval-scene:create']">
-          <Icon icon="ep:plus" class="mr-5px" /> 新增
-        </el-button>
       </el-form-item>
     </el-form>
   </ContentWrap>
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="场景编码" align="center" prop="sceneCode" min-width="200" />
-      <el-table-column label="场景名称" align="center" prop="name" min-width="150" />
-      <el-table-column label="模块编码" align="center" prop="moduleCode" width="120" />
-      <el-table-column label="业务类型" align="center" prop="bizType" width="100" />
-      <el-table-column label="动作编码" align="center" prop="actionCode" width="100" />
-      <el-table-column label="状态" align="center" prop="status" width="80">
+    <div style="overflow-x: auto">
+      <el-table :data="list" v-loading="loading" :stripe="true" :show-overflow-tooltip="true" style="min-width: 1100px">
+      <el-table-column label="场景名称" min-width="200">
         <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="light">
-            {{ row.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
+          <div class="flex flex-col">
+            <span class="font-medium text-[var(--el-text-color-primary)]">{{ row.name }}</span>
+            <span class="text-xs text-[var(--el-text-color-secondary)] font-mono">{{ row.sceneCode }}</span>
+          </div>
         </template>
       </el-table-column>
-      <el-table-column label="生效方案" align="center" prop="activeSchemeId" width="100">
+      <el-table-column label="业务类型" prop="bizType" min-width="120" />
+      <el-table-column label="模块编码" prop="moduleCode" min-width="140" />
+      <el-table-column label="触发动作" prop="actionCode" min-width="100" />
+      <el-table-column label="关联方案" min-width="100" align="center">
         <template #default="{ row }">
-          <el-tag v-if="row.activeSchemeId" type="success" effect="plain">已绑定</el-tag>
-          <el-tag v-else type="info" effect="plain">未绑定</el-tag>
+          <el-tag v-if="row.activeSchemeId" size="small" type="success" effect="plain">已绑定</el-tag>
+          <el-tag v-else size="small" type="info" effect="plain">未绑定</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="170" />
-      <el-table-column label="操作" align="center" width="200" fixed="right">
-        <template #default="scope">
-          <el-button link type="primary" @click="openForm('update', scope.row.id)" v-hasPermi="['bpm:approval-scene:update']">
-            编辑
-          </el-button>
-          <el-button link type="primary" @click="handleBindScheme(scope.row)" v-hasPermi="['bpm:approval-scheme:create']">
-            绑定方案
-          </el-button>
-          <el-button link type="danger" @click="handleDelete(scope.row.id)" v-hasPermi="['bpm:approval-scene:delete']">
-            删除
-          </el-button>
+      <el-table-column label="状态" min-width="80" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.status === 1" size="small" type="success" effect="plain">启用</el-tag>
+          <el-tag v-else size="small" type="info" effect="plain">禁用</el-tag>
         </template>
       </el-table-column>
-    </el-table>
+      <el-table-column label="创建时间" min-width="132">
+        <template #default="{ row }">
+          <div class="scene-time-cell">
+            <span>{{ formatTimestamp(row.createTime).date }}</span>
+            <span>{{ formatTimestamp(row.createTime).time }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" min-width="200" :fixed="isActionColumnFixed ? 'right' : false">
+        <template #default="{ row }">
+          <div class="scene-action-cell">
+            <el-button
+              link
+              type="primary"
+              @click="handleBindScheme(row)"
+            >
+              {{ row.activeSchemeId ? '换绑' : '绑定' }}
+            </el-button>
+            <el-button
+              v-if="row.status === 0"
+              link
+              type="primary"
+              @click="handleEnable(row)"
+            >
+              启用
+            </el-button>
+            <el-button
+              v-if="row.status === 1"
+              link
+              type="warning"
+              @click="handleDisable(row)"
+            >
+              禁用
+            </el-button>
+            <el-button link type="danger" @click="handleDelete(row)">
+              删除
+            </el-button>
+          </div>
+        </template>
+      </el-table-column>
+      </el-table>
+    </div>
     <!-- 分页 -->
     <Pagination
       :total="total"
@@ -92,147 +113,153 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗 -->
-  <ApprovalSceneForm ref="formRef" @success="getList" />
-
   <!-- 绑定方案弹窗 -->
-  <el-dialog v-model="bindDialogVisible" title="绑定审批方案" width="500px" append-to-body>
-    <el-form label-width="80px">
-      <el-form-item label="审批方案">
-        <el-select
-          v-model="bindForm.schemeId"
-          placeholder="请选择审批方案"
-          clearable
-          filterable
-          style="width: 100%"
-        >
-          <el-option
-            v-for="item in schemeList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          >
-            <span>{{ item.name }}</span>
-            <span style="float: right; color: #8492a6; font-size: 12px">{{ item.code }}</span>
-          </el-option>
-        </el-select>
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <el-button @click="bindDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="handleBindSubmit" :loading="bindLoading">
-        确定
-      </el-button>
-    </template>
-  </el-dialog>
+  <BindSchemeDialog ref="bindSchemeRef" @success="getList" />
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useWindowSize } from '@vueuse/core'
 import { ElMessageBox } from 'element-plus'
-import { useI18n } from '@/hooks/web/useI18n'
 import { useMessage } from '@/hooks/web/useMessage'
-import { DICT_TYPE } from '@/utils/dict'
 import * as ApprovalSceneApi from '@/api/bpm/approval/scene'
-import * as ApprovalSchemeApi from '@/api/bpm/approval/scheme'
-import ApprovalSceneForm from './ApprovalSceneForm.vue'
+import BindSchemeDialog from './BindSchemeDialog.vue'
 
 defineOptions({ name: 'BpmApprovalScene' })
 
-const { t } = useI18n()
-const { message } = useMessage()
+const message = useMessage()
 
 const loading = ref(true)
-const list = ref<ApprovalSceneApi.ApprovalSceneVO[]>([])
 const total = ref(0)
+const list = ref<ApprovalSceneApi.ApprovalSceneVO[]>([])
+const { width: windowWidth } = useWindowSize()
+const isActionColumnFixed = computed(() => windowWidth.value >= 1280)
 const queryParams = reactive<ApprovalSceneApi.ApprovalScenePageReqVO>({
   name: undefined,
-  moduleCode: undefined,
   status: undefined,
   pageNo: 1,
-  pageSize: 10
+  pageSize: 20
 })
-const queryFormRef = ref()
 
-// 查询列表
+// 时间戳格式化
+const formatTimestamp = (ts: number | null | undefined) => {
+  if (!ts) return { date: '', time: '' }
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return {
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+  }
+}
+
 const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalSceneApi.getApprovalScenePage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[BpmApprovalScene] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[BpmApprovalScene] list.value:', list.value)
+  } catch (error: any) {
+    console.error('[BpmApprovalScene] getList failed:', error)
+    list.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
 }
 
-// 搜索
 const handleQuery = () => {
   queryParams.pageNo = 1
   getList()
 }
 
-// 重置
 const resetQuery = () => {
-  queryFormRef.value.resetFields()
+  queryParams.name = undefined
+  queryParams.status = undefined
   handleQuery()
 }
 
-// 新增/编辑
-const formRef = ref()
-const openForm = (type: string, id?: number) => {
-  formRef.value.open(type, id)
+const handleEnable = async (row: ApprovalSceneApi.ApprovalSceneVO) => {
+  try {
+    await ElMessageBox.confirm(`确认启用场景「${row.name}」？`, '启用场景', { type: 'info' })
+    await ApprovalSceneApi.enableApprovalScene(row.id)
+    message.success('启用成功')
+    await getList()
+  } catch (error: any) {
+    if (error !== 'cancel' && error?.message !== 'cancel') {
+      message.error('启用失败：' + (error?.message || '未知错误'))
+    }
+  }
 }
 
-// 绑定方案
-const bindDialogVisible = ref(false)
-const bindLoading = ref(false)
-const bindForm = reactive<{ sceneId: number | null; schemeId: number | null }>({
-  sceneId: null,
-  schemeId: null
-})
-const schemeList = ref<ApprovalSchemeApi.ApprovalSchemeVO[]>([])
+const handleDisable = async (row: ApprovalSceneApi.ApprovalSceneVO) => {
+  try {
+    await ElMessageBox.confirm(`确认禁用场景「${row.name}」？`, '禁用场景', { type: 'warning' })
+    await ApprovalSceneApi.disableApprovalScene(row.id)
+    message.success('禁用成功')
+    await getList()
+  } catch (error: any) {
+    if (error !== 'cancel' && error?.message !== 'cancel') {
+      message.error('禁用失败：' + (error?.message || '未知错误'))
+    }
+  }
+}
+
+const handleDelete = async (row: ApprovalSceneApi.ApprovalSceneVO) => {
+  try {
+    await ElMessageBox.confirm(`确认删除场景「${row.name}」？删除后不可恢复。`, '删除场景', { type: 'warning' })
+    // 乐观更新：先从列表移除，给用户即时反馈
+    list.value = list.value.filter(item => item.id !== row.id)
+    total.value--
+    // 调用 API 真正删除
+    await ApprovalSceneApi.deleteApprovalScene(row.id)
+    message.success('删除成功')
+  } catch (error: any) {
+    // 删除失败，回滚：重新加载列表
+    await getList()
+    if (error !== 'cancel' && error?.message !== 'cancel') {
+      message.error('删除失败：' + (error?.message || '未知错误'))
+    }
+  }
+}
+
+const bindSchemeRef = ref()
 
 const handleBindScheme = async (row: ApprovalSceneApi.ApprovalSceneVO) => {
-  bindForm.sceneId = row.id
-  bindForm.schemeId = row.activeSchemeId ?? null
-  bindDialogVisible.value = true
-  // 加载方案列表（取前 100 条）
-  try {
-    const data = await ApprovalSchemeApi.getApprovalSchemePage({ pageNo: 1, pageSize: 100 })
-    schemeList.value = data.list
-  } catch {
-    schemeList.value = []
+  console.log('[BpmApprovalScene] handleBindScheme called with:', row)
+  console.log('[BpmApprovalScene] bindSchemeRef.value:', bindSchemeRef.value)
+  if (bindSchemeRef.value) {
+    await bindSchemeRef.value.open(row)
+  } else {
+    console.error('[BpmApprovalScene] bindSchemeRef is not initialized')
+    message.error('绑定弹窗组件未初始化')
   }
 }
 
-const handleBindSubmit = async () => {
-  if (!bindForm.sceneId) return
-  bindLoading.value = true
-  try {
-    await ApprovalSceneApi.bindSchemeToScene(bindForm.sceneId, bindForm.schemeId)
-    message.success('绑定成功')
-    bindDialogVisible.value = false
-    getList()
-  } finally {
-    bindLoading.value = false
-  }
-}
-
-// 删除
-const handleDelete = async (id: number) => {
-  try {
-    await ElMessageBox.confirm('确认删除该审批场景？', '提示', {
-      type: 'warning'
-    })
-    await ApprovalSceneApi.deleteApprovalScene(id)
-    message.success('删除成功')
-    getList()
-  } catch {
-    // 取消操作
-  }
-}
-
-// 初始化
-getList()
+onMounted(() => {
+  getList()
+})
 </script>
+
+<style scoped>
+.scene-time-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.scene-action-cell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.scene-action-cell :deep(.el-button + .el-button) {
+  margin-left: 8px;
+}
+</style>

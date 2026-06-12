@@ -43,11 +43,13 @@ public interface BpmApprovalHolidayMapper extends BaseMapperX<BpmApprovalHoliday
     /**
      * 判断日期是否为节假日
      *
-     * @param holidayDate 节假日日期
+     * @param holidayDate 节假日日期（会自动截断时分秒，只比较日期部分）
      * @return 是否为节假日
      */
     default boolean isHoliday(Date holidayDate) {
-        BpmApprovalHolidayDO holiday = selectByDate(holidayDate);
+        // 截断时分秒，只保留日期部分，避免 DATETIME vs DATE 比较精度问题
+        Date dateOnly = cn.hutool.core.date.DateUtil.beginOfDay(holidayDate);
+        BpmApprovalHolidayDO holiday = selectByDate(dateOnly);
         if (holiday == null) {
             return false;
         }

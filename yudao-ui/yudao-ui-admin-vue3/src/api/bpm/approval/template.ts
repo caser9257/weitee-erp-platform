@@ -39,7 +39,18 @@ export const getApprovalTemplateByCode = async (code: string) => {
   return await request.get({ url: '/bpm/approval-template/get-by-code', params: { code } })
 }
 
-// 使用模板创建审批场景
+// 使用模板创建审批场景（使用默认流程配置）
 export const useApprovalTemplate = async (templateId: number) => {
   return await request.post({ url: '/bpm/approval-template/use', params: { templateId } })
+}
+
+// 使用模板创建审批场景（使用自定义流程配置）
+export const useApprovalTemplateWithFlow = async (templateId: number, flowConfig: Record<string, any>) => {
+  return await request.post({
+    url: '/bpm/approval-template/use-with-flow',
+    data: {
+      templateId,
+      flowConfig
+    }
+  })
 }

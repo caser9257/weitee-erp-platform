@@ -1,7 +1,9 @@
 package cn.iocoder.yudao.module.bpm.dal.dataobject.approval;
 
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.KeySequence;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
@@ -53,7 +55,10 @@ public class BpmApprovalSceneDO extends BaseDO {
 
     /**
      * 当前生效方案编号
+     * 
+     * 使用 FieldStrategy.ALWAYS 确保可以更新为 NULL（解绑场景）
      */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private Long activeSchemeId;
 
     /**

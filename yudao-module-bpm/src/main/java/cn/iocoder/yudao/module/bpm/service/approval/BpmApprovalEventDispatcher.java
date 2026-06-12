@@ -118,7 +118,7 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
             BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
                     .approvalId(snapshot.getApprovalId())
                     .action("APPROVE")
-                    .operatorUserId(Long.parseLong(snapshot.getCreator()))
+                    .operatorUserId(snapshot.getStartUserId())
                     .comment(reason)
                     .build();
             approvalRecordService.createRecord(record);
@@ -132,7 +132,7 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
                     new BpmMessageSendWhenProcessInstanceApproveReqDTO()
                             .setProcessInstanceId(processInstanceId)
                             .setProcessInstanceName(snapshot.getSceneCode())
-                            .setStartUserId(Long.parseLong(snapshot.getCreator())));
+                            .setStartUserId(snapshot.getStartUserId()));
         } catch (Exception e) {
             log.error("[handleApprove][场景({}) 业务({}) 发送通知异常]", snapshot.getSceneCode(), bizId, e);
         }
@@ -158,7 +158,7 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
             BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
                     .approvalId(snapshot.getApprovalId())
                     .action("REJECT")
-                    .operatorUserId(Long.parseLong(snapshot.getCreator()))
+                    .operatorUserId(snapshot.getStartUserId())
                     .comment(reason)
                     .build();
             approvalRecordService.createRecord(record);
@@ -172,7 +172,7 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
                     new BpmMessageSendWhenProcessInstanceRejectReqDTO()
                             .setProcessInstanceId(processInstanceId)
                             .setProcessInstanceName(snapshot.getSceneCode())
-                            .setStartUserId(Long.parseLong(snapshot.getCreator()))
+                            .setStartUserId(snapshot.getStartUserId())
                             .setReason(reason));
         } catch (Exception e) {
             log.error("[handleReject][场景({}) 业务({}) 发送通知异常]", snapshot.getSceneCode(), bizId, e);

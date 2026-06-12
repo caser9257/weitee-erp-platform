@@ -37,4 +37,14 @@ public interface BpmApprovalUrgeRecordMapper extends BaseMapperX<BpmApprovalUrge
                 .orderByDesc(BpmApprovalUrgeRecordDO::getUrgeTime));
     }
 
+    /**
+     * 查询指定审批 ID 最近一次催办记录
+     */
+    default BpmApprovalUrgeRecordDO selectLastByApprovalId(String approvalId) {
+        return selectOne(new LambdaQueryWrapperX<BpmApprovalUrgeRecordDO>()
+                .eq(BpmApprovalUrgeRecordDO::getApprovalId, approvalId)
+                .orderByDesc(BpmApprovalUrgeRecordDO::getUrgeTime)
+                .last("LIMIT 1"));
+    }
+
 }

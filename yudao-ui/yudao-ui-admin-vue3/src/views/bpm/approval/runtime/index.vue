@@ -117,7 +117,7 @@ import * as RuntimeApi from '@/api/bpm/approval/runtime'
 
 defineOptions({ name: 'BpmApprovalRuntime' })
 
-const { message } = useMessage()
+const message = useMessage()
 const router = useRouter()
 
 const snapshot = ref<RuntimeApi.ApprovalSnapshotVO | null>(null)

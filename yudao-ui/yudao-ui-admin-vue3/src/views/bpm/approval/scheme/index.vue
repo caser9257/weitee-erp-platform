@@ -51,13 +51,14 @@
 
   <!-- 列表 -->
   <ContentWrap>
-    <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="方案编码" align="center" prop="code" min-width="150" />
-      <el-table-column label="方案名称" align="center" prop="name" min-width="150" />
-      <el-table-column label="模块编码" align="center" prop="moduleCode" width="120" />
-      <el-table-column label="业务类型" align="center" prop="bizType" width="100" />
-      <el-table-column label="最新版本号" align="center" prop="latestVersionNo" width="100" />
-      <el-table-column label="版本状态" align="center" width="100">
+    <div style="overflow-x: auto">
+      <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true" style="min-width: 1200px">
+        <el-table-column label="方案编码" align="center" prop="code" min-width="150" />
+        <el-table-column label="方案名称" align="center" prop="name" min-width="150" />
+        <el-table-column label="模块编码" align="center" prop="moduleCode" min-width="120" />
+        <el-table-column label="业务类型" align="center" prop="bizType" min-width="100" />
+        <el-table-column label="最新版本号" align="center" prop="latestVersionNo" min-width="100" />
+        <el-table-column label="版本状态" align="center" min-width="100">
         <template #default="{ row }">
           <el-tag v-if="row.latestVersionStatus === 10" type="info" effect="light">草稿</el-tag>
           <el-tag v-else-if="row.latestVersionStatus === 20" type="warning" effect="light">待发布</el-tag>
@@ -65,8 +66,12 @@
           <el-tag v-else-if="row.latestVersionStatus === 40" type="danger" effect="light">已停用</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="170" />
-      <el-table-column label="操作" align="center" width="280" fixed="right">
+      <el-table-column label="创建时间" align="center" min-width="180">
+        <template #default="{ row }">
+          {{ formatTimestamp(row.createTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" align="center" min-width="280" fixed="right">
         <template #default="scope">
           <el-button link type="primary" @click="openForm('update', scope.row.id)" v-hasPermi="['bpm:approval-scheme:update']">
             编辑
@@ -91,7 +96,8 @@
           >停用</el-button>
         </template>
       </el-table-column>
-    </el-table>
+      </el-table>
+    </div>
     <!-- 分页 -->
     <Pagination
       :total="total"
@@ -114,7 +120,7 @@ import SchemeForm from './SchemeForm.vue'
 
 defineOptions({ name: 'BpmApprovalScheme' })
 
-const { message } = useMessage()
+const message = useMessage()
 
 const loading = ref(true)
 const list = ref<ApprovalSchemeApi.ApprovalSchemeVO[]>([])
@@ -128,12 +134,27 @@ const queryParams = reactive<ApprovalSchemeApi.ApprovalSchemePageReqVO>({
 })
 const queryFormRef = ref()
 
+// 时间戳格式化
+const formatTimestamp = (ts: number | null | undefined) => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
 const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalSchemeApi.getApprovalSchemePage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[BpmApprovalScheme] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[BpmApprovalScheme] list.value:', list.value)
+  } catch (error: any) {
+    console.error('[BpmApprovalScheme] getList failed:', error)
+    list.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }

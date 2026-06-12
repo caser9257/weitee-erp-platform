@@ -84,8 +84,11 @@ const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalPortalApi.getApprovalCcPage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[CcList] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[CcList] list.value:', list.value)
   } catch (error) {
     list.value = []
     total.value = 0

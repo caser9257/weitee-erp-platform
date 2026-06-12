@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -15,6 +16,11 @@ import java.util.List;
 @Service
 @Validated
 public class BpmApprovalUrgeRecordServiceImpl implements BpmApprovalUrgeRecordService {
+
+    /**
+     * 催办频率限制：同一审批 5 分钟内不允许重复催办
+     */
+    private static final long URGE_COOLDOWN_MILLIS = 5 * 60 * 1000L;
 
     @Resource
     private BpmApprovalUrgeRecordMapper approvalUrgeRecordMapper;
@@ -34,6 +40,16 @@ public class BpmApprovalUrgeRecordServiceImpl implements BpmApprovalUrgeRecordSe
     @Override
     public List<BpmApprovalUrgeRecordDO> getRecordsByTaskId(String taskId) {
         return approvalUrgeRecordMapper.selectListByTaskId(taskId);
+    }
+
+    @Override
+    public boolean isUrgeAllowed(String approvalId) {
+        BpmApprovalUrgeRecordDO lastRecord = approvalUrgeRecordMapper.selectLastByApprovalId(approvalId);
+        if (lastRecord == null) {
+            return true;
+        }
+        long elapsed = new Date().getTime() - lastRecord.getUrgeTime().getTime();
+        return elapsed >= URGE_COOLDOWN_MILLIS;
     }
 
 }

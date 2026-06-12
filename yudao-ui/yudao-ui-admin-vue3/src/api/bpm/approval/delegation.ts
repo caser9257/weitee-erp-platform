@@ -52,7 +52,7 @@ export const updateApprovalDelegation = async (data: ApprovalDelegationSaveReqVO
 
 // 删除审批委托
 export const deleteApprovalDelegation = async (id: number) => {
-  return await request.delete({ url: '/bpm/approval-delegation/delete', params: { id } })
+  return await request.delete({ url: '/bpm/approval-delegation/delete?id=' + id })
 }
 
 // 查询我的有效委托

@@ -4,6 +4,8 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.template.BpmApprovalTemplatePageReqVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.template.BpmApprovalTemplateRespVO;
 
+import java.util.Map;
+
 /**
  * 审批模板 Service 接口
  */
@@ -32,5 +34,15 @@ public interface BpmApprovalTemplateService {
      * @return 场景 ID
      */
     Long useTemplate(Long templateId, Long userId);
+
+    /**
+     * 使用模板创建审批场景和方案（带自定义流程配置）
+     *
+     * @param templateId 模板 ID
+     * @param flowConfig 自定义流程配置
+     * @param userId 用户 ID
+     * @return 场景 ID
+     */
+    Long useTemplateWithFlow(Long templateId, Map<String, Object> flowConfig, Long userId);
 
 }

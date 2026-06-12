@@ -71,6 +71,12 @@
       <el-tab-pane label="抄送我的" name="cc" lazy>
         <CcList ref="ccListRef" @module-unavailable="handleModuleUnavailable" />
       </el-tab-pane>
+      <el-tab-pane label="审批模板" name="template" lazy>
+        <ApprovalTemplateList />
+      </el-tab-pane>
+      <el-tab-pane label="审批委托" name="delegation" lazy>
+        <ApprovalDelegationList />
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -79,10 +85,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { BPM_MODULE_UNAVAILABLE_TEXT } from './moduleGuard'
+import * as ApprovalPortalApi from '@/api/bpm/approval/portal'
 import PendingList from './components/PendingList.vue'
 import ApprovedList from './components/ApprovedList.vue'
 import SubmittedList from './components/SubmittedList.vue'
 import CcList from './components/CcList.vue'
+import ApprovalTemplateList from '../template/index.vue'
+import ApprovalDelegationList from '../delegation/index.vue'
 
 defineOptions({ name: 'BpmApprovalPortal' })
 
@@ -92,13 +101,18 @@ const router = useRouter()
 // Tab name → 路由路径映射
 const tabRouteMap: Record<string, string> = {
   pending: '/approval/todo',
+  approved: '/approval/approved',
   submitted: '/approval/submitted',
-  cc: '/approval/cc'
+  cc: '/approval/cc',
+  template: '/approval/template',
+  delegation: '/approval/delegation'
 }
 
 // 根据路由路径设置默认 Tab
 const getDefaultTab = () => {
   const path = route.path
+  if (path.includes('/template')) return 'template'
+  if (path.includes('/delegation')) return 'delegation'
   if (path.includes('/submitted')) return 'submitted'
   if (path.includes('/cc')) return 'cc'
   if (path.includes('/approved')) return 'approved'
@@ -162,11 +176,22 @@ const handleModuleUnavailable = (message?: string) => {
   })
 }
 
-// 加载统计数据
+// 加载统计数据：并行查询各维度数量
 const loadStatistics = async () => {
-  // TODO: 调用后端接口获取统计数据
-  // const data = await getApprovalStatistics()
-  // Object.assign(statistics, data)
+  try {
+    const [todoRes, doneRes, myRes, ccRes] = await Promise.allSettled([
+      ApprovalPortalApi.getApprovalTodoPage({ pageNo: 1, pageSize: 1 }),
+      ApprovalPortalApi.getApprovalDonePage({ pageNo: 1, pageSize: 1 }),
+      ApprovalPortalApi.getApprovalMyPage({ pageNo: 1, pageSize: 1 }),
+      ApprovalPortalApi.getApprovalCcPage({ pageNo: 1, pageSize: 1 })
+    ])
+    statistics.pendingCount = todoRes.status === 'fulfilled' ? (todoRes.value?.total ?? 0) : 0
+    statistics.approvedCount = doneRes.status === 'fulfilled' ? (doneRes.value?.total ?? 0) : 0
+    statistics.submittedCount = myRes.status === 'fulfilled' ? (myRes.value?.total ?? 0) : 0
+    statistics.ccCount = ccRes.status === 'fulfilled' ? (ccRes.value?.total ?? 0) : 0
+  } catch {
+    // 静默失败，统计卡片显示 0
+  }
 }
 
 onMounted(() => {

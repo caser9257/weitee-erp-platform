@@ -18,7 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.APPROVAL_SCENE_NOT_EXISTS;
+import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.APPROVAL_DELEGATION_NOT_EXISTS;
 
 /**
  * 审批委托 Service 实现类
@@ -59,7 +59,7 @@ public class BpmApprovalDelegationServiceImpl implements BpmApprovalDelegationSe
     public BpmApprovalDelegationRespVO getDelegation(Long id) {
         BpmApprovalDelegationDO delegation = approvalDelegationMapper.selectById(id);
         if (delegation == null) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
+            throw exception(APPROVAL_DELEGATION_NOT_EXISTS);
         }
         return BeanUtils.toBean(delegation, BpmApprovalDelegationRespVO.class);
     }
@@ -86,13 +86,19 @@ public class BpmApprovalDelegationServiceImpl implements BpmApprovalDelegationSe
         if (delegations.isEmpty()) {
             return null;
         }
-        // 返回第一个有效的委托
+        // 优先返回场景精确匹配的委托，其次返回通配（sceneCode 为空）的委托
+        for (BpmApprovalDelegationDO delegation : delegations) {
+            if (sceneCode.equals(delegation.getSceneCode())) {
+                return delegation.getDelegateUserId();
+            }
+        }
+        // 无精确匹配，返回第一条（通配委托）
         return delegations.get(0).getDelegateUserId();
     }
 
     private void validateDelegationExists(Long id) {
         if (approvalDelegationMapper.selectById(id) == null) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
+            throw exception(APPROVAL_DELEGATION_NOT_EXISTS);
         }
     }
 

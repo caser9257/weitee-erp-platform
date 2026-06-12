@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.scene.BpmApprova
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalSceneDO;
 import cn.iocoder.yudao.module.bpm.dal.mysql.approval.BpmApprovalSceneMapper;
 import cn.iocoder.yudao.module.bpm.dal.mysql.approval.BpmApprovalSchemeMapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -100,9 +101,10 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
         BpmApprovalSceneDO scene = validateSceneExists(id);
         validateSceneOwnership(scene);
         validateActiveSchemeExists(activeSchemeId);
-        approvalSceneMapper.updateById(new BpmApprovalSceneDO()
-                .setId(id)
-                .setActiveSchemeId(activeSchemeId));
+        // 使用 UpdateWrapper 确保可以更新为 NULL（解绑场景）
+        approvalSceneMapper.update(null, new LambdaUpdateWrapper<BpmApprovalSceneDO>()
+                .eq(BpmApprovalSceneDO::getId, id)
+                .set(BpmApprovalSceneDO::getActiveSchemeId, activeSchemeId));
     }
 
     private BpmApprovalSceneDO validateSceneExists(Long id) {

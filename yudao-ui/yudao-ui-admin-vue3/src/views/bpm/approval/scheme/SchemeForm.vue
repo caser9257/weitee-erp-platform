@@ -316,7 +316,7 @@ import { SimpleProcessDesigner } from '@/components/SimpleProcessDesignerV2/src/
 
 defineOptions({ name: 'SchemeForm' })
 
-const { message } = useMessage()
+const message = useMessage()
 const emit = defineEmits(['success'])
 
 const dialogVisible = ref(false)

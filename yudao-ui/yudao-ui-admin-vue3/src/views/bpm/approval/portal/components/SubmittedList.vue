@@ -37,7 +37,10 @@
           </el-button>
           <el-button
             v-if="scope.row.status === 1"
-            link type="danger"
+            :loading="cancellingProcessInstanceId === (scope.row.id || scope.row.processInstanceId)"
+            :disabled="!!cancellingProcessInstanceId"
+            link
+            type="danger"
             @click="handleCancel(scope.row)"
           >
             撤回
@@ -62,7 +65,7 @@ import { ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/formatTime'
 import { useMessage } from '@/hooks/web/useMessage'
 import * as ApprovalPortalApi from '@/api/bpm/approval/portal'
-import * as ApprovalApi from '@/api/bpm/approval'
+import * as ProcessInstanceApi from '@/api/bpm/processInstance'
 import {
   BPM_MODULE_UNAVAILABLE_TEXT,
   getErrorMessage,
@@ -87,6 +90,7 @@ const formatTime = (time: any) => {
 const loading = ref(true)
 const list = ref<any[]>([])
 const total = ref(0)
+const cancellingProcessInstanceId = ref<string>('')
 const queryParams = reactive({ pageNo: 1, pageSize: 10 })
 const detailDialogRef = ref()
 
@@ -104,8 +108,11 @@ const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalPortalApi.getApprovalMyPage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[SubmittedList] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[SubmittedList] list.value:', list.value)
   } catch (error) {
     list.value = []
     total.value = 0
@@ -125,16 +132,26 @@ const handleDetail = (row: any) => {
 }
 
 const handleCancel = async (row: any) => {
+  const processInstanceId = row.id || row.processInstanceId
+  if (!processInstanceId || cancellingProcessInstanceId.value) {
+    return
+  }
   try {
     await ElMessageBox.confirm('确认撤回该审批？', '提示', { type: 'warning' })
-    await ApprovalApi.cancelApproval({
-      sceneCode: row.sceneCode,
-      bizId: row.bizId,
-      reason: '用户主动撤回'
-    })
+    cancellingProcessInstanceId.value = processInstanceId
+    await ProcessInstanceApi.cancelProcessInstanceByStartUser(processInstanceId, '用户主动撤回')
     message.success('撤回成功')
-    getList()
-  } catch {}
+    await getList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      const errorMessage = getErrorMessage(error)
+      if (errorMessage) {
+        message.error(errorMessage)
+      }
+    }
+  } finally {
+    cancellingProcessInstanceId.value = ''
+  }
 }
 
 const refresh = () => getList()

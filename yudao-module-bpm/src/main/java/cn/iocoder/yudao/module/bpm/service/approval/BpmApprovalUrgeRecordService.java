@@ -33,4 +33,12 @@ public interface BpmApprovalUrgeRecordService {
      */
     List<BpmApprovalUrgeRecordDO> getRecordsByTaskId(String taskId);
 
+    /**
+     * 检查催办是否允许（频率限制：同一审批 5 分钟内不允许重复催办）
+     *
+     * @param approvalId 审批 ID
+     * @return true=允许催办，false=过于频繁
+     */
+    boolean isUrgeAllowed(String approvalId);
+
 }

@@ -45,6 +45,11 @@ public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstan
     }
 
     @Override
+    public BpmApprovalInstanceSnapshotDO getSnapshotByApprovalId(String approvalId) {
+        return approvalInstanceSnapshotMapper.selectByApprovalId(approvalId);
+    }
+
+    @Override
     public List<BpmApprovalInstanceSnapshotDO> getSnapshotsByStatus(Integer status) {
         return approvalInstanceSnapshotMapper.selectListByStatus(status);
     }

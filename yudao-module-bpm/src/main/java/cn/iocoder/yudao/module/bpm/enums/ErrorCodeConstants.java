@@ -106,6 +106,9 @@ public interface ErrorCodeConstants {
 
     // ========== BPM 审批场景 1-009-016-000 ==========
     ErrorCode APPROVAL_SCENE_NOT_EXISTS = new ErrorCode(1_009_016_000, "审批场景不存在");
+
+    // ========== BPM 审批委托 1-009-016-100 ==========
+    ErrorCode APPROVAL_DELEGATION_NOT_EXISTS = new ErrorCode(1_009_016_100, "审批委托不存在");
     ErrorCode APPROVAL_SCENE_CODE_DUPLICATE = new ErrorCode(1_009_016_001, "审批场景编码【{}】已存在");
     ErrorCode APPROVAL_SCENE_DISABLED = new ErrorCode(1_009_016_002, "审批场景已禁用");
     ErrorCode APPROVAL_SCHEME_BIND_TO_SCENE = new ErrorCode(1_009_016_003, "审批方案已被场景引用，不能操作");
@@ -122,5 +125,6 @@ public interface ErrorCodeConstants {
     ErrorCode APPROVAL_CONTEXT_IS_NULL = new ErrorCode(1_009_018_001, "场景【{}】业务【{}】上下文为空");
     ErrorCode APPROVAL_SCHEME_NOT_ACTIVE = new ErrorCode(1_009_018_002, "场景【{}】没有生效的审批方案");
     ErrorCode APPROVAL_RULE_NOT_FOUND = new ErrorCode(1_009_018_003, "版本【{}】找不到默认审批规则");
+    ErrorCode APPROVAL_URGE_TOO_FREQUENT = new ErrorCode(1_009_018_004, "催办过于频繁，请 5 分钟后再试");
 
 }

@@ -16,7 +16,7 @@
 
       <!-- 审批表单 -->
       <el-form ref="formRef" :model="formData" label-width="80px">
-        <el-form-item label="审批意见">
+        <el-form-item v-if="!showReturnForm" label="审批意见">
           <el-input
             v-model="formData.comment"
             type="textarea"
@@ -25,46 +25,92 @@
           />
         </el-form-item>
       </el-form>
+
+      <!-- 驳回表单 -->
+      <el-form v-if="showReturnForm" ref="returnFormRef" :model="returnFormData" :rules="returnFormRules" label-width="80px">
+        <el-form-item label="退回节点" prop="targetTaskDefinitionKey">
+          <el-select v-model="returnFormData.targetTaskDefinitionKey" placeholder="请选择退回节点" style="width: 100%">
+            <el-option
+              v-for="item in returnNodes"
+              :key="item.taskDefinitionKey"
+              :label="item.name"
+              :value="item.taskDefinitionKey"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="退回原因" prop="reason">
+          <el-input
+            v-model="returnFormData.reason"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入退回原因"
+          />
+        </el-form-item>
+      </el-form>
     </div>
     <template #footer>
       <el-button @click="dialogVisible = false">取 消</el-button>
-      <el-button type="danger" @click="handleReject" :loading="loading">拒 绝</el-button>
-      <el-button type="warning" @click="handleReturn" :loading="loading">驳 回</el-button>
-      <el-button type="primary" @click="handleApprove" :loading="loading">同 意</el-button>
+      <template v-if="showReturnForm">
+        <el-button @click="showReturnForm = false">返 回</el-button>
+        <el-button type="warning" @click="handleReturnSubmit" :loading="loading">确认驳回</el-button>
+      </template>
+      <template v-else>
+        <el-button type="danger" @click="handleReject" :loading="loading">拒 绝</el-button>
+        <el-button type="warning" @click="handleReturn" :loading="returnLoading">驳 回</el-button>
+        <el-button type="primary" @click="handleApprove" :loading="loading">同 意</el-button>
+      </template>
     </template>
   </Dialog>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useMessage } from '@/hooks/web/useMessage'
-import * as ApprovalApi from '@/api/bpm/approval'
+import * as TaskApi from '@/api/bpm/task'
 
 defineOptions({ name: 'ApproveDialog' })
 
-const { message } = useMessage()
+const message = useMessage()
 const emit = defineEmits(['success'])
 
 const dialogVisible = ref(false)
 const loading = ref(false)
+const returnLoading = ref(false)
 const task = ref<any>(null)
-const formRef = ref()
+const formRef = ref<FormInstance>()
 
 const formData = reactive({
   comment: ''
 })
 
+// 驳回相关
+const showReturnForm = ref(false)
+const returnNodes = ref<any[]>([])
+const returnFormRef = ref<FormInstance>()
+const returnFormData = reactive({
+  targetTaskDefinitionKey: undefined as string | undefined,
+  reason: ''
+})
+const returnFormRules: FormRules = {
+  targetTaskDefinitionKey: [{ required: true, message: '请选择退回节点', trigger: 'change' }],
+  reason: [{ required: true, message: '请输入退回原因', trigger: 'blur' }]
+}
+
 const open = (taskData: any) => {
   task.value = taskData
   formData.comment = ''
+  showReturnForm.value = false
+  returnNodes.value = []
+  returnFormData.targetTaskDefinitionKey = undefined
+  returnFormData.reason = ''
   dialogVisible.value = true
 }
 
 const handleApprove = async () => {
   loading.value = true
   try {
-    // TODO: 调用审批接口
-    // await approveTask(task.value.id, formData.comment)
+    await TaskApi.approveTask({ id: task.value.id, reason: formData.comment })
     message.success('审批通过')
     dialogVisible.value = false
     emit('success')
@@ -76,8 +122,7 @@ const handleApprove = async () => {
 const handleReject = async () => {
   loading.value = true
   try {
-    // TODO: 调用拒绝接口
-    // await rejectTask(task.value.id, formData.comment)
+    await TaskApi.rejectTask({ id: task.value.id, reason: formData.comment })
     message.success('已拒绝')
     dialogVisible.value = false
     emit('success')
@@ -87,8 +132,35 @@ const handleReject = async () => {
 }
 
 const handleReturn = async () => {
-  // TODO: 打开驳回节点选择弹窗
-  message.info('驳回功能开发中')
+  returnLoading.value = true
+  try {
+    returnNodes.value = await TaskApi.getTaskListByReturn(task.value.id)
+    if (returnNodes.value.length === 0) {
+      message.warning('当前没有可退回的节点')
+      return
+    }
+    showReturnForm.value = true
+  } finally {
+    returnLoading.value = false
+  }
+}
+
+const handleReturnSubmit = async () => {
+  if (!returnFormRef.value) return
+  await returnFormRef.value.validate()
+  loading.value = true
+  try {
+    await TaskApi.returnTask({
+      id: task.value.id,
+      reason: returnFormData.reason,
+      targetTaskDefinitionKey: returnFormData.targetTaskDefinitionKey
+    })
+    message.success('已驳回')
+    dialogVisible.value = false
+    emit('success')
+  } finally {
+    loading.value = false
+  }
 }
 
 defineExpose({ open })

@@ -30,7 +30,7 @@ import * as ApprovalApi from '@/api/bpm/approval'
 
 defineOptions({ name: 'UrgeDialog' })
 
-const { message } = useMessage()
+const message = useMessage()
 const emit = defineEmits(['success'])
 
 const dialogVisible = ref(false)

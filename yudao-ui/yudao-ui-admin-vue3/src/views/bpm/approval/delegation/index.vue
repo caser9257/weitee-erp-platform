@@ -58,7 +58,11 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" align="center" prop="createTime" width="170" />
+      <el-table-column label="创建时间" align="center" width="180">
+        <template #default="{ row }">
+          {{ formatTimestamp(row.createTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" width="150" fixed="right">
         <template #default="scope">
           <el-button link type="primary" @click="openForm('update', scope.row.id)">
@@ -152,7 +156,7 @@ import * as ApprovalDelegationApi from '@/api/bpm/approval/delegation'
 
 defineOptions({ name: 'BpmApprovalDelegation' })
 
-const { message } = useMessage()
+const message = useMessage()
 
 const loading = ref(true)
 const list = ref<ApprovalDelegationApi.ApprovalDelegationVO[]>([])
@@ -163,6 +167,14 @@ const queryParams = reactive<ApprovalDelegationApi.ApprovalDelegationPageReqVO>(
   pageSize: 10
 })
 const queryFormRef = ref()
+
+// 时间戳格式化
+const formatTimestamp = (ts: number | null | undefined) => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
@@ -189,8 +201,15 @@ const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalDelegationApi.getApprovalDelegationPage(queryParams)
-    list.value = data.list
-    total.value = data.total
+    console.log('[BpmApprovalDelegation] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    total.value = data?.total || 0
+    console.log('[BpmApprovalDelegation] list.value:', list.value)
+  } catch (error: any) {
+    console.error('[BpmApprovalDelegation] getList failed:', error)
+    list.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }

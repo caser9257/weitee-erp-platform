@@ -676,6 +676,30 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'approval/scene',
+        component: () => import('@/views/bpm/approval/scene/index.vue'),
+        name: 'BpmApprovalScene',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批场景管理',
+          activeMenu: '/bpm/approval/scene'
+        }
+      },
+      {
+        path: 'approval/scheme',
+        component: () => import('@/views/bpm/approval/scheme/index.vue'),
+        name: 'BpmApprovalScheme',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批方案管理',
+          activeMenu: '/bpm/approval/scheme'
+        }
+      },
+      {
         path: 'approval/delegation',
         component: () => import('@/views/bpm/approval/delegation/index.vue'),
         name: 'BpmApprovalDelegation',
@@ -741,6 +765,42 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           title: '抄送我的',
           activeMenu: '/approval/cc'
+        }
+      },
+      {
+        path: 'approved',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalApproved',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '我已审批',
+          activeMenu: '/approval/approved'
+        }
+      },
+      {
+        path: 'template',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalTemplate',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批模板',
+          activeMenu: '/approval/template'
+        }
+      },
+      {
+        path: 'delegation',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'BpmApprovalDelegation',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批委托',
+          activeMenu: '/approval/delegation'
         }
       }
     ]

@@ -8,6 +8,7 @@ export type ApprovalSceneVO = {
   bizType: string
   actionCode: string
   activeSchemeId: number | null
+  ownerUserId: number
   status: number
   remark: string
   createTime: string
@@ -22,17 +23,6 @@ export type ApprovalScenePageReqVO = {
   pageSize?: number
 }
 
-export type ApprovalSceneSaveReqVO = {
-  id?: number
-  sceneCode: string
-  name: string
-  moduleCode: string
-  bizType: string
-  actionCode: string
-  status: number
-  remark?: string
-}
-
 // 查询审批场景分页
 export const getApprovalScenePage = async (params: ApprovalScenePageReqVO) => {
   return await request.get({ url: '/bpm/approval-scene/page', params })
@@ -43,27 +33,22 @@ export const getApprovalScene = async (id: number) => {
   return await request.get({ url: '/bpm/approval-scene/get', params: { id } })
 }
 
-// 根据场景编码查询审批场景
-export const getApprovalSceneByCode = async (sceneCode: string) => {
-  return await request.get({ url: '/bpm/approval-scene/get-by-code', params: { sceneCode } })
+// 启用审批场景
+export const enableApprovalScene = async (id: number) => {
+  return await request.put({ url: '/bpm/approval-scene/enable', params: { id } })
 }
 
-// 新增审批场景
-export const createApprovalScene = async (data: ApprovalSceneSaveReqVO) => {
-  return await request.post({ url: '/bpm/approval-scene/create', data })
-}
-
-// 修改审批场景
-export const updateApprovalScene = async (data: ApprovalSceneSaveReqVO) => {
-  return await request.put({ url: '/bpm/approval-scene/update', data })
+// 禁用审批场景
+export const disableApprovalScene = async (id: number) => {
+  return await request.put({ url: '/bpm/approval-scene/disable', params: { id } })
 }
 
 // 删除审批场景
 export const deleteApprovalScene = async (id: number) => {
-  return await request.delete({ url: '/bpm/approval-scene/delete', params: { id } })
+  return await request.delete({ url: '/bpm/approval-scene/delete?id=' + id })
 }
 
-// 绑定审批方案到场景
-export const bindSchemeToScene = async (id: number, activeSchemeId: number | null) => {
+// 绑定审批方案
+export const bindScheme = async (id: number, activeSchemeId?: number | null) => {
   return await request.put({ url: '/bpm/approval-scene/bind-scheme', params: { id, activeSchemeId } })
 }

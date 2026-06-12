@@ -4,13 +4,18 @@ import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.bpm.controller.admin.approval.vo.runtime.*;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.instance.BpmApprovalDetailRespVO;
+import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.task.BpmTaskApproveReqVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.task.BpmTaskRespVO;
 import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.task.BpmTaskReturnReqVO;
+import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalRecordDO;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalUrgeRecordDO;
+import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalInstanceSnapshotService;
 import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalRecordService;
 import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalRuntimeService;
 import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalUrgeRecordService;
+import cn.iocoder.yudao.module.bpm.service.message.BpmMessageService;
+import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenTaskUrgeReqDTO;
 import cn.iocoder.yudao.module.bpm.service.task.BpmTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,6 +32,8 @@ import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertList;
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.APPROVAL_URGE_TOO_FREQUENT;
 
 @Tag(name = "管理后台 - 审批运行时")
 @RestController
@@ -46,6 +53,12 @@ public class BpmApprovalRuntimeController {
 
     @Resource
     private BpmTaskService taskService;
+
+    @Resource
+    private BpmMessageService messageService;
+
+    @Resource
+    private BpmApprovalInstanceSnapshotService approvalInstanceSnapshotService;
 
     @PostMapping("/submit")
     @Operation(summary = "提交审批")
@@ -105,7 +118,9 @@ public class BpmApprovalRuntimeController {
         for (String taskId : reqVO.getTaskIds()) {
             try {
                 // 调用 BPM 任务服务完成任务
-                // 注意：这里需要根据实际情况调用相应的服务
+                taskService.approveTask(userId, new BpmTaskApproveReqVO()
+                        .setId(taskId)
+                        .setReason(reqVO.getComment()));
                 successCount++;
             } catch (Exception e) {
                 log.error("[batchApprove][任务({}) 审批失败]", taskId, e);
@@ -120,6 +135,11 @@ public class BpmApprovalRuntimeController {
     public CommonResult<Boolean> urgeApproval(@Valid @RequestBody BpmApprovalUrgeReqVO reqVO) {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
 
+        // 0. 频率限制：同一审批 5 分钟内不允许重复催办
+        if (!approvalUrgeRecordService.isUrgeAllowed(reqVO.getApprovalId())) {
+            throw exception(APPROVAL_URGE_TOO_FREQUENT);
+        }
+
         // 1. 记录催办操作
         BpmApprovalUrgeRecordDO record = BpmApprovalUrgeRecordDO.builder()
                 .approvalId(reqVO.getApprovalId())
@@ -130,8 +150,21 @@ public class BpmApprovalRuntimeController {
                 .build();
         approvalUrgeRecordService.createRecord(record);
 
-        // 2. 发送催办通知（站内信）
-        // TODO: 调用通知服务发送催办站内信
+        // 2. 获取快照信息，用于发送催办通知
+        BpmApprovalInstanceSnapshotDO snapshot = approvalInstanceSnapshotService
+                .getSnapshotByApprovalId(reqVO.getApprovalId());
+
+        // 3. 发送催办通知
+        if (snapshot != null) {
+            messageService.sendMessageWhenTaskUrge(new BpmMessageSendWhenTaskUrgeReqDTO()
+                    .setTaskId(reqVO.getTaskId())
+                    .setProcessInstanceId(snapshot.getProcessInstanceId())
+                    .setProcessInstanceName(snapshot.getSceneCode())
+                    .setTaskName("审批催办")
+                    .setAssigneeUserId(snapshot.getStartUserId())
+                    .setUrgeUserId(userId)
+                    .setUrgeMessage(reqVO.getMessage()));
+        }
 
         return success(true);
     }

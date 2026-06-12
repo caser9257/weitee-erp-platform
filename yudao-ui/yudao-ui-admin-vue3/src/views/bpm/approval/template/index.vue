@@ -56,7 +56,7 @@
         v-for="template in list"
         :key="template.id"
         class="template-card"
-        @click="handleUseTemplate(template)"
+        @click="handleViewDetail(template)"
       >
         <div class="template-card__icon">
           <Icon :icon="template.icon || 'ep:document'" :size="32" />
@@ -70,27 +70,44 @@
           </div>
         </div>
         <div class="template-card__action">
-          <el-button type="primary" size="small" @click.stop="handleUseTemplate(template)">
-            使用模板
+          <el-button
+            type="primary"
+            size="small"
+            :loading="useTemplateLoading"
+            @click.stop="handleUseTemplate(template)"
+          >
+            <Icon icon="ep:check" class="mr-5px" />
+            一键启用
           </el-button>
         </div>
       </div>
     </div>
     <el-empty v-if="!loading && list.length === 0" description="暂无模板" />
   </ContentWrap>
+
+  <!-- 模板详情弹窗 -->
+  <TemplateDetail ref="templateDetailRef" @use="handleUseFromDetail" />
+
+  <!-- 流程设计器弹窗 -->
+  <TemplateFlowDesigner ref="flowDesignerRef" @success="handleFlowDesignerSuccess" />
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useMessage } from '@/hooks/web/useMessage'
 import * as ApprovalTemplateApi from '@/api/bpm/approval/template'
+import TemplateDetail from './TemplateDetail.vue'
+import TemplateFlowDesigner from './TemplateFlowDesigner.vue'
 
 defineOptions({ name: 'BpmApprovalTemplate' })
 
-const { message } = useMessage()
+const message = useMessage()
+const router = useRouter()
 
 const loading = ref(true)
+const useTemplateLoading = ref(false)
 const list = ref<ApprovalTemplateApi.ApprovalTemplateVO[]>([])
 const queryParams = reactive<ApprovalTemplateApi.ApprovalTemplatePageReqVO>({
   name: undefined,
@@ -104,7 +121,13 @@ const getList = async () => {
   loading.value = true
   try {
     const data = await ApprovalTemplateApi.getApprovalTemplatePage(queryParams)
-    list.value = data.list
+    console.log('[BpmApprovalTemplate] getList response:', data)
+    // 确保 data.list 存在
+    list.value = data?.list || []
+    console.log('[BpmApprovalTemplate] list.value:', list.value)
+  } catch (error: any) {
+    console.error('[BpmApprovalTemplate] getList failed:', error)
+    list.value = []
   } finally {
     loading.value = false
   }
@@ -122,18 +145,26 @@ const resetQuery = () => {
   handleQuery()
 }
 
+const templateDetailRef = ref()
+const flowDesignerRef = ref()
+
+const handleViewDetail = (template: ApprovalTemplateApi.ApprovalTemplateVO) => {
+  templateDetailRef.value.open(template.id)
+}
+
+const handleUseFromDetail = async (template: ApprovalTemplateApi.ApprovalTemplateVO) => {
+  await handleUseTemplate(template)
+}
+
 const handleUseTemplate = async (template: ApprovalTemplateApi.ApprovalTemplateVO) => {
-  try {
-    await ElMessageBox.confirm(
-      `确认使用模板「${template.name}」创建审批流程？将自动创建审批场景、方案和版本。`,
-      '使用模板',
-      { type: 'info' }
-    )
-    const sceneId = await ApprovalTemplateApi.useApprovalTemplate(template.id)
-    message.success('模板使用成功，已创建审批场景')
-    // 跳转到场景编辑页
-    // router.push(`/bpm/approval-scene?id=${sceneId}`)
-  } catch {}
+  // 直接打开流程设计器，让用户可以查看和修改流程
+  flowDesignerRef.value.open(template)
+}
+
+const handleFlowDesignerSuccess = async (result: any) => {
+  // 流程设计器保存成功后，刷新列表
+  await getList()
+  message.success('审批流程已创建并启用！')
 }
 
 onMounted(() => {
