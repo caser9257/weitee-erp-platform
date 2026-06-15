@@ -43,7 +43,7 @@ public class NotifySendServiceImpl implements NotifySendService {
 
     @Override
     public Long sendSingleNotify(Long userId, Integer userType, String templateCode, Map<String, Object> templateParams) {
-        if (UserTypeEnum.MEMBER.getValue().equals(userType)) {
+        if (UserTypeEnum.APP.getValue().equals(userType)) {
             throw exception(NOTICE_NOT_FOUND);
         }
         // 校验模版

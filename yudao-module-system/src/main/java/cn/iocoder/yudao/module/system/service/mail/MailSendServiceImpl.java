@@ -107,7 +107,7 @@ public class MailSendServiceImpl implements MailSendService {
                 return user.getEmail();
             }
         }
-        if (UserTypeEnum.MEMBER.getValue().equals(userType)) {
+        if (UserTypeEnum.APP.getValue().equals(userType)) {
             throw exception(MAIL_SEND_MAIL_NOT_EXISTS);
         }
         return null;

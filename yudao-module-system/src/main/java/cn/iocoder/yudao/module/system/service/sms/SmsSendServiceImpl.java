@@ -67,8 +67,8 @@ public class SmsSendServiceImpl implements SmsSendService {
     @Override
     public Long sendSingleSms(String mobile, Long userId, Integer userType,
                               String templateCode, Map<String, Object> templateParams) {
-        if (UserTypeEnum.MEMBER.getValue().equals(userType)) {
-            throw exception(SMS_SEND_MOBILE_NOT_EXISTS, "会员用户已不支持短信发送");
+        if (UserTypeEnum.APP.getValue().equals(userType)) {
+            throw exception(SMS_SEND_MOBILE_NOT_EXISTS, "APP用户已不支持短信发送");
         }
         // 校验短信模板是否合法
         SmsTemplateDO template = validateSmsTemplate(templateCode);

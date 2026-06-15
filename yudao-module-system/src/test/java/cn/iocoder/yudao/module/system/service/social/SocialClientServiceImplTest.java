@@ -448,7 +448,7 @@ public class SocialClientServiceImplTest extends BaseDbUnitTest {
         // 测试 socialType 不匹配
         socialClientMapper.insert(cloneIgnoreId(dbSocialClient, o -> o.setSocialType(SocialTypeEnum.DINGTALK.getType())));
         // 测试 userType 不匹配
-        socialClientMapper.insert(cloneIgnoreId(dbSocialClient, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        socialClientMapper.insert(cloneIgnoreId(dbSocialClient, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 clientId 不匹配
         socialClientMapper.insert(cloneIgnoreId(dbSocialClient, o -> o.setClientId("dao")));
         // 测试 status 不匹配
