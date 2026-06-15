@@ -5,6 +5,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntryPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProjectSummaryRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProductSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntrySaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
 
@@ -30,6 +31,14 @@ public interface ErpProductionCostService {
     ErpProductionCostDetailRespVO getCostDetail(Long productionOrderId);
 
     List<ErpProductionCostProjectSummaryRespVO> getProjectSummary(String accountingMonth);
+
+    /**
+     * 获取产品维度成本汇总
+     *
+     * @param accountingMonth 归集月份（可选，为空则汇总所有月份）
+     * @return 产品成本汇总列表
+     */
+    List<ErpProductionCostProductSummaryRespVO> getProductSummary(String accountingMonth);
 
     /**
      * 从盘点盘亏创建生产成本条目

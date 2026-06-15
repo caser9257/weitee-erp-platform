@@ -8,6 +8,15 @@ metadata:
   topics: authentication,authorization,encryption,xss,sql-injection,cors,oauth,jwt,csrf
 ---
 
+## 安全编码规范
+
+**强制规范见 AGENTS.md 第 15 节「后端安全编码规范」**，包含：
+- 15.1 鉴权规范（权限注解、数据权限、敏感接口二次确认）
+- 15.2 防重刷与防重复提交（状态变更防重、幂等 Token）
+- 15.3 输入校验规范（VO 校验注解、禁止信任前端字段）
+- 15.4 防注入规范（SQL 注入、Like 注入、动态排序注入）
+- 15.5 敏感数据保护（日志脱敏、接口返回脱敏）
+
 ## 安全最佳实践速查
 
 ### 认证（Authentication）

@@ -125,7 +125,6 @@ const selectedScheme = computed(() => {
 
 // 打开弹窗
 const open = async (sceneData: ApprovalSceneApi.ApprovalSceneVO) => {
-  console.log('[BindSchemeDialog] open called with:', sceneData)
   visible.value = true
   scene.value = sceneData
   selectedSchemeId.value = sceneData.activeSchemeId || undefined
@@ -137,22 +136,17 @@ const open = async (sceneData: ApprovalSceneApi.ApprovalSceneVO) => {
 const loadSchemeList = async () => {
   schemeLoading.value = true
   try {
-    console.log('[BindSchemeDialog] Loading scheme list...')
     const data = await ApprovalSchemeApi.getApprovalSchemePage({
       pageNo: 1,
       pageSize: 100
     })
-    console.log('[BindSchemeDialog] Scheme list response:', data)
     // 确保 data.list 存在
     schemeList.value = data?.list || []
-    console.log('[BindSchemeDialog] schemeList.value:', schemeList.value)
     // 如果方案列表为空，提示用户
     if (schemeList.value.length === 0) {
-      console.warn('[BindSchemeDialog] No schemes found')
       message.warning('暂无可用的审批方案，请先创建审批方案')
     }
   } catch (error: any) {
-    console.error('[BindSchemeDialog] Failed to load scheme list:', error)
     message.error('获取方案列表失败：' + (error?.message || '未知错误'))
     schemeList.value = []
   } finally {
@@ -163,7 +157,6 @@ const loadSchemeList = async () => {
 // 绑定方案
 const handleBind = async () => {
   if (!scene.value || !selectedSchemeId.value) {
-    console.warn('[BindSchemeDialog] Cannot bind: scene or selectedSchemeId is missing')
     return
   }
   try {
@@ -173,14 +166,12 @@ const handleBind = async () => {
       { type: 'info' }
     )
     bindLoading.value = true
-    console.log('[BindSchemeDialog] Binding scheme:', scene.value.id, selectedSchemeId.value)
     await ApprovalSceneApi.bindScheme(scene.value.id, selectedSchemeId.value)
     message.success('绑定成功')
     visible.value = false
     emit('success')
   } catch (error: any) {
     if (error !== 'cancel' && error?.message !== 'cancel') {
-      console.error('[BindSchemeDialog] Bind failed:', error)
       message.error('绑定失败：' + (error?.message || '未知错误'))
     }
   } finally {
@@ -198,7 +189,6 @@ const handleUnbind = async () => {
       { type: 'warning' }
     )
     unbindLoading.value = true
-    console.log('[BindSchemeDialog] Unbinding scheme for scene:', scene.value.id)
     // 传递 null 表示解绑
     await ApprovalSceneApi.bindScheme(scene.value.id, null)
     message.success('解绑成功')
@@ -206,7 +196,6 @@ const handleUnbind = async () => {
     emit('success')
   } catch (error: any) {
     if (error !== 'cancel' && error?.message !== 'cancel') {
-      console.error('[BindSchemeDialog] Unbind failed:', error)
       message.error('解绑失败：' + (error?.message || '未知错误'))
     }
   } finally {

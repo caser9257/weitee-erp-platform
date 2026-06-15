@@ -107,6 +107,9 @@ public interface ErrorCodeConstants {
     // ========== BPM 审批场景 1-009-016-000 ==========
     ErrorCode APPROVAL_SCENE_NOT_EXISTS = new ErrorCode(1_009_016_000, "审批场景不存在");
 
+    // ========== BPM 审批模板 1-009-016-200 ==========
+    ErrorCode APPROVAL_TEMPLATE_NOT_EXISTS = new ErrorCode(1_009_016_200, "审批模板不存在");
+
     // ========== BPM 审批委托 1-009-016-100 ==========
     ErrorCode APPROVAL_DELEGATION_NOT_EXISTS = new ErrorCode(1_009_016_100, "审批委托不存在");
     ErrorCode APPROVAL_SCENE_CODE_DUPLICATE = new ErrorCode(1_009_016_001, "审批场景编码【{}】已存在");

@@ -51,7 +51,7 @@ public class ApiErrorLogServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         apiErrorLogMapper.insert(cloneIgnoreId(apiErrorLogDO, o -> o.setUserId(3344L)));
         // 测试 userType 不匹配
-        apiErrorLogMapper.insert(cloneIgnoreId(apiErrorLogDO, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        apiErrorLogMapper.insert(cloneIgnoreId(apiErrorLogDO, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 applicationName 不匹配
         apiErrorLogMapper.insert(cloneIgnoreId(apiErrorLogDO, o -> o.setApplicationName("test")));
         // 测试 requestUrl 不匹配

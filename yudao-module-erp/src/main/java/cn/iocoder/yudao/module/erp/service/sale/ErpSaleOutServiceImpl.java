@@ -26,7 +26,9 @@ import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
+import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +55,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpSaleOutServiceImpl implements ErpSaleOutService {
 
     @Resource
@@ -79,6 +82,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
     @Resource
     @Lazy
     private ErpFinanceBizHookService financeBizHookService;
+    @Resource
+    private ErpProjectLifecycleService projectLifecycleService;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -221,6 +226,17 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         if (approve) {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,
                     defaultTime(saleOut.getOutTime(), saleOut.getCreateTime(), saleOut.getUpdateTime()).toLocalDate());
+            // 触发项目生命周期刷新
+            try {
+                if (saleOut.getOrderId() != null) {
+                    ErpSaleOrderDO order = saleOrderService.validateSaleOrder(saleOut.getOrderId());
+                    if (order != null && order.getProjectId() != null) {
+                        projectLifecycleService.refreshProjectStatus(order.getProjectId());
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("[updateSaleOutStatus] 刷新项目生命周期失败，saleOutId={}", id, e);
+            }
         } else {
             financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,
                     null, "销售出库反审核关闭双账套凭证");

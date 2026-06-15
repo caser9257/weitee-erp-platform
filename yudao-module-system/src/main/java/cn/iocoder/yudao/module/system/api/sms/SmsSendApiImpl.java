@@ -27,8 +27,7 @@ public class SmsSendApiImpl implements SmsSendApi {
 
     @Override
     public Long sendSingleSmsToMember(SmsSendSingleToUserReqDTO reqDTO) {
-        return smsSendService.sendSingleSmsToMember(reqDTO.getMobile(), reqDTO.getUserId(),
-                reqDTO.getTemplateCode(), reqDTO.getTemplateParams());
+        throw new UnsupportedOperationException("会员用户已不支持短信发送");
     }
 
 }

@@ -78,4 +78,35 @@ public interface ErpInvoiceService {
      */
     java.math.BigDecimal getInvoicedAmountByOrderId(Long orderId);
 
+    /**
+     * 批量获取订单的已开票金额
+     *
+     * @param orderIds 订单编号集合
+     * @return key=orderId, value=已开票金额
+     */
+    java.util.Map<Long, java.math.BigDecimal> getInvoicedAmountByOrderIds(java.util.Collection<Long> orderIds);
+
+    /**
+     * 获取订单可开票明细（排除已开票数量）
+     *
+     * @param orderId 订单编号
+     * @return 可开票明细列表
+     */
+    List<UninvoicedItemVO> getUninvoicedItems(Long orderId);
+
+    /**
+     * 可开票明细 VO
+     */
+    @lombok.Data
+    class UninvoicedItemVO {
+        private Long productId;
+        private String productName;
+        private String productSpec;
+        private String unit;
+        private java.math.BigDecimal totalCount;     // 订单数量
+        private java.math.BigDecimal invoicedCount;  // 已开票数量
+        private java.math.BigDecimal availableCount; // 可开票数量
+        private java.math.BigDecimal price;          // 单价
+    }
+
 }

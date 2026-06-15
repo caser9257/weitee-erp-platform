@@ -9,6 +9,11 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpInvoiceItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpInvoiceItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpInvoiceMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderItemMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -16,7 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 /**
  * ERP 销项发票 Service 实现
@@ -36,6 +41,13 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
 
     @Resource
     private ErpNoRedisDAO noRedisDAO;
+
+    @Resource
+    private ErpProjectLifecycleService projectLifecycleService;
+    @Resource
+    private ErpSaleOrderMapper erpSaleOrderMapper;
+    @Resource
+    private ErpSaleOrderItemMapper erpSaleOrderItemMapper;
 
     @Override
     public Long createInvoice(ErpInvoiceSaveReqVO createReqVO) {
@@ -182,6 +194,18 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
         erpInvoiceMapper.updateById(updateInvoice);
 
         log.info("更新销项发票状态：{} -> {}", id, status);
+
+        // 开票完成时，触发项目生命周期刷新
+        if ("ISSUED".equals(status) && invoice.getOrderId() != null) {
+            try {
+                ErpSaleOrderDO order = erpSaleOrderMapper.selectById(invoice.getOrderId());
+                if (order != null && order.getProjectId() != null) {
+                    projectLifecycleService.refreshProjectStatus(order.getProjectId());
+                }
+            } catch (Exception e) {
+                log.warn("[updateInvoiceStatus] 刷新项目生命周期失败，orderId={}", invoice.getOrderId(), e);
+            }
+        }
     }
 
     @Override
@@ -220,6 +244,79 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
         return invoices.stream()
                 .map(ErpInvoiceDO::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    public Map<Long, BigDecimal> getInvoicedAmountByOrderIds(Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        // 一次查询所有相关发票（使用 LambdaQueryWrapperX 支持 in + eq 组合）
+        List<ErpInvoiceDO> invoices = erpInvoiceMapper.selectList(
+                new cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX<ErpInvoiceDO>()
+                        .in(ErpInvoiceDO::getOrderId, orderIds)
+                        .eq(ErpInvoiceDO::getStatus, "ISSUED")
+        );
+        // 按 orderId 分组汇总
+        Map<Long, BigDecimal> result = new HashMap<>();
+        for (ErpInvoiceDO invoice : invoices) {
+            result.merge(invoice.getOrderId(),
+                    invoice.getTotalAmount() != null ? invoice.getTotalAmount() : BigDecimal.ZERO,
+                    BigDecimal::add);
+        }
+        // 确保所有 orderId 都有值
+        for (Long orderId : orderIds) {
+            result.putIfAbsent(orderId, BigDecimal.ZERO);
+        }
+        return result;
+    }
+
+    @Override
+    public List<UninvoicedItemVO> getUninvoicedItems(Long orderId) {
+        // 1. 获取订单产品明细
+        List<ErpSaleOrderItemDO> orderItems = erpSaleOrderItemMapper.selectListByOrderId(orderId);
+        if (orderItems.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 获取该订单所有已开票明细（状态为 ISSUED）
+        List<ErpInvoiceDO> invoices = erpInvoiceMapper.selectList(
+                ErpInvoiceDO::getOrderId, orderId,
+                ErpInvoiceDO::getStatus, "ISSUED"
+        );
+        List<Long> invoiceIds = invoices.stream().map(ErpInvoiceDO::getId).toList();
+
+        // 统计每个产品的已开票数量
+        Map<Long, BigDecimal> invoicedCountMap = new HashMap<>();
+        if (!invoiceIds.isEmpty()) {
+            List<ErpInvoiceItemDO> allInvoiceItems = erpInvoiceItemMapper.selectListByInvoiceIds(invoiceIds);
+            for (ErpInvoiceItemDO item : allInvoiceItems) {
+                invoicedCountMap.merge(item.getProductId(), item.getCount(), BigDecimal::add);
+            }
+        }
+
+        // 3. 计算可开票数量
+        List<UninvoicedItemVO> result = new ArrayList<>();
+        for (ErpSaleOrderItemDO orderItem : orderItems) {
+            BigDecimal totalCount = orderItem.getCount() != null ? orderItem.getCount() : BigDecimal.ZERO;
+            BigDecimal invoicedCount = invoicedCountMap.getOrDefault(orderItem.getProductId(), BigDecimal.ZERO);
+            BigDecimal availableCount = totalCount.subtract(invoicedCount);
+
+            if (availableCount.compareTo(BigDecimal.ZERO) > 0) {
+                UninvoicedItemVO vo = new UninvoicedItemVO();
+                vo.setProductId(orderItem.getProductId());
+                vo.setProductName(orderItem.getProductName());
+                vo.setProductSpec(orderItem.getProductBarCode());
+                vo.setUnit(orderItem.getProductUnitName());
+                vo.setTotalCount(totalCount);
+                vo.setInvoicedCount(invoicedCount);
+                vo.setAvailableCount(availableCount);
+                vo.setPrice(orderItem.getProductPrice());
+                result.add(vo);
+            }
+        }
+
+        return result;
     }
 
     /**

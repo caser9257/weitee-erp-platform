@@ -89,7 +89,7 @@ public class WebFrameworkUtils {
             return UserTypeEnum.ADMIN.getValue();
         }
         if (request.getServletPath().startsWith(properties.getAppApi().getPrefix())) {
-            return UserTypeEnum.MEMBER.getValue();
+            return UserTypeEnum.APP.getValue();
         }
         return null;
     }

@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * ERP 收款单 Service 接口
@@ -89,5 +90,13 @@ public interface ErpFinanceReceiptService {
      * @return 已收款金额
      */
     BigDecimal getReceivedAmountByOrderId(Long orderId);
+
+    /**
+     * 批量获得订单的已收款金额
+     *
+     * @param orderIds 订单编号集合
+     * @return key=orderId, value=已收款金额
+     */
+    Map<Long, BigDecimal> getReceivedAmountByOrderIds(Collection<Long> orderIds);
 
 }

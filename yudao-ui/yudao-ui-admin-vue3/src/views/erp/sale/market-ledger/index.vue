@@ -74,6 +74,26 @@
                 <el-option label="验收不通过" value="REJECTED" />
               </el-select>
             </el-form-item>
+            <el-form-item label="订单月份" prop="orderMonth">
+              <el-date-picker
+                v-model="queryParams.orderMonth"
+                type="month"
+                value-format="YYYY-MM"
+                placeholder="请选择月份"
+                class="!w-1/1"
+              />
+            </el-form-item>
+            <el-form-item label="交期范围" prop="deliveryDateRange">
+              <el-date-picker
+                v-model="deliveryDateRange"
+                type="daterange"
+                value-format="YYYY-MM-DD"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                class="!w-1/1"
+                @change="handleDeliveryDateChange"
+              />
+            </el-form-item>
           </div>
         </transition>
 
@@ -329,8 +349,24 @@ const queryParams = reactive({
   lifecycleStage: '',
   releaseStatus: '',
   invoiceStatus: '',
-  acceptanceStatus: ''
+  acceptanceStatus: '',
+  orderMonth: '',
+  deliveryDateStart: '',
+  deliveryDateEnd: ''
 })
+
+// 交期范围
+const deliveryDateRange = ref<[string, string] | null>(null)
+
+const handleDeliveryDateChange = (val: [string, string] | null) => {
+  if (val) {
+    queryParams.deliveryDateStart = val[0]
+    queryParams.deliveryDateEnd = val[1]
+  } else {
+    queryParams.deliveryDateStart = ''
+    queryParams.deliveryDateEnd = ''
+  }
+}
 
 const queryFormRef = ref()
 
@@ -358,6 +394,10 @@ const resetQuery = async () => {
   queryParams.releaseStatus = ''
   queryParams.invoiceStatus = ''
   queryParams.acceptanceStatus = ''
+  queryParams.orderMonth = ''
+  queryParams.deliveryDateStart = ''
+  queryParams.deliveryDateEnd = ''
+  deliveryDateRange.value = null
   queryParams.pageNo = 1
   await loadData()
 }

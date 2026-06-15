@@ -41,4 +41,13 @@ public class MarketLedgerPageReqVO extends PageParam {
     @Schema(description = "验收状态", example = "PENDING")
     private String acceptanceStatus;
 
+    @Schema(description = "订单月份（格式：yyyy-MM）", example = "2026-06")
+    private String orderMonth;
+
+    @Schema(description = "交期开始日期", example = "2026-01-01")
+    private String deliveryDateStart;
+
+    @Schema(description = "交期结束日期", example = "2026-12-31")
+    private String deliveryDateEnd;
+
 }
