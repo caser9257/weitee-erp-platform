@@ -4,6 +4,7 @@ import cn.iocoder.yudao.module.bpm.api.event.BpmProcessInstanceStatusEvent;
 import cn.iocoder.yudao.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
 import cn.iocoder.yudao.module.bpm.enums.approval.BpmApprovalInstanceSnapshotStatusEnum;
 import cn.iocoder.yudao.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
+import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalRecordService;
 import cn.iocoder.yudao.module.bpm.service.approval.handler.ApprovalResultHandler;
 import cn.iocoder.yudao.module.bpm.service.message.BpmMessageService;
 import cn.iocoder.yudao.module.bpm.service.message.dto.BpmMessageSendWhenProcessInstanceApproveReqDTO;
@@ -71,8 +72,8 @@ class BpmApprovalEventDispatcherTest {
         event.setProcessDefinitionKey("test-process");
         event.setStatus(BpmProcessInstanceStatusEnum.APPROVE.getStatus());
 
-        // 执行并验证：handler 异常应向上抛出
-        assertThrows(RuntimeException.class, () -> dispatcher.onApplicationEvent(event));
+        // 执行：handler 异常被内部捕获，不会抛出
+        dispatcher.onApplicationEvent(event);
 
         // 关键验证：snapshot 不应该被更新为 APPROVE 终态
         assertEquals(0, snapshotUpdateCount.get(), "handler 失败时 snapshot 不应被更新");
@@ -159,7 +160,8 @@ class BpmApprovalEventDispatcherTest {
         event.setProcessDefinitionKey("test-process");
         event.setStatus(BpmProcessInstanceStatusEnum.REJECT.getStatus());
 
-        assertThrows(RuntimeException.class, () -> dispatcher.onApplicationEvent(event));
+        // handler 异常被内部捕获，不会抛出
+        dispatcher.onApplicationEvent(event);
         assertEquals(0, snapshotUpdateCount.get(), "handler 失败时 snapshot 不应被更新");
     }
 
@@ -220,9 +222,9 @@ class BpmApprovalEventDispatcherTest {
                                 .processInstanceId("proc-1").status(BpmApprovalInstanceSnapshotStatusEnum.PROCESSING.getStatus())
                                 .build();
                     }
-                    if ("updateSnapshotStatusIfProcessing".equals(methodName)) {
+                    if ("updateSnapshotStatus".equals(methodName)) {
                         snapshotUpdateCount.incrementAndGet();
-                        return true;
+                        return null;
                     }
                     return null;
                 }));
@@ -236,6 +238,9 @@ class BpmApprovalEventDispatcherTest {
         setField(dispatcher, "messageService", createProxy(BpmMessageService.class,
                 (methodName, args) -> null));
 
+        setField(dispatcher, "approvalRecordService", createProxy(
+                BpmApprovalRecordService.class, (methodName, args) -> null));
+
         BpmProcessInstanceStatusEvent event = new BpmProcessInstanceStatusEvent(this);
         event.setId("proc-1");
         event.setProcessDefinitionKey("test-process");
@@ -243,8 +248,8 @@ class BpmApprovalEventDispatcherTest {
 
         dispatcher.onApplicationEvent(event);
 
-        assertEquals(1, snapshotUpdateCount.get(), "快照应从 PROCESSING 更新为 CANCEL");
         assertEquals(1, handlerCallCount.get(), "handler 应被调用一次");
+        assertEquals(1, snapshotUpdateCount.get(), "快照应从 PROCESSING 更新为 CANCEL");
     }
 
     // ========== 辅助方法 ==========

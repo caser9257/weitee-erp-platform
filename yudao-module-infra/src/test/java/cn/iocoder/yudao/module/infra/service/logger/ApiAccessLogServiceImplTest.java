@@ -45,7 +45,7 @@ public class ApiAccessLogServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         apiAccessLogMapper.insert(cloneIgnoreId(apiAccessLogDO, o -> o.setUserId(3344L)));
         // 测试 userType 不匹配
-        apiAccessLogMapper.insert(cloneIgnoreId(apiAccessLogDO, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        apiAccessLogMapper.insert(cloneIgnoreId(apiAccessLogDO, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 applicationName 不匹配
         apiAccessLogMapper.insert(cloneIgnoreId(apiAccessLogDO, o -> o.setApplicationName("test")));
         // 测试 requestUrl 不匹配

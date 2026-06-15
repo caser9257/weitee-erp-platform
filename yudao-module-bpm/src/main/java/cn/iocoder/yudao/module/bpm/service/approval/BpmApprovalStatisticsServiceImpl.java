@@ -21,19 +21,16 @@ public class BpmApprovalStatisticsServiceImpl implements BpmApprovalStatisticsSe
 
     @Override
     public ApprovalStatisticsRespVO getApprovalStatistics() {
-        // 使用 SQL 聚合查询各状态数量
-        long totalCount = approvalInstanceSnapshotMapper.selectCountByStatus(1)
-                + approvalInstanceSnapshotMapper.selectCountByStatus(2)
-                + approvalInstanceSnapshotMapper.selectCountByStatus(3)
-                + approvalInstanceSnapshotMapper.selectCountByStatus(4);
-        long processingCount = approvalInstanceSnapshotMapper.selectCountByStatus(1);
-        long approvedCount = approvalInstanceSnapshotMapper.selectCountByStatus(2);
-        long rejectedCount = approvalInstanceSnapshotMapper.selectCountByStatus(3);
-        long cancelledCount = approvalInstanceSnapshotMapper.selectCountByStatus(4);
+        // 使用单次 SQL 聚合查询各状态数量
+        Map<String, Object> stats = approvalInstanceSnapshotMapper.selectStatusStatistics();
+        long processingCount = ((Number) stats.get("processingCount")).longValue();
+        long approvedCount = ((Number) stats.get("approvedCount")).longValue();
+        long rejectedCount = ((Number) stats.get("rejectedCount")).longValue();
+        long cancelledCount = ((Number) stats.get("cancelledCount")).longValue();
 
         // 构建返回对象
         ApprovalStatisticsRespVO respVO = new ApprovalStatisticsRespVO();
-        respVO.setTotalCount(totalCount);
+        respVO.setTotalCount(processingCount + approvedCount + rejectedCount + cancelledCount);
         respVO.setProcessingCount(processingCount);
         respVO.setApprovedCount(approvedCount);
         respVO.setRejectedCount(rejectedCount);
@@ -44,17 +41,17 @@ public class BpmApprovalStatisticsServiceImpl implements BpmApprovalStatisticsSe
 
     @Override
     public UserApprovalStatisticsRespVO getUserApprovalStatistics(Long userId) {
-        // 使用 SQL 聚合查询用户各状态数量
-        long processingCount = approvalInstanceSnapshotMapper.selectCountByStartUserIdAndStatus(userId, 1);
-        long approvedCount = approvalInstanceSnapshotMapper.selectCountByStartUserIdAndStatus(userId, 2);
-        long rejectedCount = approvalInstanceSnapshotMapper.selectCountByStartUserIdAndStatus(userId, 3);
-        long cancelledCount = approvalInstanceSnapshotMapper.selectCountByStartUserIdAndStatus(userId, 4);
-        long totalCount = processingCount + approvedCount + rejectedCount + cancelledCount;
+        // 使用单次 SQL 聚合查询用户各状态数量
+        Map<String, Object> stats = approvalInstanceSnapshotMapper.selectStatusStatisticsByStartUserId(userId);
+        long processingCount = ((Number) stats.get("processingCount")).longValue();
+        long approvedCount = ((Number) stats.get("approvedCount")).longValue();
+        long rejectedCount = ((Number) stats.get("rejectedCount")).longValue();
+        long cancelledCount = ((Number) stats.get("cancelledCount")).longValue();
 
         // 构建返回对象
         UserApprovalStatisticsRespVO respVO = new UserApprovalStatisticsRespVO();
         respVO.setUserId(userId);
-        respVO.setTotalCount(totalCount);
+        respVO.setTotalCount(processingCount + approvedCount + rejectedCount + cancelledCount);
         respVO.setProcessingCount(processingCount);
         respVO.setApprovedCount(approvedCount);
         respVO.setRejectedCount(rejectedCount);

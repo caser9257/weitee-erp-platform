@@ -3,9 +3,12 @@ package cn.iocoder.yudao.module.erp.service.sale;
 import cn.hutool.core.collection.CollUtil;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.MarketAlertRuleVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.MarketAlertVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpMarketAlertRuleDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpMarketAlertRuleMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceReceiptService;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -16,7 +19,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -35,73 +37,74 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
     @Resource
     private ErpFinanceReceiptService erpFinanceReceiptService;
 
+    @Resource
+    private ErpMarketAlertRuleMapper erpMarketAlertRuleMapper;
+
     @Override
     public List<MarketAlertRuleVO> getAlertRules() {
-        // 返回预定义的预警规则
-        List<MarketAlertRuleVO> rules = new ArrayList<>();
-
-        MarketAlertRuleVO receiptOverdue = new MarketAlertRuleVO();
-        receiptOverdue.setCode("RECEIPT_OVERDUE");
-        receiptOverdue.setName("收款逾期预警");
-        receiptOverdue.setDescription("订单交期后仍未收到货款");
-        receiptOverdue.setEnabled(true);
-        receiptOverdue.setThresholdDays(30);
-        receiptOverdue.setLevel("WARNING");
-        rules.add(receiptOverdue);
-
-        MarketAlertRuleVO deliveryOverdue = new MarketAlertRuleVO();
-        deliveryOverdue.setCode("DELIVERY_OVERDUE");
-        deliveryOverdue.setName("交期逾期预警");
-        deliveryOverdue.setDescription("订单交期已过但未出库");
-        deliveryOverdue.setEnabled(true);
-        deliveryOverdue.setThresholdDays(0);
-        deliveryOverdue.setLevel("DANGER");
-        rules.add(deliveryOverdue);
-
-        MarketAlertRuleVO releaseBlocked = new MarketAlertRuleVO();
-        releaseBlocked.setCode("RELEASE_BLOCKED");
-        releaseBlocked.setName("放行阻塞预警");
-        releaseBlocked.setDescription("订单放行状态为阻塞");
-        releaseBlocked.setEnabled(true);
-        releaseBlocked.setThresholdDays(7);
-        releaseBlocked.setLevel("WARNING");
-        rules.add(releaseBlocked);
-
-        MarketAlertRuleVO invoiceOverdue = new MarketAlertRuleVO();
-        invoiceOverdue.setCode("INVOICE_OVERDUE");
-        invoiceOverdue.setName("开票逾期预警");
-        invoiceOverdue.setDescription("出库后30天仍未开票");
-        invoiceOverdue.setEnabled(true);
-        invoiceOverdue.setThresholdDays(30);
-        invoiceOverdue.setLevel("WARNING");
-        rules.add(invoiceOverdue);
-
-        return rules;
+        // 从数据库读取预警规则
+        List<ErpMarketAlertRuleDO> ruleDOList = erpMarketAlertRuleMapper.selectList();
+        return BeanUtils.toBean(ruleDOList, MarketAlertRuleVO.class);
     }
 
     @Override
     public void updateAlertRule(MarketAlertRuleVO ruleVO) {
-        // TODO: 实现规则更新（需要持久化存储）
-        log.info("更新预警规则：{}", ruleVO.getCode());
+        // 更新规则到数据库
+        ErpMarketAlertRuleDO ruleDO = erpMarketAlertRuleMapper.selectOne(
+                ErpMarketAlertRuleDO::getRuleCode, ruleVO.getCode());
+        if (ruleDO != null) {
+            ruleDO.setEnabled(ruleVO.getEnabled());
+            ruleDO.setThresholdDays(ruleVO.getThresholdDays());
+            ruleDO.setLevel(ruleVO.getLevel());
+            erpMarketAlertRuleMapper.updateById(ruleDO);
+            log.info("[updateAlertRule] 更新预警规则：{}", ruleVO.getCode());
+        } else {
+            log.warn("[updateAlertRule] 预警规则不存在：{}", ruleVO.getCode());
+        }
     }
 
     @Override
     public List<MarketAlertVO> getCurrentAlerts() {
         List<MarketAlertVO> alerts = new ArrayList<>();
 
+        // 从数据库读取规则配置
+        List<ErpMarketAlertRuleDO> rules = erpMarketAlertRuleMapper.selectList();
+        int receiptThresholdDays = 30;
+        int deliveryThresholdDays = 0;
+        int releaseThresholdDays = 7;
+        int invoiceThresholdDays = 30;
+
+        for (ErpMarketAlertRuleDO rule : rules) {
+            if (!Boolean.TRUE.equals(rule.getEnabled())) continue;
+            switch (rule.getRuleCode()) {
+                case "RECEIPT_OVERDUE":
+                    receiptThresholdDays = rule.getThresholdDays() != null ? rule.getThresholdDays() : 30;
+                    break;
+                case "DELIVERY_OVERDUE":
+                    deliveryThresholdDays = rule.getThresholdDays() != null ? rule.getThresholdDays() : 0;
+                    break;
+                case "RELEASE_BLOCKED":
+                    releaseThresholdDays = rule.getThresholdDays() != null ? rule.getThresholdDays() : 7;
+                    break;
+                case "INVOICE_OVERDUE":
+                    invoiceThresholdDays = rule.getThresholdDays() != null ? rule.getThresholdDays() : 30;
+                    break;
+            }
+        }
+
         // 查询所有订单
         List<ErpSaleOrderDO> orders = erpSaleOrderMapper.selectList();
         LocalDate today = LocalDate.now();
 
         for (ErpSaleOrderDO order : orders) {
-            // 检查收款逾期
+            // 1. 检查收款逾期
             if (order.getDeliveryDate() != null && order.getDeliveryDate().isBefore(today)) {
                 BigDecimal receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(order.getId());
                 BigDecimal orderAmount = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
-                
+
                 if (receivedAmount.compareTo(orderAmount) < 0) {
                     long daysOverdue = ChronoUnit.DAYS.between(order.getDeliveryDate(), today);
-                    if (daysOverdue >= 30) {
+                    if (daysOverdue >= receiptThresholdDays) {
                         MarketAlertVO alert = new MarketAlertVO();
                         alert.setId(order.getId());
                         alert.setRuleCode("RECEIPT_OVERDUE");
@@ -118,26 +121,28 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
                 }
             }
 
-            // 检查交期逾期
+            // 2. 检查交期逾期
             if (order.getDeliveryDate() != null && order.getDeliveryDate().isBefore(today)) {
                 if (order.getOutCount() == null || order.getOutCount().compareTo(BigDecimal.ZERO) == 0) {
                     long daysOverdue = ChronoUnit.DAYS.between(order.getDeliveryDate(), today);
-                    MarketAlertVO alert = new MarketAlertVO();
-                    alert.setId(order.getId() + 10000);
-                    alert.setRuleCode("DELIVERY_OVERDUE");
-                    alert.setRuleName("交期逾期预警");
-                    alert.setLevel("DANGER");
-                    alert.setProjectId(order.getProjectId());
-                    alert.setOrderId(order.getId());
-                    alert.setOrderNo(order.getNo());
-                    alert.setContent("订单交期已过" + daysOverdue + "天，但未出库");
-                    alert.setTriggerTime(LocalDateTime.now());
-                    alert.setHandled(false);
-                    alerts.add(alert);
+                    if (daysOverdue >= deliveryThresholdDays) {
+                        MarketAlertVO alert = new MarketAlertVO();
+                        alert.setId(order.getId() + 10000);
+                        alert.setRuleCode("DELIVERY_OVERDUE");
+                        alert.setRuleName("交期逾期预警");
+                        alert.setLevel("DANGER");
+                        alert.setProjectId(order.getProjectId());
+                        alert.setOrderId(order.getId());
+                        alert.setOrderNo(order.getNo());
+                        alert.setContent("订单交期已过" + daysOverdue + "天，但未出库");
+                        alert.setTriggerTime(LocalDateTime.now());
+                        alert.setHandled(false);
+                        alerts.add(alert);
+                    }
                 }
             }
 
-            // 检查放行阻塞
+            // 3. 检查放行阻塞
             if ("BLOCKED".equals(order.getShipmentReleaseStatus())) {
                 MarketAlertVO alert = new MarketAlertVO();
                 alert.setId(order.getId() + 20000);
@@ -152,6 +157,30 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
                 alert.setHandled(false);
                 alerts.add(alert);
             }
+
+            // 4. 检查开票逾期
+            if (order.getOutCount() != null && order.getOutCount().compareTo(BigDecimal.ZERO) > 0
+                    && "NOT_INVOICED".equals(order.getInvoiceStatus())) {
+                // 出库后超过阈值天数未开票
+                if (order.getUpdateTime() != null) {
+                    long daysSinceOutbound = ChronoUnit.DAYS.between(
+                            order.getUpdateTime().toLocalDate(), today);
+                    if (daysSinceOutbound >= invoiceThresholdDays) {
+                        MarketAlertVO alert = new MarketAlertVO();
+                        alert.setId(order.getId() + 30000);
+                        alert.setRuleCode("INVOICE_OVERDUE");
+                        alert.setRuleName("开票逾期预警");
+                        alert.setLevel("WARNING");
+                        alert.setProjectId(order.getProjectId());
+                        alert.setOrderId(order.getId());
+                        alert.setOrderNo(order.getNo());
+                        alert.setContent("出库后已过" + daysSinceOutbound + "天，仍未开票");
+                        alert.setTriggerTime(LocalDateTime.now());
+                        alert.setHandled(false);
+                        alerts.add(alert);
+                    }
+                }
+            }
         }
 
         return alerts;
@@ -160,8 +189,20 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
     @Override
     public int checkAndTriggerAlerts() {
         List<MarketAlertVO> alerts = getCurrentAlerts();
-        // TODO: 实现预警通知（邮件、站内信等）
-        log.info("检查预警完成，发现 {} 条预警", alerts.size());
+
+        // 记录预警日志
+        if (!alerts.isEmpty()) {
+            log.info("[checkAndTriggerAlerts] 发现 {} 条预警：", alerts.size());
+            for (MarketAlertVO alert : alerts) {
+                log.info("  - [{}] {}：{}", alert.getLevel(), alert.getRuleName(), alert.getContent());
+            }
+
+            // TODO: 对接通知服务发送预警通知（站内信、邮件等）
+            // 通知内容模板化：预警类型 + 涉及单据 + 建议操作
+        } else {
+            log.info("[checkAndTriggerAlerts] 未发现预警");
+        }
+
         return alerts.size();
     }
 

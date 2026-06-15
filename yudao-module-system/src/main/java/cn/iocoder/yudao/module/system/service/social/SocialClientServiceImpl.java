@@ -295,21 +295,7 @@ public class SocialClientServiceImpl implements SocialClientService {
 
     @Override
     public byte[] getWxaQrcode(SocialWxQrcodeReqDTO reqVO) {
-        WxMaService service = getWxMaService(UserTypeEnum.MEMBER.getValue());
-        try {
-            return service.getQrcodeService().createWxaCodeUnlimitBytes(
-                    ObjUtil.defaultIfEmpty(reqVO.getScene(), SocialWxQrcodeReqDTO.SCENE),
-                    reqVO.getPath(),
-                    ObjUtil.defaultIfNull(reqVO.getCheckPath(), SocialWxQrcodeReqDTO.CHECK_PATH),
-                    envVersion,
-                    ObjUtil.defaultIfNull(reqVO.getWidth(), SocialWxQrcodeReqDTO.WIDTH),
-                    ObjUtil.defaultIfNull(reqVO.getAutoColor(), SocialWxQrcodeReqDTO.AUTO_COLOR),
-                    null,
-                    ObjUtil.defaultIfNull(reqVO.getHyaline(), SocialWxQrcodeReqDTO.HYALINE));
-        } catch (WxErrorException e) {
-            log.error("[getWxQrcode][reqVO({}) 获得小程序码失败]", reqVO, e);
-            throw exception(SOCIAL_CLIENT_WEIXIN_MINI_APP_QRCODE_ERROR);
-        }
+        throw exception(SOCIAL_CLIENT_WEIXIN_MINI_APP_QRCODE_ERROR);
     }
 
     @Override

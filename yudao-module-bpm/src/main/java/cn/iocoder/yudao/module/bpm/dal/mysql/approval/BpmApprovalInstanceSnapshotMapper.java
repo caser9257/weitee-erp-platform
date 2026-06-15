@@ -59,6 +59,28 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
     long selectCountByStartUserIdAndStatus(@Param("startUserId") Long startUserId, @Param("status") Integer status);
 
     /**
+     * 全局各状态聚合统计
+     */
+    @Select("SELECT " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS processingCount, " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS approvedCount, " +
+            "SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS rejectedCount, " +
+            "SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS cancelledCount " +
+            "FROM bpm_approval_instance_snapshot WHERE deleted = 0")
+    Map<String, Object> selectStatusStatistics();
+
+    /**
+     * 按用户各状态聚合统计
+     */
+    @Select("SELECT " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS processingCount, " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS approvedCount, " +
+            "SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS rejectedCount, " +
+            "SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS cancelledCount " +
+            "FROM bpm_approval_instance_snapshot WHERE start_user_id = #{startUserId} AND deleted = 0")
+    Map<String, Object> selectStatusStatisticsByStartUserId(@Param("startUserId") Long startUserId);
+
+    /**
      * 按用户分组统计各状态数量
      */
     @Select("SELECT start_user_id AS startUserId, " +

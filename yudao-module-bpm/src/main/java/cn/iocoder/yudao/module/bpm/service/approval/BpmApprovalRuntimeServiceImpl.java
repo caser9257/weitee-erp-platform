@@ -25,6 +25,7 @@ import cn.iocoder.yudao.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
 import cn.iocoder.yudao.module.bpm.service.approval.handler.ApprovalResultHandler;
 import cn.iocoder.yudao.module.bpm.service.approval.provider.ApprovalContext;
 import cn.iocoder.yudao.module.bpm.service.approval.provider.ApprovalContextProvider;
+import cn.iocoder.yudao.module.bpm.service.approval.engine.RuleConditionEvaluator;
 import cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,8 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     private BpmProcessInstanceService processInstanceService;
     @Resource
     private BpmApprovalEventDispatcher approvalEventDispatcher;
+    @Resource
+    private RuleConditionEvaluator ruleConditionEvaluator;
 
     private Map<String, ApprovalContextProvider> contextProviderMap;
     private Map<String, ApprovalResultHandler> resultHandlerMap;
@@ -94,6 +98,7 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
         }
 
         // 2. 防重检查：同一业务单据在同一场景下不允许重复提交
+        //    铁律 5：区分"已完成的终态"和"handler 失败的伪终态" — FAILED 状态允许重新提交
         BpmApprovalInstanceSnapshotDO existingSnapshot = approvalInstanceSnapshotService
                 .getSnapshotBySceneCodeAndBizId(sceneCode, String.valueOf(bizId));
         if (existingSnapshot != null) {
@@ -102,7 +107,12 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 // 审批中，拒绝重复提交
                 throw exception(APPROVAL_INSTANCE_ALREADY_PROCESSING, sceneCode, bizId);
             }
-            // 已完结（通过/驳回/撤回），清理旧快照后允许重新提交
+            if (ObjectUtil.equal(existingSnapshot.getStatus(),
+                    BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus())) {
+                // 失败状态，清理旧快照后允许重新提交
+                log.info("[submit] 检测到FAILED状态快照，允许重新提交，sceneCode={}, bizId={}", sceneCode, bizId);
+            }
+            // 已完结（通过/驳回/撤回/失败），清理旧快照后允许重新提交
             approvalInstanceSnapshotService.deleteSnapshot(existingSnapshot.getId());
         }
 
@@ -129,12 +139,9 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_SCHEME_VERSION_NOT_ACTIVE, activeSchemeId);
         }
 
-        // 6. 命中规则（暂时使用默认规则）
+        // 6. 命中规则（优先匹配条件规则，无匹配时回退到默认规则）
         List<BpmApprovalRuleDO> rules = approvalRuleMapper.selectListBySchemeVersionId(activeVersion.getId());
-        BpmApprovalRuleDO hitRule = rules.stream()
-                .filter(rule -> Boolean.TRUE.equals(rule.getDefaultRule()) && Boolean.TRUE.equals(rule.getEnabled()))
-                .findFirst()
-                .orElse(null);
+        BpmApprovalRuleDO hitRule = matchRule(rules, context);
         if (hitRule == null) {
             throw exception(APPROVAL_RULE_NOT_FOUND, activeVersion.getId());
         }
@@ -148,6 +155,7 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 .approvalId(approvalId)
                 .sceneCode(sceneCode)
                 .bizId(String.valueOf(bizId))
+                .startUserId(userId)
                 .schemeId(activeSchemeId)
                 .schemeVersionId(activeVersion.getId())
                 .ruleId(hitRule.getId())
@@ -165,17 +173,37 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
         variables.put("bizId", String.valueOf(bizId));
         variables.put("snapshotId", snapshotId);
 
-        // 9. 启动 BPM 实例
-        String processInstanceId = processInstanceApi.createProcessInstance(userId,
-                new BpmProcessInstanceCreateReqDTO()
-                        .setProcessDefinitionKey(processKey)
-                        .setBusinessKey(String.valueOf(bizId))
-                        .setVariables(variables));
+        // 9. 事务提交后启动 BPM 实例（铁律 1：事务内禁止调外部系统）
+        //    返回 snapshotId 而非 processInstanceId，调用方可通过 snapshot 查询审批状态
+        String processKeyFinal = processKey;
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            String processInstanceId = processInstanceApi.createProcessInstance(userId,
+                                    new BpmProcessInstanceCreateReqDTO()
+                                            .setProcessDefinitionKey(processKeyFinal)
+                                            .setBusinessKey(String.valueOf(bizId))
+                                            .setVariables(variables));
+                            // 更新快照流程实例 ID
+                            approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(snapshotId, processInstanceId);
+                        } catch (Exception e) {
+                            log.error("[submit] BPM 创建失败，snapshotId={}, sceneCode={}, bizId={}",
+                                    snapshotId, sceneCode, bizId, e);
+                            // 铁律 4：失败路径必须可恢复 — 标记为 FAILED 状态
+                            try {
+                                approvalInstanceSnapshotService.updateSnapshotStatus(snapshotId,
+                                        BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus(),
+                                        "BPM创建失败: " + e.getMessage());
+                            } catch (Exception ex) {
+                                log.error("[submit] 更新快照为FAILED状态也失败，snapshotId={}", snapshotId, ex);
+                            }
+                        }
+                    }
+                });
 
-        // 10. 更新快照流程实例 ID
-        approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(snapshotId, processInstanceId);
-
-        return processInstanceId;
+        return String.valueOf(snapshotId);
     }
 
     @Override
@@ -214,17 +242,7 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_PROCESS_INSTANCE_NOT_EXISTS);
         }
 
-        // 3. 调用 BPM 撤回
-        processInstanceService.cancelProcessInstanceByStartUser(userId,
-                new BpmProcessInstanceCancelReqVO()
-                        .setId(snapshot.getProcessInstanceId())
-                        .setReason(reason));
-
-        // 4. 更新快照状态
-        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
-                BpmApprovalInstanceSnapshotStatusEnum.CANCEL.getStatus(), reason);
-
-        // 5. 记录审批操作
+        // 3. 记录审批操作（本地事务内）
         BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
                 .approvalId(snapshot.getApprovalId())
                 .action("CANCEL")
@@ -233,18 +251,81 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 .build();
         approvalRecordService.createRecord(record);
 
-        // 6. 调用结果处理器
-        // 异常不做静默吞掉：若 onCancel() 抛出异常，快照状态保持 PROCESSING，避免标记撤回但业务未回写；
-        // 调用方需感知失败并做补偿。若未来确认 onCancel() 仅为通知类副作用，可在实现内自行 try-catch。
-        ApprovalResultHandler handler = resultHandlerMap.get(sceneCode);
-        if (handler != null) {
-            handler.onCancel(bizId, snapshot.getProcessInstanceId(), reason);
-        }
+        // 4. 事务提交后调用外部 BPM 系统（铁律 1：事务内禁止调外部系统）
+        //    终态写入和业务回调统一由 BpmApprovalEventDispatcher.handleCancel() 处理（铁律 3：单一路径）
+        Long snapshotId = snapshot.getId();
+        String processInstanceId = snapshot.getProcessInstanceId();
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            processInstanceService.cancelProcessInstanceByStartUser(userId,
+                                    new BpmProcessInstanceCancelReqVO()
+                                            .setId(processInstanceId)
+                                            .setReason(reason));
+                        } catch (Exception e) {
+                            log.error("[cancel] BPM 撤回失败，sceneCode={}, bizId={}, processInstanceId={}",
+                                    sceneCode, bizId, processInstanceId, e);
+                            // 铁律 4：失败路径必须可恢复 — 标记为 FAILED 状态，支持定时重试或人工处理
+                            try {
+                                approvalInstanceSnapshotService.updateSnapshotStatus(snapshotId,
+                                        BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus(),
+                                        "BPM撤回失败: " + e.getMessage());
+                            } catch (Exception ex) {
+                                log.error("[cancel] 更新快照为FAILED状态也失败，snapshotId={}", snapshotId, ex);
+                            }
+                        }
+                    }
+                });
     }
 
     @Override
     public void dispatchResult(BpmProcessInstanceStatusEvent event) {
         approvalEventDispatcher.onApplicationEvent(event);
+    }
+
+    /**
+     * 匹配审批规则
+     *
+     * 匹配策略：
+     * 1. 按优先级从高到低排序
+     * 2. 优先匹配有条件表达式的规则（conditionJson 不为空）
+     * 3. 条件匹配成功则返回该规则
+     * 4. 无条件匹配时，回退到默认规则（defaultRule = true）
+     *
+     * @param rules 规则列表
+     * @param context 审批上下文
+     * @return 命中的规则，无匹配时返回 null
+     */
+    private BpmApprovalRuleDO matchRule(List<BpmApprovalRuleDO> rules, ApprovalContext context) {
+        // 1. 过滤启用的规则
+        List<BpmApprovalRuleDO> enabledRules = rules.stream()
+                .filter(rule -> Boolean.TRUE.equals(rule.getEnabled()))
+                .toList();
+        if (enabledRules.isEmpty()) {
+            return null;
+        }
+
+        // 2. 按优先级排序（priority 越小越优先）
+        enabledRules.sort(Comparator.comparingInt(rule -> rule.getPriority() != null ? rule.getPriority() : Integer.MAX_VALUE));
+
+        // 3. 优先匹配条件规则
+        for (BpmApprovalRuleDO rule : enabledRules) {
+            if (Boolean.TRUE.equals(rule.getDefaultRule())) {
+                continue; // 默认规则稍后处理
+            }
+            if (ruleConditionEvaluator.evaluate(rule.getConditionJson(), context)) {
+                log.info("[matchRule] 命中条件规则：ruleId={}, ruleName={}", rule.getId(), rule.getRuleName());
+                return rule;
+            }
+        }
+
+        // 4. 回退到默认规则
+        return enabledRules.stream()
+                .filter(rule -> Boolean.TRUE.equals(rule.getDefaultRule()))
+                .findFirst()
+                .orElse(null);
     }
 
     /**

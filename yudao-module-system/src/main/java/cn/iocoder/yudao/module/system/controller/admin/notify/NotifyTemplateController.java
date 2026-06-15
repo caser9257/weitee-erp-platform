@@ -90,12 +90,10 @@ public class NotifyTemplateController {
     @Operation(summary = "发送站内信")
     @PreAuthorize("@ss.hasPermission('system:notify-template:send-notify')")
     public CommonResult<Long> sendNotify(@Valid @RequestBody NotifyTemplateSendReqVO sendReqVO) {
-        if (UserTypeEnum.MEMBER.getValue().equals(sendReqVO.getUserType())) {
-            return success(notifySendService.sendSingleNotifyToMember(sendReqVO.getUserId(),
-                    sendReqVO.getTemplateCode(), sendReqVO.getTemplateParams()));
-        } else {
-            return success(notifySendService.sendSingleNotifyToAdmin(sendReqVO.getUserId(),
-                    sendReqVO.getTemplateCode(), sendReqVO.getTemplateParams()));
+        if (UserTypeEnum.APP.getValue().equals(sendReqVO.getUserType())) {
+            throw new IllegalArgumentException("APP用户已不支持站内信发送");
         }
+        return success(notifySendService.sendSingleNotifyToAdmin(sendReqVO.getUserId(),
+                sendReqVO.getTemplateCode(), sendReqVO.getTemplateParams()));
     }
 }

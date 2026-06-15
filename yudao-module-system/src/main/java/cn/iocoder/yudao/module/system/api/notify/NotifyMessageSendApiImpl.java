@@ -25,8 +25,7 @@ public class NotifyMessageSendApiImpl implements NotifyMessageSendApi {
 
     @Override
     public Long sendSingleMessageToMember(NotifySendSingleToUserReqDTO reqDTO) {
-        return notifySendService.sendSingleNotifyToMember(reqDTO.getUserId(),
-                reqDTO.getTemplateCode(), reqDTO.getTemplateParams());
+        throw new UnsupportedOperationException("会员用户已不支持站内信发送");
     }
 
 }

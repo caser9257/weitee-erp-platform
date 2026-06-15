@@ -7,6 +7,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntryPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntrySaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProjectSummaryRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProductSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
@@ -282,6 +283,128 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         }
         result.sort(java.util.Comparator.comparing(ErpProductionCostProjectSummaryRespVO::getProjectId));
         return result;
+    }
+
+    @Override
+    public List<ErpProductionCostProductSummaryRespVO> getProductSummary(String accountingMonth) {
+        // 1. 查询成本条目和工时
+        List<ErpProductionCostEntryDO> entryList = erpProductionCostEntryMapper.selectListByAccountingMonth(accountingMonth);
+        List<ErpProductionManHourDO> manHourList = erpProductionManHourMapper.selectListByAccountingMonth(accountingMonth);
+
+        // 2. 收集所有生产工单 ID
+        Set<Long> productionOrderIds = new LinkedHashSet<>();
+        productionOrderIds.addAll(filterNotNull(convertSet(entryList, ErpProductionCostEntryDO::getProductionOrderId)));
+        productionOrderIds.addAll(filterNotNull(convertSet(manHourList, ErpProductionManHourDO::getProductionOrderId)));
+        if (productionOrderIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 3. 获取工单信息，构建产品维度映射
+        Map<Long, ErpProductionOrderDO> orderMap = productionOrderService.getProductionOrderList(productionOrderIds).stream()
+                .filter(Objects::nonNull)
+                .collect(java.util.stream.Collectors.toMap(ErpProductionOrderDO::getId, item -> item, (left, right) -> left));
+
+        // 4. 获取产品信息
+        Map<Long, ErpProductRespVO> productMap = buildProductMap(orderMap);
+
+        // 5. 按产品汇总
+        Map<Long, ErpProductionCostProductSummaryRespVO> summaryMap = new LinkedHashMap<>();
+        Map<Long, Set<Long>> projectSetMap = new LinkedHashMap<>();
+        Map<Long, Set<Long>> orderSetMap = new LinkedHashMap<>();
+
+        // 汇总工时
+        for (ErpProductionManHourDO manHour : manHourList) {
+            ErpProductionOrderDO order = orderMap.get(manHour.getProductionOrderId());
+            if (order == null || order.getProductId() == null) {
+                continue;
+            }
+            Long productId = order.getProductId();
+            ErpProductionCostProductSummaryRespVO summary = summaryMap.computeIfAbsent(productId,
+                    pid -> createProductSummary(pid, productMap.get(pid)));
+            summary.setTotalManHour(defaultScaled(summary.getTotalManHour()).add(defaultScaled(manHour.getManHour())));
+            orderSetMap.computeIfAbsent(productId, k -> new LinkedHashSet<>()).add(order.getId());
+            if (order.getProjectId() != null) {
+                projectSetMap.computeIfAbsent(productId, k -> new LinkedHashSet<>()).add(order.getProjectId());
+            }
+        }
+
+        // 汇总成本
+        for (ErpProductionCostEntryDO entry : entryList) {
+            ErpProductionOrderDO order = orderMap.get(entry.getProductionOrderId());
+            if (order == null || order.getProductId() == null) {
+                continue;
+            }
+            Long productId = order.getProductId();
+            ErpProductionCostProductSummaryRespVO summary = summaryMap.computeIfAbsent(productId,
+                    pid -> createProductSummary(pid, productMap.get(pid)));
+            accumulateProductCost(summary, entry);
+            orderSetMap.computeIfAbsent(productId, k -> new LinkedHashSet<>()).add(order.getId());
+            if (order.getProjectId() != null) {
+                projectSetMap.computeIfAbsent(productId, k -> new LinkedHashSet<>()).add(order.getProjectId());
+            }
+        }
+
+        // 6. 计算汇总值
+        List<ErpProductionCostProductSummaryRespVO> result = new ArrayList<>(summaryMap.values());
+        for (ErpProductionCostProductSummaryRespVO summary : result) {
+            summary.setProductionOrderCount(orderSetMap.getOrDefault(summary.getProductId(), Collections.emptySet()).size());
+            summary.setProjectCount(projectSetMap.getOrDefault(summary.getProductId(), Collections.emptySet()).size());
+            BigDecimal totalCost = defaultAmount(summary.getMaterialCost())
+                    .add(defaultAmount(summary.getLaborCost()))
+                    .add(defaultAmount(summary.getDepreciationCost()))
+                    .add(defaultAmount(summary.getPowerCost()))
+                    .add(defaultAmount(summary.getOtherCost()));
+            summary.setTotalCost(totalCost);
+            // 计算单位成本
+            if (summary.getOutputQty() != null && summary.getOutputQty().compareTo(BigDecimal.ZERO) > 0) {
+                summary.setUnitCost(totalCost.divide(summary.getOutputQty(), 2, RoundingMode.HALF_UP));
+            }
+        }
+        result.sort(java.util.Comparator.comparing(ErpProductionCostProductSummaryRespVO::getProductId));
+        return result;
+    }
+
+    private ErpProductionCostProductSummaryRespVO createProductSummary(Long productId, ErpProductRespVO product) {
+        ErpProductionCostProductSummaryRespVO summary = new ErpProductionCostProductSummaryRespVO();
+        summary.setProductId(productId);
+        summary.setProductName(product == null ? null : product.getName());
+        summary.setProductSpec(product == null ? null : product.getStandard());
+        summary.setProductUnit(product == null ? null : product.getUnitName());
+        summary.setProjectCount(0);
+        summary.setProductionOrderCount(0);
+        summary.setTotalManHour(BigDecimal.ZERO.setScale(6, RoundingMode.HALF_UP));
+        summary.setMaterialCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setLaborCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setDepreciationCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setPowerCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setOtherCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setTotalCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setOutputQty(BigDecimal.ZERO);
+        summary.setUnitCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        return summary;
+    }
+
+    private void accumulateProductCost(ErpProductionCostProductSummaryRespVO summary, ErpProductionCostEntryDO entry) {
+        BigDecimal amount = defaultAmount(entry.getAmount());
+        if (ErpProductionCostTypeEnum.MATERIAL.getType().equals(entry.getCostType())) {
+            summary.setMaterialCost(defaultAmount(summary.getMaterialCost()).add(amount));
+            return;
+        }
+        if (ErpProductionCostTypeEnum.LABOR.getType().equals(entry.getCostType())) {
+            summary.setLaborCost(defaultAmount(summary.getLaborCost()).add(amount));
+            return;
+        }
+        if (ErpProductionCostTypeEnum.DEPRECIATION.getType().equals(entry.getCostType())) {
+            summary.setDepreciationCost(defaultAmount(summary.getDepreciationCost()).add(amount));
+            return;
+        }
+        if (ErpProductionCostTypeEnum.POWER.getType().equals(entry.getCostType())) {
+            summary.setPowerCost(defaultAmount(summary.getPowerCost()).add(amount));
+            return;
+        }
+        if (ErpProductionCostTypeEnum.OTHER.getType().equals(entry.getCostType())) {
+            summary.setOtherCost(defaultAmount(summary.getOtherCost()).add(amount));
+        }
     }
 
     private void validateManualEntry(Long productionOrderId, Integer costType, BigDecimal amount) {

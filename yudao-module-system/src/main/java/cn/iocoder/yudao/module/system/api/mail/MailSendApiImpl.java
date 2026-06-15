@@ -28,9 +28,7 @@ public class MailSendApiImpl implements MailSendApi {
 
     @Override
     public Long sendSingleMailToMember(MailSendSingleToUserReqDTO reqDTO) {
-        return mailSendService.sendSingleMailToMember(reqDTO.getUserId(),
-                reqDTO.getToMails(), reqDTO.getCcMails(), reqDTO.getBccMails(),
-                reqDTO.getTemplateCode(), reqDTO.getTemplateParams(), reqDTO.getAttachments());
+        throw new UnsupportedOperationException("会员用户已不支持邮件发送");
     }
 
 }

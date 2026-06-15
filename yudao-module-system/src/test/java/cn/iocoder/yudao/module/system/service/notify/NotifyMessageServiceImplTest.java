@@ -83,7 +83,7 @@ public class NotifyMessageServiceImplTest extends BaseDbUnitTest {
        // 测试 userId 不匹配
        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserId(2L)));
        // 测试 userType 不匹配
-       notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+       notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.APP.getValue())));
        // 测试 templateCode 不匹配
        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setTemplateCode("test_11")));
        // 测试 templateType 不匹配
@@ -134,7 +134,7 @@ public class NotifyMessageServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserId(2L)));
         // 测试 userType 不匹配
-        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 readStatus 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setReadStatus(false)));
         // 测试 createTime 不匹配
@@ -167,7 +167,7 @@ public class NotifyMessageServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserId(2L)));
         // 测试 userType 不匹配
-        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 readStatus 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setReadStatus(true)));
         // 准备参数
@@ -195,7 +195,7 @@ public class NotifyMessageServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserId(2L)));
         // 测试 userType 不匹配
-        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 readStatus 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setReadStatus(true)));
         // 准备参数
@@ -220,7 +220,7 @@ public class NotifyMessageServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserId(2L)));
         // 测试 userType 不匹配
-        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 readStatus 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setReadStatus(true)));
         // 准备参数
@@ -252,7 +252,7 @@ public class NotifyMessageServiceImplTest extends BaseDbUnitTest {
         // 测试 userId 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserId(2L)));
         // 测试 userType 不匹配
-        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.MEMBER.getValue())));
+        notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setUserType(UserTypeEnum.APP.getValue())));
         // 测试 readStatus 不匹配
         notifyMessageMapper.insert(cloneIgnoreId(dbNotifyMessage, o -> o.setReadStatus(true)));
         // 准备参数

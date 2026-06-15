@@ -20,7 +20,9 @@ import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
 import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSaleOutService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSaleReturnService;
+import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -44,6 +46,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
 
     @Resource
@@ -62,6 +65,8 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     private ErpSaleOutService saleOutService;
     @Resource
     private ErpSaleReturnService saleReturnService;
+    @Resource
+    private ErpProjectLifecycleService projectLifecycleService;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -153,6 +158,30 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
                 new ErpFinanceReceiptDO().setStatus(status));
         if (updateCount == 0) {
             throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
+        }
+
+        // 3. 审批通过时，触发项目生命周期刷新
+        if (approve) {
+            triggerProjectLifecycleRefresh(id);
+        }
+    }
+
+    /**
+     * 触发收款单关联项目的生命周期刷新
+     */
+    private void triggerProjectLifecycleRefresh(Long receiptId) {
+        try {
+            List<ErpFinanceReceiptItemDO> items = erpFinanceReceiptItemMapper.selectListByReceiptId(receiptId);
+            for (ErpFinanceReceiptItemDO item : items) {
+                if (ObjectUtil.equal(item.getBizType(), cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum.SALE_OUT.getType())) {
+                    ErpSaleOutDO saleOut = saleOutService.validateSaleOut(item.getBizId());
+                    if (saleOut != null && saleOut.getProjectId() != null) {
+                        projectLifecycleService.refreshProjectStatus(saleOut.getProjectId());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[triggerProjectLifecycleRefresh] 刷新项目生命周期失败，receiptId={}", receiptId, e);
         }
     }
 
@@ -286,6 +315,18 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             }
         }
         return totalReceived;
+    }
+
+    @Override
+    public Map<Long, BigDecimal> getReceivedAmountByOrderIds(Collection<Long> orderIds) {
+        if (CollUtil.isEmpty(orderIds)) {
+            return java.util.Collections.emptyMap();
+        }
+        Map<Long, BigDecimal> result = new java.util.HashMap<>();
+        for (Long orderId : orderIds) {
+            result.put(orderId, getReceivedAmountByOrderId(orderId));
+        }
+        return result;
     }
 
 }

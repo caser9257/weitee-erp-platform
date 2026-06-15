@@ -16,7 +16,6 @@ import cn.iocoder.yudao.module.system.dal.dataobject.sms.SmsTemplateDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.mq.message.sms.SmsSendMessage;
 import cn.iocoder.yudao.module.system.mq.producer.sms.SmsProducer;
-import cn.iocoder.yudao.module.system.service.member.MemberService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
@@ -42,8 +41,6 @@ public class SmsSendServiceImpl implements SmsSendService {
     @Resource
     private AdminUserService adminUserService;
     @Resource
-    private MemberService memberService;
-    @Resource
     private SmsChannelService smsChannelService;
     @Resource
     private SmsTemplateService smsTemplateService;
@@ -68,18 +65,11 @@ public class SmsSendServiceImpl implements SmsSendService {
     }
 
     @Override
-    public Long sendSingleSmsToMember(String mobile, Long userId, String templateCode, Map<String, Object> templateParams) {
-        // 如果 mobile 为空，则加载用户编号对应的手机号
-        if (StrUtil.isEmpty(mobile)) {
-            mobile = memberService.getMemberUserMobile(userId);
-        }
-        // 执行发送
-        return sendSingleSms(mobile, userId, UserTypeEnum.MEMBER.getValue(), templateCode, templateParams);
-    }
-
-    @Override
     public Long sendSingleSms(String mobile, Long userId, Integer userType,
                               String templateCode, Map<String, Object> templateParams) {
+        if (UserTypeEnum.APP.getValue().equals(userType)) {
+            throw exception(SMS_SEND_MOBILE_NOT_EXISTS, "APP用户已不支持短信发送");
+        }
         // 校验短信模板是否合法
         SmsTemplateDO template = validateSmsTemplate(templateCode);
         // 校验短信渠道是否合法
