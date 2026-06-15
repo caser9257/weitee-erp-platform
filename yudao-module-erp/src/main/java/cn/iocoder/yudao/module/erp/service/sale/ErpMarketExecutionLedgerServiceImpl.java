@@ -10,7 +10,10 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.project.ErpProjectMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
+import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceReceiptService;
+import cn.iocoder.yudao.module.erp.service.finance.ErpInvoiceService;
 import cn.iocoder.yudao.framework.mybatis.core.query.MPJLambdaWrapperX;
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +21,9 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +46,12 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
     @Resource
     private ErpProjectMapper erpProjectMapper;
 
+    @Resource
+    private ErpFinanceReceiptService erpFinanceReceiptService;
+
+    @Resource
+    private ErpInvoiceService erpInvoiceService;
+
     @Override
     public PageResult<MarketLedgerVO> getLedgerPage(MarketLedgerPageReqVO reqVO) {
         // 1. 查询销售订单
@@ -51,6 +63,24 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
                 .eqIfPresent(ErpSaleOrderDO::getAcceptanceStatus, reqVO.getAcceptanceStatus())
                 .selectAll(ErpSaleOrderDO.class)
                 .orderByDesc(ErpSaleOrderDO::getId);
+
+        // 交期范围筛选
+        if (StrUtil.isNotBlank(reqVO.getDeliveryDateStart())) {
+            query.ge(ErpSaleOrderDO::getDeliveryDate, LocalDate.parse(reqVO.getDeliveryDateStart()));
+        }
+        if (StrUtil.isNotBlank(reqVO.getDeliveryDateEnd())) {
+            query.le(ErpSaleOrderDO::getDeliveryDate, LocalDate.parse(reqVO.getDeliveryDateEnd()));
+        }
+
+        // 订单月份筛选
+        if (StrUtil.isNotBlank(reqVO.getOrderMonth())) {
+            YearMonth ym = YearMonth.parse(reqVO.getOrderMonth(), DateTimeFormatter.ofPattern("yyyy-MM"));
+            LocalDate monthStart = ym.atDay(1);
+            LocalDate monthEnd = ym.atEndOfMonth();
+            query.ge(ErpSaleOrderDO::getDeliveryDate, monthStart)
+                 .le(ErpSaleOrderDO::getDeliveryDate, monthEnd);
+        }
+
         if (reqVO.getProjectNo() != null || reqVO.getLifecycleStage() != null || reqVO.getCustomerName() != null) {
             query.leftJoin(ErpProjectDO.class, ErpProjectDO::getId, ErpSaleOrderDO::getProjectId)
                     .leftJoin(ErpCustomerDO.class, ErpCustomerDO::getId, ErpSaleOrderDO::getCustomerId)
@@ -71,9 +101,18 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
         Map<Long, ErpProjectDO> projectMap = erpProjectMapper.selectBatchIds(projectIds).stream()
                 .collect(Collectors.toMap(ErpProjectDO::getId, p -> p));
 
-        // 3. 转换为台账 VO
+        // 3. 批量查询收款和开票金额（避免 N+1）
+        Set<Long> orderIds = orderPage.getList().stream()
+                .map(ErpSaleOrderDO::getId)
+                .collect(Collectors.toSet());
+        Map<Long, BigDecimal> receivedAmountMap = erpFinanceReceiptService.getReceivedAmountByOrderIds(orderIds);
+        Map<Long, BigDecimal> invoicedAmountMap = erpInvoiceService.getInvoicedAmountByOrderIds(orderIds);
+
+        // 4. 转换为台账 VO
         List<MarketLedgerVO> ledgerList = orderPage.getList().stream()
-                .map(order -> convertToLedgerVO(order, projectMap.get(order.getProjectId())))
+                .map(order -> convertToLedgerVO(order, projectMap.get(order.getProjectId()),
+                        receivedAmountMap.getOrDefault(order.getId(), BigDecimal.ZERO),
+                        invoicedAmountMap.getOrDefault(order.getId(), BigDecimal.ZERO)))
                 .collect(Collectors.toList());
 
         return new PageResult<>(ledgerList, orderPage.getTotal());
@@ -123,23 +162,76 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
                 .count();
         stats.setAbnormalOrderCount((int) abnormalCount);
 
-        // 7. 计算已收款金额（简化实现，实际需要查询收款单）
-        // TODO: 需要集成收款服务查询实际收款金额
-        stats.setTotalReceivedAmount(BigDecimal.ZERO);
+        // 7. 批量计算已收款金额（避免 N+1 查询）
+        Set<Long> orderIds = allOrders.stream()
+                .map(ErpSaleOrderDO::getId)
+                .filter(id -> id != null)
+                .collect(Collectors.toSet());
+        Map<Long, BigDecimal> receivedAmountMap = erpFinanceReceiptService.getReceivedAmountByOrderIds(orderIds);
+        BigDecimal totalReceivedAmount = receivedAmountMap.values().stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        stats.setTotalReceivedAmount(totalReceivedAmount);
 
         return stats;
     }
 
     @Override
     public MarketLedgerVO getProjectSummary(Long projectId) {
-        // TODO: 实现项目级聚合视图
-        return null;
+        // 查询项目信息
+        ErpProjectDO project = erpProjectMapper.selectById(projectId);
+        if (project == null) {
+            return null;
+        }
+
+        // 查询该项目的所有订单
+        List<ErpSaleOrderDO> orders = erpSaleOrderMapper.selectList(
+                ErpSaleOrderDO::getProjectId, projectId);
+        if (orders.isEmpty()) {
+            return null;
+        }
+
+        // 聚合计算
+        MarketLedgerVO vo = new MarketLedgerVO();
+        vo.setProjectId(project.getId());
+        vo.setProjectNo(project.getNo());
+        vo.setProjectName(project.getName());
+        vo.setLifecycleStage(project.getLifecycleStage());
+
+        // 订单汇总
+        BigDecimal totalOrderAmount = orders.stream()
+                .map(o -> o.getTotalPrice() != null ? o.getTotalPrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        vo.setOrderTotalPrice(totalOrderAmount);
+
+        // 批量查询收款和开票金额（避免 N+1）
+        Set<Long> orderIds = orders.stream()
+                .map(ErpSaleOrderDO::getId)
+                .collect(Collectors.toSet());
+        Map<Long, BigDecimal> receivedMap = erpFinanceReceiptService.getReceivedAmountByOrderIds(orderIds);
+        Map<Long, BigDecimal> invoicedMap = erpInvoiceService.getInvoicedAmountByOrderIds(orderIds);
+
+        BigDecimal totalReceived = receivedMap.values().stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        vo.setReceivedAmount(totalReceived);
+        vo.setReceivableAmount(totalOrderAmount);
+        if (totalOrderAmount.compareTo(BigDecimal.ZERO) > 0) {
+            vo.setReceiptProgress(totalReceived
+                    .multiply(new BigDecimal("100"))
+                    .divide(totalOrderAmount, 2, RoundingMode.HALF_UP));
+        }
+
+        BigDecimal totalInvoiced = invoicedMap.values().stream()
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        vo.setInvoicedAmount(totalInvoiced);
+
+        return vo;
     }
 
     /**
      * 转换为台账 VO
      */
-    private MarketLedgerVO convertToLedgerVO(ErpSaleOrderDO order, ErpProjectDO project) {
+    private MarketLedgerVO convertToLedgerVO(ErpSaleOrderDO order, ErpProjectDO project,
+                                              BigDecimal receivedAmount, BigDecimal invoicedAmount) {
         MarketLedgerVO vo = new MarketLedgerVO();
 
         // 项目信息
@@ -163,15 +255,20 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
         vo.setInvoiceStatus(order.getInvoiceStatus());
         vo.setAcceptanceStatus(order.getAcceptanceStatus());
 
-        // 合同信息（需要从订单关联获取）
+        // 合同信息
         vo.setContractId(order.getContractId());
         vo.setContractNo(order.getContractNo());
 
-        // 收款信息（需要查询收款单）
-        // TODO: 查询实际收款金额
-        vo.setReceivedAmount(BigDecimal.ZERO);
+        // 收款信息（使用预查询的金额）
+        vo.setReceivedAmount(receivedAmount != null ? receivedAmount : BigDecimal.ZERO);
         vo.setReceivableAmount(order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO);
-        vo.setReceiptProgress(BigDecimal.ZERO);
+        if (vo.getReceivableAmount().compareTo(BigDecimal.ZERO) > 0) {
+            vo.setReceiptProgress(vo.getReceivedAmount()
+                    .multiply(new BigDecimal("100"))
+                    .divide(vo.getReceivableAmount(), 2, RoundingMode.HALF_UP));
+        } else {
+            vo.setReceiptProgress(BigDecimal.ZERO);
+        }
 
         // 出库信息
         vo.setShippedCount(order.getOutCount() != null ? order.getOutCount() : BigDecimal.ZERO);
@@ -184,9 +281,8 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
             vo.setShipmentProgress(BigDecimal.ZERO);
         }
 
-        // 开票信息
-        // TODO: 查询实际开票金额
-        vo.setInvoicedAmount(BigDecimal.ZERO);
+        // 开票信息（使用预查询的金额）
+        vo.setInvoicedAmount(invoicedAmount != null ? invoicedAmount : BigDecimal.ZERO);
 
         return vo;
     }

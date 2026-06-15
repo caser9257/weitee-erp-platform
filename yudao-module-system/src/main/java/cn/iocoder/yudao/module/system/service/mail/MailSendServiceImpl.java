@@ -12,7 +12,6 @@ import cn.iocoder.yudao.module.system.dal.dataobject.mail.MailTemplateDO;
 import cn.iocoder.yudao.module.system.dal.dataobject.user.AdminUserDO;
 import cn.iocoder.yudao.module.system.mq.message.mail.MailSendMessage;
 import cn.iocoder.yudao.module.system.mq.producer.mail.MailProducer;
-import cn.iocoder.yudao.module.system.service.member.MemberService;
 import cn.iocoder.yudao.module.system.service.user.AdminUserService;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
@@ -41,9 +40,6 @@ public class MailSendServiceImpl implements MailSendService {
 
     @Resource
     private AdminUserService adminUserService;
-    @Resource
-    private MemberService memberService;
-
     @Resource
     private MailAccountService mailAccountService;
     @Resource
@@ -112,7 +108,7 @@ public class MailSendServiceImpl implements MailSendService {
             }
         }
         if (UserTypeEnum.MEMBER.getValue().equals(userType)) {
-            return memberService.getMemberUserEmail(userId);
+            throw exception(MAIL_SEND_MAIL_NOT_EXISTS);
         }
         return null;
     }

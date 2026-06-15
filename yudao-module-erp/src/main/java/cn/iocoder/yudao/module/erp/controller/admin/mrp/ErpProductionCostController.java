@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntrySaveReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProjectSummaryRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProductSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
@@ -133,6 +134,15 @@ public class ErpProductionCostController {
     public CommonResult<List<ErpProductionCostProjectSummaryRespVO>> getProjectSummary(
             @RequestParam("accountingMonth") String accountingMonth) {
         return success(productionCostService.getProjectSummary(accountingMonth));
+    }
+
+    @GetMapping("/product-summary")
+    @Operation(summary = "获取生产成本产品汇总")
+    @Parameter(name = "accountingMonth", description = "归集月份（可选，为空则汇总所有月份）", required = false)
+    @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
+    public CommonResult<List<ErpProductionCostProductSummaryRespVO>> getProductSummary(
+            @RequestParam(value = "accountingMonth", required = false) String accountingMonth) {
+        return success(productionCostService.getProductSummary(accountingMonth));
     }
 
     private PageResult<ErpProductionCostEntryRespVO> buildEntryVOPageResult(PageResult<ErpProductionCostEntryDO> pageResult) {

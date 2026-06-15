@@ -355,6 +355,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'finance/cost-product',
+        component: () => import('@/views/erp/finance/cost-product/index.vue'),
+        name: 'ErpProductionCostProductSummary',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '产品成本汇总',
+          activeMenu: '/finance/cost-product'
+        }
+      },
+      {
         path: 'sale/market-alert',
         component: () => import('@/views/erp/sale/market-alert/index.vue'),
         name: 'ErpMarketAlertPage',
@@ -712,6 +724,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'approval/statistics',
+        component: () => import('@/views/bpm/approval/statistics/index.vue'),
+        name: 'BpmApprovalStatistics',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '审批统计看板',
+          activeMenu: '/bpm/approval/statistics'
+        }
+      },
+      {
         path: 'approval/portal',
         component: () => import('@/views/bpm/approval/portal/index.vue'),
         name: 'BpmApprovalPortal',
@@ -802,24 +826,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '审批委托',
           activeMenu: '/approval/delegation'
         }
-      }
-    ]
-  },
-  {
-    path: '/member',
-    component: Layout,
-    name: 'MemberCenter',
-    meta: { hidden: true },
-    children: [
-      {
-        path: 'user/detail/:id',
-        name: 'MemberUserDetail',
-        meta: {
-          title: '会员详情',
-          noCache: true,
-          hidden: true
-        },
-        component: () => import('@/views/member/user/detail/index.vue')
       }
     ]
   },

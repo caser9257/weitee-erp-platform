@@ -91,11 +91,9 @@ public class NotifyTemplateController {
     @PreAuthorize("@ss.hasPermission('system:notify-template:send-notify')")
     public CommonResult<Long> sendNotify(@Valid @RequestBody NotifyTemplateSendReqVO sendReqVO) {
         if (UserTypeEnum.MEMBER.getValue().equals(sendReqVO.getUserType())) {
-            return success(notifySendService.sendSingleNotifyToMember(sendReqVO.getUserId(),
-                    sendReqVO.getTemplateCode(), sendReqVO.getTemplateParams()));
-        } else {
-            return success(notifySendService.sendSingleNotifyToAdmin(sendReqVO.getUserId(),
-                    sendReqVO.getTemplateCode(), sendReqVO.getTemplateParams()));
+            throw new IllegalArgumentException("会员用户已不支持站内信发送");
         }
+        return success(notifySendService.sendSingleNotifyToAdmin(sendReqVO.getUserId(),
+                sendReqVO.getTemplateCode(), sendReqVO.getTemplateParams()));
     }
 }

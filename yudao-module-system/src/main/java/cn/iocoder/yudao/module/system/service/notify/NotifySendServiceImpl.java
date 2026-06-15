@@ -42,12 +42,10 @@ public class NotifySendServiceImpl implements NotifySendService {
     }
 
     @Override
-    public Long sendSingleNotifyToMember(Long userId, String templateCode, Map<String, Object> templateParams) {
-        return sendSingleNotify(userId, UserTypeEnum.MEMBER.getValue(), templateCode, templateParams);
-    }
-
-    @Override
     public Long sendSingleNotify(Long userId, Integer userType, String templateCode, Map<String, Object> templateParams) {
+        if (UserTypeEnum.MEMBER.getValue().equals(userType)) {
+            throw exception(NOTICE_NOT_FOUND);
+        }
         // 校验模版
         NotifyTemplateDO template = validateNotifyTemplate(templateCode);
         if (Objects.equals(template.getStatus(), CommonStatusEnum.DISABLE.getStatus())) {

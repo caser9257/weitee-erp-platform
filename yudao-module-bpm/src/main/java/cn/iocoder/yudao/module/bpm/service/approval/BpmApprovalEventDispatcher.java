@@ -59,7 +59,9 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         }
 
         // 1.1 幂等保护：重复事件且状态已经落库，直接忽略
-        if (ObjectUtil.equal(snapshot.getStatus(), translateStatus(event.getStatus()))) {
+        //     但 FAILED 状态不拦截 — 可能是之前 BPM 调用失败后重试的事件
+        if (ObjectUtil.equal(snapshot.getStatus(), translateStatus(event.getStatus()))
+                && !ObjectUtil.equal(snapshot.getStatus(), BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus())) {
             return;
         }
 
@@ -181,13 +183,30 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
 
     private void handleCancel(BpmApprovalInstanceSnapshotDO snapshot, ApprovalResultHandler handler,
                               Long bizId, String processInstanceId, String reason) {
-        // 快照状态已经在 BpmApprovalRuntimeServiceImpl.cancel 中更新，这里不需要再更新
-
-        // 调用结果处理器
+        // 1. 先调用结果处理器（业务状态回写）
+        //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
             handler.onCancel(bizId, processInstanceId, reason);
         } catch (Exception e) {
-            log.error("[handleCancel][场景({}) 业务({}) 结果处理器异常]", snapshot.getSceneCode(), bizId, e);
+            log.error("[handleCancel][场景({}) 业务({}) 结果处理器异常，快照状态未更新]", snapshot.getSceneCode(), bizId, e);
+            return; // 处理器失败，不更新快照状态，保持"审批中"
+        }
+
+        // 2. 处理器成功后，更新快照状态为"撤回"
+        approvalInstanceSnapshotService.updateSnapshotStatus(snapshot.getId(),
+                BpmApprovalInstanceSnapshotStatusEnum.CANCEL.getStatus(), reason);
+
+        // 3. 记录审批操作
+        try {
+            BpmApprovalRecordDO record = BpmApprovalRecordDO.builder()
+                    .approvalId(snapshot.getApprovalId())
+                    .action("CANCEL")
+                    .operatorUserId(snapshot.getStartUserId())
+                    .comment(reason)
+                    .build();
+            approvalRecordService.createRecord(record);
+        } catch (Exception e) {
+            log.error("[handleCancel][场景({}) 业务({}) 记录审批操作异常]", snapshot.getSceneCode(), bizId, e);
         }
     }
 

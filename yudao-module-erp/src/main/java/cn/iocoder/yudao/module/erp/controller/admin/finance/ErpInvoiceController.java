@@ -98,4 +98,11 @@ public class ErpInvoiceController {
         return success(amount);
     }
 
+    @GetMapping("/uninvoiced-items")
+    @PreAuthorize("@ss.hasPermission('erp:invoice:query')")
+    @Operation(summary = "获得订单可开票明细（排除已开票数量）")
+    public CommonResult<List<ErpInvoiceService.UninvoicedItemVO>> getUninvoicedItems(@RequestParam("orderId") Long orderId) {
+        return success(erpInvoiceService.getUninvoicedItems(orderId));
+    }
+
 }

@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.APPROVAL_SCENE_NOT_EXISTS;
+import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.APPROVAL_TEMPLATE_NOT_EXISTS;
 
 /**
  * 审批模板 Service 实现类
@@ -57,7 +57,7 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
     public BpmApprovalTemplateRespVO getTemplate(Long id) {
         BpmApprovalTemplateDO template = approvalTemplateMapper.selectById(id);
         if (template == null) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
+            throw exception(APPROVAL_TEMPLATE_NOT_EXISTS);
         }
         return BeanUtils.toBean(template, BpmApprovalTemplateRespVO.class);
     }
@@ -66,7 +66,7 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
     public BpmApprovalTemplateRespVO getTemplateByCode(String code) {
         BpmApprovalTemplateDO template = approvalTemplateMapper.selectByCode(code);
         if (template == null) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
+            throw exception(APPROVAL_TEMPLATE_NOT_EXISTS);
         }
         return BeanUtils.toBean(template, BpmApprovalTemplateRespVO.class);
     }
@@ -74,98 +74,38 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long useTemplate(Long templateId, Long userId) {
-        // 1. 获取模板
+        // 获取模板
         BpmApprovalTemplateDO template = approvalTemplateMapper.selectById(templateId);
         if (template == null) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
+            throw exception(APPROVAL_TEMPLATE_NOT_EXISTS);
         }
-
-        // 2. 生成场景编码（使用模板编码 + 时间戳）
-        String sceneCode = template.getCode().toLowerCase() + "." + System.currentTimeMillis();
-
-        // 3. 创建审批场景
-        BpmApprovalSceneDO scene = BpmApprovalSceneDO.builder()
-                .sceneCode(sceneCode)
-                .name(template.getName())
-                .moduleCode(template.getCategory())
-                .bizType(template.getCode())
-                .actionCode("submit")
-                .ownerUserId(userId)
-                .status(1) // 启用
-                .remark(template.getDescription())
-                .build();
-        approvalSceneMapper.insert(scene);
-
-        // 4. 创建审批方案
-        BpmApprovalSchemeDO scheme = BpmApprovalSchemeDO.builder()
-                .code(sceneCode + ".scheme")
-                .name(template.getName() + "方案")
-                .moduleCode(template.getCategory())
-                .bizType(template.getCode())
-                .sceneId(scene.getId())
-                .ownerUserId(userId)
-                .remark(template.getDescription())
-                .build();
-        approvalSchemeMapper.insert(scheme);
-
-        // 5. 创建审批版本（状态：草稿）
-        BpmApprovalSchemeVersionDO version = BpmApprovalSchemeVersionDO.builder()
-                .schemeId(scheme.getId())
-                .versionNo(1)
-                .status(BpmApprovalSchemeStatusEnum.DRAFT.getStatus())
-                .sourceType("TEMPLATE")
-                .designJson(JSONUtil.toJsonStr(template.getFlowConfig()))
-                .notifyJson(JSONUtil.toJsonStr(template.getNotifyConfig()))
-                .build();
-        approvalSchemeVersionMapper.insert(version);
-
-        // 6. 更新方案的最新版本
-        approvalSchemeMapper.updateById(new BpmApprovalSchemeDO()
-                .setId(scheme.getId())
-                .setLatestVersionId(version.getId()));
-
-        // 7. 自动提交方案（草稿 → 待发布）
-        approvalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
-                .setId(version.getId())
-                .setStatus(BpmApprovalSchemeStatusEnum.PENDING_PUBLISH.getStatus()));
-
-        // 8. 自动发布方案（待发布 → 生效中）
-        approvalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
-                .setId(version.getId())
-                .setStatus(BpmApprovalSchemeStatusEnum.ACTIVE.getStatus())
-                .setPublishedBy(String.valueOf(userId))
-                .setPublishedTime(LocalDateTime.now()));
-        approvalSchemeMapper.updateById(new BpmApprovalSchemeDO()
-                .setId(scheme.getId())
-                .setActiveVersionId(version.getId())
-                .setLatestVersionId(version.getId()));
-
-        // 9. 自动绑定方案到场景
-        approvalSceneMapper.update(null, new LambdaUpdateWrapper<BpmApprovalSceneDO>()
-                .eq(BpmApprovalSceneDO::getId, scene.getId())
-                .set(BpmApprovalSceneDO::getActiveSchemeId, scheme.getId()));
-
-        // 10. 更新模板使用次数
-        approvalTemplateMapper.updateById(new BpmApprovalTemplateDO()
-                .setId(templateId)
-                .setUseCount(template.getUseCount() == null ? 1 : template.getUseCount() + 1));
-
-        return scene.getId();
+        return doUseTemplate(template, template.getFlowConfig(), userId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long useTemplateWithFlow(Long templateId, Map<String, Object> flowConfig, Long userId) {
-        // 1. 获取模板
+        // 获取模板
         BpmApprovalTemplateDO template = approvalTemplateMapper.selectById(templateId);
         if (template == null) {
-            throw exception(APPROVAL_SCENE_NOT_EXISTS);
+            throw exception(APPROVAL_TEMPLATE_NOT_EXISTS);
         }
+        return doUseTemplate(template, flowConfig, userId);
+    }
 
-        // 2. 生成场景编码（使用模板编码 + 时间戳）
+    /**
+     * 使用模板创建审批场景、方案和版本的公共逻辑
+     *
+     * @param template   模板
+     * @param flowConfig 流程配置（模板内置或用户自定义）
+     * @param userId     操作人
+     * @return 创建的场景 ID
+     */
+    private Long doUseTemplate(BpmApprovalTemplateDO template, Object flowConfig, Long userId) {
+        // 1. 生成场景编码（使用模板编码 + 时间戳）
         String sceneCode = template.getCode().toLowerCase() + "." + System.currentTimeMillis();
 
-        // 3. 创建审批场景
+        // 2. 创建审批场景
         BpmApprovalSceneDO scene = BpmApprovalSceneDO.builder()
                 .sceneCode(sceneCode)
                 .name(template.getName())
@@ -178,7 +118,7 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
                 .build();
         approvalSceneMapper.insert(scene);
 
-        // 4. 创建审批方案
+        // 3. 创建审批方案
         BpmApprovalSchemeDO scheme = BpmApprovalSchemeDO.builder()
                 .code(sceneCode + ".scheme")
                 .name(template.getName() + "方案")
@@ -190,7 +130,7 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
                 .build();
         approvalSchemeMapper.insert(scheme);
 
-        // 5. 创建审批版本（状态：草稿），使用自定义流程配置
+        // 4. 创建审批版本（状态：草稿）
         BpmApprovalSchemeVersionDO version = BpmApprovalSchemeVersionDO.builder()
                 .schemeId(scheme.getId())
                 .versionNo(1)
@@ -201,17 +141,17 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
                 .build();
         approvalSchemeVersionMapper.insert(version);
 
-        // 6. 更新方案的最新版本
+        // 5. 更新方案的最新版本
         approvalSchemeMapper.updateById(new BpmApprovalSchemeDO()
                 .setId(scheme.getId())
                 .setLatestVersionId(version.getId()));
 
-        // 7. 自动提交方案（草稿 → 待发布）
+        // 6. 自动提交方案（草稿 → 待发布）
         approvalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
                 .setId(version.getId())
                 .setStatus(BpmApprovalSchemeStatusEnum.PENDING_PUBLISH.getStatus()));
 
-        // 8. 自动发布方案（待发布 → 生效中）
+        // 7. 自动发布方案（待发布 → 生效中）
         approvalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
                 .setId(version.getId())
                 .setStatus(BpmApprovalSchemeStatusEnum.ACTIVE.getStatus())
@@ -222,14 +162,14 @@ public class BpmApprovalTemplateServiceImpl implements BpmApprovalTemplateServic
                 .setActiveVersionId(version.getId())
                 .setLatestVersionId(version.getId()));
 
-        // 9. 自动绑定方案到场景
+        // 8. 自动绑定方案到场景
         approvalSceneMapper.update(null, new LambdaUpdateWrapper<BpmApprovalSceneDO>()
                 .eq(BpmApprovalSceneDO::getId, scene.getId())
                 .set(BpmApprovalSceneDO::getActiveSchemeId, scheme.getId()));
 
-        // 10. 更新模板使用次数
+        // 9. 更新模板使用次数
         approvalTemplateMapper.updateById(new BpmApprovalTemplateDO()
-                .setId(templateId)
+                .setId(template.getId())
                 .setUseCount(template.getUseCount() == null ? 1 : template.getUseCount() + 1));
 
         return scene.getId();

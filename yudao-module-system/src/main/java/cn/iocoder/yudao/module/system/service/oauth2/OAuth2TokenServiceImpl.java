@@ -243,8 +243,6 @@ public class OAuth2TokenServiceImpl implements OAuth2TokenService {
             }
             return MapUtil.builder(LoginUser.INFO_KEY_NICKNAME, user.getNickname())
                     .put(LoginUser.INFO_KEY_DEPT_ID, StrUtil.toStringOrNull(user.getDeptId())).build();
-        } else if (userType.equals(UserTypeEnum.MEMBER.getValue())) {
-            return Collections.emptyMap();
         }
         throw new IllegalArgumentException("未知用户类型：" + userType);
     }

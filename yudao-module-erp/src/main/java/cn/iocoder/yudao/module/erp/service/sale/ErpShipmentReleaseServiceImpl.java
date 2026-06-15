@@ -7,6 +7,8 @@ import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ShipmentReleaseRule;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceReceiptService;
+import cn.iocoder.yudao.module.crm.service.contract.CrmContractService;
+import cn.iocoder.yudao.module.crm.dal.dataobject.contract.CrmContractDO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -31,6 +33,9 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
     @Resource
     private ErpFinanceReceiptService erpFinanceReceiptService;
+
+    @Resource
+    private CrmContractService crmContractService;
 
     @Override
     public ShipmentReleaseResultVO checkRelease(Long orderId) {
@@ -62,14 +67,25 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
             return buildResult(false, "BLOCKED", blockerReasons, null, details);
         }
 
-        // 4. 获取合同信息（简化实现，实际需要调用CRM服务）
-        // TODO: 需要集成CRM合同服务获取合同详细信息
-        // 临时实现：使用订单中的合同信息
-        String releaseRule = order.getShipmentReleaseStatus() != null ? 
-            order.getShipmentReleaseStatus() : "SIGN_AND_SHIP";
+        // 4. 从合同服务获取放行规则
+        String releaseRule = "SIGN_AND_SHIP"; // 默认签约即发
+        BigDecimal prepaymentRatio = null;
+        try {
+            CrmContractDO contract = crmContractService.getContract(order.getContractId());
+            if (contract != null) {
+                if (contract.getShipmentReleaseRule() != null) {
+                    releaseRule = contract.getShipmentReleaseRule();
+                }
+                prepaymentRatio = contract.getPrepaymentRatio();
+                log.info("[checkRelease] 订单[{}]关联合同[{}]，放行规则：{}，预付款比例：{}",
+                        orderId, contract.getNo(), releaseRule, prepaymentRatio);
+            }
+        } catch (Exception e) {
+            log.warn("[checkRelease] 获取合同信息失败，使用默认放行规则，contractId={}", order.getContractId(), e);
+        }
 
         // 5. 校验放行规则
-        ShipmentReleaseResultVO.ReleaseCheckDetailVO ruleCheck = checkReleaseRule(order, releaseRule);
+        ShipmentReleaseResultVO.ReleaseCheckDetailVO ruleCheck = checkReleaseRule(order, releaseRule, prepaymentRatio);
         details.add(ruleCheck);
         if (!ruleCheck.isPassed()) {
             blockerReasons.add(ruleCheck.getMessage());
@@ -160,7 +176,7 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     /**
      * 校验收款规则
      */
-    private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkReleaseRule(ErpSaleOrderDO order, String releaseRule) {
+    private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkReleaseRule(ErpSaleOrderDO order, String releaseRule, BigDecimal prepaymentRatio) {
         ShipmentReleaseResultVO.ReleaseCheckDetailVO detail = new ShipmentReleaseResultVO.ReleaseCheckDetailVO();
         detail.setCheckItem("放行规则校验");
 
@@ -178,7 +194,7 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
         // 达到预付款比例后发：检查预付款金额
         if ("AFTER_PREPAYMENT".equals(releaseRule)) {
-            return checkPrepaymentReceived(order, detail);
+            return checkPrepaymentReceived(order, detail, prepaymentRatio);
         }
 
         // 财务审核后发：检查财务审核状态
@@ -216,18 +232,29 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
      * 检查预付款金额是否满足
      */
     private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkPrepaymentReceived(ErpSaleOrderDO order,
-                                                                                  ShipmentReleaseResultVO.ReleaseCheckDetailVO detail) {
+                                                                                   ShipmentReleaseResultVO.ReleaseCheckDetailVO detail,
+                                                                                   BigDecimal prepaymentRatio) {
         // 查询该订单的实际收款金额
         BigDecimal receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(order.getId());
-        // 预付款金额从订单的定金字段获取
-        BigDecimal prepaymentAmount = order.getDepositPrice() != null ? order.getDepositPrice() : BigDecimal.ZERO;
+        BigDecimal orderAmount = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
+
+        // 计算预付款金额：优先使用合同的预付款比例，否则使用订单的定金
+        BigDecimal prepaymentAmount;
+        String ratioSource;
+        if (prepaymentRatio != null && prepaymentRatio.compareTo(BigDecimal.ZERO) > 0) {
+            prepaymentAmount = orderAmount.multiply(prepaymentRatio).divide(new BigDecimal("100"), 2, BigDecimal.ROUND_HALF_UP);
+            ratioSource = "合同预付款比例 " + prepaymentRatio + "%";
+        } else {
+            prepaymentAmount = order.getDepositPrice() != null ? order.getDepositPrice() : BigDecimal.ZERO;
+            ratioSource = "订单定金";
+        }
 
         if (receivedAmount.compareTo(prepaymentAmount) >= 0) {
             detail.setPassed(true);
-            detail.setMessage("已收款金额 ¥" + receivedAmount + " >= 预付款金额 ¥" + prepaymentAmount);
+            detail.setMessage("已收款 ¥" + receivedAmount + " >= 预付款 ¥" + prepaymentAmount + "（" + ratioSource + "）");
         } else {
             detail.setPassed(false);
-            detail.setMessage("已收款金额 ¥" + receivedAmount + " < 预付款金额 ¥" + prepaymentAmount);
+            detail.setMessage("已收款 ¥" + receivedAmount + " < 预付款 ¥" + prepaymentAmount + "（" + ratioSource + "）");
         }
 
         return detail;

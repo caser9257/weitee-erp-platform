@@ -200,6 +200,9 @@
         </div>
       </template>
     </el-drawer>
+
+    <!-- 发票创建/编辑弹窗 -->
+    <InvoiceForm ref="invoiceFormRef" @success="loadData" />
   </div>
 </template>
 
@@ -208,6 +211,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/formatTime'
 import * as CustomerApi from '@/api/erp/sale/customer'
+import InvoiceForm from './InvoiceForm.vue'
 
 defineOptions({ name: 'ErpInvoicePage' })
 
@@ -274,9 +278,10 @@ const resetQuery = async () => {
   await loadData()
 }
 
+const invoiceFormRef = ref()
+
 const handleCreate = () => {
-  // TODO: 打开创建发票弹窗
-  ElMessage.info('创建发票功能开发中')
+  invoiceFormRef.value?.open('create')
 }
 
 const handleView = async (row: any) => {
@@ -286,8 +291,7 @@ const handleView = async (row: any) => {
 }
 
 const handleEdit = (row: any) => {
-  // TODO: 打开编辑发票弹窗
-  ElMessage.info('编辑发票功能开发中')
+  invoiceFormRef.value?.open('update', row.id)
 }
 
 const handleIssue = async (row: any) => {
