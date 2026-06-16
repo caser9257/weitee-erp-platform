@@ -41,12 +41,6 @@ public class SocialClientApiImpl implements SocialClientApi {
         return socialClientService.getAuthorizeUrl(socialType, userType, redirectUri);
     }
 
-    @Override
-    public SocialWxJsapiSignatureRespDTO createWxMpJsapiSignature(Integer userType, String url) {
-        WxJsapiSignature signature = socialClientService.createWxMpJsapiSignature(userType, url);
-        return BeanUtils.toBean(signature, SocialWxJsapiSignatureRespDTO.class);
-    }
-
     //======================= 微信小程序独有 =======================
 
     @Override

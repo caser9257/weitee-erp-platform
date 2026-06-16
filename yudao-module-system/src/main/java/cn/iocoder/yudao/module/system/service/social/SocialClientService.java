@@ -45,17 +45,6 @@ public interface SocialClientService {
      */
     AuthUser getAuthUser(Integer socialType, Integer userType, String code, String state);
 
-    // =================== 微信公众号独有 ===================
-
-    /**
-     * 创建微信公众号的 JS SDK 初始化所需的签名
-     *
-     * @param userType 用户类型
-     * @param url      访问的 URL 地址
-     * @return 签名
-     */
-    WxJsapiSignature createWxMpJsapiSignature(Integer userType, String url);
-
     // =================== 微信小程序独有 ===================
 
     /**

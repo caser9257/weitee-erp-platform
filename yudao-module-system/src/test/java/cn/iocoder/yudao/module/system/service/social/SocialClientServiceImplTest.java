@@ -15,10 +15,6 @@ import cn.iocoder.yudao.module.system.dal.mysql.social.SocialClientMapper;
 import cn.iocoder.yudao.module.system.enums.social.SocialTypeEnum;
 import cn.iocoder.yudao.module.system.framework.justauth.core.AuthRequestFactory;
 import com.binarywang.spring.starter.wxjava.miniapp.properties.WxMaProperties;
-import com.binarywang.spring.starter.wxjava.mp.properties.WxMpProperties;
-import me.chanjar.weixin.common.bean.WxJsapiSignature;
-import me.chanjar.weixin.common.error.WxErrorException;
-import me.chanjar.weixin.mp.api.WxMpService;
 import me.zhyd.oauth.config.AuthConfig;
 import me.zhyd.oauth.model.AuthResponse;
 import me.zhyd.oauth.model.AuthUser;
@@ -29,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 import jakarta.annotation.Resource;
 
@@ -59,12 +54,6 @@ public class SocialClientServiceImplTest extends BaseDbUnitTest {
     @MockBean
     private AuthRequestFactory authRequestFactory;
 
-    @MockBean
-    private WxMpService wxMpService;
-    @MockBean
-    private WxMpProperties wxMpProperties;
-    @MockBean
-    private StringRedisTemplate stringRedisTemplate;
     @MockBean
     private WxMaService wxMaService;
     @MockBean
@@ -198,70 +187,6 @@ public class SocialClientServiceImplTest extends BaseDbUnitTest {
         // 断言
         assertSame(authRequest, result);
         assertNotSame(authConfig, ReflectUtil.getFieldValue(authRequest, "config"));
-    }
-
-    // =================== 微信公众号独有 ===================
-
-    @Test
-    public void testCreateWxMpJsapiSignature() throws WxErrorException {
-        // 准备参数
-        Integer userType = randomPojo(UserTypeEnum.class).getValue();
-        String url = randomString();
-        // mock 方法
-        WxJsapiSignature signature = randomPojo(WxJsapiSignature.class);
-        when(wxMpService.createJsapiSignature(eq(url))).thenReturn(signature);
-
-        // 调用
-        WxJsapiSignature result = socialClientService.createWxMpJsapiSignature(userType, url);
-        // 断言
-        assertSame(signature, result);
-    }
-
-    @Test
-    public void testGetWxMpService_clientNull() {
-        // 准备参数
-        Integer userType = randomPojo(UserTypeEnum.class).getValue();
-        // mock 方法
-
-        // 调用
-        WxMpService result = socialClientService.getWxMpService(userType);
-        // 断言
-        assertSame(wxMpService, result);
-    }
-
-    @Test
-    public void testGetWxMpService_clientDisable() {
-        // 准备参数
-        Integer userType = randomPojo(UserTypeEnum.class).getValue();
-        // mock 数据
-        SocialClientDO client = randomPojo(SocialClientDO.class, o -> o.setStatus(CommonStatusEnum.DISABLE.getStatus())
-                .setUserType(userType).setSocialType(SocialTypeEnum.WECHAT_MP.getType()));
-        socialClientMapper.insert(client);
-
-        // 调用
-        WxMpService result = socialClientService.getWxMpService(userType);
-        // 断言
-        assertSame(wxMpService, result);
-    }
-
-    @Test
-    public void testGetWxMpService_clientEnable() {
-        // 准备参数
-        Integer userType = randomPojo(UserTypeEnum.class).getValue();
-        // mock 数据
-        SocialClientDO client = randomPojo(SocialClientDO.class, o -> o.setStatus(CommonStatusEnum.ENABLE.getStatus())
-                .setUserType(userType).setSocialType(SocialTypeEnum.WECHAT_MP.getType()));
-        socialClientMapper.insert(client);
-        // mock 方法
-        WxMpProperties.ConfigStorage configStorage = mock(WxMpProperties.ConfigStorage.class);
-        when(wxMpProperties.getConfigStorage()).thenReturn(configStorage);
-
-        // 调用
-        WxMpService result = socialClientService.getWxMpService(userType);
-        // 断言
-        assertNotSame(wxMpService, result);
-        assertEquals(client.getClientId(), result.getWxMpConfigStorage().getAppId());
-        assertEquals(client.getClientSecret(), result.getWxMpConfigStorage().getSecret());
     }
 
     // =================== 微信小程序独有 ===================

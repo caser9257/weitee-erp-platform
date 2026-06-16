@@ -24,15 +24,6 @@ public interface SocialClientApi {
      */
     String getAuthorizeUrl(Integer socialType, Integer userType, String redirectUri);
 
-    /**
-     * 创建微信公众号 JS SDK 初始化所需的签名
-     *
-     * @param userType 用户类型
-     * @param url      访问的 URL 地址
-     * @return 签名
-     */
-    SocialWxJsapiSignatureRespDTO createWxMpJsapiSignature(Integer userType, String url);
-
     //======================= 微信小程序独有 =======================
 
     /**
