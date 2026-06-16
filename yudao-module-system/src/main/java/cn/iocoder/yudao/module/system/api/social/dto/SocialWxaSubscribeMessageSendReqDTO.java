@@ -19,7 +19,7 @@ public class SocialWxaSubscribeMessageSendReqDTO {
     /**
      * 用户编号
      *
-     * 关联 MemberUserDO 的 id 编号
+     * 关联 APP 用户的 id 编号
      * 关联 AdminUserDO 的 id 编号
      */
     @NotNull(message = "用户编号不能为空")

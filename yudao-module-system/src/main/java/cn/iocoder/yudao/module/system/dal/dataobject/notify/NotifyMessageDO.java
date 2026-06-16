@@ -37,7 +37,7 @@ public class NotifyMessageDO extends BaseDO {
     /**
      * 用户编号
      *
-     * 关联 MemberUserDO 的 id 字段、或者 AdminUserDO 的 id 字段
+     * 关联 APP 用户的 id 字段、或者 AdminUserDO 的 id 字段
      */
     private Long userId;
     /**
