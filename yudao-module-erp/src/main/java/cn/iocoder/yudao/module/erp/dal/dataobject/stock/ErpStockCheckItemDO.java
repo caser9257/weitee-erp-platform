@@ -91,5 +91,11 @@ public class ErpStockCheckItemDO extends BaseDO {
      * 复盘差异
      */
     private BigDecimal recountDiff;
+    /**
+     * 差异金额
+     *
+     * diff_amount = (actualCount - stockCount) * averageCost
+     */
+    private BigDecimal diffAmount;
 
 }

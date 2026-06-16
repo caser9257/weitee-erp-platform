@@ -21,6 +21,9 @@ public class ErpFinanceAssetPageReqVO extends PageParam {
     @Schema(description = "资产分类", example = "电子设备")
     private String categoryName;
 
+    @Schema(description = "资产类型", example = "0")
+    private Integer assetType;
+
     @Schema(description = "状态", example = "10")
     private Integer status;
 }

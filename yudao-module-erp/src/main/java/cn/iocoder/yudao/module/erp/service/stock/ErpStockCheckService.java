@@ -41,6 +41,48 @@ public interface ErpStockCheckService {
     void updateStockCheckStatus(Long id, Integer status);
 
     /**
+     * 启动盘点（DRAFT → COUNTING）
+     *
+     * 生成快照 + 冻结仓库
+     *
+     * @param id 盘点单ID
+     */
+    void startCounting(Long id);
+
+    /**
+     * 提交审核（COUNTING → REVIEWING）
+     *
+     * 计算差异金额
+     *
+     * @param id 盘点单ID
+     */
+    void submitForReview(Long id);
+
+    /**
+     * 审核通过（REVIEWING → APPROVED → CLOSED）
+     *
+     * 更新库存 + 生成凭证 + 解冻仓库
+     *
+     * @param id 盘点单ID
+     */
+    void approveAndClose(Long id);
+
+    /**
+     * 驳回到上一状态
+     *
+     * @param id 盘点单ID
+     */
+    void reject(Long id);
+
+    /**
+     * 获取盘点差异报告
+     *
+     * @param checkId 盘点单ID
+     * @return 差异报告（盘盈总额、盘亏总额）
+     */
+    java.math.BigDecimal[] getDiffReport(Long checkId);
+
+    /**
      * 删除库存盘点单
      *
      * @param ids 编号数组

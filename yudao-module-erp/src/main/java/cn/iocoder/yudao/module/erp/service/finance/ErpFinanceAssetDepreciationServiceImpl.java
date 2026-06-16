@@ -9,6 +9,8 @@ import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceAssetDepreciation
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceAssetMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceAssetDepreciationStatusEnum;
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceAssetStatusEnum;
+import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -28,6 +30,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstantsFinanceAsset.A
 
 @Service
 @Validated
+@Slf4j
 public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDepreciationService {
 
     private static final DateTimeFormatter PERIOD_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
@@ -36,6 +39,8 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
     private ErpFinanceAssetMapper financeAssetMapper;
     @Resource
     private ErpFinanceAssetDepreciationMapper financeAssetDepreciationMapper;
+    @Resource
+    private ErpFinanceVoucherService voucherService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -107,6 +112,23 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
                     .setDepreciatedAmount(depreciation.getAfterDepreciatedAmount())
                     .setCurrentAmount(depreciation.getAfterCurrentAmount())
                     .setLastDepreciationPeriod(period));
+
+            // 自动生成凭证
+            try {
+                Integer bizType = asset.getAssetType() != null && asset.getAssetType() == 1
+                        ? ErpBizTypeEnum.ASSET_AMORTIZATION.getType()
+                        : ErpBizTypeEnum.ASSET_DEPRECIATION.getType();
+                Long voucherId = voucherService.autoGenerateVoucher(bizType, depreciation.getId());
+                if (voucherId != null) {
+                    financeAssetDepreciationMapper.updateById(new ErpFinanceAssetDepreciationDO()
+                            .setId(depreciation.getId())
+                            .setVoucherId(voucherId));
+                }
+            } catch (Exception e) {
+                log.error("[generateDepreciation] 凭证生成失败，assetId={}, period={}", asset.getId(), period, e);
+                // 凭证生成失败不影响主流程
+            }
+
             created++;
         }
         return created;

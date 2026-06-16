@@ -615,6 +615,39 @@ const projectDrivenMenus: AppCustomRouteRecordRaw[] = [
             keepAlive: false
           },
           {
+            path: 'cost-product',
+            name: '\u4ea7\u54c1\u6210\u672c\u6c47\u603b',
+            icon: 'ep:goods',
+            component: 'erp/finance/cost-product/index',
+            componentName: 'ErpProductionCostProductSummary',
+            redirect: '',
+            meta: {},
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'cost-product-trend',
+            name: '\u4ea7\u54c1\u6210\u672c\u8d8b\u52bf',
+            icon: 'ep:trend-charts',
+            component: 'erp/finance/cost-product/trend',
+            componentName: 'ErpProductCostTrend',
+            redirect: '',
+            meta: {},
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'cost-report',
+            name: '\u4ea7\u54c1\u6210\u672c\u5206\u6790\u62a5\u8868',
+            icon: 'ep:data-analysis',
+            component: 'erp/finance/cost-report/index',
+            componentName: 'ErpFinanceCostReport',
+            redirect: '',
+            meta: {},
+            visible: true,
+            keepAlive: false
+          },
+          {
             path: 'apar',
             name: '\u5e94\u6536\u5e94\u4ed8\u8d26\u6b3e\u6c60',
             icon: 'ep:wallet',

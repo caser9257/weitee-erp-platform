@@ -28,7 +28,10 @@ public enum ErpBizTypeEnum implements ArrayValuable<Integer> {
     FINANCE_EXPENSE_EXPENSE(41, "研发费用化"),
     FINANCE_EXPENSE_CAPITALIZE(42, "研发资本化"),
     FINANCE_EXPENSE_MONTH_END(43, "研发费用月末结转"),
-    RESEARCH_EXPENSE(50, "研发费用");
+    RESEARCH_EXPENSE(50, "研发费用"),
+    STOCK_CHECK(60, "库存盘点"),
+    ASSET_DEPRECIATION(70, "资产折旧"),
+    ASSET_AMORTIZATION(71, "无形资产摊销");
 
     public static final Integer[] ARRAYS = Arrays.stream(values()).map(ErpBizTypeEnum::getType).toArray(Integer[]::new);
 

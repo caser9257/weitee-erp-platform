@@ -16,6 +16,7 @@ public interface ErpFinanceAssetMapper extends BaseMapperX<ErpFinanceAssetDO> {
                 .likeIfPresent(ErpFinanceAssetDO::getNo, reqVO.getNo())
                 .likeIfPresent(ErpFinanceAssetDO::getName, reqVO.getName())
                 .likeIfPresent(ErpFinanceAssetDO::getCategoryName, reqVO.getCategoryName())
+                .eqIfPresent(ErpFinanceAssetDO::getAssetType, reqVO.getAssetType())
                 .eqIfPresent(ErpFinanceAssetDO::getStatus, reqVO.getStatus())
                 .orderByDesc(ErpFinanceAssetDO::getId));
     }

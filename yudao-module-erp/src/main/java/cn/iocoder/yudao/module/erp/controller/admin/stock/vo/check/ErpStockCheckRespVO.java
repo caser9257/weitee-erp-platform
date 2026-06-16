@@ -51,6 +51,15 @@ public class ErpStockCheckRespVO {
     @Schema(description = "附件 URL", example = "https://www.iocoder.cn/1.doc")
     private String fileUrl;
 
+    @Schema(description = "是否年末盘点", example = "false")
+    private Boolean yearEndFlag;
+
+    @Schema(description = "凭证ID", example = "100")
+    private Long voucherId;
+
+    @Schema(description = "快照时间")
+    private LocalDateTime snapshotTime;
+
     @Schema(description = "创建人", example = "芋道")
     private String creator;
     @Schema(description = "创建人名称", example = "芋道")
@@ -93,6 +102,9 @@ public class ErpStockCheckRespVO {
         @Schema(description = "盈亏数量", requiredMode = Schema.RequiredMode.REQUIRED, example = "100.00")
         @NotNull(message = "盈亏数量不能为空")
         private BigDecimal count;
+
+        @Schema(description = "差异金额", example = "1000.00")
+        private BigDecimal diffAmount;
 
         @Schema(description = "备注", example = "随便")
         private String remark;

@@ -71,12 +71,11 @@
           </el-form-item>
           <el-form-item label="状态" prop="status">
             <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
-              <el-option
-                v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-              />
+              <el-option label="草稿" :value="StockCheckStatus.DRAFT" />
+              <el-option label="盘点中" :value="StockCheckStatus.COUNTING" />
+              <el-option label="审核中" :value="StockCheckStatus.REVIEWING" />
+              <el-option label="已审核" :value="StockCheckStatus.APPROVED" />
+              <el-option label="已关闭" :value="StockCheckStatus.CLOSED" />
             </el-select>
           </el-form-item>
           <el-form-item label="备注" prop="remark">
@@ -200,7 +199,9 @@
         </el-table-column>
         <el-table-column label="状态" min-width="96" fixed="right">
           <template #default="{ row }">
-            <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
+            <el-tag :type="getStatusTagType(row.status)">
+              {{ getStatusLabel(row.status) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right" align="left">
@@ -268,7 +269,7 @@
 import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
 import download from '@/utils/download'
-import { StockCheckApi, StockCheckVO } from '@/api/erp/stock/check'
+import { StockCheckApi, StockCheckVO, StockCheckStatus } from '@/api/erp/stock/check'
 import StockCheckForm from './StockCheckForm.vue'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
@@ -284,7 +285,7 @@ type StockCheckListRow = StockCheckVO & {
   creatorName?: string
 }
 
-type StockCheckActionKey = 'detail' | 'edit' | 'toggleStatus' | 'delete'
+type StockCheckActionKey = 'detail' | 'edit' | 'toggleStatus' | 'startCounting' | 'submitForReview' | 'approve' | 'reject' | 'delete'
 
 type StockCheckActionDescriptor = {
   key: StockCheckActionKey
@@ -344,6 +345,28 @@ const disableBatchDelete = computed(
 const formatDateValue = (value?: Date | string | number) =>
   value ? formatDate(value, 'YYYY-MM-DD') : '-'
 
+const getStatusLabel = (status: number) => {
+  const statusMap: Record<number, string> = {
+    [StockCheckStatus.DRAFT]: '草稿',
+    [StockCheckStatus.COUNTING]: '盘点中',
+    [StockCheckStatus.REVIEWING]: '审核中',
+    [StockCheckStatus.APPROVED]: '已审核',
+    [StockCheckStatus.CLOSED]: '已关闭'
+  }
+  return statusMap[status] || '未知'
+}
+
+const getStatusTagType = (status: number) => {
+  const typeMap: Record<number, string> = {
+    [StockCheckStatus.DRAFT]: 'info',
+    [StockCheckStatus.COUNTING]: 'warning',
+    [StockCheckStatus.REVIEWING]: '',
+    [StockCheckStatus.APPROVED]: 'success',
+    [StockCheckStatus.CLOSED]: 'success'
+  }
+  return typeMap[status] || 'info'
+}
+
 const formatCount = (value?: number | string | null) => {
   const numberValue = Number(value || 0)
   if (Number.isInteger(numberValue)) {
@@ -360,8 +383,11 @@ const formatCurrency = (value?: number | string | null) =>
     maximumFractionDigits: 2
   }).format(Number(value || 0))
 
-const canEdit = (row: StockCheckListRow) => row.status !== 20
-const canApprove = (row: StockCheckListRow) => row.status === 10
+const canEdit = (row: StockCheckListRow) => row.status === StockCheckStatus.DRAFT || row.status === StockCheckStatus.COUNTING
+const canStartCounting = (row: StockCheckListRow) => row.status === StockCheckStatus.DRAFT
+const canSubmitForReview = (row: StockCheckListRow) => row.status === StockCheckStatus.COUNTING
+const canApprove = (row: StockCheckListRow) => row.status === StockCheckStatus.REVIEWING
+const canReject = (row: StockCheckListRow) => row.status === StockCheckStatus.REVIEWING || row.status === StockCheckStatus.COUNTING
 const isDeletingRow = (id?: number) => !!id && deletingIds.value.includes(id)
 const isUpdatingStatus = (id?: number) => !!id && statusUpdatingIds.value.includes(id)
 
@@ -375,15 +401,48 @@ const getAllActionDescriptors = (row: StockCheckListRow): StockCheckActionDescri
     actions.push({ key: 'edit', label: '编辑' })
   }
   if (canUpdateStockCheckStatus) {
-    actions.push({
-      key: 'toggleStatus',
-      label: canApprove(row) ? '审批' : '反审批',
-      type: canApprove(row) ? 'primary' : 'danger',
-      disabled: isUpdatingStatus(row.id),
-      loading: isUpdatingStatus(row.id)
-    })
+    // 启动盘点（DRAFT → COUNTING）
+    if (canStartCounting(row)) {
+      actions.push({
+        key: 'startCounting',
+        label: '启动盘点',
+        type: 'primary',
+        disabled: isUpdatingStatus(row.id),
+        loading: isUpdatingStatus(row.id)
+      })
+    }
+    // 提交审核（COUNTING → REVIEWING）
+    if (canSubmitForReview(row)) {
+      actions.push({
+        key: 'submitForReview',
+        label: '提交审核',
+        type: 'primary',
+        disabled: isUpdatingStatus(row.id),
+        loading: isUpdatingStatus(row.id)
+      })
+    }
+    // 审核通过（REVIEWING → CLOSED）
+    if (canApprove(row)) {
+      actions.push({
+        key: 'approve',
+        label: '审核通过',
+        type: 'primary',
+        disabled: isUpdatingStatus(row.id),
+        loading: isUpdatingStatus(row.id)
+      })
+    }
+    // 驳回
+    if (canReject(row)) {
+      actions.push({
+        key: 'reject',
+        label: '驳回',
+        type: 'danger',
+        disabled: isUpdatingStatus(row.id),
+        loading: isUpdatingStatus(row.id)
+      })
+    }
   }
-  if (canDeleteStockCheck) {
+  if (canDeleteStockCheck && row.status === StockCheckStatus.DRAFT) {
     actions.push({
       key: 'delete',
       label: '删除',
@@ -494,6 +553,70 @@ const handleUpdateStatus = async (row: StockCheckListRow) => {
   }
 }
 
+const handleStartCounting = async (row: StockCheckListRow) => {
+  if (!row.id) {
+    return
+  }
+  try {
+    await message.confirm('确定启动盘点吗？将生成库存快照并冻结仓库。')
+    setIdsLoading(statusUpdatingIds, [row.id], true)
+    await StockCheckApi.startCounting(row.id)
+    message.success('启动盘点成功')
+    await getList()
+  } catch {
+  } finally {
+    setIdsLoading(statusUpdatingIds, [row.id], false)
+  }
+}
+
+const handleSubmitForReview = async (row: StockCheckListRow) => {
+  if (!row.id) {
+    return
+  }
+  try {
+    await message.confirm('确定提交审核吗？')
+    setIdsLoading(statusUpdatingIds, [row.id], true)
+    await StockCheckApi.submitForReview(row.id)
+    message.success('提交审核成功')
+    await getList()
+  } catch {
+  } finally {
+    setIdsLoading(statusUpdatingIds, [row.id], false)
+  }
+}
+
+const handleApprove = async (row: StockCheckListRow) => {
+  if (!row.id) {
+    return
+  }
+  try {
+    await message.confirm('确定审核通过吗？将自动生成凭证并解冻仓库。')
+    setIdsLoading(statusUpdatingIds, [row.id], true)
+    await StockCheckApi.approveAndClose(row.id)
+    message.success('审核通过成功')
+    await getList()
+  } catch {
+  } finally {
+    setIdsLoading(statusUpdatingIds, [row.id], false)
+  }
+}
+
+const handleReject = async (row: StockCheckListRow) => {
+  if (!row.id) {
+    return
+  }
+  try {
+    await message.confirm('确定驳回吗？')
+    setIdsLoading(statusUpdatingIds, [row.id], true)
+    await StockCheckApi.reject(row.id)
+    message.success('驳回成功')
+    await getList()
+  } catch {
+  } finally {
+    setIdsLoading(statusUpdatingIds, [row.id], false)
+  }
+}
+
 const handleExport = async () => {
   try {
     await message.exportConfirm()
@@ -520,6 +643,18 @@ const handleCommand = async (command: StockCheckActionKey | string, row: StockCh
       break
     case 'toggleStatus':
       await handleUpdateStatus(row)
+      break
+    case 'startCounting':
+      await handleStartCounting(row)
+      break
+    case 'submitForReview':
+      await handleSubmitForReview(row)
+      break
+    case 'approve':
+      await handleApprove(row)
+      break
+    case 'reject':
+      await handleReject(row)
       break
     case 'delete':
       await handleDelete(row.id ? [row.id] : [])

@@ -9,9 +9,12 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntryPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostEntrySaveReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProductSummaryReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProjectSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostProductSummaryRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostSummaryRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostTrendReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostTrendRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
@@ -143,6 +146,22 @@ public class ErpProductionCostController {
     public CommonResult<List<ErpProductionCostProductSummaryRespVO>> getProductSummary(
             @RequestParam(value = "accountingMonth", required = false) String accountingMonth) {
         return success(productionCostService.getProductSummary(accountingMonth));
+    }
+
+    @GetMapping("/product-summary-v2")
+    @Operation(summary = "获取生产成本产品汇总（支持多条件筛选）")
+    @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
+    public CommonResult<List<ErpProductionCostProductSummaryRespVO>> getProductSummaryV2(
+            @Valid ErpProductionCostProductSummaryReqVO reqVO) {
+        return success(productionCostService.getProductSummary(reqVO));
+    }
+
+    @GetMapping("/cost-trend")
+    @Operation(summary = "获取产品成本趋势分析数据")
+    @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
+    public CommonResult<ErpProductionCostTrendRespVO> getCostTrend(
+            @Valid ErpProductionCostTrendReqVO reqVO) {
+        return success(productionCostService.getCostTrend(reqVO));
     }
 
     private PageResult<ErpProductionCostEntryRespVO> buildEntryVOPageResult(PageResult<ErpProductionCostEntryDO> pageResult) {

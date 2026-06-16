@@ -177,6 +177,12 @@ public interface ErrorCodeConstants {
     ErrorCode STOCK_CHECK_APPROVE_FAIL = new ErrorCode(1_030_403_003, "审核失败，只有未审核的盘点单才能审核");
     ErrorCode STOCK_CHECK_NO_EXISTS = new ErrorCode(1_030_403_004, "生成盘点号失败，请重新提交");
     ErrorCode STOCK_CHECK_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_403_005, "库存盘点单({})已审核，无法修改");
+    ErrorCode STOCK_CHECK_STATUS_TRANSITION_FAIL = new ErrorCode(1_030_403_006, "盘点单状态流转失败，当前状态({})不允许流转到目标状态({})");
+    ErrorCode STOCK_CHECK_SNAPSHOT_FAIL = new ErrorCode(1_030_403_007, "盘点单快照生成失败");
+    ErrorCode STOCK_CHECK_VOUCHER_GENERATE_FAIL = new ErrorCode(1_030_403_008, "盘点凭证生成失败");
+    ErrorCode STOCK_CHECK_VOUCHER_VOID_FAIL = new ErrorCode(1_030_403_009, "盘点凭证作废失败");
+    ErrorCode STOCK_CHECK_CLOSE_FAIL_VOUCHER_MISSING = new ErrorCode(1_030_403_010, "盘点单关闭失败，凭证未生成");
+    ErrorCode STOCK_CHECK_YEAR_END_NOT_CLOSED = new ErrorCode(1_030_403_011, "年末盘点单({})未完成，无法进行年结");
 
     // ========== ERP 产品库存 1-030-404-000 ==========
     ErrorCode STOCK_COUNT_NEGATIVE = new ErrorCode(1_030_404_000, "操作失败，产品({})所在仓库({})的库存：{}，小于变更数量：{}");

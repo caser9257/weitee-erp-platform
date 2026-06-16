@@ -53,6 +53,12 @@
               @keyup.enter="handleQuery"
             />
           </el-form-item>
+          <el-form-item label="资产类型" prop="assetType">
+            <el-select v-model="queryParams.assetType" placeholder="请选择资产类型" clearable class="!w-full">
+              <el-option label="固定资产" :value="0" />
+              <el-option label="无形资产" :value="1" />
+            </el-select>
+          </el-form-item>
           <el-form-item label="状态" prop="status">
             <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
               <el-option
@@ -113,6 +119,18 @@
                 </div>
               </template>
             </el-table-column>
+            <el-table-column label="资产类型" min-width="120">
+              <template #default="{ row }">
+                <div class="finance-asset-page__primary-cell">
+                  <el-tag :type="row.assetType === 1 ? 'success' : 'primary'" effect="light" round size="small">
+                    {{ row.assetType === 1 ? '无形资产' : '固定资产' }}
+                  </el-tag>
+                  <span v-if="row.assetType === 1 && row.subCategory" class="finance-asset-page__muted-text text-xs">
+                    {{ row.subCategory }}
+                  </span>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column label="分类与来源" min-width="200">
               <template #default="{ row }">
                 <div class="finance-asset-page__primary-cell">
@@ -149,13 +167,13 @@
             <el-table-column label="原值" align="right" min-width="120">
               <template #default="{ row }">{{ formatAmount(row.originalAmount) }}</template>
             </el-table-column>
-            <el-table-column label="累计折旧/摊销" align="right" min-width="120">
+            <el-table-column :label="currentAssetType === 1 ? '累计摊销' : '累计折旧'" align="right" min-width="120">
               <template #default="{ row }">{{ formatAmount(row.depreciatedAmount) }}</template>
             </el-table-column>
             <el-table-column label="净值" align="right" min-width="120">
               <template #default="{ row }">{{ formatAmount(row.currentAmount) }}</template>
             </el-table-column>
-            <el-table-column label="折旧/摊销方式" min-width="140">
+            <el-table-column :label="currentAssetType === 1 ? '摊销方式' : '折旧方式'" min-width="140">
               <template #default="{ row }">
                 <div class="finance-asset-page__primary-cell">
                   <span class="finance-asset-page__muted-text">{{ row.depreciationMethod || '-' }}</span>
@@ -896,6 +914,7 @@ const queryParams = reactive({
   no: undefined as string | undefined,
   name: undefined as string | undefined,
   categoryName: undefined as string | undefined,
+  assetType: undefined as number | undefined,
   status: undefined as number | undefined
 })
 
@@ -921,6 +940,7 @@ const assetForm = reactive<FinanceAssetVO>({
 
 const isIntangibleAsset = computed(() => assetForm.assetType === 1)
 const depreciationLabel = computed(() => isIntangibleAsset.value ? '摊销' : '折旧')
+const currentAssetType = computed(() => queryParams.assetType ?? 0)
 
 const candidateConfirmForm = reactive<any>({
   candidateId: undefined,

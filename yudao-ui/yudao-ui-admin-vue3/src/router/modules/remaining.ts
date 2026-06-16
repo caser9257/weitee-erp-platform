@@ -355,18 +355,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
-        path: 'finance/cost-product',
-        component: () => import('@/views/erp/finance/cost-product/index.vue'),
-        name: 'ErpProductionCostProductSummary',
-        meta: {
-          noCache: true,
-          hidden: true,
-          canTo: true,
-          title: '产品成本汇总',
-          activeMenu: '/finance/cost-product'
-        }
-      },
-      {
         path: 'sale/market-alert',
         component: () => import('@/views/erp/sale/market-alert/index.vue'),
         name: 'ErpMarketAlertPage',

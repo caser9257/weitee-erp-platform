@@ -67,5 +67,15 @@ public class ErpStockCheckDO extends BaseDO {
      * 是否盲盘模式
      */
     private Boolean blindCount;
+    /**
+     * 是否年末盘点
+     */
+    private Boolean yearEndFlag;
+    /**
+     * 生成的凭证ID
+     *
+     * 关联 {@link cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO#getId()}
+     */
+    private Long voucherId;
 
 }

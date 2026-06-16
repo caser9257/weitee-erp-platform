@@ -451,5 +451,59 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_delegation` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '审批委托配置表';
 
 -- ==============================================================================
+-- 第十一部分：预置审批模板 Seed
+-- 来源：54 / 54-v2
+-- 说明：140 之前的旧增量脚本除了 schema，还承担模板初始化职责。
+--      为了让 140 成为可独立执行的最终脚本，这里并入模板 seed。
+-- ==============================================================================
+
+INSERT IGNORE INTO `bpm_approval_template`
+(`code`, `name`, `category`, `icon`, `description`, `form_config`, `flow_config`, `notify_config`, `status`)
+VALUES
+('LEAVE_APPROVAL', '请假审批', 'OA', 'ep:calendar', '适用于员工请假申请',
+ '{"fields":[{"field":"leaveType","label":"请假类型","type":"select","required":true,"options":[{"value":"ANNUAL","label":"年假"},{"value":"SICK","label":"病假"},{"value":"PERSONAL","label":"事假"}]},{"field":"startDate","label":"开始日期","type":"date","required":true},{"field":"endDate","label":"结束日期","type":"date","required":true},{"field":"reason","label":"请假原因","type":"textarea","required":true}]}',
+ '{"nodes":[{"nodeId":"deptManager","name":"直属主管审批","type":"APPROVAL","approverType":"DEPT_LEADER","approveMethod":"ANY"},{"nodeId":"hr","name":"HR审批","type":"APPROVAL","approverType":"ROLE","roleCode":"hr","approveMethod":"ANY"}]}',
+ '{"scenes":[{"sceneCode":"TASK_ASSIGNED","enabled":true},{"sceneCode":"PROCESS_APPROVE","enabled":true},{"sceneCode":"PROCESS_REJECT","enabled":true}]}',
+ 0),
+('EXPENSE_APPROVAL', '报销审批', '财务', 'ep:money', '适用于费用报销申请',
+ '{"fields":[{"field":"expenseType","label":"费用类型","type":"select","required":true,"options":[{"value":"TRAVEL","label":"差旅费"},{"value":"MEAL","label":"餐饮费"},{"value":"OFFICE","label":"办公费"}]},{"field":"amount","label":"金额","type":"number","required":true},{"field":"invoiceNo","label":"发票号","type":"text","required":false},{"field":"reason","label":"费用说明","type":"textarea","required":true}]}',
+ '{"nodes":[{"nodeId":"deptManager","name":"部门经理审批","type":"APPROVAL","approverType":"DEPT_LEADER","approveMethod":"ANY"},{"nodeId":"finance","name":"财务审批","type":"APPROVAL","approverType":"ROLE","roleCode":"finance","approveMethod":"ANY"}]}',
+ '{"scenes":[{"sceneCode":"TASK_ASSIGNED","enabled":true},{"sceneCode":"PROCESS_APPROVE","enabled":true},{"sceneCode":"PROCESS_REJECT","enabled":true}]}',
+ 0),
+('PURCHASE_APPROVAL', '采购审批', '采购', 'ep:shopping-cart', '适用于采购订单申请',
+ '{"fields":[{"field":"supplierName","label":"供应商","type":"text","required":true},{"field":"amount","label":"金额","type":"number","required":true},{"field":"items","label":"采购明细","type":"table","required":true}]}',
+ '{"nodes":[{"nodeId":"deptManager","name":"部门经理审批","type":"APPROVAL","approverType":"DEPT_LEADER","approveMethod":"ANY"},{"nodeId":"purchase","name":"采购经理审批","type":"APPROVAL","approverType":"ROLE","roleCode":"purchase_manager","approveMethod":"ANY"},{"nodeId":"finance","name":"财务审批","type":"APPROVAL","approverType":"ROLE","roleCode":"finance","approveMethod":"ANY"}]}',
+ '{"scenes":[{"sceneCode":"TASK_ASSIGNED","enabled":true},{"sceneCode":"PROCESS_APPROVE","enabled":true},{"sceneCode":"PROCESS_REJECT","enabled":true}]}',
+ 0),
+('SALE_APPROVAL', '销售审批', '销售', 'ep:sell', '适用于销售订单申请',
+ '{"fields":[{"field":"customerName","label":"客户","type":"text","required":true},{"field":"amount","label":"金额","type":"number","required":true},{"field":"items","label":"产品明细","type":"table","required":true}]}',
+ '{"nodes":[{"nodeId":"salesManager","name":"销售经理审批","type":"APPROVAL","approverType":"ROLE","roleCode":"sales_manager","approveMethod":"ANY"},{"nodeId":"finance","name":"财务审批","type":"APPROVAL","approverType":"ROLE","roleCode":"finance","approveMethod":"ANY"}]}',
+ '{"scenes":[{"sceneCode":"TASK_ASSIGNED","enabled":true},{"sceneCode":"PROCESS_APPROVE","enabled":true},{"sceneCode":"PROCESS_REJECT","enabled":true}]}',
+ 0),
+('PAYMENT_APPROVAL', '付款审批', '财务', 'ep:credit-card', '适用于付款单申请',
+ '{"fields":[{"field":"paymentType","label":"付款类型","type":"select","required":true,"options":[{"value":"SUPPLIER","label":"供应商付款"},{"value":"SALARY","label":"工资发放"},{"value":"OTHER","label":"其他付款"}]},{"field":"amount","label":"金额","type":"number","required":true},{"field":"bankAccount","label":"收款账户","type":"text","required":true},{"field":"reason","label":"付款原因","type":"textarea","required":true}]}',
+ '{"nodes":[{"nodeId":"deptManager","name":"部门经理审批","type":"APPROVAL","approverType":"DEPT_LEADER","approveMethod":"ANY"},{"nodeId":"finance","name":"财务审批","type":"APPROVAL","approverType":"ROLE","roleCode":"finance","approveMethod":"ANY"},{"nodeId":"cfo","name":"财务总监审批","type":"APPROVAL","approverType":"ROLE","roleCode":"cfo","approveMethod":"ANY"}]}',
+ '{"scenes":[{"sceneCode":"TASK_ASSIGNED","enabled":true},{"sceneCode":"PROCESS_APPROVE","enabled":true},{"sceneCode":"PROCESS_REJECT","enabled":true}]}',
+ 0);
+
+-- ==============================================================================
+-- 第十二部分：审批站内信模板 Seed
+-- 来源：54 / 54-v2
+-- 说明：system_notify_template 没有唯一索引约束 code，因此这里继续沿用 INSERT IGNORE
+--      只保证“新库初始化可用”，不负责清理历史重复数据。
+-- ==============================================================================
+
+INSERT IGNORE INTO `system_notify_template`
+(`name`, `code`, `nickname`, `content`, `status`, `params`, `type`)
+VALUES
+('审批任务到达', 'APPROVAL_TASK_ASSIGNED', '审批助手', '您有一条新的审批任务：{{bizTitle}}，请及时处理。[查看详情]({{detailUrl}})', 0, '["bizTitle", "taskName", "detailUrl"]', 10),
+('审批通过', 'APPROVAL_APPROVED', '审批助手', '您提交的{{bizTitle}}已审批通过。[查看详情]({{detailUrl}})', 0, '["bizTitle", "detailUrl"]', 10),
+('审批驳回', 'APPROVAL_REJECTED', '审批助手', '您提交的{{bizTitle}}已被拒绝，原因：{{reason}}。[查看详情]({{detailUrl}})', 0, '["bizTitle", "reason", "detailUrl"]', 10),
+('审批撤回', 'APPROVAL_WITHDRAWN', '审批助手', '{{startUserName}}已撤回审批：{{bizTitle}}。', 0, '["bizTitle", "startUserName"]', 10),
+('审批超时提醒', 'APPROVAL_TASK_TIMEOUT', '审批助手', '您有一条审批任务已超时：{{bizTitle}}，请尽快处理。[查看详情]({{detailUrl}})', 0, '["bizTitle", "taskName", "detailUrl"]', 10),
+('审批催办', 'APPROVAL_TASK_URGE', '审批助手', '{{urgeUserName}}催办您处理审批任务：{{bizTitle}}。[查看详情]({{detailUrl}})', 0, '["bizTitle", "urgeUserName", "detailUrl"]', 10),
+('任务转办', 'APPROVAL_TASK_TRANSFER', '审批助手', '您有一条新的审批任务（由{{transferUserName}}转办）：{{bizTitle}}。[查看详情]({{detailUrl}})', 0, '["bizTitle", "transferUserName", "detailUrl"]', 10);
+
+-- ==============================================================================
 -- 脚本结束
 -- ==============================================================================

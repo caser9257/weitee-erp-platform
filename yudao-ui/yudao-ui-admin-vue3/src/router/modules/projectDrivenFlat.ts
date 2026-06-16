@@ -741,6 +741,57 @@ const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
             },
             visible: true,
             keepAlive: false
+          },
+          {
+            path: 'cost-product',
+            name: '产品成本汇总',
+            icon: 'ep:goods',
+            component: 'erp/finance/cost-product/index',
+            componentName: 'ErpProductionCostProductSummary',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/report-analysis',
+              menuGroupTitle: '报表与分析',
+              menuGroupIcon: 'ep:data-analysis',
+              menuGroupOrder: 50,
+              menuOrder: 25
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'cost-product-trend',
+            name: '产品成本趋势',
+            icon: 'ep:trend-charts',
+            component: 'erp/finance/cost-product/trend',
+            componentName: 'ErpProductCostTrend',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/report-analysis',
+              menuGroupTitle: '报表与分析',
+              menuGroupIcon: 'ep:data-analysis',
+              menuGroupOrder: 50,
+              menuOrder: 26
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'cost-report',
+            name: '产品成本分析报表',
+            icon: 'ep:data-analysis',
+            component: 'erp/finance/cost-report/index',
+            componentName: 'ErpFinanceCostReport',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/report-analysis',
+              menuGroupTitle: '报表与分析',
+              menuGroupIcon: 'ep:data-analysis',
+              menuGroupOrder: 50,
+              menuOrder: 30
+            },
+            visible: true,
+            keepAlive: false
           }
         ]
       }

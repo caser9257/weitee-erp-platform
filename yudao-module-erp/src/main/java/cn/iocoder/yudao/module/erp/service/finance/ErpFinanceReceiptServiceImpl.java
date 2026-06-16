@@ -11,9 +11,11 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.receipt.ErpFinanc
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOutDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceReceiptItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceReceiptMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
@@ -32,6 +34,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.*;
@@ -65,6 +68,8 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     private ErpSaleOutService saleOutService;
     @Resource
     private ErpSaleReturnService saleReturnService;
+    @Resource
+    private ErpSaleOrderMapper saleOrderMapper;
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
 
@@ -175,8 +180,12 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             for (ErpFinanceReceiptItemDO item : items) {
                 if (ObjectUtil.equal(item.getBizType(), cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum.SALE_OUT.getType())) {
                     ErpSaleOutDO saleOut = saleOutService.validateSaleOut(item.getBizId());
-                    if (saleOut != null && saleOut.getProjectId() != null) {
-                        projectLifecycleService.refreshProjectStatus(saleOut.getProjectId());
+                    if (saleOut != null && saleOut.getOrderId() != null) {
+                        // 通过销售订单获取 projectId
+                        ErpSaleOrderDO saleOrder = saleOrderMapper.selectById(saleOut.getOrderId());
+                        if (saleOrder != null && saleOrder.getProjectId() != null) {
+                            projectLifecycleService.refreshProjectStatus(saleOrder.getProjectId());
+                        }
                     }
                 }
             }

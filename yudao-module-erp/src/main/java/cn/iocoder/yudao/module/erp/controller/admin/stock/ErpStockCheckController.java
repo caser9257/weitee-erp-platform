@@ -76,6 +76,45 @@ public class ErpStockCheckController {
         return success(true);
     }
 
+    @PutMapping("/start-counting")
+    @Operation(summary = "启动盘点（DRAFT → COUNTING）")
+    @PreAuthorize("@ss.hasPermission('erp:stock-check:update-status')")
+    public CommonResult<Boolean> startCounting(@RequestParam("id") Long id) {
+        stockCheckService.startCounting(id);
+        return success(true);
+    }
+
+    @PutMapping("/submit-for-review")
+    @Operation(summary = "提交审核（COUNTING → REVIEWING）")
+    @PreAuthorize("@ss.hasPermission('erp:stock-check:update-status')")
+    public CommonResult<Boolean> submitForReview(@RequestParam("id") Long id) {
+        stockCheckService.submitForReview(id);
+        return success(true);
+    }
+
+    @PutMapping("/approve-and-close")
+    @Operation(summary = "审核通过（REVIEWING → APPROVED → CLOSED）")
+    @PreAuthorize("@ss.hasPermission('erp:stock-check:update-status')")
+    public CommonResult<Boolean> approveAndClose(@RequestParam("id") Long id) {
+        stockCheckService.approveAndClose(id);
+        return success(true);
+    }
+
+    @PutMapping("/reject")
+    @Operation(summary = "驳回到上一状态")
+    @PreAuthorize("@ss.hasPermission('erp:stock-check:update-status')")
+    public CommonResult<Boolean> reject(@RequestParam("id") Long id) {
+        stockCheckService.reject(id);
+        return success(true);
+    }
+
+    @GetMapping("/diff-report")
+    @Operation(summary = "获取盘点差异报告")
+    @PreAuthorize("@ss.hasPermission('erp:stock-check:query')")
+    public CommonResult<java.math.BigDecimal[]> getDiffReport(@RequestParam("id") Long id) {
+        return success(stockCheckService.getDiffReport(id));
+    }
+
     @DeleteMapping("/delete")
     @Operation(summary = "删除库存调拨单")
     @Parameter(name = "ids", description = "编号数组", required = true)

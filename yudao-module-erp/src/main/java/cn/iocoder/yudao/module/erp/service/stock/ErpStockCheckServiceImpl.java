@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockCheckItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockCheckSnapshotDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockCheckItemMapper;
@@ -19,10 +20,14 @@ import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.mrp.ErpProductionCostSourceTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.mrp.ErpProductionCostTypeEnum;
+import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
+import cn.iocoder.yudao.module.erp.enums.stock.ErpStockCheckStatusEnum;
 import cn.iocoder.yudao.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
+import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceVoucherService;
 import cn.iocoder.yudao.module.erp.service.mrp.ErpProductionCostService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -50,6 +55,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpStockCheckServiceImpl implements ErpStockCheckService {
 
     @Resource
@@ -70,6 +76,10 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     private ErpStockService stockService;
     @Resource
     private ErpProductionCostService productionCostService;
+    @Resource
+    private ErpStockCheckSnapshotService stockCheckSnapshotService;
+    @Resource
+    private ErpFinanceVoucherService voucherService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,15 +92,13 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             throw exception(STOCK_CHECK_NO_EXISTS);
         }
 
-        // 2.1 插入盘点单
+        // 2.1 插入盘点单（使用DRAFT状态）
         ErpStockCheckDO stockCheck = BeanUtils.toBean(createReqVO, ErpStockCheckDO.class, in -> in
-                .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setNo(no).setStatus(ErpStockCheckStatusEnum.DRAFT.getStatus())
                 .setTotalCount(getSumValue(stockCheckItems, ErpStockCheckItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockCheckItems, ErpStockCheckItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockCheckMapper.insert(stockCheck);
-        // 记录快照时间
-        stockCheck.setSnapshotTime(LocalDateTime.now());
-        erpStockCheckMapper.updateById(new ErpStockCheckDO().setId(stockCheck.getId()).setSnapshotTime(stockCheck.getSnapshotTime()));
+
         // 2.2 插入盘点单项
         stockCheckItems.forEach(o -> o.setCheckId(stockCheck.getId()));
         erpStockCheckItemMapper.insertBatch(stockCheckItems);
@@ -120,77 +128,169 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateStockCheckStatus(Long id, Integer status) {
-        boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         // 1.1 校验存在
         ErpStockCheckDO stockCheck = validateStockCheckExists(id);
-        // 1.2 校验状态
-        if (stockCheck.getStatus().equals(status)) {
-            throw exception(approve ? STOCK_CHECK_APPROVE_FAIL : STOCK_CHECK_PROCESS_FAIL);
+        Integer currentStatus = stockCheck.getStatus();
+
+        // 1.2 校验状态流转是否合法
+        ErpStockCheckStatusEnum currentEnum = ErpStockCheckStatusEnum.fromStatus(currentStatus);
+        if (currentEnum == null || !currentEnum.canTransitionTo(status)) {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, currentStatus, status);
         }
 
-        // 2. 更新状态
-        int updateCount = erpStockCheckMapper.updateByIdAndStatus(id, stockCheck.getStatus(),
-                new ErpStockCheckDO().setStatus(status));
-        if (updateCount == 0) {
-            throw exception(approve ? STOCK_CHECK_APPROVE_FAIL : STOCK_CHECK_PROCESS_FAIL);
+        // 2. 根据目标状态执行不同逻辑
+        ErpStockCheckStatusEnum targetEnum = ErpStockCheckStatusEnum.fromStatus(status);
+
+        switch (targetEnum) {
+            case COUNTING -> {
+                // DRAFT → COUNTING：生成快照 + 冻结仓库
+                startCounting(stockCheck);
+            }
+            case REVIEWING -> {
+                // COUNTING → REVIEWING：提交审核
+                submitForReview(stockCheck);
+            }
+            case APPROVED -> {
+                // REVIEWING → APPROVED：更新库存 + 生成凭证 + 变为 CLOSED
+                approveAndClose(stockCheck);
+            }
+            case DRAFT -> {
+                // COUNTING → DRAFT 或 REVIEWING → COUNTING：驳回修改
+                rejectToPrevious(stockCheck, currentStatus);
+            }
+            default -> {
+                throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, currentStatus, status);
+            }
+        }
+    }
+
+    /**
+     * 启动盘点（DRAFT → COUNTING）
+     *
+     * 生成快照 + 冻结仓库
+     */
+    private void startCounting(ErpStockCheckDO stockCheck) {
+        Long checkId = stockCheck.getId();
+
+        // 1. 生成快照
+        int snapshotCount = stockCheckSnapshotService.createSnapshot(checkId);
+        if (snapshotCount == 0) {
+            throw exception(STOCK_CHECK_SNAPSHOT_FAIL);
         }
 
-        // 3. 变更库存
-        List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(id);
+        // 2. 冻结相关仓库
+        List<ErpStockCheckItemDO> checkItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
+        Set<Long> warehouseIds = checkItems.stream()
+                .map(ErpStockCheckItemDO::getWarehouseId)
+                .collect(Collectors.toSet());
+        warehouseIds.forEach(warehouseId -> {
+            warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
+                    .setId(warehouseId).setFrozen(true));
+        });
+
+        // 3. 更新状态为 COUNTING，记录快照时间
+        erpStockCheckMapper.updateById(new ErpStockCheckDO()
+                .setId(checkId)
+                .setStatus(ErpStockCheckStatusEnum.COUNTING.getStatus())
+                .setSnapshotTime(LocalDateTime.now()));
+    }
+
+    /**
+     * 提交审核（COUNTING → REVIEWING）
+     *
+     * 计算差异金额
+     */
+    private void submitForReview(ErpStockCheckDO stockCheck) {
+        Long checkId = stockCheck.getId();
+
+        // 1. 计算差异金额
+        calculateDiffAmount(checkId);
+
+        // 2. 更新状态为 REVIEWING
+        erpStockCheckMapper.updateById(new ErpStockCheckDO()
+                .setId(checkId)
+                .setStatus(ErpStockCheckStatusEnum.REVIEWING.getStatus()));
+    }
+
+    /**
+     * 审核通过并关闭（REVIEWING → APPROVED → CLOSED）
+     *
+     * 更新库存 + 生成凭证 + 解冻仓库
+     */
+    private void approveAndClose(ErpStockCheckDO stockCheck) {
+        Long checkId = stockCheck.getId();
+
+        // 1. 更新库存
+        List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
         stockCheckItems.forEach(stockCheckItem -> {
             // 没有盈亏，不用出入库
             if (stockCheckItem.getCount().compareTo(BigDecimal.ZERO) == 0) {
                 return;
             }
-            // 10；12；-2（）
-            BigDecimal count = approve ? stockCheckItem.getCount(): stockCheckItem.getCount().negate();
-            Integer bizType;
-            if (approve) {
-                bizType = count.compareTo(BigDecimal.ZERO) > 0 ? ErpStockRecordBizTypeEnum.CHECK_MORE_IN.getType()
-                        : ErpStockRecordBizTypeEnum.CHECK_LESS_OUT.getType();
-            } else {
-                bizType = count.compareTo(BigDecimal.ZERO) > 0 ? ErpStockRecordBizTypeEnum.CHECK_MORE_IN_CANCEL.getType()
-                        : ErpStockRecordBizTypeEnum.CHECK_LESS_OUT_CANCEL.getType();
-            }
+
+            BigDecimal count = stockCheckItem.getCount();
+            Integer bizType = count.compareTo(BigDecimal.ZERO) > 0
+                    ? ErpStockRecordBizTypeEnum.CHECK_MORE_IN.getType()
+                    : ErpStockRecordBizTypeEnum.CHECK_LESS_OUT.getType();
+
             // 获取加权平均成本作为盘点价格
             ErpStockDO stock = stockService.getStock(stockCheckItem.getProductId(), stockCheckItem.getWarehouseId());
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(stockCheckItem.getCount().abs()) : null;
+
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                     stockCheckItem.getProductId(), stockCheckItem.getWarehouseId(), count,
                     bizType, stockCheckItem.getCheckId(), stockCheckItem.getId(), stockCheck.getNo(),
                     price, amount));
         });
 
-        // 4. 盘亏结转至制造费用
-        if (approve) {
-            stockCheckItems.forEach(stockCheckItem -> {
-                // 只处理盘亏（count < 0 表示账面 > 实际，即盘亏）
-                if (stockCheckItem.getCount().compareTo(BigDecimal.ZERO) >= 0) {
-                    return;
-                }
-                // 计算盘亏金额
-                BigDecimal lossAmount = stockCheckItem.getCount().abs().multiply(
-                        defaultAmount(stockCheckItem.getProductPrice()));
-                if (lossAmount.compareTo(BigDecimal.ZERO) <= 0) {
-                    return;
-                }
-                // 创建生产成本条目（制造费用-OTHER）
-                ErpProductionCostEntryDO costEntry = ErpProductionCostEntryDO.builder()
-                        .costType(ErpProductionCostTypeEnum.OTHER.getType())
-                        .sourceType(ErpProductionCostSourceTypeEnum.SYSTEM.getType())
-                        .amount(lossAmount)
-                        .sourceId(stockCheckItem.getCheckId())
-                        .sourceNo(stockCheck.getNo())
-                        .remark("盘点盘亏自动结转")
-                        .build();
-                productionCostService.createProductionCostEntryFromCheck(costEntry);
-            });
+        // 2. 生成凭证
+        Long voucherId = null;
+        try {
+            voucherId = voucherService.autoGenerateVoucher(ErpBizTypeEnum.STOCK_CHECK.getType(), checkId);
+        } catch (Exception e) {
+            log.error("[approveAndClose] 盘点凭证生成失败，checkId={}", checkId, e);
+            // 凭证生成失败不影响主流程，记录日志即可
         }
 
-        // 盘点完成后自动解冻关联仓库
-        if (approve) {
-            Set<Long> warehouseIds = stockCheckItems.stream()
+        // 3. 更新状态为 CLOSED
+        ErpStockCheckDO updateObj = new ErpStockCheckDO()
+                .setId(checkId)
+                .setStatus(ErpStockCheckStatusEnum.CLOSED.getStatus());
+        if (voucherId != null) {
+            updateObj.setVoucherId(voucherId);
+        }
+        erpStockCheckMapper.updateById(updateObj);
+
+        // 4. 解冻仓库
+        Set<Long> warehouseIds = stockCheckItems.stream()
+                .map(ErpStockCheckItemDO::getWarehouseId)
+                .collect(Collectors.toSet());
+        warehouseIds.forEach(warehouseId -> {
+            ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
+            if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
+                warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
+                        .setId(warehouseId).setFrozen(false));
+            }
+        });
+    }
+
+    /**
+     * 驳回到上一状态
+     *
+     * REVIEWING → COUNTING 或 COUNTING → DRAFT
+     */
+    private void rejectToPrevious(ErpStockCheckDO stockCheck, Integer currentStatus) {
+        Integer targetStatus;
+        if (ErpStockCheckStatusEnum.REVIEWING.getStatus().equals(currentStatus)) {
+            targetStatus = ErpStockCheckStatusEnum.COUNTING.getStatus();
+        } else if (ErpStockCheckStatusEnum.COUNTING.getStatus().equals(currentStatus)) {
+            targetStatus = ErpStockCheckStatusEnum.DRAFT.getStatus();
+            // 删除快照
+            stockCheckSnapshotService.deleteSnapshot(stockCheck.getId());
+            // 解冻仓库
+            List<ErpStockCheckItemDO> checkItems = erpStockCheckItemMapper.selectListByCheckId(stockCheck.getId());
+            Set<Long> warehouseIds = checkItems.stream()
                     .map(ErpStockCheckItemDO::getWarehouseId)
                     .collect(Collectors.toSet());
             warehouseIds.forEach(warehouseId -> {
@@ -200,6 +300,44 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
                             .setId(warehouseId).setFrozen(false));
                 }
             });
+        } else {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, currentStatus, null);
+        }
+
+        erpStockCheckMapper.updateById(new ErpStockCheckDO()
+                .setId(stockCheck.getId())
+                .setStatus(targetStatus));
+    }
+
+    /**
+     * 计算差异金额
+     */
+    private void calculateDiffAmount(Long checkId) {
+        List<ErpStockCheckItemDO> checkItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
+        List<ErpStockCheckSnapshotDO> snapshots = stockCheckSnapshotService.getSnapshotList(checkId);
+
+        // 构建快照索引：product_warehouse -> snapshot
+        Map<String, ErpStockCheckSnapshotDO> snapshotMap = snapshots.stream()
+                .collect(Collectors.toMap(
+                        s -> s.getProductId() + "_" + s.getWarehouseId(),
+                        s -> s,
+                        (a, b) -> a
+                ));
+
+        for (ErpStockCheckItemDO item : checkItems) {
+            String key = item.getProductId() + "_" + item.getWarehouseId();
+            ErpStockCheckSnapshotDO snapshot = snapshotMap.get(key);
+
+            if (snapshot != null && snapshot.getAverageCost() != null) {
+                // 差异数量 = 实际数量 - 账面数量
+                BigDecimal diffQty = item.getActualCount().subtract(item.getStockCount());
+                // 差异金额 = 差异数量 * 平均成本
+                BigDecimal diffAmount = diffQty.multiply(snapshot.getAverageCost());
+
+                erpStockCheckItemMapper.updateById(new ErpStockCheckItemDO()
+                        .setId(item.getId())
+                        .setDiffAmount(diffAmount));
+            }
         }
     }
 
@@ -293,6 +431,82 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             return Collections.emptyList();
         }
         return erpStockCheckItemMapper.selectListByCheckIds(checkIds);
+    }
+
+    // ==================== 场景A状态流转方法 ====================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void startCounting(Long id) {
+        ErpStockCheckDO stockCheck = validateStockCheckExists(id);
+        ErpStockCheckStatusEnum currentEnum = ErpStockCheckStatusEnum.fromStatus(stockCheck.getStatus());
+        if (currentEnum == null || !currentEnum.canTransitionTo(ErpStockCheckStatusEnum.COUNTING.getStatus())) {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, stockCheck.getStatus(), ErpStockCheckStatusEnum.COUNTING.getStatus());
+        }
+        startCounting(stockCheck);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void submitForReview(Long id) {
+        ErpStockCheckDO stockCheck = validateStockCheckExists(id);
+        ErpStockCheckStatusEnum currentEnum = ErpStockCheckStatusEnum.fromStatus(stockCheck.getStatus());
+        if (currentEnum == null || !currentEnum.canTransitionTo(ErpStockCheckStatusEnum.REVIEWING.getStatus())) {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, stockCheck.getStatus(), ErpStockCheckStatusEnum.REVIEWING.getStatus());
+        }
+        submitForReview(stockCheck);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void approveAndClose(Long id) {
+        ErpStockCheckDO stockCheck = validateStockCheckExists(id);
+        ErpStockCheckStatusEnum currentEnum = ErpStockCheckStatusEnum.fromStatus(stockCheck.getStatus());
+        if (currentEnum == null || !currentEnum.canTransitionTo(ErpStockCheckStatusEnum.APPROVED.getStatus())) {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, stockCheck.getStatus(), ErpStockCheckStatusEnum.APPROVED.getStatus());
+        }
+        approveAndClose(stockCheck);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void reject(Long id) {
+        ErpStockCheckDO stockCheck = validateStockCheckExists(id);
+        Integer currentStatus = stockCheck.getStatus();
+
+        // 根据当前状态决定驳回到哪个状态
+        Integer targetStatus;
+        if (ErpStockCheckStatusEnum.REVIEWING.getStatus().equals(currentStatus)) {
+            targetStatus = ErpStockCheckStatusEnum.COUNTING.getStatus();
+        } else if (ErpStockCheckStatusEnum.COUNTING.getStatus().equals(currentStatus)) {
+            targetStatus = ErpStockCheckStatusEnum.DRAFT.getStatus();
+        } else {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, currentStatus, null);
+        }
+
+        rejectToPrevious(stockCheck, currentStatus);
+    }
+
+    @Override
+    public BigDecimal[] getDiffReport(Long checkId) {
+        List<ErpStockCheckItemDO> checkItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
+
+        BigDecimal totalProfit = BigDecimal.ZERO;  // 盘盈总额
+        BigDecimal totalLoss = BigDecimal.ZERO;    // 盘亏总额
+
+        for (ErpStockCheckItemDO item : checkItems) {
+            if (item.getDiffAmount() == null) {
+                continue;
+            }
+
+            if (item.getDiffAmount().compareTo(BigDecimal.ZERO) > 0) {
+                totalProfit = totalProfit.add(item.getDiffAmount());
+            } else {
+                totalLoss = totalLoss.add(item.getDiffAmount().abs());
+            }
+        }
+
+        return new BigDecimal[]{totalProfit, totalLoss};
     }
 
 }

@@ -28,7 +28,7 @@ public interface ErpProductionCostEntryMapper extends BaseMapperX<ErpProductionC
 
     default List<ErpProductionCostEntryDO> selectListByAccountingMonth(String accountingMonth) {
         return selectList(new LambdaQueryWrapperX<ErpProductionCostEntryDO>()
-                .eq(ErpProductionCostEntryDO::getAccountingMonth, accountingMonth)
+                .eqIfPresent(ErpProductionCostEntryDO::getAccountingMonth, accountingMonth)
                 .orderByAsc(ErpProductionCostEntryDO::getProductionOrderId, ErpProductionCostEntryDO::getId));
     }
 

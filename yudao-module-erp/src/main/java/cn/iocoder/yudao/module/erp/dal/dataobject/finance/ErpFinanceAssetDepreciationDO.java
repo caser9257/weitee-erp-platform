@@ -36,5 +36,6 @@ public class ErpFinanceAssetDepreciationDO extends BaseDO {
     private BigDecimal beforeCurrentAmount;
     private BigDecimal afterCurrentAmount;
     private Integer status;
+    private Long voucherId;
     private String remark;
 }

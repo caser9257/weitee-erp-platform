@@ -9,6 +9,10 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpInvoiceItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpInvoiceItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpInvoiceMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductUnitDO;
+import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
+import cn.iocoder.yudao.module.erp.service.product.ErpProductUnitService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
@@ -44,6 +48,10 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
 
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
+    @Resource
+    private ErpProductService productService;
+    @Resource
+    private ErpProductUnitService productUnitService;
     @Resource
     private ErpSaleOrderMapper erpSaleOrderMapper;
     @Resource
@@ -295,7 +303,21 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
             }
         }
 
-        // 3. 计算可开票数量
+        // 3. 批量获取产品信息
+        Set<Long> productIds = orderItems.stream()
+                .map(ErpSaleOrderItemDO::getProductId)
+                .collect(java.util.stream.Collectors.toSet());
+        Map<Long, ErpProductDO> productMap = productService.validProductList(productIds).stream()
+                .collect(java.util.stream.Collectors.toMap(ErpProductDO::getId, p -> p));
+        // 批量获取产品单位信息
+        Set<Long> unitIds = productMap.values().stream()
+                .map(ErpProductDO::getUnitId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        Map<Long, ErpProductUnitDO> unitMap = unitIds.isEmpty() ? Collections.emptyMap() :
+                productUnitService.getProductUnitMap(unitIds);
+
+        // 4. 计算可开票数量
         List<UninvoicedItemVO> result = new ArrayList<>();
         for (ErpSaleOrderItemDO orderItem : orderItems) {
             BigDecimal totalCount = orderItem.getCount() != null ? orderItem.getCount() : BigDecimal.ZERO;
@@ -305,9 +327,17 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
             if (availableCount.compareTo(BigDecimal.ZERO) > 0) {
                 UninvoicedItemVO vo = new UninvoicedItemVO();
                 vo.setProductId(orderItem.getProductId());
-                vo.setProductName(orderItem.getProductName());
-                vo.setProductSpec(orderItem.getProductBarCode());
-                vo.setUnit(orderItem.getProductUnitName());
+                // 从产品表获取产品信息
+                ErpProductDO product = productMap.get(orderItem.getProductId());
+                if (product != null) {
+                    vo.setProductName(product.getName());
+                    vo.setProductSpec(product.getBarCode());
+                    // 获取单位名称
+                    ErpProductUnitDO unit = product.getUnitId() != null ? unitMap.get(product.getUnitId()) : null;
+                    if (unit != null) {
+                        vo.setUnit(unit.getName());
+                    }
+                }
                 vo.setTotalCount(totalCount);
                 vo.setInvoicedCount(invoicedCount);
                 vo.setAvailableCount(availableCount);
