@@ -123,7 +123,10 @@ public class SocialClientServiceImpl implements SocialClientService {
     /**
      * 缓存 WxMaService 对象
      *
-     * 说明同 {@link #wxMpServiceCache} 变量
+     * key：使用微信小程序的 appId + secret 拼接，即 {@link SocialClientDO} 的 clientId 和 clientSecret 属性。
+     * 为什么 key 使用这种格式？因为 {@link SocialClientDO} 在管理后台可以变更，通过这个 key 存储它的单例。
+     *
+     * 为什么要做 WxMaService 缓存？因为 WxMaService 构建成本比较大，所以尽量保证它是单例。
      */
     private final LoadingCache<String, WxMaService> wxMaServiceCache = CacheUtils.buildAsyncReloadingCache(
             Duration.ofSeconds(10L),
@@ -378,7 +381,7 @@ public class SocialClientServiceImpl implements SocialClientService {
         configStorage.setAppid(clientId);
         configStorage.setSecret(clientSecret);
 
-        // 第二步，创建 WxMpService 对象
+        // 第二步，创建 WxMaService 对象
         WxMaService service = new WxMaServiceImpl();
         service.setWxMaConfig(configStorage);
         return service;

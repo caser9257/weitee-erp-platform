@@ -1,0 +1,11 @@
+{
+  "id": "review-mp-module-removal",
+  "title": "审查公众号模块代码清除变更",
+  "status": "completed",
+  "phase": null,
+  "gate": null,
+  "description": "审查从616530f59d到ac3e2a2a3e的代码变更，确保彻底清除公众号模块相关代码同时保留微信公众号登录功能",
+  "files": [],
+  "created_at": "2026-06-16T01:36:38.401Z",
+  "updated_at": "2026-06-16T01:42:54.642Z"
+}

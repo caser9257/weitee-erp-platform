@@ -10,7 +10,6 @@ import cn.iocoder.yudao.module.system.enums.social.SocialTypeEnum;
 import cn.iocoder.yudao.module.system.service.social.SocialClientService;
 import cn.iocoder.yudao.module.system.service.social.SocialUserService;
 import lombok.extern.slf4j.Slf4j;
-import me.chanjar.weixin.common.bean.WxJsapiSignature;
 import me.chanjar.weixin.common.bean.subscribemsg.TemplateInfo;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
