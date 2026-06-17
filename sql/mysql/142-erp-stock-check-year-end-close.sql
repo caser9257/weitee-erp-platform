@@ -54,14 +54,20 @@ ALTER TABLE `erp_stock_check_item`
 -- ============================================================
 -- 5. 初始化历史数据
 -- ============================================================
--- 将现有盘点单的 year_end_flag 设为 0（非年末盘点）
+-- 5.1 将现有盘点单的 year_end_flag 设为 0（非年末盘点）
 UPDATE `erp_stock_check` SET `year_end_flag` = b'0' WHERE `year_end_flag` IS NULL;
 
+-- 5.2 状态码迁移：旧 ErpAuditStatus → 新 ErpStockCheckStatusEnum
+-- 旧 PROCESS(10) = 未审核 → 新 DRAFT(0) = 草稿
+-- 旧 APPROVE(20) = 已审核 → 新 CLOSED(40) = 已关闭
+UPDATE `erp_stock_check` SET `status` = 0 WHERE `status` = 10;
+UPDATE `erp_stock_check` SET `status` = 40 WHERE `status` = 20;
+
 -- ============================================================
--- 6. 凭证模板配置（如果需要）
+-- 6. 凭证模板配置
 -- ============================================================
 -- 盘点凭证模板（盘盈/盘亏统一进管理费用）
--- biz_type = 92 表示盘点凭证
+-- biz_type = 60 对应 ErpBizTypeEnum.STOCK_CHECK
 INSERT INTO `erp_finance_voucher_template` (`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
-VALUES (202, 1, 92, '盘点凭证模板', 0, b'1', '库存盘点', '盘点盘盈/盘亏自动生成凭证', '1', NOW(), '1', NOW(), b'0')
-ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+VALUES (202, 1, 60, '盘点凭证模板', 0, b'1', '库存盘点', '盘点盘盈/盘亏自动生成凭证', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `biz_type` = VALUES(`biz_type`), `name` = VALUES(`name`);

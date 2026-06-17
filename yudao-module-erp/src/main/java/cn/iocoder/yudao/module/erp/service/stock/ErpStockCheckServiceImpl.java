@@ -17,7 +17,6 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockCheckItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
-import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.mrp.ErpProductionCostSourceTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.mrp.ErpProductionCostTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
@@ -110,7 +109,8 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     public void updateStockCheck(ErpStockCheckSaveReqVO updateReqVO) {
         // 1.1 校验存在
         ErpStockCheckDO stockCheck = validateStockCheckExists(updateReqVO.getId());
-        if (ErpAuditStatus.APPROVE.getStatus().equals(stockCheck.getStatus())) {
+        if (ErpStockCheckStatusEnum.APPROVED.getStatus().equals(stockCheck.getStatus())
+                || ErpStockCheckStatusEnum.CLOSED.getStatus().equals(stockCheck.getStatus())) {
             throw exception(STOCK_CHECK_UPDATE_FAIL_APPROVE, stockCheck.getNo());
         }
         // 1.2 校验盘点项的有效性
@@ -215,10 +215,16 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     /**
      * 审核通过并关闭（REVIEWING → APPROVED → CLOSED）
      *
-     * 更新库存 + 生成凭证 + 解冻仓库
+     * 先写 APPROVED 保留审计轨迹，再执行业务，最后写 CLOSED。
+     * 包含：更新库存、盘亏结转制造费用、生成凭证、解冻仓库。
      */
     private void approveAndClose(ErpStockCheckDO stockCheck) {
         Long checkId = stockCheck.getId();
+
+        // 0. 先写 APPROVED 状态，保留审计轨迹
+        erpStockCheckMapper.updateById(new ErpStockCheckDO()
+                .setId(checkId)
+                .setStatus(ErpStockCheckStatusEnum.APPROVED.getStatus()));
 
         // 1. 更新库存
         List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
@@ -244,7 +250,31 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
                     price, amount));
         });
 
-        // 2. 生成凭证
+        // 2. 盘亏结转至制造费用
+        stockCheckItems.forEach(stockCheckItem -> {
+            // 只处理盘亏（count < 0 表示账面 > 实际，即盘亏）
+            if (stockCheckItem.getCount().compareTo(BigDecimal.ZERO) >= 0) {
+                return;
+            }
+            // 计算盘亏金额
+            BigDecimal lossAmount = stockCheckItem.getCount().abs().multiply(
+                    defaultAmount(stockCheckItem.getProductPrice()));
+            if (lossAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                return;
+            }
+            // 创建生产成本条目（制造费用-OTHER）
+            ErpProductionCostEntryDO costEntry = ErpProductionCostEntryDO.builder()
+                    .costType(ErpProductionCostTypeEnum.OTHER.getType())
+                    .sourceType(ErpProductionCostSourceTypeEnum.SYSTEM.getType())
+                    .amount(lossAmount)
+                    .sourceId(stockCheckItem.getCheckId())
+                    .sourceNo(stockCheck.getNo())
+                    .remark("盘点盘亏自动结转")
+                    .build();
+            productionCostService.createProductionCostEntryFromCheck(costEntry);
+        });
+
+        // 3. 生成凭证
         Long voucherId = null;
         try {
             voucherId = voucherService.autoGenerateVoucher(ErpBizTypeEnum.STOCK_CHECK.getType(), checkId);
@@ -253,7 +283,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             // 凭证生成失败不影响主流程，记录日志即可
         }
 
-        // 3. 更新状态为 CLOSED
+        // 4. 更新状态为 CLOSED
         ErpStockCheckDO updateObj = new ErpStockCheckDO()
                 .setId(checkId)
                 .setStatus(ErpStockCheckStatusEnum.CLOSED.getStatus());
@@ -262,7 +292,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         }
         erpStockCheckMapper.updateById(updateObj);
 
-        // 4. 解冻仓库
+        // 5. 解冻仓库
         Set<Long> warehouseIds = stockCheckItems.stream()
                 .map(ErpStockCheckItemDO::getWarehouseId)
                 .collect(Collectors.toSet());
@@ -382,7 +412,8 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             return;
         }
         stockChecks.forEach(stockCheck -> {
-            if (ErpAuditStatus.APPROVE.getStatus().equals(stockCheck.getStatus())) {
+            if (ErpStockCheckStatusEnum.APPROVED.getStatus().equals(stockCheck.getStatus())
+                    || ErpStockCheckStatusEnum.CLOSED.getStatus().equals(stockCheck.getStatus())) {
                 throw exception(STOCK_CHECK_DELETE_FAIL_APPROVE, stockCheck.getNo());
             }
         });

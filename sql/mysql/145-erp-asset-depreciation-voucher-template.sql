@@ -10,12 +10,26 @@ INSERT INTO erp_finance_voucher_template (id, ledger_id, biz_type, name, status,
 VALUES (203, 1, 70, '固定资产折旧凭证模板', 0, b'1', '固定资产折旧', '固定资产折旧自动生成凭证', '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
+-- 1.1 资产折旧凭证模板明细 - 借方：管理费用-折旧费（按部门判断）
+INSERT INTO erp_finance_voucher_template_item (id, template_id, entry_no, entry_direction, subject_code, subject_name, amount_source, amount_source_value, summary, creator, create_time, updater, update_time, deleted)
+VALUES 
+(2031, 203, 1, 1, '6602', '管理费用', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0'),
+(2032, 203, 2, 2, '1602', '累计折旧', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE subject_code = VALUES(subject_code), subject_name = VALUES(subject_name);
+
 -- 2. 无形资产摊销凭证模板
 -- 借：管理费用-无形资产摊销 / 研发支出-无形资产摊销
 -- 贷：累计摊销
 INSERT INTO erp_finance_voucher_template (id, ledger_id, biz_type, name, status, auto_generate, default_summary, remark, creator, create_time, updater, update_time, deleted)
 VALUES (204, 1, 71, '无形资产摊销凭证模板', 0, b'1', '无形资产摊销', '无形资产摊销自动生成凭证', '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- 2.1 无形资产摊销凭证模板明细 - 借方：管理费用-无形资产摊销
+INSERT INTO erp_finance_voucher_template_item (id, template_id, entry_no, entry_direction, subject_code, subject_name, amount_source, amount_source_value, summary, creator, create_time, updater, update_time, deleted)
+VALUES 
+(2041, 204, 1, 1, '6602', '管理费用', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
+(2042, 204, 2, 2, '1702', '累计摊销', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE subject_code = VALUES(subject_code), subject_name = VALUES(subject_name);
 
 -- 3. 确认会计科目表中"1602 累计折旧"科目已创建
 INSERT INTO erp_finance_subject (id, ledger_id, parent_id, subject_code, subject_name, subject_type, balance_direction, leaf, status, sort, remark, creator, create_time, updater, update_time, deleted)

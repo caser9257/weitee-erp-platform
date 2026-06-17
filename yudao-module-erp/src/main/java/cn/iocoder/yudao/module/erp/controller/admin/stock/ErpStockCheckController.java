@@ -67,8 +67,9 @@ public class ErpStockCheckController {
         return success(true);
     }
 
+    @Deprecated // 请使用专用端点：startCounting / submitForReview / approveAndClose / reject
     @PutMapping("/update-status")
-    @Operation(summary = "更新库存调拨单的状态")
+    @Operation(summary = "更新库存调拨单的状态（已废弃，请使用专用端点）")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:update-status')")
     public CommonResult<Boolean> updateStockCheckStatus(@RequestParam("id") Long id,
                                                      @RequestParam("status") Integer status) {

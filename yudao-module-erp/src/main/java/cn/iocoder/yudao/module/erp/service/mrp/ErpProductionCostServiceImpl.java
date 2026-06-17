@@ -791,7 +791,28 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         // 1. 生成期间列表
         List<String> allPeriods = generatePeriods(reqVO.getStartMonth(), reqVO.getEndMonth(), reqVO.getDimension());
 
-        // 2. 按期间查询成本数据，只保留有数据的期间
+        // 2. 批量查询所有期间的成本条目（避免 N+1）
+        List<ErpProductionCostEntryDO> allEntries = erpProductionCostEntryMapper.selectListByAccountingMonths(allPeriods);
+        Map<String, List<ErpProductionCostEntryDO>> entriesByPeriod = allEntries.stream()
+                .collect(Collectors.groupingBy(ErpProductionCostEntryDO::getAccountingMonth));
+
+        // 3. 如果指定了产品ID，需要批量获取工单映射并过滤
+        Map<Long, ErpProductionOrderDO> orderMap = null;
+        Set<Long> productOrderIds = null;
+        if (reqVO.getProductId() != null) {
+            Set<Long> allOrderIds = filterNotNull(convertSet(allEntries, ErpProductionCostEntryDO::getProductionOrderId));
+            if (!allOrderIds.isEmpty()) {
+                orderMap = productionOrderService.getProductionOrderList(allOrderIds).stream()
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toMap(ErpProductionOrderDO::getId, item -> item, (left, right) -> left));
+                productOrderIds = orderMap.entrySet().stream()
+                        .filter(e -> reqVO.getProductId().equals(e.getValue().getProductId()))
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toSet());
+            }
+        }
+
+        // 4. 按期间汇总成本数据，只保留有数据的期间
         List<String> periods = new ArrayList<>();
         List<BigDecimal> materialCosts = new ArrayList<>();
         List<BigDecimal> laborCosts = new ArrayList<>();
@@ -809,20 +830,11 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         BigDecimal totalOther = BigDecimal.ZERO;
 
         for (String period : allPeriods) {
-            // 查询该期间的成本条目
-            List<ErpProductionCostEntryDO> entryList = erpProductionCostEntryMapper.selectListByAccountingMonth(period);
+            List<ErpProductionCostEntryDO> entryList = entriesByPeriod.getOrDefault(period, List.of());
 
-            // 如果指定了产品ID，需要过滤
+            // 如果指定了产品ID，过滤条目
             if (reqVO.getProductId() != null) {
-                Set<Long> orderIds = filterNotNull(convertSet(entryList, ErpProductionCostEntryDO::getProductionOrderId));
-                if (!orderIds.isEmpty()) {
-                    Map<Long, ErpProductionOrderDO> orderMap = productionOrderService.getProductionOrderList(orderIds).stream()
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toMap(ErpProductionOrderDO::getId, item -> item, (left, right) -> left));
-                    Set<Long> productOrderIds = orderMap.entrySet().stream()
-                            .filter(e -> reqVO.getProductId().equals(e.getValue().getProductId()))
-                            .map(Map.Entry::getKey)
-                            .collect(Collectors.toSet());
+                if (productOrderIds != null && !productOrderIds.isEmpty()) {
                     entryList = entryList.stream()
                             .filter(e -> productOrderIds.contains(e.getProductionOrderId()))
                             .collect(Collectors.toList());
@@ -885,7 +897,7 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         result.setOutputQtys(outputQtys);
         result.setUnitCosts(unitCosts);
 
-        // 4. 设置成本构成数据
+        // 5. 设置成本构成数据
         ErpProductionCostTrendRespVO.CompositionData compositionData = new ErpProductionCostTrendRespVO.CompositionData();
         compositionData.setMaterialCost(totalMaterial);
         compositionData.setLaborCost(totalLabor);
@@ -895,7 +907,7 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         compositionData.setTotalCost(totalMaterial.add(totalLabor).add(totalDepreciation).add(totalPower).add(totalOther));
         result.setCompositionData(compositionData);
 
-        // 5. 设置产品对比数据（默认查询前5个产品）
+        // 6. 设置产品对比数据（默认查询前5个产品）
         List<ErpProductionCostTrendRespVO.ProductCompareItem> compareData = new ArrayList<>();
         List<ErpProductionCostProductSummaryRespVO> productSummaryList = getProductSummary(reqVO.getStartMonth());
         int count = 0;
@@ -915,24 +927,17 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         }
         result.setProductCompareData(compareData);
 
-        // 6. 设置期间工单信息
+        // 7. 设置期间工单信息（复用已有的 orderMap，避免重复查询）
         java.util.Map<String, ErpProductionCostTrendRespVO.OrderInfo> orderData = new java.util.LinkedHashMap<>();
-        if (reqVO.getProductId() != null) {
+        if (reqVO.getProductId() != null && orderMap != null) {
             for (String period : periods) {
-                List<ErpProductionCostEntryDO> entryList = erpProductionCostEntryMapper.selectListByAccountingMonth(period);
-                Set<Long> orderIds = filterNotNull(convertSet(entryList, ErpProductionCostEntryDO::getProductionOrderId));
-                if (!orderIds.isEmpty()) {
-                    Map<Long, ErpProductionOrderDO> orderMap = productionOrderService.getProductionOrderList(orderIds).stream()
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toMap(ErpProductionOrderDO::getId, item -> item, (left, right) -> left));
-                    for (ErpProductionOrderDO order : orderMap.values()) {
-                        if (reqVO.getProductId().equals(order.getProductId())) {
-                            ErpProductionCostTrendRespVO.OrderInfo info = new ErpProductionCostTrendRespVO.OrderInfo();
-                            info.setOrderId(order.getId());
-                            info.setOrderNo(order.getOrderNo());
-                            orderData.put(period, info);
-                            break;
-                        }
+                for (ErpProductionOrderDO order : orderMap.values()) {
+                    if (reqVO.getProductId().equals(order.getProductId())) {
+                        ErpProductionCostTrendRespVO.OrderInfo info = new ErpProductionCostTrendRespVO.OrderInfo();
+                        info.setOrderId(order.getId());
+                        info.setOrderNo(order.getOrderNo());
+                        orderData.put(period, info);
+                        break;
                     }
                 }
             }

@@ -32,6 +32,12 @@ public interface ErpProductionCostEntryMapper extends BaseMapperX<ErpProductionC
                 .orderByAsc(ErpProductionCostEntryDO::getProductionOrderId, ErpProductionCostEntryDO::getId));
     }
 
+    default List<ErpProductionCostEntryDO> selectListByAccountingMonths(List<String> accountingMonths) {
+        return selectList(new LambdaQueryWrapperX<ErpProductionCostEntryDO>()
+                .in(ErpProductionCostEntryDO::getAccountingMonth, accountingMonths)
+                .orderByAsc(ErpProductionCostEntryDO::getProductionOrderId, ErpProductionCostEntryDO::getId));
+    }
+
     default List<ErpProductionCostEntryDO> selectListByPageReqVO(ErpProductionCostEntryPageReqVO reqVO) {
         return selectList(new LambdaQueryWrapperX<ErpProductionCostEntryDO>()
                 .eqIfPresent(ErpProductionCostEntryDO::getProductionOrderId, reqVO.getProductionOrderId())
