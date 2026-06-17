@@ -25,6 +25,8 @@ export interface FinanceAssetVO {
   status?: number
   lastDepreciationPeriod?: string
   remark?: string
+  assetType?: number
+  subCategory?: string
   createTime?: string
 }
 

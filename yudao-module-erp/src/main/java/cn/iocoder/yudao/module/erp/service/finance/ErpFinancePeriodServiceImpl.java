@@ -8,8 +8,11 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.period.ErpFinance
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.period.ErpFinancePeriodSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePeriodDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinancePeriodMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpFinancePeriodStatusEnum;
+import cn.iocoder.yudao.module.erp.enums.stock.ErpStockCheckStatusEnum;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -24,6 +27,7 @@ import java.util.Set;
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.STOCK_CHECK_YEAR_END_NOT_CLOSED;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_PERIOD_ALREADY_EXISTS;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_PERIOD_CLOSE_FAIL_ALREADY_CLOSED;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_PERIOD_CLOSE_FAIL_EARLIER_OPEN;
@@ -40,6 +44,8 @@ public class ErpFinancePeriodServiceImpl implements ErpFinancePeriodService {
     private ErpFinancePeriodMapper erpFinancePeriodMapper;
     @Resource
     private ErpFinanceLedgerService financeLedgerService;
+    @Resource
+    private ErpStockCheckMapper erpStockCheckMapper;
 
     @Override
     public Long createFinancePeriod(ErpFinancePeriodSaveReqVO createReqVO) {
@@ -90,6 +96,12 @@ public class ErpFinancePeriodServiceImpl implements ErpFinancePeriodService {
         if (erpFinancePeriodMapper.selectEarlierOpenCount(period.getLedgerId(), period.getPeriodSort()) > 0) {
             throw exception(FINANCE_PERIOD_CLOSE_FAIL_EARLIER_OPEN, period.getPeriodCode());
         }
+
+        // 年末盘点校验：如果是12月期间，检查年末盘点是否完成
+        if (period.getPeriodMonth() != null && period.getPeriodMonth() == 12) {
+            validateYearEndStockCheckClosed();
+        }
+
         erpFinancePeriodMapper.updateById(new ErpFinancePeriodDO()
                 .setId(id)
                 .setStatus(ErpFinancePeriodStatusEnum.CLOSED.getStatus())
@@ -147,6 +159,24 @@ public class ErpFinancePeriodServiceImpl implements ErpFinancePeriodService {
         ErpFinancePeriodDO existed = erpFinancePeriodMapper.selectByLedgerIdAndPeriodSort(ledger.getId(), periodSort);
         if (existed != null) {
             throw exception(FINANCE_PERIOD_ALREADY_EXISTS, ledger.getName(), periodCode);
+        }
+    }
+
+    /**
+     * 校验年末盘点是否已完成
+     *
+     * 检查所有 year_end_flag=1 的盘点单是否状态为 CLOSED
+     */
+    private void validateYearEndStockCheckClosed() {
+        List<ErpStockCheckDO> yearEndChecks = erpStockCheckMapper.selectList(
+                ErpStockCheckDO::getYearEndFlag, true);
+        if (CollUtil.isEmpty(yearEndChecks)) {
+            return;
+        }
+        for (ErpStockCheckDO check : yearEndChecks) {
+            if (!ErpStockCheckStatusEnum.CLOSED.getStatus().equals(check.getStatus())) {
+                throw exception(STOCK_CHECK_YEAR_END_NOT_CLOSED, check.getNo());
+            }
         }
     }
 

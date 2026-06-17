@@ -10,6 +10,8 @@ import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinanceAssetMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceAssetDepreciationStatusEnum;
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceAssetStatusEnum;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
+import cn.iocoder.yudao.module.system.api.dept.DeptApi;
+import cn.iocoder.yudao.module.system.api.dept.dto.DeptRespDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +43,8 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
     private ErpFinanceAssetDepreciationMapper financeAssetDepreciationMapper;
     @Resource
     private ErpFinanceVoucherService voucherService;
+    @Resource
+    private DeptApi deptApi;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -115,9 +119,7 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
 
             // 自动生成凭证
             try {
-                Integer bizType = asset.getAssetType() != null && asset.getAssetType() == 1
-                        ? ErpBizTypeEnum.ASSET_AMORTIZATION.getType()
-                        : ErpBizTypeEnum.ASSET_DEPRECIATION.getType();
+                Integer bizType = resolveDepreciationBizType(asset);
                 Long voucherId = voucherService.autoGenerateVoucher(bizType, depreciation.getId());
                 if (voucherId != null) {
                     financeAssetDepreciationMapper.updateById(new ErpFinanceAssetDepreciationDO()
@@ -135,6 +137,11 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
     }
 
     @Override
+    public ErpFinanceAssetDepreciationDO getFinanceAssetDepreciation(Long id) {
+        return financeAssetDepreciationMapper.selectById(id);
+    }
+
+    @Override
     public PageResult<ErpFinanceAssetDepreciationDO> getFinanceAssetDepreciationPage(ErpFinanceAssetDepreciationPageReqVO pageReqVO) {
         return financeAssetDepreciationMapper.selectPage(pageReqVO);
     }
@@ -149,5 +156,34 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
 
     private BigDecimal defaultAmount(BigDecimal amount) {
         return amount == null ? BigDecimal.ZERO : amount;
+    }
+
+    /**
+     * 根据资产类型和所属部门的成本类型，解析折旧/摊销的业务类型
+     *
+     * 规则：
+     * - 固定资产 → ASSET_DEPRECIATION (70)
+     * - 无形资产 + 研发部门(cost_type=4) → ASSET_AMORTIZATION_RD (72)
+     * - 无形资产 + 其他部门 → ASSET_AMORTIZATION (71)
+     */
+    private Integer resolveDepreciationBizType(ErpFinanceAssetDO asset) {
+        // 固定资产
+        if (asset.getAssetType() == null || asset.getAssetType() == 0) {
+            return ErpBizTypeEnum.ASSET_DEPRECIATION.getType();
+        }
+        // 无形资产：根据部门成本类型判断
+        if (asset.getDeptId() != null) {
+            try {
+                DeptRespDTO dept = deptApi.getDept(asset.getDeptId());
+                if (dept != null && dept.getCostType() != null && dept.getCostType() == 4) {
+                    // 研发部门
+                    return ErpBizTypeEnum.ASSET_AMORTIZATION_RD.getType();
+                }
+            } catch (Exception e) {
+                log.warn("[resolveDepreciationBizType] 获取部门信息失败，deptId={}", asset.getDeptId(), e);
+            }
+        }
+        // 默认无形资产摊销
+        return ErpBizTypeEnum.ASSET_AMORTIZATION.getType();
     }
 }

@@ -12,5 +12,7 @@ public interface ErpFinanceAssetDepreciationService {
 
     Integer generateDepreciationForAssets(String period, List<Long> assetIds);
 
+    ErpFinanceAssetDepreciationDO getFinanceAssetDepreciation(Long id);
+
     PageResult<ErpFinanceAssetDepreciationDO> getFinanceAssetDepreciationPage(ErpFinanceAssetDepreciationPageReqVO pageReqVO);
 }

@@ -443,6 +443,35 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
             }
         }
 
+        // 6.1 计算环比变化率（如果指定了月份）
+        if (cn.hutool.core.util.StrUtil.isNotBlank(reqVO.getAccountingMonth())) {
+            String lastMonth = getLastMonth(reqVO.getAccountingMonth());
+            if (lastMonth != null) {
+                List<ErpProductionCostProductSummaryRespVO> lastMonthResult = getProductSummary(
+                        new ErpProductionCostProductSummaryReqVO().setAccountingMonth(lastMonth));
+                Map<Long, BigDecimal> lastMonthCostMap = lastMonthResult.stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                ErpProductionCostProductSummaryRespVO::getProductId,
+                                s -> defaultAmount(s.getTotalCost()),
+                                (a, b) -> a));
+                for (ErpProductionCostProductSummaryRespVO summary : result) {
+                    BigDecimal lastMonthCost = lastMonthCostMap.get(summary.getProductId());
+                    summary.setLastMonthTotalCost(lastMonthCost);
+                    if (lastMonthCost != null && lastMonthCost.compareTo(BigDecimal.ZERO) > 0) {
+                        BigDecimal changeRate = summary.getTotalCost()
+                                .subtract(lastMonthCost)
+                                .multiply(BigDecimal.valueOf(100))
+                                .divide(lastMonthCost, 2, RoundingMode.HALF_UP);
+                        summary.setCostChangeRate(changeRate);
+                        summary.setCostAnomaly(changeRate.abs().compareTo(BigDecimal.valueOf(20)) > 0);
+                    } else {
+                        summary.setCostChangeRate(null);
+                        summary.setCostAnomaly(false);
+                    }
+                }
+            }
+        }
+
         // 7. 应用筛选条件
         result = result.stream()
                 .filter(summary -> matchesFilter(summary, reqVO))
@@ -493,7 +522,21 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         summary.setTotalCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
         summary.setOutputQty(BigDecimal.ZERO);
         summary.setUnitCost(BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP));
+        summary.setCostAnomaly(false);
         return summary;
+    }
+
+    /**
+     * 获取上月月份字符串
+     */
+    private String getLastMonth(String accountingMonth) {
+        try {
+            java.time.YearMonth ym = java.time.YearMonth.parse(accountingMonth, java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+            java.time.YearMonth lastYm = ym.minusMonths(1);
+            return lastYm.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void accumulateProductCost(ErpProductionCostProductSummaryRespVO summary, ErpProductionCostEntryDO entry) {
@@ -811,6 +854,8 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
                         .collect(Collectors.toSet());
             }
         }
+        // 创建 final 引用供 lambda 使用
+        final Set<Long> finalProductOrderIds = productOrderIds;
 
         // 4. 按期间汇总成本数据，只保留有数据的期间
         List<String> periods = new ArrayList<>();
@@ -834,9 +879,9 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
 
             // 如果指定了产品ID，过滤条目
             if (reqVO.getProductId() != null) {
-                if (productOrderIds != null && !productOrderIds.isEmpty()) {
+                if (finalProductOrderIds != null && !finalProductOrderIds.isEmpty()) {
                     entryList = entryList.stream()
-                            .filter(e -> productOrderIds.contains(e.getProductionOrderId()))
+                            .filter(e -> finalProductOrderIds.contains(e.getProductionOrderId()))
                             .collect(Collectors.toList());
                 } else {
                     entryList = List.of();
@@ -1005,6 +1050,25 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
             }
         }
         return result;
+    }
+
+    @Override
+    public List<ErpProductRespVO> getCostProductList() {
+        // 1. 查询有成本记录的工单 ID
+        List<Long> orderIds = erpProductionCostEntryMapper.selectDistinctProductionOrderIds();
+        if (orderIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. 通过工单获取产品 ID
+        List<ErpProductionOrderDO> orders = productionOrderService.getProductionOrderList(orderIds);
+        Set<Long> productIds = filterNotNull(convertSet(orders, ErpProductionOrderDO::getProductId));
+        if (productIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 3. 返回产品列表
+        return productService.getProductVOList(productIds);
     }
 
 }

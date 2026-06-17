@@ -54,4 +54,13 @@ public class ErpProductionCostProductSummaryRespVO {
     @Schema(description = "单位成本", example = "83.00")
     private BigDecimal unitCost;
 
+    @Schema(description = "上月成本合计", example = "7500.00")
+    private BigDecimal lastMonthTotalCost;
+
+    @Schema(description = "环比变化率（%）", example = "10.67")
+    private BigDecimal costChangeRate;
+
+    @Schema(description = "是否成本异常", example = "false")
+    private Boolean costAnomaly;
+
 }

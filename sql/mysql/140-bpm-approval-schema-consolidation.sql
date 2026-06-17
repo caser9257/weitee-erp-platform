@@ -5,7 +5,14 @@
 --   - 54-bpm-approval-platform-incremental.sql（废弃）
 --   - 54-bpm-approval-platform-incremental-v2.sql（废弃）
 --   - 55-bpm-approval-add-missing-columns.sql（废弃）
+--   - 57-bpm-urge-record-add-base-fields.sql（废弃）
+--   - 58-bpm-record-add-base-fields.sql（废弃）
+--   - 58-bpm-notification-policy.sql（废弃）
+--   - 60-bpm-historical-data-compatibility.sql（废弃）
 --   - 135-bpm-approval-scene-and-snapshot.sql（废弃）
+--   - 136-bpm-approval-scene-menu-permission.sql（废弃）
+--   - 137-bpm-approval-scheme-menu-permission.sql（废弃）
+--   - 138-bpm-approval-template-flowconfig-fix.sql（废弃）
 --
 -- 设计决策：
 --   1. snapshot 表以 135 为基准，status 使用 TINYINT（1=审批中 2=通过 3=驳回 4=撤回）
@@ -109,6 +116,46 @@ DELIMITER ;
 
 CALL `bpm_approval_consolidation_add_version_columns`();
 DROP PROCEDURE IF EXISTS `bpm_approval_consolidation_add_version_columns`;
+
+-- ==============================================================================
+-- 第三部分补充：流程定义通知策略兼容字段
+-- 来源：58-bpm-notification-policy.sql
+-- 说明：当前 BPM 模型元信息与前端通知设置仍依赖该字段，统一并入 140。
+-- ==============================================================================
+
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS `bpm_approval_consolidation_add_notification_policy_column`() 
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_process_definition_info'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_process_definition_info'
+          AND COLUMN_NAME = 'notification_policy_setting'
+    ) THEN
+        IF EXISTS (
+            SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'bpm_process_definition_info'
+              AND COLUMN_NAME = 'task_after_trigger_setting'
+        ) THEN
+            ALTER TABLE `bpm_process_definition_info`
+                ADD COLUMN `notification_policy_setting` MEDIUMTEXT DEFAULT NULL
+                COMMENT '通知策略设置' AFTER `task_after_trigger_setting`;
+        ELSE
+            ALTER TABLE `bpm_process_definition_info`
+                ADD COLUMN `notification_policy_setting` MEDIUMTEXT DEFAULT NULL
+                COMMENT '通知策略设置';
+        END IF;
+    END IF;
+END //
+DELIMITER ;
+
+CALL `bpm_approval_consolidation_add_notification_policy_column`();
+DROP PROCEDURE IF EXISTS `bpm_approval_consolidation_add_notification_policy_column`;
 
 -- ==============================================================================
 -- 第四部分：审批场景表（最终版）
@@ -328,6 +375,55 @@ CALL `bpm_approval_consolidation_add_snapshot_columns`();
 DROP PROCEDURE IF EXISTS `bpm_approval_consolidation_add_snapshot_columns`;
 
 -- ==============================================================================
+-- 第五部分补充：历史数据兼容回填与统计视图
+-- 来源：60-bpm-historical-data-compatibility.sql
+-- 说明：保留仍有价值的历史库补齐逻辑，避免再额外执行独立兼容脚本。
+-- ==============================================================================
+
+UPDATE `bpm_approval_scene`
+SET `owner_user_id` = 1
+WHERE `owner_user_id` = 0 OR `owner_user_id` IS NULL;
+
+UPDATE `bpm_approval_scheme`
+SET `owner_user_id` = 1
+WHERE `owner_user_id` = 0 OR `owner_user_id` IS NULL;
+
+UPDATE `bpm_approval_instance_snapshot`
+SET `approval_id` = UUID()
+WHERE `approval_id` IS NULL OR `approval_id` = '';
+
+UPDATE `bpm_approval_instance_snapshot`
+SET `start_user_id` = CAST(`creator` AS UNSIGNED)
+WHERE (`start_user_id` IS NULL OR `start_user_id` = 0)
+  AND `creator` REGEXP '^[0-9]+$';
+
+UPDATE `bpm_approval_instance_snapshot`
+SET `start_time` = `create_time`
+WHERE `start_time` IS NULL;
+
+CREATE OR REPLACE VIEW `v_approval_statistics` AS
+SELECT
+    `scene_code`,
+    COUNT(*) AS `total_count`,
+    SUM(CASE WHEN `status` = 1 THEN 1 ELSE 0 END) AS `processing_count`,
+    SUM(CASE WHEN `status` = 2 THEN 1 ELSE 0 END) AS `approved_count`,
+    SUM(CASE WHEN `status` = 3 THEN 1 ELSE 0 END) AS `rejected_count`,
+    SUM(CASE WHEN `status` = 4 THEN 1 ELSE 0 END) AS `cancelled_count`
+FROM `bpm_approval_instance_snapshot`
+GROUP BY `scene_code`;
+
+CREATE OR REPLACE VIEW `v_user_approval_statistics` AS
+SELECT
+    `start_user_id` AS `user_id`,
+    COUNT(*) AS `total_count`,
+    SUM(CASE WHEN `status` = 1 THEN 1 ELSE 0 END) AS `processing_count`,
+    SUM(CASE WHEN `status` = 2 THEN 1 ELSE 0 END) AS `approved_count`,
+    SUM(CASE WHEN `status` = 3 THEN 1 ELSE 0 END) AS `rejected_count`,
+    SUM(CASE WHEN `status` = 4 THEN 1 ELSE 0 END) AS `cancelled_count`
+FROM `bpm_approval_instance_snapshot`
+GROUP BY `start_user_id`;
+
+-- ==============================================================================
 -- 第六部分：审批任务表（无冲突，使用 IF NOT EXISTS 保证幂等）
 -- 来源：54 / 54-v2
 -- ==============================================================================
@@ -377,6 +473,60 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_record` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '审批记录表';
 
 -- ==============================================================================
+-- 第七部分补充：审批记录表 BaseDO 兼容字段
+-- 来源：58-bpm-record-add-base-fields.sql
+-- ==============================================================================
+
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS `bpm_approval_consolidation_add_record_base_columns`()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_record'
+          AND COLUMN_NAME = 'update_time'
+    ) THEN
+        ALTER TABLE `bpm_approval_record`
+            ADD COLUMN `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            COMMENT '更新时间' AFTER `create_time`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_record'
+          AND COLUMN_NAME = 'creator'
+    ) THEN
+        ALTER TABLE `bpm_approval_record`
+            ADD COLUMN `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者' AFTER `update_time`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_record'
+          AND COLUMN_NAME = 'updater'
+    ) THEN
+        ALTER TABLE `bpm_approval_record`
+            ADD COLUMN `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者' AFTER `creator`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_record'
+          AND COLUMN_NAME = 'deleted'
+    ) THEN
+        ALTER TABLE `bpm_approval_record`
+            ADD COLUMN `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除' AFTER `updater`;
+    END IF;
+END //
+DELIMITER ;
+
+CALL `bpm_approval_consolidation_add_record_base_columns`();
+DROP PROCEDURE IF EXISTS `bpm_approval_consolidation_add_record_base_columns`;
+
+-- ==============================================================================
 -- 第八部分：审批模板表（无冲突）
 -- 来源：54 / 54-v2
 -- ==============================================================================
@@ -423,6 +573,70 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_urge_record` (
     KEY `idx_bpm_approval_urge_approval` (`approval_id`),
     KEY `idx_bpm_approval_urge_task` (`task_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '催办记录表';
+
+-- ==============================================================================
+-- 第九部分补充：催办记录表 BaseDO 兼容字段
+-- 来源：57-bpm-urge-record-add-base-fields.sql
+-- ==============================================================================
+
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS `bpm_approval_consolidation_add_urge_record_base_columns`()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_urge_record'
+          AND COLUMN_NAME = 'update_time'
+    ) THEN
+        ALTER TABLE `bpm_approval_urge_record`
+            ADD COLUMN `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            COMMENT '更新时间' AFTER `urge_time`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_urge_record'
+          AND COLUMN_NAME = 'creator'
+    ) THEN
+        ALTER TABLE `bpm_approval_urge_record`
+            ADD COLUMN `creator` VARCHAR(64) DEFAULT '' COMMENT '创建者' AFTER `update_time`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_urge_record'
+          AND COLUMN_NAME = 'updater'
+    ) THEN
+        ALTER TABLE `bpm_approval_urge_record`
+            ADD COLUMN `updater` VARCHAR(64) DEFAULT '' COMMENT '更新者' AFTER `creator`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_urge_record'
+          AND COLUMN_NAME = 'deleted'
+    ) THEN
+        ALTER TABLE `bpm_approval_urge_record`
+            ADD COLUMN `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除' AFTER `updater`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'bpm_approval_urge_record'
+          AND COLUMN_NAME = 'tenant_id'
+    ) THEN
+        ALTER TABLE `bpm_approval_urge_record`
+            ADD COLUMN `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号' AFTER `deleted`;
+    END IF;
+END //
+DELIMITER ;
+
+CALL `bpm_approval_consolidation_add_urge_record_base_columns`();
+DROP PROCEDURE IF EXISTS `bpm_approval_consolidation_add_urge_record_base_columns`;
 
 -- ==============================================================================
 -- 第十部分：审批委托配置表（无冲突）
@@ -503,6 +717,448 @@ VALUES
 ('审批超时提醒', 'APPROVAL_TASK_TIMEOUT', '审批助手', '您有一条审批任务已超时：{{bizTitle}}，请尽快处理。[查看详情]({{detailUrl}})', 0, '["bizTitle", "taskName", "detailUrl"]', 10),
 ('审批催办', 'APPROVAL_TASK_URGE', '审批助手', '{{urgeUserName}}催办您处理审批任务：{{bizTitle}}。[查看详情]({{detailUrl}})', 0, '["bizTitle", "urgeUserName", "detailUrl"]', 10),
 ('任务转办', 'APPROVAL_TASK_TRANSFER', '审批助手', '您有一条新的审批任务（由{{transferUserName}}转办）：{{bizTitle}}。[查看详情]({{detailUrl}})', 0, '["bizTitle", "transferUserName", "detailUrl"]', 10);
+
+-- ==============================================================================
+-- 第十三部分：审批菜单与权限
+-- 来源：59 / 63 / 64 / 136 / 137
+-- 说明：审批场景、审批方案、审批门户、审批模板、审批委托等菜单与按钮权限统一收敛到本脚本，
+--      避免继续保留外围补丁、简化版菜单脚本和旧组件路径脚本。
+-- ==============================================================================
+
+SET @bpm_parent_id := COALESCE(
+    (SELECT `id` FROM `system_menu` WHERE `name` = '工作流程' AND `deleted` = b'0' ORDER BY `id` LIMIT 1),
+    (SELECT `id` FROM `system_menu` WHERE `name` = '流程管理' AND `deleted` = b'0' ORDER BY `id` LIMIT 1),
+    0
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113100, '审批管理', '', 1, 50, @bpm_parent_id, '/approval', 'ep:stamp', '', 'ApprovalRoot', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `path` = '/approval' AND `deleted` = b'0'
+);
+
+SET @approval_root_id := (
+    SELECT `id` FROM `system_menu`
+    WHERE `path` = '/approval' AND `deleted` = b'0'
+    ORDER BY `id` LIMIT 1
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113101, '审批场景', 'bpm:approval-scene:query', 2, 10, @approval_root_id, 'scene', 'ep:coordinate', 'bpm/approval/scene/index', 'BpmApprovalScene', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `component` = 'bpm/approval/scene/index' AND `deleted` = b'0'
+);
+
+SET @scene_menu_id := (
+    SELECT `id` FROM `system_menu`
+    WHERE `component` = 'bpm/approval/scene/index' AND `deleted` = b'0'
+    ORDER BY `id` LIMIT 1
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113102, '审批场景查询', 'bpm:approval-scene:query', 3, 1, @scene_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scene_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scene:query' AND `parent_id` = @scene_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113103, '审批场景创建', 'bpm:approval-scene:create', 3, 2, @scene_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scene_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scene:create' AND `parent_id` = @scene_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113104, '审批场景更新', 'bpm:approval-scene:update', 3, 3, @scene_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scene_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scene:update' AND `parent_id` = @scene_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113105, '审批场景删除', 'bpm:approval-scene:delete', 3, 4, @scene_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scene_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scene:delete' AND `parent_id` = @scene_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113201, '审批方案', 'bpm:approval-scheme:query', 2, 20, @approval_root_id, 'scheme', 'ep:connection', 'bpm/approval/scheme/index', 'BpmApprovalScheme', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `component` = 'bpm/approval/scheme/index' AND `deleted` = b'0'
+);
+
+SET @scheme_menu_id := (
+    SELECT `id` FROM `system_menu`
+    WHERE `component` = 'bpm/approval/scheme/index' AND `deleted` = b'0'
+    ORDER BY `id` LIMIT 1
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113202, '审批方案查询', 'bpm:approval-scheme:query', 3, 1, @scheme_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scheme_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scheme:query' AND `parent_id` = @scheme_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113203, '审批方案创建', 'bpm:approval-scheme:create', 3, 2, @scheme_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scheme_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scheme:create' AND `parent_id` = @scheme_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113204, '审批方案更新', 'bpm:approval-scheme:update', 3, 3, @scheme_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scheme_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scheme:update' AND `parent_id` = @scheme_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113205, '审批方案发布', 'bpm:approval-scheme:publish', 3, 4, @scheme_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scheme_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scheme:publish' AND `parent_id` = @scheme_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113206, '审批方案删除', 'bpm:approval-scheme:delete', 3, 5, @scheme_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @scheme_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-scheme:delete' AND `parent_id` = @scheme_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113301, '待我审批', 'bpm:approval:query', 2, 30, @approval_root_id, 'todo', 'ep:clock', 'bpm/approval/portal/index', 'BpmApprovalTodo', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `path` = 'todo' AND `parent_id` = @approval_root_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113302, '我发起的', 'bpm:approval:query', 2, 31, @approval_root_id, 'submitted', 'ep:upload', 'bpm/approval/portal/index', 'BpmApprovalSubmitted', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `path` = 'submitted' AND `parent_id` = @approval_root_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113303, '抄送我的', 'bpm:approval:query', 2, 32, @approval_root_id, 'cc', 'ep:message', 'bpm/approval/portal/index', 'BpmApprovalCc', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `path` = 'cc' AND `parent_id` = @approval_root_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113304, '我已审批', 'bpm:approval:query', 2, 33, @approval_root_id, 'approved', 'ep:select', 'bpm/approval/portal/index', 'BpmApprovalApproved', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `path` = 'approved' AND `parent_id` = @approval_root_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113401, '审批模板', 'bpm:approval-template:query', 2, 40, @approval_root_id, 'template', 'ep:document', 'bpm/approval/template/index', 'BpmApprovalTemplate', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `component` = 'bpm/approval/template/index' AND `deleted` = b'0'
+);
+
+SET @template_menu_id := (
+    SELECT `id` FROM `system_menu`
+    WHERE `component` = 'bpm/approval/template/index' AND `deleted` = b'0'
+    ORDER BY `id` LIMIT 1
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113402, '审批模板查询', 'bpm:approval-template:query', 3, 1, @template_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @template_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-template:query' AND `parent_id` = @template_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113403, '审批模板使用', 'bpm:approval-template:use', 3, 2, @template_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @template_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-template:use' AND `parent_id` = @template_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113501, '审批委托', 'bpm:approval-delegation:query', 2, 50, @approval_root_id, 'delegation', 'ep:connection', 'bpm/approval/delegation/index', 'BpmApprovalDelegation', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `component` = 'bpm/approval/delegation/index' AND `deleted` = b'0'
+);
+
+SET @delegation_menu_id := (
+    SELECT `id` FROM `system_menu`
+    WHERE `component` = 'bpm/approval/delegation/index' AND `deleted` = b'0'
+    ORDER BY `id` LIMIT 1
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113502, '审批委托查询', 'bpm:approval-delegation:query', 3, 1, @delegation_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @delegation_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-delegation:query' AND `parent_id` = @delegation_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113503, '审批委托创建', 'bpm:approval-delegation:create', 3, 2, @delegation_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @delegation_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-delegation:create' AND `parent_id` = @delegation_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113504, '审批委托更新', 'bpm:approval-delegation:update', 3, 3, @delegation_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @delegation_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-delegation:update' AND `parent_id` = @delegation_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113505, '审批委托删除', 'bpm:approval-delegation:delete', 3, 4, @delegation_menu_id, '', '', '', '', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @delegation_menu_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `permission` = 'bpm:approval-delegation:delete' AND `parent_id` = @delegation_menu_id AND `deleted` = b'0'
+);
+
+INSERT INTO `system_menu` (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`, `component_name`, `status`, `visible`, `keep_alive`, `always_show`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 113601, '审批统计看板', 'bpm:approval:query', 2, 60, @approval_root_id, 'statistics', 'ep:data-analysis', 'bpm/approval/statistics/index', 'BpmApprovalStatistics', 0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
+FROM DUAL
+WHERE @approval_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_menu`
+    WHERE `component` = 'bpm/approval/statistics/index' AND `deleted` = b'0'
+);
+
+-- ==============================================================================
+-- 第十四部分：模板 flowConfig 兼容修复
+-- 来源：138
+-- 说明：将旧模板中的简化 flowConfig 转为 SimpleProcessDesigner 可读取的树形结构。
+-- ==============================================================================
+
+UPDATE `bpm_approval_template`
+SET `flow_config` = '{
+  "id": "StartUserNode",
+  "type": 10,
+  "name": "发起人",
+  "childNode": {
+    "id": "deptManager",
+    "type": 11,
+    "name": "直属主管审批",
+    "showText": "直属主管审批",
+    "candidateStrategy": 21,
+    "approveMethod": 3,
+    "childNode": {
+      "id": "hr",
+      "type": 11,
+      "name": "HR审批",
+      "showText": "HR审批",
+      "candidateStrategy": 10,
+      "candidateParam": "hr",
+      "approveMethod": 3,
+      "childNode": {
+        "id": "EndEvent",
+        "type": 1,
+        "name": "结束"
+      }
+    }
+  }
+}'
+WHERE `code` = 'LEAVE_APPROVAL' AND `deleted` = b'0';
+
+UPDATE `bpm_approval_template`
+SET `flow_config` = '{
+  "id": "StartUserNode",
+  "type": 10,
+  "name": "发起人",
+  "childNode": {
+    "id": "deptManager",
+    "type": 11,
+    "name": "部门经理审批",
+    "showText": "部门经理审批",
+    "candidateStrategy": 21,
+    "approveMethod": 3,
+    "childNode": {
+      "id": "finance",
+      "type": 11,
+      "name": "财务审批",
+      "showText": "财务审批",
+      "candidateStrategy": 10,
+      "candidateParam": "finance",
+      "approveMethod": 3,
+      "childNode": {
+        "id": "EndEvent",
+        "type": 1,
+        "name": "结束"
+      }
+    }
+  }
+}'
+WHERE `code` = 'EXPENSE_APPROVAL' AND `deleted` = b'0';
+
+UPDATE `bpm_approval_template`
+SET `flow_config` = '{
+  "id": "StartUserNode",
+  "type": 10,
+  "name": "发起人",
+  "childNode": {
+    "id": "deptManager",
+    "type": 11,
+    "name": "部门经理审批",
+    "showText": "部门经理审批",
+    "candidateStrategy": 21,
+    "approveMethod": 3,
+    "childNode": {
+      "id": "purchase",
+      "type": 11,
+      "name": "采购经理审批",
+      "showText": "采购经理审批",
+      "candidateStrategy": 10,
+      "candidateParam": "purchase_manager",
+      "approveMethod": 3,
+      "childNode": {
+        "id": "finance",
+        "type": 11,
+        "name": "财务审批",
+        "showText": "财务审批",
+        "candidateStrategy": 10,
+        "candidateParam": "finance",
+        "approveMethod": 3,
+        "childNode": {
+          "id": "EndEvent",
+          "type": 1,
+          "name": "结束"
+        }
+      }
+    }
+  }
+}'
+WHERE `code` = 'PURCHASE_APPROVAL' AND `deleted` = b'0';
+
+UPDATE `bpm_approval_template`
+SET `flow_config` = '{
+  "id": "StartUserNode",
+  "type": 10,
+  "name": "发起人",
+  "childNode": {
+    "id": "salesManager",
+    "type": 11,
+    "name": "销售经理审批",
+    "showText": "销售经理审批",
+    "candidateStrategy": 10,
+    "candidateParam": "sales_manager",
+    "approveMethod": 3,
+    "childNode": {
+      "id": "finance",
+      "type": 11,
+      "name": "财务审批",
+      "showText": "财务审批",
+      "candidateStrategy": 10,
+      "candidateParam": "finance",
+      "approveMethod": 3,
+      "childNode": {
+        "id": "EndEvent",
+        "type": 1,
+        "name": "结束"
+      }
+    }
+  }
+}'
+WHERE `code` = 'SALE_APPROVAL' AND `deleted` = b'0';
+
+UPDATE `bpm_approval_template`
+SET `flow_config` = '{
+  "id": "StartUserNode",
+  "type": 10,
+  "name": "发起人",
+  "childNode": {
+    "id": "deptManager",
+    "type": 11,
+    "name": "部门经理审批",
+    "showText": "部门经理审批",
+    "candidateStrategy": 21,
+    "approveMethod": 3,
+    "childNode": {
+      "id": "finance",
+      "type": 11,
+      "name": "财务审批",
+      "showText": "财务审批",
+      "candidateStrategy": 10,
+      "candidateParam": "finance",
+      "approveMethod": 3,
+      "childNode": {
+        "id": "cfo",
+        "type": 11,
+        "name": "财务总监审批",
+        "showText": "财务总监审批",
+        "candidateStrategy": 10,
+        "candidateParam": "cfo",
+        "approveMethod": 3,
+        "childNode": {
+          "id": "EndEvent",
+          "type": 1,
+          "name": "结束"
+        }
+      }
+    }
+  }
+}'
+WHERE `code` = 'PAYMENT_APPROVAL' AND `deleted` = b'0';
 
 -- ==============================================================================
 -- 脚本结束

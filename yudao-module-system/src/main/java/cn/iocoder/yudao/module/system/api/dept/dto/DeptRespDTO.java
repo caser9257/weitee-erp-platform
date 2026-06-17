@@ -33,5 +33,11 @@ public class DeptRespDTO {
      * 枚举 {@link CommonStatusEnum}
      */
     private Integer status;
+    /**
+     * 成本类型
+     *
+     * 枚举值：1-生产部门, 2-销售部门, 3-管理部门, 4-研发部门
+     */
+    private Integer costType;
 
 }

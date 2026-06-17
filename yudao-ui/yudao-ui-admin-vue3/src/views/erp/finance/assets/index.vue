@@ -1,21 +1,7 @@
 ﻿<template>
   <div class="finance-asset-page">
     <ContentWrap>
-      <div class="finance-asset-page__hero">
-        <div>
-          <div class="finance-asset-page__title">资产台账</div>
-          <div class="finance-asset-page__summary">
-            维护固定资产和无形资产卡片、候选入账、折旧/摊销参数和净值信息，支撑后续财务核算。
-          </div>
-        </div>
-        </div>
-        <div class="finance-asset-page__hero-actions">
-          <el-tag effect="light" round>资产管理</el-tag>
-          <el-tag :type="loadingList ? 'warning' : 'success'" effect="light" round>
-            {{ loadingList ? '列表加载中' : '正式模块已接入' }}
-          </el-tag>
-        </div>
-      </div>
+      <div class="finance-asset-page__title">资产台账</div>
     </ContentWrap>
 
     <ContentWrap>
@@ -116,22 +102,18 @@
                 <div class="finance-asset-page__primary-cell">
                   <span class="finance-asset-page__primary-text">{{ row.name || '-' }}</span>
                   <span class="finance-asset-page__muted-text font-mono">{{ row.no || '-' }}</span>
+                  <div class="finance-asset-page__row-tags">
+                    <el-tag :type="row.assetType === 1 ? 'success' : 'primary'" effect="light" round size="small">
+                      {{ row.assetType === 1 ? '无形资产' : '固定资产' }}
+                    </el-tag>
+                    <span v-if="row.assetType === 1 && row.subCategory" class="finance-asset-page__muted-text text-xs">
+                      {{ row.subCategory }}
+                    </span>
+                  </div>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="资产类型" min-width="120">
-              <template #default="{ row }">
-                <div class="finance-asset-page__primary-cell">
-                  <el-tag :type="row.assetType === 1 ? 'success' : 'primary'" effect="light" round size="small">
-                    {{ row.assetType === 1 ? '无形资产' : '固定资产' }}
-                  </el-tag>
-                  <span v-if="row.assetType === 1 && row.subCategory" class="finance-asset-page__muted-text text-xs">
-                    {{ row.subCategory }}
-                  </span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="分类与来源" min-width="200">
+            <el-table-column label="分类与来源" min-width="180">
               <template #default="{ row }">
                 <div class="finance-asset-page__primary-cell">
                   <span class="finance-asset-page__primary-text">{{ row.categoryName || '-' }}</span>
@@ -143,55 +125,49 @@
                       {{ row.sourceBizNo || '手工新增' }}
                     </span>
                   </div>
-                  <el-button
-                    v-if="canJumpToSourceWithPermission(row.sourceType, row.sourceBizId)"
-                    link
-                    type="primary"
-                    class="finance-asset-page__source-link"
-                    :disabled="navigatingSource"
-                    @click="jumpToSource(row.sourceType, row.sourceBizId, row.sourceBizNo)"
-                  >
-                    查看来源
-                  </el-button>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="购置 / 启用" min-width="180">
+            <el-table-column label="财务信息" min-width="200" :show-overflow-tooltip="false">
               <template #default="{ row }">
-                <div class="finance-asset-page__primary-cell">
-                  <span class="finance-asset-page__muted-text">{{ formatDateValue(row.purchaseDate) }}</span>
-                  <span class="finance-asset-page__muted-text">{{ formatDateValue(row.startUseDate) }}</span>
+                <div class="finance-asset-page__amount-cell">
+                  <div class="finance-asset-page__amount-row">
+                    <span class="finance-asset-page__amount-label">原值</span>
+                    <span class="font-mono">{{ formatAmount(row.originalAmount) }}</span>
+                  </div>
+                  <div class="finance-asset-page__amount-row">
+                    <span class="finance-asset-page__amount-label">{{ currentAssetType === 1 ? '摊销' : '折旧' }}</span>
+                    <span class="font-mono">{{ formatAmount(row.depreciatedAmount) }}</span>
+                  </div>
+                  <div class="finance-asset-page__amount-row finance-asset-page__amount-row--highlight">
+                    <span class="finance-asset-page__amount-label">净值</span>
+                    <span class="font-mono">{{ formatAmount(row.currentAmount) }}</span>
+                  </div>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="原值" align="right" min-width="120">
-              <template #default="{ row }">{{ formatAmount(row.originalAmount) }}</template>
-            </el-table-column>
-            <el-table-column :label="currentAssetType === 1 ? '累计摊销' : '累计折旧'" align="right" min-width="120">
-              <template #default="{ row }">{{ formatAmount(row.depreciatedAmount) }}</template>
-            </el-table-column>
-            <el-table-column label="净值" align="right" min-width="120">
-              <template #default="{ row }">{{ formatAmount(row.currentAmount) }}</template>
-            </el-table-column>
-            <el-table-column :label="currentAssetType === 1 ? '摊销方式' : '折旧方式'" min-width="140">
+            <el-table-column label="摊销配置" min-width="180" :show-overflow-tooltip="false">
               <template #default="{ row }">
                 <div class="finance-asset-page__primary-cell">
                   <span class="finance-asset-page__muted-text">{{ row.depreciationMethod || '-' }}</span>
-                  <span class="finance-asset-page__muted-text">{{ row.depreciationStartPeriod || '-' }}</span>
+                  <span class="finance-asset-page__muted-text">{{ formatDateValue(row.purchaseDate) }} ~ {{ formatDateValue(row.startUseDate) }}</span>
+                  <span class="finance-asset-page__muted-text">起始：{{ row.depreciationStartPeriod || '-' }}</span>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="状态" align="center" width="110">
+            <el-table-column label="状态" min-width="130">
               <template #default="{ row }">
-                <el-tag :type="assetStatusTagType(row.status)" effect="light" round>
-                  {{ getAssetStatusLabel(row.status) }}
-                </el-tag>
+                <div class="finance-asset-page__primary-cell">
+                  <el-tag :type="assetStatusTagType(row.status)" effect="light" round size="small">
+                    {{ getAssetStatusLabel(row.status) }}
+                  </el-tag>
+                  <span v-if="row.lastDepreciationPeriod" class="finance-asset-page__muted-text text-xs">
+                    计提至 {{ row.lastDepreciationPeriod }}
+                  </span>
+                </div>
               </template>
             </el-table-column>
-            <el-table-column label="最近计提期间" min-width="120">
-              <template #default="{ row }">{{ row.lastDepreciationPeriod || '-' }}</template>
-            </el-table-column>
-            <el-table-column label="操作" align="center" fixed="right" width="280">
+            <el-table-column label="操作" align="center" fixed="right" width="200">
               <template #default="{ row }">
                 <el-button link type="primary" :disabled="loadingDetail" @click="openDetailDrawer(row.id!)">
                   详情
@@ -213,9 +189,10 @@
                   {{ row.status === 10 ? '停用' : '启用' }}
                 </el-button>
                 <el-button
+                  v-if="canDelete(row)"
                   link
                   type="danger"
-                  :disabled="deletingAsset || !canDelete(row)"
+                  :disabled="deletingAsset"
                   @click="handleDelete(row)"
                 >
                   删除
@@ -494,19 +471,67 @@
     <Dialog
       v-model="depreciationDialogOpen"
       title="生成折旧/摊销"
-      width="520px"
-      scroll
-      maxHeight="72vh"
+      width="420px"
       @closed="resetDepreciationDialog"
     >
       <el-form label-width="110px">
         <el-form-item label="折旧/摊销期间">
-          <el-input v-model="depreciationPeriod" placeholder="请输入如 2026-05" />
+          <el-date-picker
+            v-model="depreciationPeriod"
+            type="month"
+            value-format="YYYY-MM"
+            placeholder="请选择期间"
+            class="!w-full"
+          />
+        </el-form-item>
+        <el-form-item v-if="depreciationPeriodMessage" label="期间状态">
+          <div class="flex items-center gap-8px">
+            <el-tag
+              v-if="depreciationPeriodStatus === 10"
+              type="success"
+              effect="light"
+              size="small"
+            >
+              已打开
+            </el-tag>
+            <el-tag
+              v-else-if="depreciationPeriodStatus === 20"
+              type="danger"
+              effect="light"
+              size="small"
+            >
+              已关闭
+            </el-tag>
+            <el-tag
+              v-else-if="depreciationPeriodStatus === -1"
+              type="info"
+              effect="light"
+              size="small"
+            >
+              未确认
+            </el-tag>
+            <el-tag
+              v-else
+              type="warning"
+              effect="light"
+              size="small"
+            >
+              未找到
+            </el-tag>
+            <span class="text-xs text-gray-500">{{ depreciationPeriodMessage }}</span>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button :disabled="generatingDepreciation" @click="depreciationDialogOpen = false">取消</el-button>
-        <el-button type="primary" :loading="generatingDepreciation" @click="submitDepreciation">确认生成</el-button>
+        <el-button
+          type="primary"
+          :loading="generatingDepreciation"
+          :disabled="depreciationPeriodStatus === 20"
+          @click="submitDepreciation"
+        >
+          确认生成
+        </el-button>
       </template>
     </Dialog>
 
@@ -854,6 +879,8 @@ import {
   type FinanceAssetTraceVO,
   type FinanceAssetVO
 } from '@/api/erp/finance/assets'
+import { FinancePeriodApi } from '@/api/erp/finance/period'
+import { FinanceLedgerApi } from '@/api/erp/finance/ledger'
 
 defineOptions({ name: 'ErpFinanceAssets' })
 
@@ -963,6 +990,9 @@ const candidateConfirmForm = reactive<any>({
 })
 
 const depreciationPeriod = ref('')
+const depreciationPeriodStatus = ref<number | null>(null)
+const depreciationPeriodChecking = ref(false)
+const depreciationPeriodMessage = ref('')
 
 const assetFormRules: FormRules = {
   name: [{ required: true, message: '请输入资产名称', trigger: 'blur' }],
@@ -1223,6 +1253,9 @@ const submitAssetForm = async () => {
     }
     assetDialogOpen.value = false
     await getAssetList()
+  } catch (error: any) {
+    console.error('保存资产失败:', error)
+    message.error(error?.message || '保存失败，请稍后重试')
   } finally {
     savingAsset.value = false
   }
@@ -1367,8 +1400,63 @@ const resetCandidateConfirmDialog = () => {
 
 const openDepreciationDialog = () => {
   depreciationPeriod.value = ''
+  depreciationPeriodStatus.value = null
+  depreciationPeriodMessage.value = ''
   depreciationDialogOpen.value = true
 }
+
+const checkPeriodStatus = async (period: string) => {
+  if (!period) {
+    depreciationPeriodStatus.value = null
+    depreciationPeriodMessage.value = ''
+    return
+  }
+  depreciationPeriodChecking.value = true
+  depreciationPeriodMessage.value = ''
+  try {
+    // 先获取默认账簿 ID
+    const ledgers = await FinanceLedgerApi.getLedgerSimpleList()
+    const defaultLedger = ledgers?.find((l: any) => l.defaultStatus)
+    if (!defaultLedger) {
+      depreciationPeriodStatus.value = -1
+      depreciationPeriodMessage.value = '未找到默认账簿，提交后由系统校验'
+      return
+    }
+    // 查询默认账簿的该期间状态
+    const result = await FinancePeriodApi.getPeriodPage({
+      pageNo: 1,
+      pageSize: 1,
+      ledgerId: defaultLedger.id,
+      periodCode: period
+    })
+    const list = result?.list || []
+    if (list.length > 0) {
+      const p = list[0]
+      depreciationPeriodStatus.value = p.status
+      depreciationPeriodMessage.value = p.status === 10
+        ? `期间 ${period} 已打开（${p.ledgerName || ''}）`
+        : `期间 ${period} 已关闭，需要先反关账`
+    } else {
+      depreciationPeriodStatus.value = null
+      depreciationPeriodMessage.value = `期间 ${period} 在默认账簿中不存在，请先创建`
+    }
+  } catch (error: any) {
+    // 查询失败时不做限制，让用户直接提交，由后端校验
+    depreciationPeriodStatus.value = -1
+    depreciationPeriodMessage.value = '期间状态未确认，提交后由系统校验'
+  } finally {
+    depreciationPeriodChecking.value = false
+  }
+}
+
+watch(depreciationPeriod, (val) => {
+  if (val) {
+    checkPeriodStatus(val)
+  } else {
+    depreciationPeriodStatus.value = null
+    depreciationPeriodMessage.value = ''
+  }
+})
 
 const submitDepreciation = async () => {
   generatingDepreciation.value = true
@@ -1380,6 +1468,9 @@ const submitDepreciation = async () => {
     if (detailDrawerOpen.value && currentDetailId.value) {
       await openDetailDrawer(currentDetailId.value)
     }
+  } catch (error: any) {
+    console.error('生成折旧/摊销失败:', error)
+    message.error(error?.message || '生成失败，请检查期间是否已打开')
   } finally {
     generatingDepreciation.value = false
   }
@@ -1387,6 +1478,8 @@ const submitDepreciation = async () => {
 
 const resetDepreciationDialog = () => {
   depreciationPeriod.value = ''
+  depreciationPeriodStatus.value = null
+  depreciationPeriodMessage.value = ''
 }
 
 const openDetailDrawer = async (id: number) => {
@@ -1427,7 +1520,6 @@ onMounted(() => {
   gap: 16px;
 }
 
-.finance-asset-page__hero,
 .finance-asset-page__toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -1443,13 +1535,6 @@ onMounted(() => {
   font-weight: 700;
 }
 
-.finance-asset-page__summary {
-  margin-top: 6px;
-  color: var(--erp-slate-500);
-  line-height: 1.7;
-}
-
-.finance-asset-page__hero-actions,
 .finance-asset-page__toolbar-actions,
 .finance-asset-page__query-actions {
   display: flex;
@@ -1488,6 +1573,33 @@ onMounted(() => {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+.finance-asset-page__amount-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.finance-asset-page__amount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.finance-asset-page__amount-label {
+  color: #909399;
+  font-size: 11px;
+}
+
+.finance-asset-page__amount-row--highlight {
+  font-weight: 600;
+  color: #303133;
 }
 
 .finance-asset-page__primary-text {

@@ -151,7 +151,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, nextTick, watch, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
-import { ProductApi } from '@/api/erp/product/product'
 
 defineOptions({ name: 'ErpProductCostTrend' })
 
@@ -184,6 +183,10 @@ const CostApi = {
   getProductSummaryV2: async (params: any) => {
     const { request } = await import('@/config/axios')
     return await request.get({ url: '/erp/production-cost-entry/product-summary-v2', params })
+  },
+  getCostProductList: async () => {
+    const { request } = await import('@/config/axios')
+    return await request.get({ url: '/erp/production-cost-entry/cost-products' })
   }
 }
 
@@ -443,9 +446,10 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
-  // 加载产品列表
+  // 加载有成本记录的产品列表
+  // 注意：必须用 getCostProductList（只返回有成本记录的成品），禁止换成 getProductSimpleList（会混入物料）
   try {
-    productList.value = await ProductApi.getProductSimpleList()
+    productList.value = await CostApi.getCostProductList()
   } catch {}
 
   await loadData()

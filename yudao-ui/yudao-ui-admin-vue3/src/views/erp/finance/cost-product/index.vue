@@ -187,6 +187,28 @@
             <span class="font-mono font-bold text-red-600">{{ formatMoney(row.totalCost) }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="环比" min-width="120" align="right">
+          <template #default="{ row }">
+            <div v-if="row.costChangeRate !== null && row.costChangeRate !== undefined" class="flex items-center justify-end gap-8px">
+              <span
+                class="font-mono text-xs"
+                :class="row.costChangeRate > 0 ? 'text-red-500' : row.costChangeRate < 0 ? 'text-emerald-500' : 'text-slate-400'"
+              >
+                {{ row.costChangeRate > 0 ? '+' : '' }}{{ row.costChangeRate }}%
+              </span>
+              <el-tag
+                v-if="row.costAnomaly"
+                type="danger"
+                effect="light"
+                size="small"
+                round
+              >
+                异常
+              </el-tag>
+            </div>
+            <span v-else class="text-slate-400 text-xs">-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="完工数量" width="100" align="right">
           <template #default="{ row }">
             <span class="font-mono">{{ formatCount(row.outputQty) }}</span>

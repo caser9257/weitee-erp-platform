@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.voucher.ErpFinanc
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherGenerateReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherReverseReqVO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceAssetDepreciationDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerConfigDO;
@@ -47,6 +48,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -121,6 +123,9 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     @Lazy
     private ErpProductionInboundService productionInboundService;
     @Resource
+    @Lazy
+    private ErpFinanceAssetDepreciationService financeAssetDepreciationService;
+    @Resource
     private ErpFinanceGeneralLedgerService financeGeneralLedgerService;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
@@ -184,7 +189,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public Long autoGenerateVoucher(Integer bizType, Long bizId) {
         List<Long> ledgerIds = resolveAutoGenerateLedgerIds(bizType);
         if (CollUtil.isEmpty(ledgerIds)) {
@@ -327,6 +332,14 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     private Long autoGenerateVoucherForLedger(Long ledgerId, Integer sourceBizType, Integer actualBizType, Long bizId) {
         List<ErpFinanceVoucherTemplateDO> templates = voucherTemplateService
                 .getVoucherTemplateListByLedgerAndBizType(ledgerId, actualBizType);
+        // 容错：如果在当前账簿找不到模板，尝试查找 ledger_id=1 的模板（兼容旧数据）
+        if (CollUtil.isEmpty(templates) && !ObjectUtil.equal(ledgerId, 1L)) {
+            templates = voucherTemplateService
+                    .getVoucherTemplateListByLedgerAndBizType(1L, actualBizType);
+            if (CollUtil.isNotEmpty(templates)) {
+                log.warn("[autoGenerateVoucherForLedger] 在账簿 {} 未找到 bizType={} 的模板，回退使用 ledger_id=1 的模板", ledgerId, actualBizType);
+            }
+        }
         if (CollUtil.isEmpty(templates)) {
             return null;
         }
@@ -677,6 +690,30 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             return new VoucherSource(expense.getNo(),
                     defaultTime(expense.getExpenseTime(), expense.getCreateTime(), expense.getUpdateTime()),
                     defaultAmount(expense.getExpensePrice()), expense.getRemark());
+        }
+        // 固定资产折旧 / 无形资产摊销 / 研发无形资产摊销
+        if (ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_DEPRECIATION.getType())
+                || ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_AMORTIZATION.getType())
+                || ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_AMORTIZATION_RD.getType())) {
+            ErpFinanceAssetDepreciationDO depreciation = financeAssetDepreciationService.getFinanceAssetDepreciation(bizId);
+            if (depreciation == null) {
+                throw exception(FINANCE_VOUCHER_NOT_EXISTS);
+            }
+            String bizName;
+            if (ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_DEPRECIATION.getType())) {
+                bizName = "固定资产折旧";
+            } else if (ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_AMORTIZATION.getType())) {
+                bizName = "无形资产摊销";
+            } else {
+                bizName = "研发无形资产摊销";
+            }
+            // 凭证时间使用摊销期间的最后一天，确保落在正确的财务期间内
+            YearMonth yearMonth = YearMonth.parse(depreciation.getPeriod());
+            LocalDateTime voucherTime = yearMonth.atEndOfMonth().atTime(23, 59, 59);
+            return new VoucherSource(depreciation.getAssetNo() + "/" + depreciation.getPeriod(),
+                    voucherTime,
+                    defaultAmount(depreciation.getDepreciationAmount()),
+                    bizName + " " + depreciation.getPeriod());
         }
         throw exception(FINANCE_VOUCHER_SOURCE_NOT_SUPPORTED);
     }

@@ -47,8 +47,41 @@
     background-color: $erp-slate-50;
   }
 
+  // 固定列需要稳定的实体背景和层级，避免横向滚动内容透到操作列上方。
+  .el-table__header-wrapper,
+  .el-table__body-wrapper,
+  .el-table__footer-wrapper {
+    .el-table-fixed-column--left,
+    .el-table-fixed-column--right,
+    .el-table__fixed-right-patch {
+      background-color: $erp-slate-50;
+      z-index: calc(var(--el-table-index) + 3);
+      overflow: hidden;
+
+      .cell {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    td.el-table-fixed-column--left,
+    td.el-table-fixed-column--right {
+      background-color: $erp-slate-50;
+    }
+
+    th.el-table-fixed-column--left,
+    th.el-table-fixed-column--right {
+      background-color: $erp-slate-50;
+    }
+  }
+
   // 当前行高亮
   .el-table__body tr.current-row > td.el-table__cell {
+    background-color: $erp-primary-50;
+  }
+
+  .el-table__body tr.current-row > td.el-table-fixed-column--left,
+  .el-table__body tr.current-row > td.el-table-fixed-column--right {
     background-color: $erp-primary-50;
   }
 

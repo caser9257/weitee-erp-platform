@@ -38,6 +38,14 @@ public interface ErpProductionCostEntryMapper extends BaseMapperX<ErpProductionC
                 .orderByAsc(ErpProductionCostEntryDO::getProductionOrderId, ErpProductionCostEntryDO::getId));
     }
 
+    default List<Long> selectDistinctProductionOrderIds() {
+        return selectList(new LambdaQueryWrapperX<ErpProductionCostEntryDO>()
+                .select(ErpProductionCostEntryDO::getProductionOrderId)
+                .groupBy(ErpProductionCostEntryDO::getProductionOrderId))
+                .stream().map(ErpProductionCostEntryDO::getProductionOrderId)
+                .distinct().collect(java.util.stream.Collectors.toList());
+    }
+
     default List<ErpProductionCostEntryDO> selectListByPageReqVO(ErpProductionCostEntryPageReqVO reqVO) {
         return selectList(new LambdaQueryWrapperX<ErpProductionCostEntryDO>()
                 .eqIfPresent(ErpProductionCostEntryDO::getProductionOrderId, reqVO.getProductionOrderId())

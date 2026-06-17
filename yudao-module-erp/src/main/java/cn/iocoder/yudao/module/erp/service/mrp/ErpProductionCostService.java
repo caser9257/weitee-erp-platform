@@ -12,6 +12,8 @@ import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCos
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostTrendRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionCostEntryDO;
 
+import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+
 import jakarta.validation.Valid;
 import java.util.List;
 
@@ -66,5 +68,12 @@ public interface ErpProductionCostService {
      * @return 趋势分析数据
      */
     ErpProductionCostTrendRespVO getCostTrend(ErpProductionCostTrendReqVO reqVO);
+
+    /**
+     * 获取有生产成本记录的产品列表（用于成本分析页面产品下拉）
+     *
+     * @return 产品精简列表
+     */
+    List<ErpProductRespVO> getCostProductList();
 
 }

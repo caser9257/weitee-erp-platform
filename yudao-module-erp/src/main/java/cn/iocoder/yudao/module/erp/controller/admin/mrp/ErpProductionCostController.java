@@ -156,6 +156,13 @@ public class ErpProductionCostController {
         return success(productionCostService.getProductSummary(reqVO));
     }
 
+    @GetMapping("/cost-products")
+    @Operation(summary = "获取有生产成本记录的产品列表")
+    @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
+    public CommonResult<List<ErpProductRespVO>> getCostProductList() {
+        return success(productionCostService.getCostProductList());
+    }
+
     @GetMapping("/cost-trend")
     @Operation(summary = "获取产品成本趋势分析数据")
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")

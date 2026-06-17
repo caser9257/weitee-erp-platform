@@ -188,3 +188,351 @@ CREATE TABLE IF NOT EXISTS `erp_finance_asset_depreciation` (
   UNIQUE KEY `uk_finance_asset_depreciation_period` (`tenant_id`, `asset_id`, `period`, `deleted`),
   KEY `idx_finance_asset_depreciation_period` (`tenant_id`, `period`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 固定资产折旧';
+
+SET @finance_asset_cost_center_id_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'erp_finance_asset'
+    AND COLUMN_NAME = 'cost_center_id'
+);
+SET @finance_asset_cost_center_id_sql := IF(
+  @finance_asset_cost_center_id_exists > 0,
+  'SELECT ''erp_finance_asset.cost_center_id already exists''',
+  'ALTER TABLE `erp_finance_asset` ADD COLUMN `cost_center_id` BIGINT NULL COMMENT ''成本中心ID（部门ID）'' AFTER `sub_category`'
+);
+PREPARE finance_asset_cost_center_id_stmt FROM @finance_asset_cost_center_id_sql;
+EXECUTE finance_asset_cost_center_id_stmt;
+DEALLOCATE PREPARE finance_asset_cost_center_id_stmt;
+
+SET @finance_asset_depreciation_voucher_id_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'erp_finance_asset_depreciation'
+    AND COLUMN_NAME = 'voucher_id'
+);
+SET @finance_asset_depreciation_voucher_id_sql := IF(
+  @finance_asset_depreciation_voucher_id_exists > 0,
+  'SELECT ''erp_finance_asset_depreciation.voucher_id already exists''',
+  'ALTER TABLE `erp_finance_asset_depreciation` ADD COLUMN `voucher_id` BIGINT NULL COMMENT ''生成的凭证ID'' AFTER `status`'
+);
+PREPARE finance_asset_depreciation_voucher_id_stmt FROM @finance_asset_depreciation_voucher_id_sql;
+EXECUTE finance_asset_depreciation_voucher_id_stmt;
+DEALLOCATE PREPARE finance_asset_depreciation_voucher_id_stmt;
+
+-- 固定资产折旧凭证模板
+INSERT INTO `erp_finance_voucher_template`
+(`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES (203, 1, 70, '固定资产折旧凭证模板', 0, b'1', '固定资产折旧', '固定资产折旧自动生成凭证', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+
+INSERT INTO `erp_finance_voucher_template_item`
+(`id`, `template_id`, `entry_no`, `entry_direction`, `subject_code`, `subject_name`, `amount_source`, `amount_source_value`, `summary`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES
+(2031, 203, 1, 1, '6602', '管理费用', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0'),
+(2032, 203, 2, 2, '1602', '累计折旧', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE
+  `subject_code` = VALUES(`subject_code`),
+  `subject_name` = VALUES(`subject_name`);
+
+-- 无形资产摊销凭证模板
+INSERT INTO `erp_finance_voucher_template`
+(`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES (204, 1, 71, '无形资产摊销凭证模板', 0, b'1', '无形资产摊销', '无形资产摊销自动生成凭证', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+
+INSERT INTO `erp_finance_voucher_template_item`
+(`id`, `template_id`, `entry_no`, `entry_direction`, `subject_code`, `subject_name`, `amount_source`, `amount_source_value`, `summary`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES
+(2041, 204, 1, 1, '6602', '管理费用', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
+(2042, 204, 2, 2, '1702', '累计摊销', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE
+  `subject_code` = VALUES(`subject_code`),
+  `subject_name` = VALUES(`subject_name`);
+
+-- 研发无形资产摊销凭证模板
+INSERT INTO `erp_finance_voucher_template`
+(`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES (205, 1, 72, '研发无形资产摊销凭证模板', 0, b'1', '研发无形资产摊销', '研发无形资产摊销自动生成凭证', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+
+INSERT INTO `erp_finance_voucher_template_item`
+(`id`, `template_id`, `entry_no`, `entry_direction`, `subject_code`, `subject_name`, `amount_source`, `amount_source_value`, `summary`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES
+(2051, 205, 1, 1, '5301', '研发支出', 10, NULL, '研发无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
+(2052, 205, 2, 2, '1702', '累计摊销', 10, NULL, '研发无形资产摊销', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE
+  `subject_code` = VALUES(`subject_code`),
+  `subject_name` = VALUES(`subject_name`);
+
+INSERT INTO `erp_finance_subject`
+(`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES (1602, 1, NULL, '1602', '累计折旧', 1, 2, b'1', 0, 0, '固定资产折旧备抵科目', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `subject_name` = VALUES(`subject_name`);
+
+INSERT INTO `erp_finance_subject`
+(`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES (1702, 1, NULL, '1702', '累计摊销', 1, 2, b'1', 0, 0, '无形资产摊销备抵科目', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `subject_name` = VALUES(`subject_name`);
+
+INSERT INTO `erp_finance_subject`
+(`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+VALUES (5301, 1, NULL, '5301', '研发支出', 1, 1, b'1', 0, 0, '研发无形资产摊销成本科目', '1', NOW(), '1', NOW(), b'0')
+ON DUPLICATE KEY UPDATE `subject_name` = VALUES(`subject_name`);
+
+-- 固定资产菜单和按钮权限收口
+SET @tenant_id := 1;
+SET @asset_role_id := (
+  SELECT id
+  FROM system_role
+  WHERE code = 'erp_finance_manager'
+    AND deleted = b'0'
+  ORDER BY id
+  LIMIT 1
+);
+
+SET @asset_finance_root_id := (
+  SELECT id
+  FROM system_menu
+  WHERE deleted = b'0'
+    AND (
+      path = '/finance'
+      OR component_name IN ('FormalFinanceRoot', 'ProjectFinanceRoot')
+      OR name = '财务管理'
+    )
+  ORDER BY id
+  LIMIT 1
+);
+
+SET @assets_menu_id := (
+  SELECT id
+  FROM system_menu
+  WHERE deleted = b'0'
+    AND (
+      component = 'erp/finance/assets/index'
+      OR component_name IN ('FormalFinanceAssets', 'ProjectFinanceAssets')
+      OR path = 'assets'
+    )
+  ORDER BY id
+  LIMIT 1
+);
+
+UPDATE system_menu
+SET parent_id = COALESCE(@asset_finance_root_id, parent_id),
+    status = 0,
+    visible = b'1',
+    keep_alive = b'1',
+    always_show = b'1',
+    updater = '1',
+    update_time = NOW()
+WHERE id = @assets_menu_id
+  AND deleted = b'0';
+
+SET @asset_query_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset:query'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产查询', 'erp:finance-asset:query', 3, 1, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @asset_query_menu_id IS NULL;
+
+SET @asset_create_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset:create'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产创建', 'erp:finance-asset:create', 3, 2, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @asset_create_menu_id IS NULL;
+
+SET @asset_update_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset:update'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产更新', 'erp:finance-asset:update', 3, 3, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @asset_update_menu_id IS NULL;
+
+SET @asset_delete_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset:delete'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产删除', 'erp:finance-asset:delete', 3, 4, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @asset_delete_menu_id IS NULL;
+
+SET @asset_status_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset:update-status'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产状态更新', 'erp:finance-asset:update-status', 3, 5, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @asset_status_menu_id IS NULL;
+
+SET @candidate_query_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset-candidate:query'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产候选查询', 'erp:finance-asset-candidate:query', 3, 6, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @candidate_query_menu_id IS NULL;
+
+SET @candidate_confirm_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset-candidate:confirm'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产候选确认', 'erp:finance-asset-candidate:confirm', 3, 7, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @candidate_confirm_menu_id IS NULL;
+
+SET @depreciation_query_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset-depreciation:query'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产折旧查询', 'erp:finance-asset-depreciation:query', 3, 8, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @depreciation_query_menu_id IS NULL;
+
+SET @depreciation_generate_menu_id := (
+  SELECT id FROM system_menu
+  WHERE deleted = b'0'
+    AND permission = 'erp:finance-asset-depreciation:generate'
+  ORDER BY id
+  LIMIT 1
+);
+INSERT INTO system_menu (
+  id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
+)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
+       '固定资产折旧生成', 'erp:finance-asset-depreciation:generate', 3, 9, @assets_menu_id,
+       '', '', '', '',
+       0, b'1', b'1', b'0', '1', NOW(), '1', NOW(), b'0'
+WHERE @assets_menu_id IS NOT NULL
+  AND @depreciation_generate_menu_id IS NULL;
+
+UPDATE system_menu
+SET parent_id = @assets_menu_id,
+    status = 0,
+    updater = '1',
+    update_time = NOW()
+WHERE deleted = b'0'
+  AND permission IN (
+    'erp:finance-asset:query',
+    'erp:finance-asset:create',
+    'erp:finance-asset:update',
+    'erp:finance-asset:delete',
+    'erp:finance-asset:update-status',
+    'erp:finance-asset-candidate:query',
+    'erp:finance-asset-candidate:confirm',
+    'erp:finance-asset-depreciation:query',
+    'erp:finance-asset-depreciation:generate'
+  );
+
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
+SELECT @asset_role_id, m.id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+FROM system_menu m
+WHERE @asset_role_id IS NOT NULL
+  AND m.deleted = b'0'
+  AND (
+    m.id = @assets_menu_id
+    OR m.permission IN (
+      'erp:finance-asset:query',
+      'erp:finance-asset:create',
+      'erp:finance-asset:update',
+      'erp:finance-asset:delete',
+      'erp:finance-asset:update-status',
+      'erp:finance-asset-candidate:query',
+      'erp:finance-asset-candidate:confirm',
+      'erp:finance-asset-depreciation:query',
+      'erp:finance-asset-depreciation:generate'
+    )
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM system_role_menu rm
+    WHERE rm.role_id = @asset_role_id
+      AND rm.menu_id = m.id
+      AND rm.deleted = b'0'
+      AND rm.tenant_id = @tenant_id
+  );

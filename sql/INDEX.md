@@ -6,7 +6,7 @@
 
 | 路径 | 说明 |
 |------|------|
-| `mysql/` | 主维护目录，包含基础初始化、编号增量、测试/补数/专项脚本 |
+| `mysql/` | 主维护目录，保留基础初始化与现役业务增量脚本 |
 | `tools/` | Docker 启动、跨数据库转换等辅助工具 |
 | `oracle/` `postgresql/` `sqlserver/` `dm/` `kingbase/` `opengauss/` | 从 MySQL 基础脚本转换得到的多数据库版本 |
 | `handoff-archive/` | 交付过程中的归档 SQL，不纳入常规部署路径 |
@@ -14,10 +14,10 @@
 
 ## MySQL 目录现状
 
-截至 2026-06-16，`sql/mysql/` 目录下共有：
+截至 2026-06-17，`sql/mysql/` 目录已按“现役迁移优先”收口：
 
-- `193` 个编号增量脚本：`NNN-*.sql`
-- `12` 个独立专项脚本：不带编号，通常用于测试数据、补数、历史修复或一次性场景
+- 主目录只保留基础初始化与现役业务增量
+- 测试数据、演示数据、验证脚本、本地引导、历史查询包已从主目录移除
 - `0` 个异常非 `.sql` 文件
 
 详细分类见 [mysql/README.md](/D:/ruoyi-vue-pro/sql/mysql/README.md)。
@@ -43,7 +43,7 @@
 - 优先按业务模块挑选脚本，不要机械地把 `04` 到 `144` 全量重放到任意环境。
 - 同一编号可能对应多个模块脚本，例如 `99-*`、`100-*`、`140-*`，不能只靠编号推断单一主题。
 - 菜单、权限、测试数据、补数、热修复脚本与 DDL/DML 主链脚本混放在一起，执行前必须先读文件头注释。
-- 带 `test-data`、`demo-data`、`sample`、`bootstrap`、`verify`、`void`、`init`、`hotfix`、`repair`、`restore` 等后缀的脚本，默认按“专项脚本”对待，不应直接纳入生产全量升级流程。
+- 主目录默认不再保留 `test-data`、`demo-data`、`sample`、`bootstrap`、`verify` 这类脚本。
 
 ### 3. 多数据库版本
 
@@ -74,8 +74,28 @@
 
 其中 BPM 审批平台脚本已开始收口：
 
-- `140-bpm-approval-schema-consolidation.sql` 现在同时包含最终 schema 与基础 seed
-- 老的 `54/55/135` 分片脚本已不再作为首选入口
+- `140-bpm-approval-schema-consolidation.sql` 现在同时包含最终 schema、历史兼容补列/回填、基础 seed、菜单权限、审批门户入口以及模板格式修复
+- 老的 `54/55/57/58/59/60/63/64/135/136/137/138` 分片脚本已不再作为首选入口
+
+财务双账套脚本也已收口：
+
+- `146-erp-finance-dual-ledger-consolidation.sql` 现在同时包含建表、旧环境补列、菜单和权限
+- 老的 `116/117/123/125/131/133` 分片脚本已删除，不再作为首选入口
+
+固定资产脚本也已收口一轮：
+
+- `108-erp-finance-asset-phase1.sql` 现在同时包含资产主表、折旧记录、资产补列、折旧/摊销凭证模板初始化、研发无形资产摊销模板，以及固定资产菜单/按钮权限
+- 老的 `98/145` 分片脚本已删除，不再作为首选入口
+
+财务菜单与权限脚本也已收口：
+
+- `147-erp-finance-menu-permission-consolidation.sql` 现在同时包含财务菜单恢复、只读 query 权限、应付台账、暂估/费用单、付款审批/作废、预付款、凭证模板等权限修复
+- 老的 `96/102/106/107/114/119/134` 分片脚本已删除，不再作为首选入口
+
+财务审计/账簿权限脚本当前口径：
+
+- `118-erp-finance-ledger-permission.sql` 保留为账簿权限与审计日志相关 schema 入口
+- 老的 `119-erp-finance-audit-role-seed.sql`、`120-erp-finance-audit-role-permissions.sql` 因写死角色 ID、菜单 ID、账簿 ID，已删除，不再作为可执行入口
 
 ## 已知问题
 
@@ -90,16 +110,21 @@
 
 因此目前不建议直接做物理迁移。
 
-### 2. 已清理的重复脚本
+### 2. 已清理的脚本
 
 - `mysql/42-erpurchase.tmp` 已删除：与 `mysql/42-erp-purchase-in-quality-notify.sql` 内容完全一致，属于重复临时文件。
 - `mysql/erp-dept-cost-type-init.sql` 已删除：内容已被 `mysql/erp-finance-year-end-close-data-init.sql` 第 1 节完整覆盖。
+- `mysql/99-erp-finance-dual-write-config.sql` 已删除：建表逻辑已被 `mysql/100-erp-finance-dual-write.sql` 覆盖，不再保留双份来源。
+- `mysql/59-bpm-admin-role-permissions.sql`、`mysql/63-bpm-portal-menu.sql`、`mysql/64-bpm-portal-menu-simple.sql` 已删除：内容已并入 `mysql/140-bpm-approval-schema-consolidation.sql`，不再保留多份 BPM 菜单来源。
+- `mysql/999-remove-tenant-tables.sql` 已删除：去租户动作已被 `mysql/137-tenant-id-merge-and-drop.sql` 更完整覆盖。
+- `mysql/29-bpm-super-admin-publish-fix.sql`、`mysql/98-clean-mall-and-mp-data.sql` 已删除：它们属于环境热修 / 一次性清场脚本，不再与现役迁移脚本混放。
+- `mysql/` 主目录中的测试数据、演示数据、验证脚本、本地 bootstrap、历史查询包已删除，不再与现役迁移脚本混放。
 
 ### 3. 顶层历史文档曾有失真
 
 此前索引里存在过期描述，例如：
 
-- 写成 `bpm-2025-03-17-违规查询.sql`，而当前实际文件名是 `bpm-2025-03-17-传播违法.sql`
-- 未覆盖 `131-144` 区间以及多个 2026-06 独立脚本
+- 混入了测试、演示、验证、本地引导和历史查询包
+- 未覆盖 `134-146` 区间以及 2026-06 的现役增量脚本
 
 本次已改为“现状索引 + 下钻 README”的维护方式，避免继续在单个大表里手工追更 200+ 文件。
