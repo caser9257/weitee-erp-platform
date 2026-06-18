@@ -35,6 +35,8 @@ import cn.iocoder.yudao.module.erp.service.mrp.ErpMrpStockReservationSummaryServ
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
+import cn.iocoder.yudao.module.erp.service.project.event.ProjectLifecycleRefreshEvent;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -304,13 +306,13 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         }
         if (approve) {
             eventPublisher.publishEvent(new ErpSaleOrderApprovedEvent(reqVO.getId()));
-            // 触发项目生命周期刷新
-            try {
-                if (saleOrder.getProjectId() != null) {
-                    projectLifecycleService.refreshProjectStatus(saleOrder.getProjectId());
-                }
-            } catch (Exception e) {
-                log.warn("[updateSaleOrderStatus] 刷新项目生命周期失败，projectId={}", saleOrder.getProjectId(), e);
+            // 事务提交后异步触发项目生命周期刷新
+            if (saleOrder.getProjectId() != null) {
+                Long projectId = saleOrder.getProjectId();
+                ErpTransactionUtils.afterCommit(() -> {
+                    eventPublisher.publishEvent(new ProjectLifecycleRefreshEvent(
+                            projectId, "销售订单审批通过"));
+                });
             }
         }
     }

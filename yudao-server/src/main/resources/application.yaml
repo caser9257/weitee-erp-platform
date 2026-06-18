@@ -8,6 +8,10 @@ spring:
   main:
     allow-circular-references: true # 允许循环依赖，因为项目是三层架构，无法避免这个情况。
 
+  autoconfigure:
+    exclude:
+      - org.jeecg.modules.jmreport.config.init.JimuReportConfiguration # 使用项目内无 Banner 输出的积木报表配置
+
   # Servlet 配置
   servlet:
     # 文件上传相关配置项

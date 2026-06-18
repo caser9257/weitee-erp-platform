@@ -20,6 +20,7 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 
 import static cn.hutool.core.date.DatePattern.PURE_DATE_PATTERN;
@@ -186,6 +187,14 @@ public class FileServiceImpl implements FileService {
 
         // 删除记录
         fileMapper.deleteByIds(ids);
+    }
+
+    @Override
+    public List<FileDO> getFileListByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return fileMapper.selectBatchIds(ids);
     }
 
     private FileDO validateFileExists(Long id) {

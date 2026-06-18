@@ -152,10 +152,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import { formatDate } from '@/utils/formatTime'
 
 defineOptions({ name: 'ErpMarketAlertPage' })
+
+const router = useRouter()
 
 // API 接口
 const MarketAlertApi = {
@@ -174,6 +177,10 @@ const MarketAlertApi = {
   updateAlertRule: async (rule: any) => {
     const { request } = await import('@/config/axios')
     return await request.put({ url: '/erp/market-alert/rules', data: rule })
+  },
+  handleAlert: async (id: number, remark?: string) => {
+    const { request } = await import('@/config/axios')
+    return await request.put({ url: '/erp/market-alert/handle', params: { id, remark } })
   }
 }
 
@@ -225,14 +232,23 @@ const saveRules = async () => {
   ElMessage.success('规则已保存')
 }
 
-const handleAlert = (alert: any) => {
-  // TODO: 实现预警处理
-  ElMessage.info('预警处理功能开发中')
+const handleAlert = async (alert: any) => {
+  try {
+    await ElMessageBox.confirm('确认已处理该预警？', '处理预警', { type: 'warning' })
+    await MarketAlertApi.handleAlert(alert.id, '已处理')
+    ElMessage.success('预警已处理')
+    await loadData()
+  } catch {
+    // 用户取消
+  }
 }
 
 const handleViewOrder = (alert: any) => {
-  // TODO: 跳转到订单详情
-  ElMessage.info('查看订单功能开发中')
+  if (alert.orderId) {
+    router.push({ path: '/erp/sale/order', query: { id: alert.orderId } })
+  } else {
+    ElMessage.warning('无关联订单')
+  }
 }
 
 const levelTagType = (level?: string) => {

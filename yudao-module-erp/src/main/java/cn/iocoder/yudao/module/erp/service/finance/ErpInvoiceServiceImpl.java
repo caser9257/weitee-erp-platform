@@ -14,11 +14,14 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductUnitDO;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductUnitService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
+import cn.iocoder.yudao.module.erp.service.project.event.ProjectLifecycleRefreshEvent;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderItemMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
@@ -48,6 +51,8 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
 
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
     @Resource
     private ErpProductService productService;
     @Resource
@@ -203,16 +208,20 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
 
         log.info("更新销项发票状态：{} -> {}", id, status);
 
-        // 开票完成时，触发项目生命周期刷新
+        // 开票完成时，事务提交后异步触发项目生命周期刷新
         if ("ISSUED".equals(status) && invoice.getOrderId() != null) {
-            try {
-                ErpSaleOrderDO order = erpSaleOrderMapper.selectById(invoice.getOrderId());
-                if (order != null && order.getProjectId() != null) {
-                    projectLifecycleService.refreshProjectStatus(order.getProjectId());
+            Long orderId = invoice.getOrderId();
+            ErpTransactionUtils.afterCommit(() -> {
+                try {
+                    ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
+                    if (order != null && order.getProjectId() != null) {
+                        eventPublisher.publishEvent(new ProjectLifecycleRefreshEvent(
+                                order.getProjectId(), "开票完成"));
+                    }
+                } catch (Exception e) {
+                    log.warn("[updateInvoiceStatus] 触发项目生命周期刷新事件失败，orderId={}", orderId, e);
                 }
-            } catch (Exception e) {
-                log.warn("[updateInvoiceStatus] 刷新项目生命周期失败，orderId={}", invoice.getOrderId(), e);
-            }
+            });
         }
     }
 

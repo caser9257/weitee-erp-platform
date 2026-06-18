@@ -36,6 +36,11 @@
         <div class="flex items-center">
           <span>{{ row.file.name }}</span>
           <div class="ml-10px">
+            <el-button link type="primary" @click="handlePreview(row.file)">
+              预览
+            </el-button>
+          </div>
+          <div class="ml-10px">
             <el-link
               :href="row.file.url"
               :underline="false"
@@ -59,12 +64,20 @@
     <div v-for="(file, index) in fileList" :key="index" class="flex items-center file-list-item">
       <span>{{ file.name }}</span>
       <div class="ml-10px">
+        <el-button link type="primary" @click="handlePreview(file)">
+          预览
+        </el-button>
+      </div>
+      <div class="ml-10px">
         <el-link :href="file.url" :underline="false" download target="_blank" type="primary">
           下载
         </el-link>
       </div>
     </div>
   </div>
+
+  <!-- 文件预览弹窗 -->
+  <FilePreviewDialog ref="previewRef" />
 </template>
 <script lang="ts" setup>
 import { propTypes } from '@/utils/propTypes'
@@ -72,11 +85,22 @@ import type { UploadInstance, UploadProps, UploadRawFile, UploadUserFile } from 
 import { isString } from '@/utils/is'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 import { UploadFile } from 'element-plus/es/components/upload/src/upload'
+import { FilePreviewDialog } from '@/components/FilePreview'
 
 defineOptions({ name: 'UploadFile' })
 
 const message = useMessage() // 消息弹窗
 const emit = defineEmits(['update:modelValue'])
+
+// 文件预览
+const previewRef = ref<InstanceType<typeof FilePreviewDialog>>()
+const handlePreview = (file: any) => {
+  previewRef.value?.open({
+    name: file.name,
+    url: file.url,
+    size: file.size,
+  })
+}
 
 const props = defineProps({
   modelValue: propTypes.oneOfType<string | string[]>([String, Array<String>]).isRequired,
@@ -162,10 +186,6 @@ const handleRemove = (file: UploadFile) => {
     emitUpdateModelValue()
   }
 }
-const handlePreview: UploadProps['onPreview'] = (uploadFile) => {
-  console.log(uploadFile)
-}
-
 // 监听模型绑定值变动
 watch(
   () => props.modelValue,

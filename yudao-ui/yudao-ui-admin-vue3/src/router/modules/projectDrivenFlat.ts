@@ -777,6 +777,57 @@ const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
             keepAlive: false
           },
           {
+            path: 'lease-contract',
+            name: '租赁合同',
+            icon: 'ep:document',
+            component: 'erp/finance/lease-contract/index',
+            componentName: 'ErpLeaseContract',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/lease-management',
+              menuGroupTitle: '租赁管理',
+              menuGroupIcon: 'ep:document',
+              menuGroupOrder: 55,
+              menuOrder: 10
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'service-receipt',
+            name: '服务接收单',
+            icon: 'ep:check',
+            component: 'erp/finance/service-receipt/index',
+            componentName: 'ErpServiceReceipt',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/lease-management',
+              menuGroupTitle: '租赁管理',
+              menuGroupIcon: 'ep:document',
+              menuGroupOrder: 55,
+              menuOrder: 20
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'three-way-match',
+            name: '三单匹配',
+            icon: 'ep:connection',
+            component: 'erp/finance/three-way-match/index',
+            componentName: 'ErpThreeWayMatch',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/lease-management',
+              menuGroupTitle: '租赁管理',
+              menuGroupIcon: 'ep:document',
+              menuGroupOrder: 55,
+              menuOrder: 30
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
             path: 'cost-report',
             name: '产品成本分析报表',
             icon: 'ep:data-analysis',

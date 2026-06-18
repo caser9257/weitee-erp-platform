@@ -22,6 +22,9 @@ public enum ErpFinanceExpenseTypeEnum implements ArrayValuable<Integer> {
     LABOR(70, "人工费", false),
     PETTY_PURCHASE(80, "零星采购", false),
     OTHER(90, "其他", false),
+    RENT(100, "房租费", false),
+    WATER_ELECTRIC(110, "水电费", false),
+    LEASE(120, "仪器租赁费", false),
     ;
 
     public static final Integer[] ARRAYS = Arrays.stream(values()).map(ErpFinanceExpenseTypeEnum::getType).toArray(Integer[]::new);

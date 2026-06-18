@@ -479,9 +479,12 @@ onMounted(async () => {
 
 .dual-ledger-config-page__row-actions {
   display: inline-flex;
-  flex-wrap: wrap;
+  align-items: center;
+  flex-wrap: nowrap;
   justify-content: center;
   gap: 0 8px;
+  max-width: 100%;
+  white-space: nowrap;
 }
 
 .dual-ledger-config-page__drawer {

@@ -78,6 +78,14 @@ public interface FileService {
     void deleteFileList(List<Long> ids) throws Exception;
 
     /**
+     * 批量获取文件列表
+     *
+     * @param ids 编号列表
+     * @return 文件列表
+     */
+    List<FileDO> getFileListByIds(List<Long> ids);
+
+    /**
      * 获得文件内容
      *
      * @param configId 配置编号

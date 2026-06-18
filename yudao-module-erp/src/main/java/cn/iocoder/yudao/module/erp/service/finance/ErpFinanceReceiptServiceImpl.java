@@ -23,8 +23,11 @@ import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSaleOutService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSaleReturnService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
+import cn.iocoder.yudao.module.erp.service.project.event.ProjectLifecycleRefreshEvent;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -72,6 +75,8 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     private ErpSaleOrderMapper saleOrderMapper;
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -165,14 +170,17 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
         }
 
-        // 3. 审批通过时，触发项目生命周期刷新
+        // 3. 审批通过时，事务提交后触发项目生命周期刷新
         if (approve) {
-            triggerProjectLifecycleRefresh(id);
+            Long finalReceiptId = id;
+            ErpTransactionUtils.afterCommit(() -> {
+                triggerProjectLifecycleRefresh(finalReceiptId);
+            });
         }
     }
 
     /**
-     * 触发收款单关联项目的生命周期刷新
+     * 触发收款单关联项目的生命周期刷新（异步）
      */
     private void triggerProjectLifecycleRefresh(Long receiptId) {
         try {
@@ -181,16 +189,17 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
                 if (ObjectUtil.equal(item.getBizType(), cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum.SALE_OUT.getType())) {
                     ErpSaleOutDO saleOut = saleOutService.validateSaleOut(item.getBizId());
                     if (saleOut != null && saleOut.getOrderId() != null) {
-                        // 通过销售订单获取 projectId
                         ErpSaleOrderDO saleOrder = saleOrderMapper.selectById(saleOut.getOrderId());
                         if (saleOrder != null && saleOrder.getProjectId() != null) {
-                            projectLifecycleService.refreshProjectStatus(saleOrder.getProjectId());
+                            // 异步触发项目生命周期刷新
+                            eventPublisher.publishEvent(new ProjectLifecycleRefreshEvent(
+                                    saleOrder.getProjectId(), "收款单审批通过"));
                         }
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn("[triggerProjectLifecycleRefresh] 刷新项目生命周期失败，receiptId={}", receiptId, e);
+            log.warn("[triggerProjectLifecycleRefresh] 触发项目生命周期刷新事件失败，receiptId={}", receiptId, e);
         }
     }
 

@@ -27,8 +27,11 @@ import cn.iocoder.yudao.module.erp.service.stock.ErpStockService;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import cn.iocoder.yudao.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
+import cn.iocoder.yudao.module.erp.service.project.event.ProjectLifecycleRefreshEvent;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +87,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
     private ErpFinanceBizHookService financeBizHookService;
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -226,16 +231,20 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         if (approve) {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,
                     defaultTime(saleOut.getOutTime(), saleOut.getCreateTime(), saleOut.getUpdateTime()).toLocalDate());
-            // 触发项目生命周期刷新
-            try {
-                if (saleOut.getOrderId() != null) {
-                    ErpSaleOrderDO order = saleOrderService.validateSaleOrder(saleOut.getOrderId());
-                    if (order != null && order.getProjectId() != null) {
-                        projectLifecycleService.refreshProjectStatus(order.getProjectId());
+            // 事务提交后异步触发项目生命周期刷新
+            if (saleOut.getOrderId() != null) {
+                Long orderId = saleOut.getOrderId();
+                ErpTransactionUtils.afterCommit(() -> {
+                    try {
+                        ErpSaleOrderDO order = saleOrderService.validateSaleOrder(orderId);
+                        if (order != null && order.getProjectId() != null) {
+                            eventPublisher.publishEvent(new ProjectLifecycleRefreshEvent(
+                                    order.getProjectId(), "销售出库审批通过"));
+                        }
+                    } catch (Exception e) {
+                        log.warn("[updateSaleOutStatus] 触发项目生命周期刷新事件失败，orderId={}", orderId, e);
                     }
-                }
-            } catch (Exception e) {
-                log.warn("[updateSaleOutStatus] 刷新项目生命周期失败，saleOutId={}", id, e);
+                });
             }
         } else {
             financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,

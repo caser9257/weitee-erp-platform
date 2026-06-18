@@ -49,9 +49,17 @@ public class ErpMarketAlertController {
 
     @GetMapping("/list")
     @PreAuthorize("@ss.hasPermission('erp:market-alert:query')")
-    @Operation(summary = "获取当前预警列表")
+    @Operation(summary = "获取当前预警列表（未处理）")
     public CommonResult<List<MarketAlertVO>> getCurrentAlerts() {
         List<MarketAlertVO> alerts = erpMarketAlertService.getCurrentAlerts();
+        return success(alerts);
+    }
+
+    @GetMapping("/history")
+    @PreAuthorize("@ss.hasPermission('erp:market-alert:query')")
+    @Operation(summary = "获取预警历史记录")
+    public CommonResult<List<MarketAlertVO>> getAlertHistory() {
+        List<MarketAlertVO> alerts = erpMarketAlertService.getAlertHistory();
         return success(alerts);
     }
 
@@ -61,6 +69,15 @@ public class ErpMarketAlertController {
     public CommonResult<Integer> checkAndTriggerAlerts() {
         int count = erpMarketAlertService.checkAndTriggerAlerts();
         return success(count);
+    }
+
+    @PutMapping("/handle")
+    @PreAuthorize("@ss.hasPermission('erp:market-alert:handle')")
+    @Operation(summary = "处理预警")
+    public CommonResult<Boolean> handleAlert(@RequestParam("id") Long id,
+                                             @RequestParam(value = "remark", required = false) String remark) {
+        erpMarketAlertService.handleAlert(id, remark);
+        return success(true);
     }
 
 }

@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.service.mrp;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
@@ -32,6 +33,7 @@ import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectService;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.api.user.dto.AdminUserRespDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -42,6 +44,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,6 +64,7 @@ import static cn.iocoder.yudao.module.erp.util.ErpUserIdUtils.parseUserId;
 
 @Service
 @Validated
+@Slf4j
 public class ErpProductionCostServiceImpl implements ErpProductionCostService {
 
     private static final Integer MANUAL_SOURCE_TYPE = ErpProductionCostSourceTypeEnum.MANUAL.getType();

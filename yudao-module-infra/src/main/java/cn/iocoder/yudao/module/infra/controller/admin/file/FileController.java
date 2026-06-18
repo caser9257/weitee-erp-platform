@@ -132,4 +132,12 @@ public class FileController {
         return success(BeanUtils.toBean(pageResult, FileRespVO.class));
     }
 
+    @GetMapping("/list-by-ids")
+    @Operation(summary = "批量获取文件列表")
+    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    public CommonResult<List<FileRespVO>> getFileListByIds(@RequestParam("ids") List<Long> ids) {
+        List<FileDO> fileList = fileService.getFileListByIds(ids);
+        return success(BeanUtils.toBean(fileList, FileRespVO.class));
+    }
+
 }
