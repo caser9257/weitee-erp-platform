@@ -55,8 +55,11 @@ application-my.yaml
 
 # Local tooling scratch files
 /.tester-temp/
+/.tester-temp-erp-lib*.jar
 /.superpowers/
 /.worktrees/
+/tmp-*.png
+/C*logs_*.sqlite
 Query*.java
 Query*.class
 Temp*.java
@@ -67,6 +70,7 @@ tmp_*.java
 tmp_*.class
 _tmp_*.vue
 yudao-ui/yudao-ui-admin-vue3/.tsconfig.tscheck.changed.json
+yudao-ui/yudao-ui-admin-vue3/tmp-node-*-check.ts
 
 # tmp workspace garbage
 tmp/m2repo/
