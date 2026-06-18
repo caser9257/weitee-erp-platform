@@ -362,13 +362,8 @@ const queryParams = reactive({
 const detailDrawerVisible = ref(false)
 const detailData = ref<any>(null)
 
-// API
-const CostApi = {
-  getProductSummaryV2: async (params: any) => {
-    const { request } = await import('@/config/axios')
-    return await request.get({ url: '/erp/production-cost-entry/product-summary-v2', params })
-  }
-}
+// M3 修复：使用统一的 API 模块
+import { ProductionCostApi } from '@/api/erp/production-cost'
 
 // 汇总计算
 const totalMaterialCost = computed(() =>
@@ -448,7 +443,7 @@ const loadData = async () => {
     if (queryParams.productName) params.productName = queryParams.productName
     if (queryParams.productNo) params.productNo = queryParams.productNo
     if (queryParams.productionOrderNo) params.productionOrderNo = queryParams.productionOrderNo
-    list.value = await CostApi.getProductSummaryV2(params) || []
+    list.value = await ProductionCostApi.getProductSummaryV2(params) || []
   } finally {
     loading.value = false
   }

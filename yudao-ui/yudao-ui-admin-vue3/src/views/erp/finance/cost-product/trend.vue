@@ -178,17 +178,8 @@ const pieChartRef = ref<HTMLElement>()
 let trendChart: echarts.ECharts | null = null
 let pieChart: echarts.ECharts | null = null
 
-// API
-const CostApi = {
-  getProductSummaryV2: async (params: any) => {
-    const { request } = await import('@/config/axios')
-    return await request.get({ url: '/erp/production-cost-entry/product-summary-v2', params })
-  },
-  getCostProductList: async () => {
-    const { request } = await import('@/config/axios')
-    return await request.get({ url: '/erp/production-cost-entry/cost-products' })
-  }
-}
+// M3 修复：使用统一的 API 模块
+import { ProductionCostApi } from '@/api/erp/production-cost'
 
 // 平均成本构成
 const avgComposition = computed(() => {
@@ -247,18 +238,26 @@ const loadData = async () => {
     const [startMonth, endMonth] = dateRange.value
     const months = generateMonths(startMonth, endMonth)
 
-    // 查询所有月份的数据
-    const allData: any[] = []
-    for (const month of months) {
+    // M4 修复：并行查询所有月份数据，替代串行查询
+    const paramsList = months.map(month => {
       const params: any = { accountingMonth: month }
       if (queryParams.productId) params.productId = queryParams.productId
-      const data = await CostApi.getProductSummaryV2(params)
+      return params
+    })
+    
+    const results = await Promise.all(
+      paramsList.map(params => ProductionCostApi.getProductSummaryV2(params))
+    )
+    
+    // 合并结果
+    const allData: any[] = []
+    results.forEach((data, index) => {
       if (data) {
         data.forEach((item: any) => {
-          allData.push({ ...item, accountingMonth: month })
+          allData.push({ ...item, accountingMonth: months[index] })
         })
       }
-    }
+    })
 
     // 计算环比
     const sortedMonths = [...months].sort()
@@ -449,7 +448,7 @@ onMounted(async () => {
   // 加载有成本记录的产品列表
   // 注意：必须用 getCostProductList（只返回有成本记录的成品），禁止换成 getProductSimpleList（会混入物料）
   try {
-    productList.value = await CostApi.getCostProductList()
+    productList.value = await ProductionCostApi.getCostProductList()
   } catch {}
 
   await loadData()

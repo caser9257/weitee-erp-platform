@@ -389,7 +389,7 @@ SET `owner_user_id` = 1
 WHERE `owner_user_id` = 0 OR `owner_user_id` IS NULL;
 
 UPDATE `bpm_approval_instance_snapshot`
-SET `approval_id` = UUID()
+SET `approval_id` = CONCAT('APPROVAL-', id)
 WHERE `approval_id` IS NULL OR `approval_id` = '';
 
 UPDATE `bpm_approval_instance_snapshot`
