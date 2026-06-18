@@ -23,8 +23,8 @@ import java.math.RoundingMode;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstantsFinanceAsset.ASSET_DEPRECIATION_PERIOD_DUPLICATE;
@@ -47,36 +47,95 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
     private DeptApi deptApi;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Integer generateDepreciation(String period) {
         validatePeriod(period);
-        if (CollUtil.isNotEmpty(financeAssetDepreciationMapper.selectListByPeriod(period))) {
-            throw exception(ASSET_DEPRECIATION_PERIOD_DUPLICATE, period);
+        // 1. 事务外：查询资产列表
+        List<ErpFinanceAssetDO> assets = financeAssetMapper.selectList(ErpFinanceAssetDO::getStatus,
+                ErpFinanceAssetStatusEnum.ACTIVE.getStatus());
+        if (CollUtil.isEmpty(assets)) {
+            return 0;
         }
-        return generateDepreciationInternal(period, financeAssetMapper.selectList(ErpFinanceAssetDO::getStatus,
-                ErpFinanceAssetStatusEnum.ACTIVE.getStatus()), true);
+
+        // 2. 事务外：批量预加载部门信息（避免事务内调外部 API）
+        Map<Long, DeptRespDTO> deptMap = batchLoadDeptInfo(assets);
+
+        // 3. 事务内：执行折旧生成
+        return doGenerateDepreciation(period, assets, deptMap, true);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Integer generateDepreciationForAssets(String period, List<Long> assetIds) {
         validatePeriod(period);
         if (CollUtil.isEmpty(assetIds)) {
             return 0;
         }
+
+        // 1. 事务外：查询资产列表
         List<ErpFinanceAssetDO> assets = financeAssetMapper.selectBatchIds(assetIds);
-        return generateDepreciationInternal(period, assets == null ? Collections.emptyList() : assets, false);
+        if (CollUtil.isEmpty(assets)) {
+            return 0;
+        }
+
+        // 2. 事务外：批量预加载部门信息（避免事务内调外部 API）
+        Map<Long, DeptRespDTO> deptMap = batchLoadDeptInfo(assets);
+
+        // 3. 事务内：执行折旧生成
+        return doGenerateDepreciation(period, assets, deptMap, false);
     }
 
-    private Integer generateDepreciationInternal(String period, List<ErpFinanceAssetDO> assets, boolean failOnPeriodDuplicate) {
+    /**
+     * 事务外批量加载部门信息
+     * 避免在事务内调用 deptApi.getDept() 外部 API
+     */
+    private Map<Long, DeptRespDTO> batchLoadDeptInfo(List<ErpFinanceAssetDO> assets) {
+        // 收集所有需要查询的部门 ID（只有无形资产需要）
+        Set<Long> deptIds = assets.stream()
+                .filter(asset -> asset.getAssetType() != null && asset.getAssetType() == 1) // 无形资产
+                .map(ErpFinanceAssetDO::getDeptId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (CollUtil.isEmpty(deptIds)) {
+            return Collections.emptyMap();
+        }
+
+        // 批量查询部门信息
+        try {
+            List<DeptRespDTO> depts = deptApi.getDeptList(deptIds);
+            if (CollUtil.isEmpty(depts)) {
+                return Collections.emptyMap();
+            }
+            return depts.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(DeptRespDTO::getId, dept -> dept, (a, b) -> a));
+        } catch (Exception e) {
+            log.warn("[batchLoadDeptInfo] 批量获取部门信息失败，deptIds={}", deptIds, e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * 事务内执行折旧生成（核心逻辑）
+     * 只做本地数据库操作，不调用外部 API
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Integer doGenerateDepreciation(String period, List<ErpFinanceAssetDO> assets,
+                                          Map<Long, DeptRespDTO> deptMap, boolean failOnPeriodDuplicate) {
+        // 检查期间是否已存在折旧记录
         if (failOnPeriodDuplicate && CollUtil.isNotEmpty(financeAssetDepreciationMapper.selectListByPeriod(period))) {
             throw exception(ASSET_DEPRECIATION_PERIOD_DUPLICATE, period);
         }
+
+        // 批量查询该期间已存在的折旧记录（避免 N+1 查询）
+        Set<Long> assetIds = assets.stream()
+                .map(ErpFinanceAssetDO::getId)
+                .collect(Collectors.toSet());
+        Set<Long> existingAssetIds = financeAssetDepreciationMapper.selectExistingAssetIdsByPeriod(assetIds, period);
+
         int created = 0;
         for (ErpFinanceAssetDO asset : assets) {
-            if (CollUtil.isNotEmpty(financeAssetDepreciationMapper.selectListByAssetId(asset.getId()).stream()
-                    .filter(item -> period.equals(item.getPeriod()))
-                    .toList())) {
+            // 使用 Set.contains() 替代循环查询（O(1) vs O(n)）
+            if (existingAssetIds.contains(asset.getId())) {
                 continue;
             }
             if (asset.getCurrentAmount() == null || asset.getOriginalAmount() == null
@@ -117,9 +176,9 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
                     .setCurrentAmount(depreciation.getAfterCurrentAmount())
                     .setLastDepreciationPeriod(period));
 
-            // 自动生成凭证
+            // 自动生成凭证（使用预加载的部门信息，不调外部 API）
             try {
-                Integer bizType = resolveDepreciationBizType(asset);
+                Integer bizType = resolveDepreciationBizType(asset, deptMap);
                 Long voucherId = voucherService.autoGenerateVoucher(bizType, depreciation.getId());
                 if (voucherId != null) {
                     financeAssetDepreciationMapper.updateById(new ErpFinanceAssetDepreciationDO()
@@ -160,27 +219,27 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
 
     /**
      * 根据资产类型和所属部门的成本类型，解析折旧/摊销的业务类型
+     * 使用预加载的部门信息，不调用外部 API
      *
      * 规则：
      * - 固定资产 → ASSET_DEPRECIATION (70)
      * - 无形资产 + 研发部门(cost_type=4) → ASSET_AMORTIZATION_RD (72)
      * - 无形资产 + 其他部门 → ASSET_AMORTIZATION (71)
+     *
+     * @param asset 资产信息
+     * @param deptMap 预加载的部门信息 Map (deptId -> DeptRespDTO)
      */
-    private Integer resolveDepreciationBizType(ErpFinanceAssetDO asset) {
+    private Integer resolveDepreciationBizType(ErpFinanceAssetDO asset, Map<Long, DeptRespDTO> deptMap) {
         // 固定资产
         if (asset.getAssetType() == null || asset.getAssetType() == 0) {
             return ErpBizTypeEnum.ASSET_DEPRECIATION.getType();
         }
-        // 无形资产：根据部门成本类型判断
-        if (asset.getDeptId() != null) {
-            try {
-                DeptRespDTO dept = deptApi.getDept(asset.getDeptId());
-                if (dept != null && dept.getCostType() != null && dept.getCostType() == 4) {
-                    // 研发部门
-                    return ErpBizTypeEnum.ASSET_AMORTIZATION_RD.getType();
-                }
-            } catch (Exception e) {
-                log.warn("[resolveDepreciationBizType] 获取部门信息失败，deptId={}", asset.getDeptId(), e);
+        // 无形资产：根据部门成本类型判断（使用预加载的 Map，不调外部 API）
+        if (asset.getDeptId() != null && deptMap != null) {
+            DeptRespDTO dept = deptMap.get(asset.getDeptId());
+            if (dept != null && dept.getCostType() != null && dept.getCostType() == 4) {
+                // 研发部门
+                return ErpBizTypeEnum.ASSET_AMORTIZATION_RD.getType();
             }
         }
         // 默认无形资产摊销
