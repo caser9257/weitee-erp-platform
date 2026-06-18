@@ -397,7 +397,7 @@ const costComposition = computed(() => {
 
   if (total === 0) return []
 
-  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#06B6D4', '#14B8A6']
   const items = [
     { label: '直接材料', value: material, color: colors[0] },
     { label: '直接人工', value: labor, color: colors[1] },

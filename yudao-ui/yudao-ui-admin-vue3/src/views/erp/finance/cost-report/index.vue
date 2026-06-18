@@ -312,7 +312,7 @@ const initTrendChart = () => {
         areaStyle: { opacity: 0.3 },
         emphasis: { focus: 'series' },
         data: trendData.value.powerCosts || [],
-        itemStyle: { color: '#8B5CF6' }
+        itemStyle: { color: '#06B6D4' }
       },
       {
         name: '其他',
@@ -321,7 +321,7 @@ const initTrendChart = () => {
         areaStyle: { opacity: 0.3 },
         emphasis: { focus: 'series' },
         data: trendData.value.otherCosts || [],
-        itemStyle: { color: '#EC4899' }
+        itemStyle: { color: '#14B8A6' }
       }
     ]
   }
@@ -336,8 +336,8 @@ const initCompositionChart = () => {
     { name: '直接材料', value: Number(comp.materialCost || 0), itemStyle: { color: '#3B82F6' } },
     { name: '直接人工', value: Number(comp.laborCost || 0), itemStyle: { color: '#10B981' } },
     { name: '折旧', value: Number(comp.depreciationCost || 0), itemStyle: { color: '#F59E0B' } },
-    { name: '电费', value: Number(comp.powerCost || 0), itemStyle: { color: '#8B5CF6' } },
-    { name: '其他', value: Number(comp.otherCost || 0), itemStyle: { color: '#EC4899' } }
+    { name: '电费', value: Number(comp.powerCost || 0), itemStyle: { color: '#06B6D4' } },
+    { name: '其他', value: Number(comp.otherCost || 0), itemStyle: { color: '#14B8A6' } }
   ]
   const option = {
     tooltip: {

@@ -447,13 +447,8 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
         if (cn.hutool.core.util.StrUtil.isNotBlank(reqVO.getAccountingMonth())) {
             String lastMonth = getLastMonth(reqVO.getAccountingMonth());
             if (lastMonth != null) {
-                List<ErpProductionCostProductSummaryRespVO> lastMonthResult = getProductSummary(
-                        new ErpProductionCostProductSummaryReqVO().setAccountingMonth(lastMonth));
-                Map<Long, BigDecimal> lastMonthCostMap = lastMonthResult.stream()
-                        .collect(java.util.stream.Collectors.toMap(
-                                ErpProductionCostProductSummaryRespVO::getProductId,
-                                s -> defaultAmount(s.getTotalCost()),
-                                (a, b) -> a));
+                // 使用轻量级方法获取上月成本数据，避免递归调用 getProductSummary()
+                Map<Long, BigDecimal> lastMonthCostMap = getProductCostSummaryMap(lastMonth);
                 for (ErpProductionCostProductSummaryRespVO summary : result) {
                     BigDecimal lastMonthCost = lastMonthCostMap.get(summary.getProductId());
                     summary.setLastMonthTotalCost(lastMonthCost);
@@ -535,8 +530,52 @@ public class ErpProductionCostServiceImpl implements ErpProductionCostService {
             java.time.YearMonth lastYm = ym.minusMonths(1);
             return lastYm.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM"));
         } catch (Exception e) {
+            log.warn("[getLastMonth] 期间格式解析失败，accountingMonth={}", accountingMonth, e);
             return null;
         }
+    }
+
+    /**
+     * 轻量级方法：获取指定期间的产品成本汇总（仅返回 productId -> totalCost 映射）
+     * 用于环比计算，避免递归调用 getProductSummary() 导致的性能问题
+     *
+     * @param accountingMonth 期间（格式：yyyy-MM）
+     * @return productId -> totalCost 映射
+     */
+    private Map<Long, BigDecimal> getProductCostSummaryMap(String accountingMonth) {
+        // 1. 查询该期间的所有成本条目
+        List<ErpProductionCostEntryDO> entries = erpProductionCostEntryMapper.selectListByAccountingMonth(accountingMonth);
+        if (CollUtil.isEmpty(entries)) {
+            return Collections.emptyMap();
+        }
+
+        // 2. 通过工单获取产品ID映射
+        Set<Long> orderIds = entries.stream()
+                .map(ErpProductionCostEntryDO::getProductionOrderId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (CollUtil.isEmpty(orderIds)) {
+            return Collections.emptyMap();
+        }
+
+        List<ErpProductionOrderDO> orders = productionOrderService.getProductionOrderList(orderIds);
+        Map<Long, Long> orderProductMap = orders.stream()
+                .filter(order -> order.getProductId() != null)
+                .collect(Collectors.toMap(
+                        ErpProductionOrderDO::getId,
+                        ErpProductionOrderDO::getProductId,
+                        (a, b) -> a));
+
+        // 3. 按产品汇总成本
+        Map<Long, BigDecimal> costMap = new HashMap<>();
+        for (ErpProductionCostEntryDO entry : entries) {
+            Long productId = orderProductMap.get(entry.getProductionOrderId());
+            if (productId != null) {
+                BigDecimal amount = defaultAmount(entry.getAmount());
+                costMap.merge(productId, amount, BigDecimal::add);
+            }
+        }
+        return costMap;
     }
 
     private void accumulateProductCost(ErpProductionCostProductSummaryRespVO summary, ErpProductionCostEntryDO entry) {

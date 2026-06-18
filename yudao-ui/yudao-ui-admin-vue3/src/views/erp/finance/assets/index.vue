@@ -993,6 +993,7 @@ const depreciationPeriod = ref('')
 const depreciationPeriodStatus = ref<number | null>(null)
 const depreciationPeriodChecking = ref(false)
 const depreciationPeriodMessage = ref('')
+const cachedDefaultLedgerId = ref<number | null>(null) // 缓存默认账簿 ID，避免重复查询
 
 const assetFormRules: FormRules = {
   name: [{ required: true, message: '请输入资产名称', trigger: 'blur' }],
@@ -1414,10 +1415,8 @@ const checkPeriodStatus = async (period: string) => {
   depreciationPeriodChecking.value = true
   depreciationPeriodMessage.value = ''
   try {
-    // 先获取默认账簿 ID
-    const ledgers = await FinanceLedgerApi.getLedgerSimpleList()
-    const defaultLedger = ledgers?.find((l: any) => l.defaultStatus)
-    if (!defaultLedger) {
+    // 使用缓存的默认账簿 ID，避免重复查询
+    if (!cachedDefaultLedgerId.value) {
       depreciationPeriodStatus.value = -1
       depreciationPeriodMessage.value = '未找到默认账簿，提交后由系统校验'
       return
@@ -1426,7 +1425,7 @@ const checkPeriodStatus = async (period: string) => {
     const result = await FinancePeriodApi.getPeriodPage({
       pageNo: 1,
       pageSize: 1,
-      ledgerId: defaultLedger.id,
+      ledgerId: cachedDefaultLedgerId.value,
       periodCode: period
     })
     const list = result?.list || []
@@ -1508,8 +1507,18 @@ const clearDetailDrawer = () => {
   currentDetailId.value = undefined
 }
 
-onMounted(() => {
+onMounted(async () => {
   getAssetList()
+  // 预加载默认账簿 ID，避免每次选择期间都查询
+  try {
+    const ledgers = await FinanceLedgerApi.getLedgerSimpleList()
+    const defaultLedger = ledgers?.find((l: any) => l.defaultStatus)
+    if (defaultLedger) {
+      cachedDefaultLedgerId.value = defaultLedger.id
+    }
+  } catch (e) {
+    console.warn('[onMounted] 预加载默认账簿失败', e)
+  }
 })
 </script>
 

@@ -206,7 +206,7 @@ const avgComposition = computed(() => {
   const total = totals.material + totals.labor + totals.depreciation + totals.power + totals.other
   if (total === 0) return []
 
-  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#06B6D4', '#14B8A6']
   const items = [
     { label: '直接材料', value: totals.material, color: colors[0] },
     { label: '直接人工', value: totals.labor, color: colors[1] },
@@ -323,7 +323,7 @@ const renderTrendChart = () => {
     : [...new Set(trendData.value.map((item: any) => item.productId))].slice(0, 5)
 
   const series: any[] = []
-  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4']
 
   productIds.forEach((productId, index) => {
     const productData = trendData.value.filter((item: any) => item.productId === productId)
