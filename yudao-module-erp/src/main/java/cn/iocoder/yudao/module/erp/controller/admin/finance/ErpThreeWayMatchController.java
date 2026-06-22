@@ -1,6 +1,10 @@
 package cn.iocoder.yudao.module.erp.controller.admin.finance;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchRespVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpThreeWayMatchDO;
 import cn.iocoder.yudao.module.erp.service.finance.ErpThreeWayMatchService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -35,18 +40,28 @@ public class ErpThreeWayMatchController {
         return success(threeWayMatchService.match(leaseContractId, serviceReceiptId, invoiceNo));
     }
 
+    @GetMapping("/page")
+    @PreAuthorize("@ss.hasPermission('erp:three-way-match:query')")
+    @Operation(summary = "获取匹配记录分页")
+    public CommonResult<PageResult<ErpThreeWayMatchRespVO>> getMatchPage(@Valid ErpThreeWayMatchPageReqVO reqVO) {
+        PageResult<ErpThreeWayMatchDO> pageResult = threeWayMatchService.getMatchPage(reqVO);
+        return success(BeanUtils.toBean(pageResult, ErpThreeWayMatchRespVO.class));
+    }
+
     @GetMapping("/list")
     @PreAuthorize("@ss.hasPermission('erp:three-way-match:query')")
     @Operation(summary = "获取匹配记录列表")
-    public CommonResult<List<ErpThreeWayMatchDO>> getMatchList() {
-        return success(threeWayMatchService.getMatchList());
+    public CommonResult<List<ErpThreeWayMatchRespVO>> getMatchList() {
+        List<ErpThreeWayMatchDO> list = threeWayMatchService.getMatchList();
+        return success(BeanUtils.toBean(list, ErpThreeWayMatchRespVO.class));
     }
 
     @GetMapping("/get")
     @PreAuthorize("@ss.hasPermission('erp:three-way-match:query')")
     @Operation(summary = "获取匹配记录")
-    public CommonResult<ErpThreeWayMatchDO> getMatch(@RequestParam("id") Long id) {
-        return success(threeWayMatchService.getMatch(id));
+    public CommonResult<ErpThreeWayMatchRespVO> getMatch(@RequestParam("id") Long id) {
+        ErpThreeWayMatchDO match = threeWayMatchService.getMatch(id);
+        return success(BeanUtils.toBean(match, ErpThreeWayMatchRespVO.class));
     }
 
     @PutMapping("/confirm")

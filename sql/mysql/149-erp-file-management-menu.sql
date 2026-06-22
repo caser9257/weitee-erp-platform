@@ -1,3 +1,8 @@
+-- [已废弃] 文件管理菜单种子
+-- 注意：此脚本将文件管理错误地放在"财务管理"下，请勿执行
+-- 如已执行，请先执行 150-erp-file-management-menu-rollback.sql 回滚
+-- 然后执行 152-erp-file-management-menu-correct.sql
+
 -- 文件管理菜单种子
 
 -- 查询财务管理菜单ID

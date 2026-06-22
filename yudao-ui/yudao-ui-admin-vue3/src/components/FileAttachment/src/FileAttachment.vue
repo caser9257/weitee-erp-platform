@@ -201,6 +201,12 @@ const handleDelete = async (file: FileInfo) => {
       })
     }
     
+    // 删除文件本身
+    await request.delete({
+      url: '/infra/file/delete',
+      params: { id: file.id }
+    })
+    
     ElMessage.success('删除成功')
     await loadFiles()
     emit('change', fileList.value)

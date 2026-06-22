@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.infra.controller.admin.file;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.infra.controller.admin.file.vo.folder.FileFolderRespVO;
 import cn.iocoder.yudao.module.infra.controller.admin.file.vo.folder.FileFolderSaveReqVO;
 import cn.iocoder.yudao.module.infra.dal.dataobject.file.FileFolderDO;
 import cn.iocoder.yudao.module.infra.service.file.FileFolderService;
@@ -53,22 +55,25 @@ public class FileFolderController {
     @GetMapping("/get")
     @PreAuthorize("@ss.hasPermission('infra:file:query')")
     @Operation(summary = "获取文件夹")
-    public CommonResult<FileFolderDO> getFileFolder(@RequestParam("id") Long id) {
-        return success(fileFolderService.getFileFolder(id));
+    public CommonResult<FileFolderRespVO> getFileFolder(@RequestParam("id") Long id) {
+        FileFolderDO folder = fileFolderService.getFileFolder(id);
+        return success(BeanUtils.toBean(folder, FileFolderRespVO.class));
     }
 
     @GetMapping("/list")
     @PreAuthorize("@ss.hasPermission('infra:file:query')")
     @Operation(summary = "获取文件夹列表")
-    public CommonResult<List<FileFolderDO>> getFileFolderList() {
-        return success(fileFolderService.getFileFolderList());
+    public CommonResult<List<FileFolderRespVO>> getFileFolderList() {
+        List<FileFolderDO> list = fileFolderService.getFileFolderList();
+        return success(BeanUtils.toBean(list, FileFolderRespVO.class));
     }
 
     @GetMapping("/tree")
     @PreAuthorize("@ss.hasPermission('infra:file:query')")
     @Operation(summary = "获取文件夹树")
-    public CommonResult<List<FileFolderDO>> getFileFolderTree() {
-        return success(fileFolderService.getFileFolderTree());
+    public CommonResult<List<FileFolderRespVO>> getFileFolderTree() {
+        List<FileFolderDO> tree = fileFolderService.getFileFolderTree();
+        return success(BeanUtils.toBean(tree, FileFolderRespVO.class));
     }
 
 }

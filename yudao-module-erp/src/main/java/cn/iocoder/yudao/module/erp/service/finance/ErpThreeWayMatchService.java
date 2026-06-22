@@ -1,5 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.finance;
 
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpThreeWayMatchDO;
 
 import java.util.List;
@@ -20,6 +22,11 @@ public interface ErpThreeWayMatchService {
      * @return 匹配结果ID
      */
     Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo);
+
+    /**
+     * 获取匹配记录分页
+     */
+    PageResult<ErpThreeWayMatchDO> getMatchPage(ErpThreeWayMatchPageReqVO reqVO);
 
     /**
      * 获取匹配记录列表

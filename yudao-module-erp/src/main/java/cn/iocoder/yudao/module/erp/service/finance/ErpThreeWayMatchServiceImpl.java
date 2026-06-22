@@ -1,5 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.finance;
 
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpLeaseContractDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpServiceReceiptDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpThreeWayMatchDO;
@@ -14,6 +16,9 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.List;
+
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 
 /**
  * 三单匹配 Service 实现
@@ -44,16 +49,16 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
         ErpServiceReceiptDO receipt = serviceReceiptMapper.selectById(serviceReceiptId);
 
         if (contract == null) {
-            throw new RuntimeException("[match] 租赁合同不存在：" + leaseContractId);
+            throw exception(THREE_WAY_MATCH_CONTRACT_NOT_EXISTS);
         }
         if (receipt == null) {
-            throw new RuntimeException("[match] 服务接收单不存在：" + serviceReceiptId);
+            throw exception(THREE_WAY_MATCH_RECEIPT_NOT_EXISTS);
         }
 
         // 2. 从发票系统查询发票金额（安全：不信任前端传入的金额）
         BigDecimal invoiceAmount = erpApInvoiceService.getAmountByInvoiceNo(invoiceNo);
         if (invoiceAmount == null) {
-            throw new RuntimeException("[match] 发票不存在或金额为空：" + invoiceNo);
+            throw exception(THREE_WAY_MATCH_INVOICE_NOT_EXISTS);
         }
 
         // 2. 执行匹配
@@ -97,6 +102,11 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
     }
 
     @Override
+    public PageResult<ErpThreeWayMatchDO> getMatchPage(ErpThreeWayMatchPageReqVO reqVO) {
+        return threeWayMatchMapper.selectPage(reqVO);
+    }
+
+    @Override
     public List<ErpThreeWayMatchDO> getMatchList() {
         return threeWayMatchMapper.selectList();
     }
@@ -111,12 +121,12 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
     public void confirmMatch(Long id) {
         ErpThreeWayMatchDO match = threeWayMatchMapper.selectById(id);
         if (match == null) {
-            throw new RuntimeException("[confirmMatch] 匹配记录不存在：" + id);
+            throw exception(THREE_WAY_MATCH_NOT_EXISTS);
         }
 
         // 校验状态：只有待匹配(0)状态才能确认
         if (match.getStatus() != 0) {
-            throw new RuntimeException("[confirmMatch] 匹配记录状态不正确，当前状态：" + match.getStatus());
+            throw exception(THREE_WAY_MATCH_STATUS_INVALID);
         }
 
         // TODO: 生成应付台账 - 需要实现 AP Statement 生成逻辑

@@ -1,6 +1,8 @@
 package cn.iocoder.yudao.module.infra.controller.admin.file;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.module.infra.controller.admin.file.vo.FileBizRelRespVO;
 import cn.iocoder.yudao.module.infra.dal.dataobject.file.FileBizRelDO;
 import cn.iocoder.yudao.module.infra.service.file.FileBizRelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -50,18 +52,20 @@ public class FileBizRelController {
     @GetMapping("/list-by-biz")
     @PreAuthorize("@ss.hasPermission('infra:file:query')")
     @Operation(summary = "获取业务单据关联的文件列表")
-    public CommonResult<List<FileBizRelDO>> getFileBizRelList(
+    public CommonResult<List<FileBizRelRespVO>> getFileBizRelList(
             @RequestParam("bizType") String bizType,
             @RequestParam("bizId") Long bizId) {
-        return success(fileBizRelService.getFileBizRelList(bizType, bizId));
+        List<FileBizRelDO> list = fileBizRelService.getFileBizRelList(bizType, bizId);
+        return success(BeanUtils.toBean(list, FileBizRelRespVO.class));
     }
 
     @GetMapping("/list-by-file")
     @PreAuthorize("@ss.hasPermission('infra:file:query')")
     @Operation(summary = "获取文件关联的业务单据列表")
-    public CommonResult<List<FileBizRelDO>> getFileBizRelListByFileId(
+    public CommonResult<List<FileBizRelRespVO>> getFileBizRelListByFileId(
             @RequestParam("fileId") Long fileId) {
-        return success(fileBizRelService.getFileBizRelListByFileId(fileId));
+        List<FileBizRelDO> list = fileBizRelService.getFileBizRelListByFileId(fileId);
+        return success(BeanUtils.toBean(list, FileBizRelRespVO.class));
     }
 
 }

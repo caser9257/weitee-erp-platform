@@ -14,6 +14,9 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.util.List;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
+
 /**
  * 服务接收单 Service 实现
  *
@@ -41,7 +44,7 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
     public void updateServiceReceipt(ErpServiceReceiptSaveReqVO reqVO) {
         ErpServiceReceiptDO receipt = serviceReceiptMapper.selectById(reqVO.getId());
         if (receipt == null) {
-            throw new RuntimeException("[updateServiceReceipt] 服务接收单不存在：" + reqVO.getId());
+            throw exception(SERVICE_RECEIPT_NOT_EXISTS);
         }
         BeanUtils.copyProperties(reqVO, receipt);
         serviceReceiptMapper.updateById(receipt);
@@ -73,7 +76,11 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
     public void confirmServiceReceipt(Long id) {
         ErpServiceReceiptDO receipt = serviceReceiptMapper.selectById(id);
         if (receipt == null) {
-            throw new RuntimeException("[confirmServiceReceipt] 服务接收单不存在：" + id);
+            throw exception(SERVICE_RECEIPT_NOT_EXISTS);
+        }
+        // 校验状态：只有草稿(0)状态才能确认
+        if (receipt.getStatus() != 0) {
+            throw exception(SERVICE_RECEIPT_STATUS_INVALID);
         }
         receipt.setStatus(10); // 已确认
         serviceReceiptMapper.updateById(receipt);

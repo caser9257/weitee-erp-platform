@@ -342,4 +342,21 @@ public interface ErrorCodeConstants {
     ErrorCode PROJECT_MC_CONFIRM_FORBIDDEN = new ErrorCode(1_020_204_008, "当前用户不是项目 MC 负责人，无法执行确认");
     ErrorCode PROJECT_PC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_009, "当前项目 PC 状态不允许重复确认");
     ErrorCode PROJECT_MC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_010, "当前项目 MC 状态不允许重复确认");
+
+    // ========== ERP 租赁合同 1-030-605-000 ==========
+    ErrorCode LEASE_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_605_000, "租赁合同不存在");
+    ErrorCode LEASE_CONTRACT_NO_EXISTS = new ErrorCode(1_030_605_001, "生成租赁合同号失败，请重新提交");
+    ErrorCode LEASE_CONTRACT_STATUS_INVALID = new ErrorCode(1_030_605_002, "当前租赁合同状态不允许执行该操作");
+
+    // ========== ERP 服务接收单 1-030-606-000 ==========
+    ErrorCode SERVICE_RECEIPT_NOT_EXISTS = new ErrorCode(1_030_606_000, "服务接收单不存在");
+    ErrorCode SERVICE_RECEIPT_NO_EXISTS = new ErrorCode(1_030_606_001, "生成服务接收单号失败，请重新提交");
+    ErrorCode SERVICE_RECEIPT_STATUS_INVALID = new ErrorCode(1_030_606_002, "当前服务接收单状态不允许执行该操作");
+
+    // ========== ERP 三单匹配 1-030-607-000 ==========
+    ErrorCode THREE_WAY_MATCH_NOT_EXISTS = new ErrorCode(1_030_607_000, "三单匹配记录不存在");
+    ErrorCode THREE_WAY_MATCH_STATUS_INVALID = new ErrorCode(1_030_607_001, "当前匹配记录状态不允许执行该操作");
+    ErrorCode THREE_WAY_MATCH_INVOICE_NOT_EXISTS = new ErrorCode(1_030_607_002, "发票不存在或金额为空");
+    ErrorCode THREE_WAY_MATCH_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_607_003, "租赁合同不存在");
+    ErrorCode THREE_WAY_MATCH_RECEIPT_NOT_EXISTS = new ErrorCode(1_030_607_004, "服务接收单不存在");
 }

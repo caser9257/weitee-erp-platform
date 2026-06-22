@@ -14,6 +14,9 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.util.List;
 
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
+
 /**
  * 租赁合同 Service 实现
  *
@@ -41,7 +44,7 @@ public class ErpLeaseContractServiceImpl implements ErpLeaseContractService {
     public void updateLeaseContract(ErpLeaseContractSaveReqVO reqVO) {
         ErpLeaseContractDO contract = leaseContractMapper.selectById(reqVO.getId());
         if (contract == null) {
-            throw new RuntimeException("[updateLeaseContract] 租赁合同不存在：" + reqVO.getId());
+            throw exception(LEASE_CONTRACT_NOT_EXISTS);
         }
         BeanUtils.copyProperties(reqVO, contract);
         leaseContractMapper.updateById(contract);
