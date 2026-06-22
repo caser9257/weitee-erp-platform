@@ -9,6 +9,7 @@ import cn.iocoder.yudao.module.erp.service.sale.ErpMarketExecutionLedgerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,7 @@ public class ErpMarketExecutionLedgerController {
     private ErpMarketExecutionLedgerService erpMarketExecutionLedgerService;
 
     @GetMapping("/page")
+    @PreAuthorize("@ss.hasPermission('erp:market-ledger:query')")
     @Operation(summary = "分页查询市场执行台账")
     public CommonResult<PageResult<MarketLedgerVO>> getLedgerPage(@Validated MarketLedgerPageReqVO reqVO) {
         PageResult<MarketLedgerVO> result = erpMarketExecutionLedgerService.getLedgerPage(reqVO);
@@ -39,6 +41,7 @@ public class ErpMarketExecutionLedgerController {
     }
 
     @GetMapping("/stats")
+    @PreAuthorize("@ss.hasPermission('erp:market-ledger:query')")
     @Operation(summary = "获取市场执行台账统计")
     public CommonResult<MarketLedgerStatsVO> getLedgerStats() {
         MarketLedgerStatsVO stats = erpMarketExecutionLedgerService.getLedgerStats();
@@ -46,6 +49,7 @@ public class ErpMarketExecutionLedgerController {
     }
 
     @GetMapping("/project/{projectId}")
+    @PreAuthorize("@ss.hasPermission('erp:market-ledger:query')")
     @Operation(summary = "获取项目级聚合视图")
     public CommonResult<MarketLedgerVO> getProjectSummary(@PathVariable("projectId") Long projectId) {
         MarketLedgerVO result = erpMarketExecutionLedgerService.getProjectSummary(projectId);

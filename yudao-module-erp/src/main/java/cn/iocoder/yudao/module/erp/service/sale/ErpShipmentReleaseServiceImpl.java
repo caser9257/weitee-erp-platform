@@ -1,7 +1,12 @@
 package cn.iocoder.yudao.module.erp.service.sale;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseResultVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseStatsVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
@@ -9,6 +14,7 @@ import cn.iocoder.yudao.module.erp.enums.ShipmentReleaseRule;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceReceiptService;
 import cn.iocoder.yudao.module.crm.service.contract.CrmContractService;
 import cn.iocoder.yudao.module.crm.dal.dataobject.contract.CrmContractDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -17,6 +23,7 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 发货放行校验服务实现
@@ -324,6 +331,104 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
         result.setPendingRole(pendingRole);
         result.setDetails(details);
         return result;
+    }
+
+    @Override
+    public PageResult<ShipmentReleasePageVO> getReleasePage(ShipmentReleasePageReqVO reqVO) {
+        // 1. 构建查询条件
+        LambdaQueryWrapper<ErpSaleOrderDO> query = new LambdaQueryWrapper<ErpSaleOrderDO>()
+                .like(StrUtil.isNotBlank(reqVO.getOrderNo()), ErpSaleOrderDO::getNo, reqVO.getOrderNo())
+                .eq(reqVO.getCustomerId() != null, ErpSaleOrderDO::getCustomerId, reqVO.getCustomerId())
+                .eq(reqVO.getSaleUserId() != null, ErpSaleOrderDO::getSaleUserId, reqVO.getSaleUserId())
+                .like(StrUtil.isNotBlank(reqVO.getContractNo()), ErpSaleOrderDO::getContractNo, reqVO.getContractNo())
+                .eq(StrUtil.isNotBlank(reqVO.getReleaseStatus()), ErpSaleOrderDO::getShipmentReleaseStatus, reqVO.getReleaseStatus())
+                .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus()) // 只查询已审批通过的订单
+                .orderByDesc(ErpSaleOrderDO::getId);
+
+        // 2. 执行分页查询
+        PageResult<ErpSaleOrderDO> orderPage = erpSaleOrderMapper.selectPage(reqVO, query);
+
+        // 3. 转换为 VO
+        List<ShipmentReleasePageVO> voList = orderPage.getList().stream()
+                .map(this::convertToReleasePageVO)
+                .collect(Collectors.toList());
+
+        return new PageResult<>(voList, orderPage.getTotal());
+    }
+
+    /**
+     * 将订单 DO 转换为发货放行分页 VO
+     */
+    private ShipmentReleasePageVO convertToReleasePageVO(ErpSaleOrderDO order) {
+        ShipmentReleasePageVO vo = new ShipmentReleasePageVO();
+        vo.setOrderId(order.getId());
+        vo.setOrderNo(order.getNo());
+        vo.setCustomerId(order.getCustomerId());
+        vo.setSaleUserId(order.getSaleUserId());
+        vo.setContractId(order.getContractId());
+        vo.setContractNo(order.getContractNo());
+        vo.setOrderTotalPrice(order.getTotalPrice());
+        vo.setReleaseStatus(order.getShipmentReleaseStatus());
+        vo.setShipmentReleaseReason(order.getShipmentReleaseReason());
+        vo.setDeliveryDate(order.getDeliveryDate());
+        vo.setCreateTime(order.getCreateTime());
+
+        // 计算应收金额
+        BigDecimal totalPrice = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
+        BigDecimal receivedAmount = BigDecimal.ZERO;
+        try {
+            receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(order.getId());
+        } catch (Exception e) {
+            log.warn("[convertToReleasePageVO] 获取收款金额失败，orderId={}", order.getId(), e);
+        }
+        vo.setReceivedAmount(receivedAmount);
+        vo.setReceivableAmount(totalPrice.subtract(receivedAmount));
+
+        // 获取放行校验结果
+        try {
+            ShipmentReleaseResultVO checkResult = checkRelease(order.getId());
+            vo.setBlockerReasons(checkResult.getBlockerReasons());
+            vo.setPendingRole(checkResult.getPendingRole());
+        } catch (Exception e) {
+            log.warn("[convertToReleasePageVO] 获取放行校验结果失败，orderId={}", order.getId(), e);
+            vo.setBlockerReasons(new ArrayList<>());
+        }
+
+        return vo;
+    }
+
+    @Override
+    public ShipmentReleaseStatsVO getReleaseStats() {
+        ShipmentReleaseStatsVO stats = new ShipmentReleaseStatsVO();
+
+        // 查询已审批通过的订单总数
+        Long totalCount = erpSaleOrderMapper.selectCount(
+                new LambdaQueryWrapper<ErpSaleOrderDO>()
+                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus()));
+        stats.setTotalCount(totalCount);
+
+        // 查询阻塞状态的订单数
+        Long blockedCount = erpSaleOrderMapper.selectCount(
+                new LambdaQueryWrapper<ErpSaleOrderDO>()
+                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
+                        .eq(ErpSaleOrderDO::getShipmentReleaseStatus, "BLOCKED"));
+        stats.setBlockedCount(blockedCount);
+
+        // 查询待财务审核的订单数
+        Long financeReviewCount = erpSaleOrderMapper.selectCount(
+                new LambdaQueryWrapper<ErpSaleOrderDO>()
+                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
+                        .eq(ErpSaleOrderDO::getShipmentReleaseStatus, "FINANCE_REVIEW"));
+        stats.setFinanceReviewCount(financeReviewCount);
+
+        // 查询已放行的订单数
+        Long releasedCount = erpSaleOrderMapper.selectCount(
+                new LambdaQueryWrapper<ErpSaleOrderDO>()
+                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
+                        .eq(ErpSaleOrderDO::getShipmentReleaseStatus, "RELEASED"));
+        stats.setReleasedCount(releasedCount);
+
+        return stats;
     }
 
 }

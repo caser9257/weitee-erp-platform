@@ -1,6 +1,10 @@
 package cn.iocoder.yudao.module.erp.service.sale;
 
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseResultVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseStatsVO;
 
 /**
  * 发货放行校验服务接口
@@ -42,5 +46,20 @@ public interface ErpShipmentReleaseService {
      * @param reason 驳回原因
      */
     void rejectFinance(Long orderId, Long approverId, String reason);
+
+    /**
+     * 分页查询发货放行订单
+     *
+     * @param reqVO 分页请求参数
+     * @return 发货放行订单分页结果
+     */
+    PageResult<ShipmentReleasePageVO> getReleasePage(ShipmentReleasePageReqVO reqVO);
+
+    /**
+     * 获取发货放行统计
+     *
+     * @return 发货放行统计信息
+     */
+    ShipmentReleaseStatsVO getReleaseStats();
 
 }

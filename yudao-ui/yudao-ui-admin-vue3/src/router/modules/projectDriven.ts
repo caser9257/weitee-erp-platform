@@ -285,6 +285,28 @@ const projectDrivenMenus: AppCustomRouteRecordRaw[] = [
         meta: {},
         visible: true,
         keepAlive: false
+      },
+      {
+        path: 'return',
+        name: '\u9500\u552e\u9000\u8d27',
+        icon: 'ep:minus',
+        component: 'erp/sale/return/index',
+        componentName: 'ProjectSalesReturn',
+        redirect: '',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'customer',
+        name: '\u5ba2\u6237\u7ba1\u7406',
+        icon: 'ep:user',
+        component: 'erp/sale/customer/index',
+        componentName: 'ProjectSalesCustomer',
+        redirect: '',
+        meta: {},
+        visible: true,
+        keepAlive: false
       }
     ]
   },

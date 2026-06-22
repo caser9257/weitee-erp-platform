@@ -1,8 +1,12 @@
 package cn.iocoder.yudao.module.erp.controller.admin.sale;
 
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
+import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseCheckReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseResultVO;
+import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseStatsVO;
 import cn.iocoder.yudao.module.erp.service.sale.ErpShipmentReleaseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +33,20 @@ public class ErpShipmentReleaseController {
 
     @Resource
     private ErpShipmentReleaseService erpShipmentReleaseService;
+
+    @GetMapping("/page")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:query')")
+    @Operation(summary = "分页查询发货放行订单")
+    public CommonResult<PageResult<ShipmentReleasePageVO>> getReleasePage(@Validated ShipmentReleasePageReqVO reqVO) {
+        return success(erpShipmentReleaseService.getReleasePage(reqVO));
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:query')")
+    @Operation(summary = "获取发货放行统计")
+    public CommonResult<ShipmentReleaseStatsVO> getReleaseStats() {
+        return success(erpShipmentReleaseService.getReleaseStats());
+    }
 
     @PostMapping("/check")
     @PreAuthorize("@ss.hasPermission('erp:shipment-release:check')")
