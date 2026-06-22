@@ -28,4 +28,10 @@ public interface ErpApInvoiceMapper extends BaseMapperX<ErpApInvoiceDO> {
                 .last("LIMIT 1"));
     }
 
+    default ErpApInvoiceDO selectByInvoiceNo(String invoiceNo) {
+        return selectOne(new LambdaQueryWrapperX<ErpApInvoiceDO>()
+                .eq(ErpApInvoiceDO::getInvoiceNo, invoiceNo)
+                .last("LIMIT 1"));
+    }
+
 }

@@ -74,19 +74,44 @@ CREATE TABLE IF NOT EXISTS `infra_file_biz_rel` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件-业务关联表';
 
 -- ============================================================
--- 5. 文件表扩展字段（如字段已存在会报错，可忽略）
+-- 5. 文件表扩展字段（幂等处理）
 -- ============================================================
-ALTER TABLE `infra_file`
-    ADD COLUMN `folder_id` BIGINT NULL COMMENT '文件夹ID' AFTER `type`;
 
-ALTER TABLE `infra_file`
-    ADD COLUMN `version` INT DEFAULT 1 COMMENT '版本号' AFTER `folder_id`;
+-- 使用存储过程实现幂等的 ALTER TABLE
+DELIMITER //
 
-ALTER TABLE `infra_file`
-    ADD COLUMN `parent_id` BIGINT NULL COMMENT '父版本ID' AFTER `version`;
+CREATE PROCEDURE IF NOT EXISTS add_column_if_not_exists(
+    IN p_table_name VARCHAR(128),
+    IN p_column_name VARCHAR(128),
+    IN p_column_definition VARCHAR(1024)
+)
+BEGIN
+    DECLARE column_count INT;
+    
+    SELECT COUNT(*) INTO column_count
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = p_table_name
+      AND COLUMN_NAME = p_column_name;
+    
+    IF column_count = 0 THEN
+        SET @sql = CONCAT('ALTER TABLE `', p_table_name, '` ADD COLUMN `', p_column_name, '` ', p_column_definition);
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+    END IF;
+END //
 
-ALTER TABLE `infra_file`
-    ADD COLUMN `description` VARCHAR(500) NULL COMMENT '文件描述' AFTER `parent_id`;
+DELIMITER ;
+
+-- 添加字段（幂等执行）
+CALL add_column_if_not_exists('infra_file', 'folder_id', 'BIGINT NULL COMMENT "文件夹ID" AFTER `type`');
+CALL add_column_if_not_exists('infra_file', 'version', 'INT DEFAULT 1 COMMENT "版本号" AFTER `folder_id`');
+CALL add_column_if_not_exists('infra_file', 'parent_id', 'BIGINT NULL COMMENT "父版本ID" AFTER `version`');
+CALL add_column_if_not_exists('infra_file', 'description', 'VARCHAR(500) NULL COMMENT "文件描述" AFTER `parent_id`');
+
+-- 清理存储过程
+DROP PROCEDURE IF EXISTS add_column_if_not_exists;
 
 -- ============================================================
 -- 6. 初始数据

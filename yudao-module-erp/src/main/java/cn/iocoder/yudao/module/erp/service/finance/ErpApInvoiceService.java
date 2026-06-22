@@ -11,6 +11,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApInvoiceDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApInvoiceMatchItemDO;
 
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,5 +34,13 @@ public interface ErpApInvoiceService {
     void confirmMatch(@Valid ErpApInvoiceMatchReqVO reqVO);
 
     void cancelMatch(@Valid ErpApInvoiceCancelMatchReqVO reqVO);
+
+    /**
+     * 根据发票号获取发票金额
+     *
+     * @param invoiceNo 发票号
+     * @return 发票金额，如果发票不存在返回null
+     */
+    BigDecimal getAmountByInvoiceNo(String invoiceNo);
 
 }

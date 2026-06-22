@@ -17,10 +17,9 @@ public interface ErpThreeWayMatchService {
      * @param leaseContractId 租赁合同ID
      * @param serviceReceiptId 服务接收单ID
      * @param invoiceNo 发票号
-     * @param invoiceAmount 发票金额
      * @return 匹配结果ID
      */
-    Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo, java.math.BigDecimal invoiceAmount);
+    Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo);
 
     /**
      * 获取匹配记录列表

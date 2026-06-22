@@ -11,7 +11,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
-import java.math.BigDecimal;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -32,11 +31,8 @@ public class ErpThreeWayMatchController {
     public CommonResult<Long> match(
             @RequestParam("leaseContractId") Long leaseContractId,
             @RequestParam("serviceReceiptId") Long serviceReceiptId,
-            @RequestParam("invoiceNo") String invoiceNo,
-            @RequestParam("invoiceAmount") BigDecimal invoiceAmount) {
-        // TODO: 安全风险 - invoiceAmount 不应由前端传入，应从发票系统获取
-        // 生产环境应改为：通过 invoiceNo 从 ErpApInvoiceService 查询真实发票金额
-        return success(threeWayMatchService.match(leaseContractId, serviceReceiptId, invoiceNo, invoiceAmount));
+            @RequestParam("invoiceNo") String invoiceNo) {
+        return success(threeWayMatchService.match(leaseContractId, serviceReceiptId, invoiceNo));
     }
 
     @GetMapping("/list")

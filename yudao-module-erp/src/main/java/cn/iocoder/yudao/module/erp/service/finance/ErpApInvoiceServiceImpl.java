@@ -474,4 +474,10 @@ public class ErpApInvoiceServiceImpl implements ErpApInvoiceService {
         return result.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : result;
     }
 
+    @Override
+    public BigDecimal getAmountByInvoiceNo(String invoiceNo) {
+        ErpApInvoiceDO invoice = erpApInvoiceMapper.selectByInvoiceNo(invoiceNo);
+        return invoice != null ? invoice.getTotalAmount() : null;
+    }
+
 }

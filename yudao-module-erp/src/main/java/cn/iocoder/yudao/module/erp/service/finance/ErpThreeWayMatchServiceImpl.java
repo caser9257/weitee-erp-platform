@@ -34,8 +34,11 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
     @Resource
     private ErpServiceReceiptMapper serviceReceiptMapper;
 
+    @Resource
+    private ErpApInvoiceService erpApInvoiceService;
+
     @Override
-    public Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo, BigDecimal invoiceAmount) {
+    public Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo) {
         // 1. 获取合同和接收单
         ErpLeaseContractDO contract = leaseContractMapper.selectById(leaseContractId);
         ErpServiceReceiptDO receipt = serviceReceiptMapper.selectById(serviceReceiptId);
@@ -47,9 +50,11 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
             throw new RuntimeException("[match] 服务接收单不存在：" + serviceReceiptId);
         }
 
-        // TODO: 安全风险 - invoiceAmount 不应由前端传入，应从发票系统获取
-        // 生产环境应改为：通过 invoiceNo 从 ErpApInvoiceService 查询真实发票金额
-        // BigDecimal invoiceAmount = erpApInvoiceService.getAmountByInvoiceNo(invoiceNo);
+        // 2. 从发票系统查询发票金额（安全：不信任前端传入的金额）
+        BigDecimal invoiceAmount = erpApInvoiceService.getAmountByInvoiceNo(invoiceNo);
+        if (invoiceAmount == null) {
+            throw new RuntimeException("[match] 发票不存在或金额为空：" + invoiceNo);
+        }
 
         // 2. 执行匹配
         BigDecimal contractAmount = contract.getMonthlyRent();
