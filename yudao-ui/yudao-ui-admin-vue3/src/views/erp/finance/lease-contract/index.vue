@@ -223,6 +223,8 @@ const loadData = async () => {
     const data = await request.get({ url: '/erp/lease-contract/page', params: queryParams })
     list.value = data.list || []
     total.value = data.total || 0
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载数据失败')
   } finally {
     loading.value = false
   }
@@ -263,6 +265,8 @@ const handleSubmit = async () => {
     ElMessage.success('保存成功')
     dialogVisible.value = false
     await loadData()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '保存失败')
   } finally {
     submitLoading.value = false
   }

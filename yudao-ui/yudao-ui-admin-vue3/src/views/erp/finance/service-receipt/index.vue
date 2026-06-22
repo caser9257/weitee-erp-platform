@@ -214,6 +214,8 @@ const loadData = async () => {
     const data = await request.get({ url: '/erp/service-receipt/page', params: queryParams })
     list.value = data.list || []
     total.value = data.total || 0
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载数据失败')
   } finally {
     loading.value = false
   }
@@ -261,23 +263,37 @@ const handleSubmit = async () => {
     ElMessage.success('保存成功')
     dialogVisible.value = false
     await loadData()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '保存失败')
   } finally {
     submitLoading.value = false
   }
 }
 
 const handleConfirm = async (row: any) => {
-  await ElMessageBox.confirm('确认该服务接收单？', '提示', { type: 'warning' })
-  await request.put({ url: '/erp/service-receipt/confirm', params: { id: row.id } })
-  ElMessage.success('确认成功')
-  await loadData()
+  try {
+    await ElMessageBox.confirm('确认该服务接收单？', '提示', { type: 'warning' })
+    await request.put({ url: '/erp/service-receipt/confirm', params: { id: row.id } })
+    ElMessage.success('确认成功')
+    await loadData()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e?.message || '确认失败')
+    }
+  }
 }
 
 const handleDelete = async (row: any) => {
-  await ElMessageBox.confirm('确认删除该服务接收单？', '提示', { type: 'warning' })
-  await request.delete({ url: '/erp/service-receipt/delete', params: { id: row.id } })
-  ElMessage.success('删除成功')
-  await loadData()
+  try {
+    await ElMessageBox.confirm('确认删除该服务接收单？', '提示', { type: 'warning' })
+    await request.delete({ url: '/erp/service-receipt/delete', params: { id: row.id } })
+    ElMessage.success('删除成功')
+    await loadData()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e?.message || '删除失败')
+    }
+  }
 }
 
 const loadOptions = async () => {

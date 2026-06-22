@@ -183,6 +183,8 @@ const loadData = async () => {
   try {
     const data = await request.get({ url: '/erp/three-way-match/list' })
     list.value = data || []
+  } catch (e: any) {
+    ElMessage.error(e?.message || '加载数据失败')
   } finally {
     loading.value = false
   }
@@ -204,21 +206,29 @@ const handleSubmitMatch = async () => {
   try {
     await request.post({
       url: '/erp/three-way-match/match',
-      params: matchForm
+      data: matchForm
     })
     ElMessage.success('匹配完成')
     matchDialogVisible.value = false
     await loadData()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '匹配失败')
   } finally {
     matchLoading.value = false
   }
 }
 
 const handleConfirm = async (row: any) => {
-  await ElMessageBox.confirm('确认匹配结果并生成应付台账？', '提示', { type: 'warning' })
-  await request.put({ url: '/erp/three-way-match/confirm', params: { id: row.id } })
-  ElMessage.success('确认成功')
-  await loadData()
+  try {
+    await ElMessageBox.confirm('确认匹配结果并生成应付台账？', '提示', { type: 'warning' })
+    await request.put({ url: '/erp/three-way-match/confirm', params: { id: row.id } })
+    ElMessage.success('确认成功')
+    await loadData()
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e?.message || '确认失败')
+    }
+  }
 }
 
 const loadOptions = async () => {

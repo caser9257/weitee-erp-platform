@@ -98,9 +98,9 @@ CREATE TABLE IF NOT EXISTS `erp_three_way_match` (
 -- 查询供应链管理菜单ID
 SET @scm_menu_id = (SELECT id FROM system_menu WHERE name = '供应链管理' AND deleted = 0 LIMIT 1);
 
--- 租赁管理菜单
+-- 租赁管理菜单（目录类型，permission不能为空）
 INSERT INTO system_menu (id, parent_id, name, permission, path, component, component_name, icon, sort, status, type, creator, create_time, updater, update_time, deleted)
-VALUES (160000, @scm_menu_id, '租赁管理', NULL, NULL, NULL, NULL, 'ep:document', 50, 0, 0, '1', NOW(), '1', NOW(), b'0')
+VALUES (160000, @scm_menu_id, '租赁管理', '', '', '', '', 'ep:document', 50, 0, 0, '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- 租赁合同菜单

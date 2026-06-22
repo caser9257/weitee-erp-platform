@@ -121,6 +121,18 @@ const loadFiles = async () => {
   }
 }
 
+// 允许的文件类型白名单
+const ALLOWED_FILE_TYPES = [
+  // 文档
+  '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.txt', '.csv',
+  // 图片
+  '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg',
+  // 压缩包
+  '.zip', '.rar', '.7z', '.tar', '.gz',
+  // 其他
+  '.mp3', '.mp4', '.wav'
+]
+
 // 上传前校验
 const beforeUpload = (file: File) => {
   if (props.limit && fileList.value.length >= props.limit) {
@@ -134,6 +146,14 @@ const beforeUpload = (file: File) => {
     return false
   }
   
+  // 校验文件类型
+  const fileName = file.name.toLowerCase()
+  const isAllowed = ALLOWED_FILE_TYPES.some(ext => fileName.endsWith(ext))
+  if (!isAllowed) {
+    ElMessage.error(`不支持的文件类型，允许的类型：${ALLOWED_FILE_TYPES.join('、')}`)
+    return false
+  }
+  
   return true
 }
 
@@ -144,7 +164,6 @@ const handleUploadSuccess = async (response: any, file: any) => {
   // 创建业务关联
   if (props.bizId && props.bizType) {
     try {
-      const { request } = await import('@/config/axios')
       await request.post({
         url: '/infra/file-biz-rel/create',
         data: {
