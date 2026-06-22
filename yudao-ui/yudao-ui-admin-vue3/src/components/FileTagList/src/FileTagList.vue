@@ -20,6 +20,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import request from '@/config/axios'
 
 defineOptions({ name: 'FileTagList' })
 
@@ -37,7 +38,6 @@ const tagList = ref<TagItem[]>([])
 // 加载标签列表
 const loadTags = async () => {
   try {
-    const { request } = await import('@/config/axios')
     const data = await request.get({ url: '/infra/file-tag/list' })
     tagList.value = data || []
   } catch (e) {

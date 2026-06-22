@@ -30,14 +30,14 @@ public class FileFolderController {
     private FileFolderService fileFolderService;
 
     @PostMapping("/create")
-    @PreAuthorize("@ss.hasPermission('infra:file:create')")
+    @PreAuthorize("@ss.hasPermission('infra:file-folder:create')")
     @Operation(summary = "创建文件夹")
     public CommonResult<Long> createFileFolder(@Valid @RequestBody FileFolderSaveReqVO reqVO) {
         return success(fileFolderService.createFileFolder(reqVO));
     }
 
     @PutMapping("/update")
-    @PreAuthorize("@ss.hasPermission('infra:file:update')")
+    @PreAuthorize("@ss.hasPermission('infra:file-folder:update')")
     @Operation(summary = "更新文件夹")
     public CommonResult<Boolean> updateFileFolder(@Valid @RequestBody FileFolderSaveReqVO reqVO) {
         fileFolderService.updateFileFolder(reqVO);
@@ -45,7 +45,7 @@ public class FileFolderController {
     }
 
     @DeleteMapping("/delete")
-    @PreAuthorize("@ss.hasPermission('infra:file:delete')")
+    @PreAuthorize("@ss.hasPermission('infra:file-folder:delete')")
     @Operation(summary = "删除文件夹")
     public CommonResult<Boolean> deleteFileFolder(@RequestParam("id") Long id) {
         fileFolderService.deleteFileFolder(id);
@@ -53,7 +53,7 @@ public class FileFolderController {
     }
 
     @GetMapping("/get")
-    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    @PreAuthorize("@ss.hasPermission('infra:file-folder:query')")
     @Operation(summary = "获取文件夹")
     public CommonResult<FileFolderRespVO> getFileFolder(@RequestParam("id") Long id) {
         FileFolderDO folder = fileFolderService.getFileFolder(id);
@@ -61,7 +61,7 @@ public class FileFolderController {
     }
 
     @GetMapping("/list")
-    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    @PreAuthorize("@ss.hasPermission('infra:file-folder:query')")
     @Operation(summary = "获取文件夹列表")
     public CommonResult<List<FileFolderRespVO>> getFileFolderList() {
         List<FileFolderDO> list = fileFolderService.getFileFolderList();
@@ -69,7 +69,7 @@ public class FileFolderController {
     }
 
     @GetMapping("/tree")
-    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    @PreAuthorize("@ss.hasPermission('infra:file-folder:query')")
     @Operation(summary = "获取文件夹树")
     public CommonResult<List<FileFolderRespVO>> getFileFolderTree() {
         List<FileFolderDO> tree = fileFolderService.getFileFolderTree();

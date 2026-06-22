@@ -28,14 +28,14 @@ public class FileTagController {
     private FileTagService fileTagService;
 
     @PostMapping("/create")
-    @PreAuthorize("@ss.hasPermission('infra:file:create')")
+    @PreAuthorize("@ss.hasPermission('infra:file-tag:create')")
     @Operation(summary = "创建文件标签")
     public CommonResult<Long> createFileTag(@Valid @RequestBody FileTagSaveReqVO reqVO) {
         return success(fileTagService.createFileTag(reqVO));
     }
 
     @PutMapping("/update")
-    @PreAuthorize("@ss.hasPermission('infra:file:update')")
+    @PreAuthorize("@ss.hasPermission('infra:file-tag:update')")
     @Operation(summary = "更新文件标签")
     public CommonResult<Boolean> updateFileTag(@Valid @RequestBody FileTagSaveReqVO reqVO) {
         fileTagService.updateFileTag(reqVO);
@@ -43,7 +43,7 @@ public class FileTagController {
     }
 
     @DeleteMapping("/delete")
-    @PreAuthorize("@ss.hasPermission('infra:file:delete')")
+    @PreAuthorize("@ss.hasPermission('infra:file-tag:delete')")
     @Operation(summary = "删除文件标签")
     public CommonResult<Boolean> deleteFileTag(@RequestParam("id") Long id) {
         fileTagService.deleteFileTag(id);
@@ -51,7 +51,7 @@ public class FileTagController {
     }
 
     @GetMapping("/list")
-    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    @PreAuthorize("@ss.hasPermission('infra:file-tag:query')")
     @Operation(summary = "获取文件标签列表")
     public CommonResult<List<FileTagDO>> getFileTagList() {
         return success(fileTagService.getFileTagList());

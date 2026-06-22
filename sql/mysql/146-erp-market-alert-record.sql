@@ -48,6 +48,7 @@ WHERE NOT EXISTS (
 );
 
 -- 站内信通知模板：市场预警
+-- 使用 ID 10000 避免与其他模板冲突
 INSERT INTO system_notify_template (id, name, code, content, type, status, params, creator, create_time, updater, update_time, deleted)
-VALUES (100, '市场预警通知', 'market_alert', '【{level}】{ruleName}\n\n订单：{orderNo}\n内容：{content}\n\n请及时处理。', 1, 0, 'level,ruleName,orderNo,content', '1', NOW(), '1', NOW(), b'0')
+VALUES (10000, '市场预警通知', 'market_alert', '【{level}】{ruleName}\n\n订单：{orderNo}\n内容：{content}\n\n请及时处理。', 1, 0, 'level,ruleName,orderNo,content', '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE content = VALUES(content), updater = '1', update_time = NOW();

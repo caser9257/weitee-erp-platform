@@ -3,6 +3,7 @@ package cn.iocoder.yudao.module.infra.controller.admin.file;
 import cn.iocoder.yudao.framework.common.pojo.CommonResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.file.vo.FileBizRelRespVO;
+import cn.iocoder.yudao.module.infra.controller.admin.file.vo.FileBizRelSaveReqVO;
 import cn.iocoder.yudao.module.infra.dal.dataobject.file.FileBizRelDO;
 import cn.iocoder.yudao.module.infra.service.file.FileBizRelService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -13,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.util.List;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
@@ -30,12 +32,9 @@ public class FileBizRelController {
     @PostMapping("/create")
     @PreAuthorize("@ss.hasPermission('infra:file:create')")
     @Operation(summary = "创建文件业务关联")
-    public CommonResult<Long> createFileBizRel(
-            @RequestParam("fileId") Long fileId,
-            @RequestParam("bizType") String bizType,
-            @RequestParam("bizId") Long bizId,
-            @RequestParam(value = "bizNo", required = false) String bizNo) {
-        return success(fileBizRelService.createFileBizRel(fileId, bizType, bizId, bizNo));
+    public CommonResult<Long> createFileBizRel(@Valid @RequestBody FileBizRelSaveReqVO reqVO) {
+        return success(fileBizRelService.createFileBizRel(
+                reqVO.getFileId(), reqVO.getBizType(), reqVO.getBizId(), reqVO.getBizNo()));
     }
 
     @DeleteMapping("/delete")

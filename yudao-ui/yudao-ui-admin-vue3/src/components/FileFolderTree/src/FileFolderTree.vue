@@ -7,23 +7,32 @@
       </el-button>
     </div>
     <div class="file-folder-tree__content">
-      <div
-        v-for="folder in folderList"
-        :key="folder.id"
-        class="folder-item"
-        :class="{ 'folder-item--active': activeFolderId === folder.id }"
-        @click="handleSelectFolder(folder)"
+      <el-tree
+        ref="treeRef"
+        :data="folderTree"
+        :props="treeProps"
+        node-key="id"
+        highlight-current
+        default-expand-all
+        :expand-on-click-node="false"
+        @node-click="handleNodeClick"
       >
-        <Icon :icon="folder.icon || 'ep:folder'" class="folder-item__icon" />
-        <span class="folder-item__name">{{ folder.name }}</span>
-        <span class="folder-item__count">{{ folder.fileCount || 0 }}</span>
-      </div>
+        <template #default="{ node, data }">
+          <div class="folder-node">
+            <Icon :icon="data.icon || 'ep:folder'" class="folder-node__icon" />
+            <span class="folder-node__name">{{ node.label }}</span>
+            <span v-if="data.fileCount" class="folder-node__count">{{ data.fileCount }}</span>
+          </div>
+        </template>
+      </el-tree>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import type { ElTree } from 'element-plus'
+import request from '@/config/axios'
 
 defineOptions({ name: 'FileFolderTree' })
 
@@ -32,28 +41,34 @@ interface FolderItem {
   name: string
   icon?: string
   fileCount?: number
+  children?: FolderItem[]
 }
 
 const emit = defineEmits(['select', 'create'])
 
+const treeRef = ref<InstanceType<typeof ElTree>>()
 const activeFolderId = ref<number | null>(null)
-const folderList = ref<FolderItem[]>([])
+const folderTree = ref<FolderItem[]>([])
 
-// 加载文件夹列表
+const treeProps = {
+  label: 'name',
+  children: 'children'
+}
+
+// 加载文件夹树
 const loadFolders = async () => {
   try {
-    const { request } = await import('@/config/axios')
-    const data = await request.get({ url: '/infra/file-folder/list' })
-    folderList.value = data || []
+    const data = await request.get({ url: '/infra/file-folder/tree' })
+    folderTree.value = data || []
   } catch (e) {
     console.error('加载文件夹失败', e)
   }
 }
 
 // 选择文件夹
-const handleSelectFolder = (folder: FolderItem) => {
-  activeFolderId.value = folder.id
-  emit('select', folder)
+const handleNodeClick = (data: FolderItem) => {
+  activeFolderId.value = data.id
+  emit('select', data)
 }
 
 // 创建文件夹
@@ -98,40 +113,38 @@ defineExpose({ refresh })
   padding: 8px;
 }
 
-.folder-item {
+.folder-node {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: var(--erp-slate-50);
-  }
-
-  &--active {
-    background: var(--erp-primary-50);
-    color: var(--erp-primary-600);
-  }
+  flex: 1;
+  padding: 4px 0;
 }
 
-.folder-item__icon {
+.folder-node__icon {
   font-size: 16px;
   color: var(--erp-slate-400);
 }
 
-.folder-item__name {
+.folder-node__name {
   flex: 1;
   font-size: 13px;
 }
 
-.folder-item__count {
+.folder-node__count {
   font-size: 12px;
   color: var(--erp-slate-400);
   background: var(--erp-slate-100);
   padding: 2px 6px;
   border-radius: 10px;
+}
+
+:deep(.el-tree-node__content) {
+  height: 36px;
+}
+
+:deep(.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content) {
+  background-color: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 </style>

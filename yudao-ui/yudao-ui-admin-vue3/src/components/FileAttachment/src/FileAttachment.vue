@@ -68,6 +68,7 @@ import { ref, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 import { FilePreviewDialog } from '@/components/FilePreview'
+import request from '@/config/axios'
 
 defineOptions({ name: 'FileAttachment' })
 
@@ -99,7 +100,6 @@ const loadFiles = async () => {
   if (!props.bizId || !props.bizType) return
   
   try {
-    const { request } = await import('@/config/axios')
     const data = await request.get({
       url: '/infra/file-biz-rel/list-by-biz',
       params: { bizType: props.bizType, bizId: props.bizId }
@@ -190,8 +190,6 @@ const handleDownload = (file: FileInfo) => {
 const handleDelete = async (file: FileInfo) => {
   try {
     await ElMessageBox.confirm('确认删除该附件？', '提示', { type: 'warning' })
-    
-    const { request } = await import('@/config/axios')
     
     // 删除业务关联
     if (props.bizId && props.bizType) {
