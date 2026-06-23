@@ -330,6 +330,28 @@
               </div>
             </template>
           </el-table-column>
+          <el-table-column label="收款状态" min-width="100" align="center">
+            <template #default="{ row }">
+              <div class="ledger-receipt-status">
+                <el-tag
+                  size="small"
+                  effect="light"
+                  :class="resolveReceiptStatusTagClass(row.receiptStatus)"
+                >
+                  {{ resolveReceiptStatusLabel(row.receiptStatus) }}
+                </el-tag>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="已收金额（元）" min-width="130" align="right">
+            <template #default="{ row }">
+              <div class="ledger-receipt-amount">
+                <span class="ledger-receipt-amount__value font-mono">
+                  {{ formatReceiptAmount(row.receiptPrice) }}
+                </span>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column label="状态 / 交付" min-width="150">
             <template #default="{ row }">
               <div class="ledger-status">
@@ -516,6 +538,25 @@
                   }}
                 </span>
                 <span>货款 {{ formatCurrency(row.totalProductPrice) }}</span>
+              </div>
+            </div>
+
+            <div class="sale-order-mobile-card__receipt">
+              <div class="sale-order-mobile-card__receipt-item">
+                <span class="sale-order-mobile-card__receipt-label">收款状态</span>
+                <el-tag
+                  size="small"
+                  effect="light"
+                  :class="resolveReceiptStatusTagClass(row.receiptStatus)"
+                >
+                  {{ resolveReceiptStatusLabel(row.receiptStatus) }}
+                </el-tag>
+              </div>
+              <div class="sale-order-mobile-card__receipt-item">
+                <span class="sale-order-mobile-card__receipt-label">已收金额</span>
+                <span class="sale-order-mobile-card__receipt-value font-mono">
+                  {{ formatReceiptAmount(row.receiptPrice) }}
+                </span>
               </div>
             </div>
 
@@ -896,6 +937,41 @@ const resolveDeliveryReadyTagType = (status?: string) => {
   return 'info'
 }
 
+// 收款状态：0-未收款 1-部分收款 2-全额收款
+const RECEIPT_STATUS = {
+  UNRECEIVED: 0,
+  PARTIAL: 1,
+  FULL: 2
+} as const
+
+const resolveReceiptStatusLabel = (status?: number) => {
+  if (status === RECEIPT_STATUS.PARTIAL) {
+    return '部分收款'
+  }
+  if (status === RECEIPT_STATUS.FULL) {
+    return '全额收款'
+  }
+  return '未收款'
+}
+
+const resolveReceiptStatusTagClass = (status?: number) => {
+  if (status === RECEIPT_STATUS.PARTIAL) {
+    return 'receipt-status-tag receipt-status-tag--partial'
+  }
+  if (status === RECEIPT_STATUS.FULL) {
+    return 'receipt-status-tag receipt-status-tag--full'
+  }
+  return 'receipt-status-tag receipt-status-tag--unreceived'
+}
+
+const formatReceiptAmount = (value?: number | string | null) => {
+  const numberValue = normalizeNumber(value)
+  return numberValue.toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
 const toggleAdvancedSearch = () => {
   advancedSearchVisible.value = !advancedSearchVisible.value
 }
@@ -1257,7 +1333,7 @@ watch(
 }
 
 .sale-order-ledger {
-  min-width: 1210px;
+  min-width: 1440px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 10px;
 
@@ -1455,6 +1531,44 @@ watch(
   color: var(--sale-danger);
 }
 
+.ledger-receipt-status {
+  display: flex;
+  justify-content: center;
+}
+
+.receipt-status-tag {
+  border: none;
+  font-weight: 600;
+}
+
+.receipt-status-tag--unreceived {
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+}
+
+.receipt-status-tag--partial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.receipt-status-tag--full {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.ledger-receipt-amount {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ledger-receipt-amount__value {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .sale-order-empty {
   min-height: 132px;
   display: flex;
@@ -1636,6 +1750,35 @@ watch(
   color: var(--sale-danger);
   font-size: 12px;
   line-height: 18px;
+}
+
+.sale-order-mobile-card__receipt {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sale-order-mobile-card__receipt-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sale-order-mobile-card__receipt-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.sale-order-mobile-card__receipt-value {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .sale-order-mobile-card__actions {

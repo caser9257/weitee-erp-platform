@@ -63,6 +63,7 @@ public interface ErrorCodeConstants {
     ErrorCode PURCHASE_IN_QUALITY_ASSIGN_CHECKER_FAIL_STATUS = new ErrorCode(1_030_102_032, "当前采购入库质检单状态不允许指派质检人");
     ErrorCode PURCHASE_IN_QUALITY_ASSIGNED_CHECKER_REQUIRED = new ErrorCode(1_030_102_033, "当前采购入库质检单尚未指派质检人");
     ErrorCode PURCHASE_IN_QUALITY_ASSIGNED_CHECKER_FORBIDDEN = new ErrorCode(1_030_102_034, "当前用户不是该质检单的被指派质检人");
+    ErrorCode PURCHASE_IN_QUALITY_NO_REJECT_ITEMS = new ErrorCode(1_030_102_037, "质检单中没有不合格品，无法创建退货单");
     ErrorCode PURCHASE_IN_BATCH_UPDATE_FIELD_NOT_SUPPORT = new ErrorCode(1_030_102_035, "批量修改字段【{}】不支持");
     ErrorCode PURCHASE_IN_BATCH_UPDATE_FIELD_VALUE_INVALID = new ErrorCode(1_030_102_036, "批量修改字段【{}】的值【{}】不合法");
 
@@ -104,6 +105,10 @@ public interface ErrorCodeConstants {
     ErrorCode SALE_ORDER_BATCH_UPDATE_FIELD_NOT_SUPPORT = new ErrorCode(1_020_201_011, "批量修改字段【{}】不支持");
     ErrorCode SALE_ORDER_BATCH_UPDATE_FIELD_VALUE_INVALID = new ErrorCode(1_020_201_012, "批量修改字段【{}】的值【{}】不合法");
 
+    // ========== ERP 发货放行（1-020-201-100） ==========
+    ErrorCode SHIPMENT_RELEASE_ORDER_NOT_EXISTS = new ErrorCode(1_020_201_100, "发货放行订单不存在");
+    ErrorCode SHIPMENT_RELEASE_STATUS_INVALID = new ErrorCode(1_020_201_101, "当前发货放行状态不允许执行该操作");
+
     // ========== ERP 销售出库（1-030-202-000） ==========
     ErrorCode SALE_OUT_NOT_EXISTS = new ErrorCode(1_020_202_000, "销售出库单不存在");
     ErrorCode SALE_OUT_DELETE_FAIL_APPROVE = new ErrorCode(1_020_202_001, "销售出库单({})已审核，无法删除");
@@ -114,6 +119,10 @@ public interface ErrorCodeConstants {
     ErrorCode SALE_OUT_NOT_APPROVE = new ErrorCode(1_020_202_006, "销售出库单未审核，无法操作");
     ErrorCode SALE_OUT_FAIL_RECEIPT_PRICE_EXCEED = new ErrorCode(1_020_202_007, "收款金额({})超过销售出库单总金额({})");
     ErrorCode SALE_OUT_PROCESS_FAIL_EXISTS_RECEIPT = new ErrorCode(1_020_202_008, "反审核失败，已存在对应的收款单");
+    ErrorCode SALE_OUT_ALREADY_EXISTS = new ErrorCode(1_020_202_009, "该订单已存在出库单，无法重复创建");
+    ErrorCode SHIPMENT_RELEASE_NOT_RELEASED = new ErrorCode(1_020_202_010, "该订单尚未放行，无法创建出库单");
+    ErrorCode SALE_ORDER_ITEM_ALL_OUTED = new ErrorCode(1_020_202_011, "该订单所有产品已全部出库");
+    ErrorCode SALE_ORDER_ITEM_NOT_EXISTS = new ErrorCode(1_020_202_012, "销售订单项不存在");
 
     // ========== ERP 销售退货（1-030-203-000） ==========
     ErrorCode SALE_RETURN_NOT_EXISTS = new ErrorCode(1_020_203_000, "销售退货单不存在");
@@ -359,4 +368,10 @@ public interface ErrorCodeConstants {
     ErrorCode THREE_WAY_MATCH_INVOICE_NOT_EXISTS = new ErrorCode(1_030_607_002, "发票不存在或金额为空");
     ErrorCode THREE_WAY_MATCH_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_607_003, "租赁合同不存在");
     ErrorCode THREE_WAY_MATCH_RECEIPT_NOT_EXISTS = new ErrorCode(1_030_607_004, "服务接收单不存在");
+
+    // ========== ERP 市场预警 1-030-608-000 ==========
+    ErrorCode MARKET_ALERT_NOT_EXISTS = new ErrorCode(1_030_608_000, "预警记录不存在");
+
+    // ========== ERP 应收台账 1-030-609-000 ==========
+    ErrorCode AR_STATEMENT_NOT_EXISTS = new ErrorCode(1_030_609_000, "应收台账不存在");
 }

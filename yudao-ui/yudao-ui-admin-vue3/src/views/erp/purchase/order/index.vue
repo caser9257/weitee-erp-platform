@@ -332,6 +332,23 @@
           </div>
         </template>
       </el-table-column>
+      <el-table-column label="付款状态" min-width="100" align="center">
+        <template #default="{ row }">
+          <span
+            class="payment-tag"
+            :class="resolvePaymentStatusTagClass(row.paymentStatus)"
+          >
+            {{ resolvePaymentStatusLabel(row.paymentStatus) }}
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column label="已付金额（元）" min-width="110" align="right">
+        <template #default="{ row }">
+          <div class="ledger-payment-amount">
+            {{ formatPaymentPrice(row.paymentPrice) }}
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column label="状态 / 入库" min-width="110">
         <template #default="{ row }">
           <div class="ledger-status">
@@ -458,6 +475,12 @@
               <el-tag size="small" effect="light" :type="resolveReturnTagType(row)">
                 {{ resolveReturnText(row) }}
               </el-tag>
+              <span
+                class="payment-tag payment-tag--sm"
+                :class="resolvePaymentStatusTagClass(row.paymentStatus)"
+              >
+                {{ resolvePaymentStatusLabel(row.paymentStatus) }}
+              </span>
             </div>
           </div>
 
@@ -482,6 +505,9 @@
               <span>税额 {{ formatCurrency(row.totalTaxPrice) }}</span>
               <span>
                 {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订金' }}
+              </span>
+              <span class="purchase-order-mobile-card__payment">
+                已付 {{ formatPaymentPrice(row.paymentPrice) }}
               </span>
             </div>
           </div>
@@ -776,6 +802,38 @@ const formatCurrency = (value?: number | string | null) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(normalizeNumber(value))
+}
+
+const formatPaymentPrice = (value?: number | string | null) => {
+  const num = normalizeNumber(value)
+  return num.toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+const resolvePaymentStatusLabel = (paymentStatus?: number) => {
+  switch (paymentStatus) {
+    case 1:
+      return '部分付款'
+    case 2:
+      return '全额付款'
+    case 0:
+    default:
+      return '未付款'
+  }
+}
+
+const resolvePaymentStatusTagClass = (paymentStatus?: number) => {
+  switch (paymentStatus) {
+    case 1:
+      return 'payment-tag--partial'
+    case 2:
+      return 'payment-tag--paid'
+    case 0:
+    default:
+      return 'payment-tag--unpaid'
+  }
 }
 
 const formatProjectIds = (row: PurchaseOrderVO) => {
@@ -1734,6 +1792,60 @@ watch(
   height: 28px;
   padding: 0;
   border-radius: 999px;
+}
+
+.ledger-payment-amount {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace;
+  white-space: nowrap;
+}
+
+.payment-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.payment-tag--sm {
+  padding: 1px 8px;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.payment-tag--unpaid {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.payment-tag--partial {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.payment-tag--paid {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.purchase-order-mobile-card__payment {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(226, 232, 240, 0.6);
+  color: #0f172a;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .purchase-order-empty {

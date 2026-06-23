@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -68,6 +69,11 @@ public class ErpMarketAlertRecordDO extends BaseDO {
      * 触发时间
      */
     private LocalDateTime triggerTime;
+
+    /**
+     * 触发日期（用于去重）
+     */
+    private LocalDate triggerDate;
 
     /**
      * 是否已处理

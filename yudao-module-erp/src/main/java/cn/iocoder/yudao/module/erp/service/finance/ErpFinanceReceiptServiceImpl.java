@@ -20,6 +20,7 @@ import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
 import cn.iocoder.yudao.module.erp.service.sale.ErpCustomerService;
+import cn.iocoder.yudao.module.erp.service.sale.ErpSaleOrderService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSaleOutService;
 import cn.iocoder.yudao.module.erp.service.sale.ErpSaleReturnService;
 import cn.iocoder.yudao.module.erp.service.project.ErpProjectLifecycleService;
@@ -73,6 +74,8 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     private ErpSaleReturnService saleReturnService;
     @Resource
     private ErpSaleOrderMapper saleOrderMapper;
+    @Resource
+    private ErpSaleOrderService saleOrderService;
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
     @Resource
@@ -170,12 +173,38 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
         }
 
-        // 3. 审批通过时，事务提交后触发项目生命周期刷新
+        // 3. 审批通过时，事务提交后触发项目生命周期刷新和销售订单收款状态更新
         if (approve) {
             Long finalReceiptId = id;
             ErpTransactionUtils.afterCommit(() -> {
                 triggerProjectLifecycleRefresh(finalReceiptId);
+                updateRelatedSaleOrderReceipt(finalReceiptId);
             });
+        }
+    }
+
+    /**
+     * 更新关联销售订单的收款状态
+     */
+    private void updateRelatedSaleOrderReceipt(Long receiptId) {
+        try {
+            List<ErpFinanceReceiptItemDO> items = erpFinanceReceiptItemMapper.selectListByReceiptId(receiptId);
+            // 收集关联的销售订单ID
+            java.util.Set<Long> orderIds = new java.util.HashSet<>();
+            for (ErpFinanceReceiptItemDO item : items) {
+                if (ObjectUtil.equal(item.getBizType(), ErpBizTypeEnum.SALE_OUT.getType())) {
+                    ErpSaleOutDO saleOut = saleOutService.validateSaleOut(item.getBizId());
+                    if (saleOut != null && saleOut.getOrderId() != null) {
+                        orderIds.add(saleOut.getOrderId());
+                    }
+                }
+            }
+            // 更新每个订单的收款状态
+            for (Long orderId : orderIds) {
+                saleOrderService.updateSaleOrderReceiptPrice(orderId);
+            }
+        } catch (Exception e) {
+            log.warn("[updateRelatedSaleOrderReceipt] 更新销售订单收款状态失败，receiptId={}", receiptId, e);
         }
     }
 
@@ -340,6 +369,9 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         if (CollUtil.isEmpty(orderIds)) {
             return java.util.Collections.emptyMap();
         }
+        // TODO: 当前实现是伪批量，实际是循环调用单个查询
+        // 优化方案：在 saleOutService 中添加批量查询方法 getSaleOutListByOrderIds(Collection<Long> orderIds)
+        // 然后在内存中按 orderId 分组汇总，减少数据库查询次数
         Map<Long, BigDecimal> result = new java.util.HashMap<>();
         for (Long orderId : orderIds) {
             result.put(orderId, getReceivedAmountByOrderId(orderId));

@@ -73,6 +73,13 @@ public interface ErpPurchaseOrderService {
     void updatePurchaseOrderReturnCount(Long orderId, Map<Long, BigDecimal> returnCountMap);
 
     /**
+     * 更新采购订单的付款金额和状态
+     *
+     * @param orderId 采购订单编号
+     */
+    void updatePurchaseOrderPaymentPrice(Long orderId);
+
+    /**
      * 删除采购订单
      *
      * @param ids 编号数组

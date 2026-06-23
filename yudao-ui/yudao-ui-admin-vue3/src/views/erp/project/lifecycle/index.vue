@@ -41,7 +41,8 @@
     <ContentWrap class="project-lifecycle-page__flow">
       <div class="section-title">生命周期阶段</div>
       <div class="lifecycle-flow">
-        <div v-for="stage in lifecycleStages" :key="stage.code" 
+        <div
+v-for="stage in lifecycleStages" :key="stage.code"
              :class="['flow-node', { 'flow-node--active': stage.code === currentProject?.lifecycleStage, 'flow-node--passed': isStagePassed(stage.code) }]">
           <div class="flow-node__icon">
             <Icon :icon="stage.icon" />
@@ -58,9 +59,10 @@
     <ContentWrap class="project-lifecycle-page__timeline">
       <div class="section-title">操作记录</div>
       <el-timeline v-if="timeline.length">
-        <el-timeline-item v-for="item in timeline" :key="item.id" 
-                          :type="timelineItemType(item.stageCode)" 
-                          :timestamp="formatDateTime(item.happenTime)" 
+        <el-timeline-item
+v-for="item in timeline" :key="item.id"
+                          :type="timelineItemType(item.stageCode)"
+                          :timestamp="formatDateTime(item.happenTime)"
                           placement="top"
                           :hollow="isCurrentStage(item.stageCode)">
           <div class="timeline-content" @click="openTimelineDetail(item)">

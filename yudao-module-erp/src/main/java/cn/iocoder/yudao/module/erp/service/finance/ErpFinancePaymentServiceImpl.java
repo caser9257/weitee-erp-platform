@@ -12,18 +12,23 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpApStatementItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentAllocateDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpApStatementItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinancePaymentItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinancePaymentMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpApStatementItemTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.ErpApStatementStatusEnum;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
+import cn.iocoder.yudao.module.erp.service.purchase.ErpPurchaseOrderService;
 import cn.iocoder.yudao.module.erp.service.purchase.ErpSupplierService;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -64,6 +69,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.FINANCE_PAYME
  */
 @Service
 @Validated
+@Slf4j
 public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
 
     @Resource
@@ -84,6 +90,10 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     private ErpSupplierService supplierService;
     @Resource
     private ErpAccountService accountService;
+    @Resource
+    private ErpPurchaseOrderService purchaseOrderService;
+    @Resource
+    private ErpPurchaseInMapper purchaseInMapper;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -172,6 +182,10 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         }
         if (approve) {
             createApprovedAllocateFacts(payment, paymentItems, statementMap);
+            // 新增：审批通过后更新采购订单付款状态
+            ErpTransactionUtils.afterCommit(() -> {
+                updateRelatedPurchaseOrderPayment(paymentItems);
+            });
         } else {
             cancelApprovedAllocateFacts(approvedAllocates);
         }
@@ -180,6 +194,30 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
                 approve ? buildAllocateAmountMap(paymentItems, statementMap) : buildRollbackAmountMap(approvedAllocates),
                 approve ? ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus()
                         : ErpApStatementItemTypeEnum.PAYMENT_ALLOCATE_ROLLBACK.getStatus());
+    }
+
+    /**
+     * 更新关联采购订单的付款状态
+     */
+    private void updateRelatedPurchaseOrderPayment(List<ErpFinancePaymentItemDO> paymentItems) {
+        try {
+            // 收集关联的采购订单ID
+            java.util.Set<Long> orderIds = new java.util.HashSet<>();
+            for (ErpFinancePaymentItemDO item : paymentItems) {
+                if (item.getBizType() == cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum.PURCHASE_IN.getType()) {
+                    ErpPurchaseInDO purchaseIn = purchaseInMapper.selectById(item.getBizId());
+                    if (purchaseIn != null && purchaseIn.getOrderId() != null) {
+                        orderIds.add(purchaseIn.getOrderId());
+                    }
+                }
+            }
+            // 更新每个订单的付款状态
+            for (Long orderId : orderIds) {
+                purchaseOrderService.updatePurchaseOrderPaymentPrice(orderId);
+            }
+        } catch (Exception e) {
+            log.error("[updateRelatedPurchaseOrderPayment] 更新采购订单付款状态失败", e);
+        }
     }
 
     @Override
@@ -213,6 +251,10 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             createApStatementItemLogs(payment.getId(), payment.getNo(),
                     buildAllocateAmountMap(paymentItems, statementMap),
                     ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus());
+            // 新增：审批通过后更新采购订单付款状态
+            ErpTransactionUtils.afterCommit(() -> {
+                updateRelatedPurchaseOrderPayment(paymentItems);
+            });
         }
     }
 

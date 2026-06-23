@@ -13,11 +13,13 @@ import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchas
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderAuditLogDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseOrderRejectLogDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpPurchaseSuggestMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseOrderAuditLogMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseOrderItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseOrderMapper;
@@ -26,8 +28,11 @@ import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpPurchaseOrderAuditActionTypeConstants;
 import cn.iocoder.yudao.module.erp.enums.mrp.ErpMrpSuggestStatusEnum;
+import cn.iocoder.yudao.module.erp.framework.event.PurchaseOrderChangedEvent;
 import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -56,6 +61,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
 
     private static final String BATCH_EDIT_MODE_OVERWRITE = "overwrite";
@@ -72,6 +78,8 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     private ErpPurchaseOrderRejectLogMapper erpPurchaseOrderRejectLogMapper;
     @Resource
     private ErpPurchaseSuggestMapper erpPurchaseSuggestMapper;
+    @Resource
+    private ErpPurchaseInMapper erpPurchaseInMapper;
 
     @Resource
     private ErpNoRedisDAO noRedisDAO;
@@ -82,6 +90,8 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     private ErpSupplierService supplierService;
     @Resource
     private ErpAccountService accountService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -208,6 +218,12 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
                 new ErpPurchaseOrderDO().setStatus(status));
         if (updateCount == 0) {
             throw exception(approve ? PURCHASE_ORDER_APPROVE_FAIL : PURCHASE_ORDER_PROCESS_FAIL);
+        }
+
+        // 3. 如果是反审核操作，发布采购订单变更事件
+        if (!approve) {
+            eventPublisher.publishEvent(new PurchaseOrderChangedEvent(id, PurchaseOrderChangedEvent.ChangeType.ORDER_REJECTED));
+            log.info("[updatePurchaseOrderStatus] 采购订单反审核，已发布变更事件，orderId={}", id);
         }
     }
 
@@ -338,6 +354,45 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void updatePurchaseOrderPaymentPrice(Long orderId) {
+        // 1. 查询该订单下所有已审批的入库单
+        List<ErpPurchaseInDO> purchaseIns = erpPurchaseInMapper.selectListByOrderIdAndStatus(
+                orderId, ErpAuditStatus.APPROVE.getStatus());
+
+        // 2. 汇总已付金额
+        BigDecimal totalPaymentPrice = purchaseIns.stream()
+                .map(pi -> pi.getPaymentPrice() != null ? pi.getPaymentPrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 3. 获取订单总价
+        ErpPurchaseOrderDO order = erpPurchaseOrderMapper.selectById(orderId);
+        if (order == null) {
+            return;
+        }
+        BigDecimal totalPrice = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
+
+        // 4. 计算付款状态
+        Integer paymentStatus;
+        if (totalPaymentPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            paymentStatus = 0; // 未付款
+        } else if (totalPaymentPrice.compareTo(totalPrice) >= 0) {
+            paymentStatus = 2; // 全额付款
+        } else {
+            paymentStatus = 1; // 部分付款
+        }
+
+        // 5. 更新采购订单
+        erpPurchaseOrderMapper.updateById(new ErpPurchaseOrderDO()
+                .setId(orderId)
+                .setPaymentPrice(totalPaymentPrice)
+                .setPaymentStatus(paymentStatus));
+
+        log.info("[updatePurchaseOrderPaymentPrice] 更新采购订单付款状态，orderId={}, paymentPrice={}, paymentStatus={}",
+                orderId, totalPaymentPrice, paymentStatus);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deletePurchaseOrder(List<Long> ids) {
         // 1. 校验不处于已审批
         List<ErpPurchaseOrderDO> purchaseOrders = erpPurchaseOrderMapper.selectByIds(ids);
@@ -353,18 +408,14 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
             }
         });
 
-        // 2. 遍历删除，并记录操作日志
+        // 2. 遍历删除，并发布取消事件（监听器异步回退 MRP 建议）
         purchaseOrders.forEach(purchaseOrder -> {
-            // 2.1 删除订单
             erpPurchaseOrderMapper.deleteById(purchaseOrder.getId());
-            // 2.2 删除订单项
             erpPurchaseOrderItemMapper.deleteByOrderId(purchaseOrder.getId());
+            eventPublisher.publishEvent(new PurchaseOrderChangedEvent(
+                    purchaseOrder.getId(), PurchaseOrderChangedEvent.ChangeType.ORDER_CANCELLED));
         });
-        erpPurchaseSuggestMapper.selectListByConvertPurchaseOrderIds(ids).forEach(purchaseSuggest ->
-                erpPurchaseSuggestMapper.updateById(new ErpPurchaseSuggestDO()
-                        .setId(purchaseSuggest.getId())
-                        .setStatus(ErpMrpSuggestStatusEnum.TO_CONFIRM.getStatus())
-                        .setConvertPurchaseOrderId(null)));
+        // 注意：MRP 建议的回退由 PurchaseOrderChangeListener 异步处理，不在此处同步操作
     }
 
     private ErpPurchaseOrderDO validatePurchaseOrderExists(Long id) {

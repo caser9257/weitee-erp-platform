@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 
 import static cn.iocoder.yudao.framework.common.pojo.CommonResult.success;
+import static cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 
 /**
  * 发货放行审核 Controller
@@ -59,9 +60,8 @@ public class ErpShipmentReleaseController {
     @PostMapping("/submit-finance")
     @PreAuthorize("@ss.hasPermission('erp:shipment-release:submit')")
     @Operation(summary = "提交财务审核")
-    public CommonResult<Boolean> submitFinanceApproval(
-            @RequestParam("orderId") Long orderId,
-            @RequestParam("approverId") Long approverId) {
+    public CommonResult<Boolean> submitFinanceApproval(@RequestParam("orderId") Long orderId) {
+        Long approverId = getLoginUserId();
         erpShipmentReleaseService.submitFinanceApproval(orderId, approverId);
         return success(true);
     }
@@ -71,8 +71,8 @@ public class ErpShipmentReleaseController {
     @Operation(summary = "财务审核通过")
     public CommonResult<Boolean> approveFinance(
             @RequestParam("orderId") Long orderId,
-            @RequestParam("approverId") Long approverId,
             @RequestParam(value = "remark", required = false) String remark) {
+        Long approverId = getLoginUserId();
         erpShipmentReleaseService.approveFinance(orderId, approverId, remark);
         return success(true);
     }
@@ -82,10 +82,20 @@ public class ErpShipmentReleaseController {
     @Operation(summary = "财务审核驳回")
     public CommonResult<Boolean> rejectFinance(
             @RequestParam("orderId") Long orderId,
-            @RequestParam("approverId") Long approverId,
             @RequestParam("reason") String reason) {
+        Long approverId = getLoginUserId();
         erpShipmentReleaseService.rejectFinance(orderId, approverId, reason);
         return success(true);
+    }
+
+    @PostMapping("/create-sale-out")
+    @PreAuthorize("@ss.hasPermission('erp:shipment-release:check')")
+    @Operation(summary = "从放行创建出库单")
+    public CommonResult<Long> createSaleOutFromRelease(
+            @RequestParam("orderId") Long orderId,
+            @RequestParam("warehouseId") Long warehouseId) {
+        Long saleOutId = erpShipmentReleaseService.createSaleOutFromRelease(orderId, warehouseId, getLoginUserId());
+        return success(saleOutId);
     }
 
 }

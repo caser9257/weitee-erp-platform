@@ -74,6 +74,13 @@ public interface ErpSaleOrderService {
     void updateSaleOrderReturnCount(Long orderId, Map<Long, BigDecimal> returnCountMap);
 
     /**
+     * 更新销售订单的收款金额和状态
+     *
+     * @param orderId 销售订单编号
+     */
+    void updateSaleOrderReceiptPrice(Long orderId);
+
+    /**
      * 删除销售订单
      *
      * @param ids 编号数组

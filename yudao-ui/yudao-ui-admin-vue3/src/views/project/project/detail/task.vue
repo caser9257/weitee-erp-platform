@@ -2,7 +2,7 @@
   <div class="task-detail">
     <el-form label-width="80px">
       <el-form-item label="任务标题">
-        <el-input v-model="task.name" @change="handleUpdate('name', task.name)" />
+        <el-input :model-value="task.name" @change="handleUpdate('name', $event)" />
       </el-form-item>
       <el-form-item label="状态">
         <el-tag v-if="task.completeAt" type="success">已完成</el-tag>

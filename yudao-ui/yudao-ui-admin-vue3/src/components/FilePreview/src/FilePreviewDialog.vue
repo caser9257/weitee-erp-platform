@@ -51,7 +51,7 @@
       <!-- 音频预览 -->
       <div v-else-if="isAudio" class="file-preview__audio">
         <div class="file-preview__audio-info">
-          <Icon icon="ep:microphone" size="48" class="text-primary-500" />
+           <Icon icon="ep:microphone" size="48" class="text-[var(--erp-primary-500)]" />
           <div class="file-preview__name">{{ file?.name }}</div>
         </div>
         <audio
@@ -87,10 +87,10 @@
           <el-icon class="is-loading"><Loading /></el-icon>
           <span>正在解析工程图纸...</span>
         </div>
-        <div v-else-if="cadSvg" class="file-preview__cad-svg" v-html="cadSvg"></div>
+        <div v-else-if="cadSvg" class="file-preview__cad-svg" v-dompurify-html="cadSvg"></div>
         <div v-else class="file-preview__cad-fallback">
           <div class="file-preview__engineering-info">
-            <Icon icon="ep:scale-to-original" size="64" class="text-primary-500" />
+             <Icon icon="ep:scale-to-original" size="64" class="text-[var(--erp-primary-500)]" />
             <div class="file-preview__name">{{ file?.name }}</div>
             <div class="file-preview__format-badge">CAD 工程图纸</div>
             <div class="file-preview__meta">
@@ -116,10 +116,10 @@
           <el-icon class="is-loading"><Loading /></el-icon>
           <span>正在解析 PCB 文件...</span>
         </div>
-        <div v-else-if="gerberSvg" class="file-preview__gerber-svg" v-html="gerberSvg"></div>
+        <div v-else-if="gerberSvg" class="file-preview__gerber-svg" v-dompurify-html="gerberSvg"></div>
         <div v-else class="file-preview__gerber-fallback">
           <div class="file-preview__engineering-info">
-            <Icon icon="ep:cpu" size="64" class="text-success-500" />
+             <Icon icon="ep:cpu" size="64" class="text-[var(--erp-success-500)]" />
             <div class="file-preview__name">{{ file?.name }}</div>
             <div class="file-preview__format-badge">PCB 设计文件</div>
             <div class="file-preview__layer-info" v-if="gerberLayer">
@@ -164,7 +164,7 @@
       <!-- EDA/原理图文件预览 -->
       <div v-else-if="isEDA" class="file-preview__eda">
         <div class="file-preview__engineering-info">
-          <Icon icon="ep:circuit-board" size="64" class="text-warning-500" />
+           <Icon icon="ep:circuit-board" size="64" class="text-[var(--erp-warning-500)]" />
           <div class="file-preview__name">{{ file?.name }}</div>
           <div class="file-preview__format-badge">{{ edaFormatName }}</div>
           <div class="file-preview__meta">
@@ -180,7 +180,7 @@
               <span>此文件需要使用专业 EDA 软件打开</span>
             </template>
             <template #default>
-              <div class="text-sm text-slate-500">
+              <div class="text-sm text-[var(--erp-slate-500)]">
                 <div v-if="file?.name?.endsWith('.schdoc')">Altium Designer 原理图文件</div>
                 <div v-else-if="file?.name?.endsWith('.pcbdoc')">Altium Designer PCB 文件</div>
                 <div v-else-if="file?.name?.endsWith('.brd')">Eagle PCB 文件</div>

@@ -5,7 +5,6 @@
       <div class="page-header">
         <div class="page-header__main">
           <div class="page-header__title">三单匹配</div>
-          <div class="page-header__desc">核对租赁合同、服务接收单、发票是否一致</div>
         </div>
         <div class="page-header__actions">
           <el-button type="primary" @click="handleMatch">
@@ -29,19 +28,19 @@
       <ContentWrap class="stat-card">
         <div class="stat-card__content">
           <div class="stat-card__label">完全匹配</div>
-          <div class="stat-card__value text-emerald-600">{{ fullMatchCount }}</div>
+          <div class="stat-card__value text-[var(--erp-success-600)]">{{ fullMatchCount }}</div>
         </div>
       </ContentWrap>
       <ContentWrap class="stat-card">
         <div class="stat-card__content">
           <div class="stat-card__label">部分匹配</div>
-          <div class="stat-card__value text-amber-600">{{ partialMatchCount }}</div>
+          <div class="stat-card__value text-[var(--erp-warning-600)]">{{ partialMatchCount }}</div>
         </div>
       </ContentWrap>
       <ContentWrap class="stat-card">
         <div class="stat-card__content">
           <div class="stat-card__label">不匹配</div>
-          <div class="stat-card__value text-red-600">{{ mismatchCount }}</div>
+          <div class="stat-card__value text-[var(--erp-danger-600)]">{{ mismatchCount }}</div>
         </div>
       </ContentWrap>
     </div>
@@ -87,6 +86,13 @@
             <el-button v-if="row.status === 0" link type="primary" @click="handleConfirm(row)">确认</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <div class="empty-state">
+            <Icon icon="ep:connection" size="48" class="empty-state__icon" />
+            <div class="empty-state__text">暂无三单匹配记录</div>
+            <div class="empty-state__hint">点击"执行匹配"按钮开始三单匹配</div>
+          </div>
+        </template>
       </el-table>
     </ContentWrap>
 
@@ -94,13 +100,13 @@
     <el-dialog v-model="matchDialogVisible" title="执行三单匹配" width="600px" destroy-on-close>
       <el-form ref="matchFormRef" :model="matchForm" :rules="matchFormRules" label-width="100px">
         <el-form-item label="租赁合同" prop="leaseContractId">
-          <el-select v-model="matchForm.leaseContractId" filterable placeholder="请选择合同" class="!w-full">
+          <el-select v-model="matchForm.leaseContractId" filterable placeholder="请选择合同" class="!w-full" @change="handleContractChange">
             <el-option v-for="item in contractList" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="服务接收单" prop="serviceReceiptId">
-          <el-select v-model="matchForm.serviceReceiptId" filterable placeholder="请选择接收单" class="!w-full">
-            <el-option v-for="item in receiptList" :key="item.id" :label="item.no" :value="item.id" />
+          <el-select v-model="matchForm.serviceReceiptId" filterable placeholder="请选择接收单" class="!w-full" @change="handleReceiptChange">
+            <el-option v-for="item in filteredReceiptList" :key="item.id" :label="item.no" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="发票号" prop="invoiceNo">
@@ -122,6 +128,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/config/axios'
+import { formatMoney } from '@/utils/formatMoney'
 
 defineOptions({ name: 'ErpThreeWayMatch' })
 
@@ -140,6 +147,30 @@ const matchForm = reactive({
   invoiceAmount: 0
 })
 
+// 根据选中的合同过滤接收单
+const filteredReceiptList = computed(() => {
+  if (!matchForm.leaseContractId) return receiptList.value
+  return receiptList.value.filter(r => r.leaseContractId === matchForm.leaseContractId)
+})
+
+// 选择合同后自动填充
+const handleContractChange = (contractId: number) => {
+  const contract = contractList.value.find(c => c.id === contractId)
+  if (contract) {
+    matchForm.invoiceAmount = contract.monthlyRent
+  }
+  // 清空接收单选择
+  matchForm.serviceReceiptId = undefined
+}
+
+// 选择接收单后自动填充
+const handleReceiptChange = (receiptId: number) => {
+  const receipt = receiptList.value.find(r => r.id === receiptId)
+  if (receipt) {
+    matchForm.invoiceAmount = receipt.amount
+  }
+}
+
 const matchFormRules = {
   leaseContractId: [{ required: true, message: '请选择合同', trigger: 'change' }],
   serviceReceiptId: [{ required: true, message: '请选择接收单', trigger: 'change' }],
@@ -152,11 +183,6 @@ const pendingCount = computed(() => list.value.filter(r => r.status === 0).lengt
 const fullMatchCount = computed(() => list.value.filter(r => r.matchResult === 1).length)
 const partialMatchCount = computed(() => list.value.filter(r => r.matchResult === 2).length)
 const mismatchCount = computed(() => list.value.filter(r => r.matchResult === 0).length)
-
-const formatMoney = (value?: number | string | null) => {
-  const n = Number(value || 0)
-  return `¥${n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
 
 const matchResultLabel = (result: number) => {
   const map: Record<number, string> = { 0: '不匹配', 1: '完全匹配', 2: '部分匹配' }
@@ -306,5 +332,29 @@ onMounted(() => {
   font-weight: 700;
   color: var(--erp-slate-900);
   font-family: 'Inter', 'SF Mono', monospace;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.empty-state__icon {
+  color: var(--erp-slate-300);
+  margin-bottom: 16px;
+}
+
+.empty-state__text {
+  font-size: 16px;
+  color: var(--erp-slate-500);
+  margin-bottom: 8px;
+}
+
+.empty-state__hint {
+  font-size: 14px;
+  color: var(--erp-slate-400);
 }
 </style>

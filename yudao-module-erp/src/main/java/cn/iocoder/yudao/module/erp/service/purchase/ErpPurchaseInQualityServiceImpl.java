@@ -19,12 +19,14 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityD
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityDefectDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityRoundDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInQualityDefectMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInQualityItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInQualityMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseInQualityRoundMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpPurchaseInQualityResultEnum;
@@ -66,6 +68,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_Q
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_ASSIGN_CHECKER_FAIL_STATUS;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_ASSIGNED_CHECKER_FORBIDDEN;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_ASSIGNED_CHECKER_REQUIRED;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_NO_REJECT_ITEMS;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_ORDER_NOT_EXISTS;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_ORDER_SUBMIT_FAIL_STATUS;
 
@@ -125,6 +128,10 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     private PermissionService permissionService;
     @Resource
     private NotifyMessageSendApi notifyMessageSendApi;
+    @Resource
+    private ErpPurchaseReturnService erpPurchaseReturnService;
+    @Resource
+    private ErpPurchaseReturnMapper erpPurchaseReturnMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -425,6 +432,92 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     @Override
     public PageResult<ErpPurchaseInQualityDO> getPurchaseInQualityPage(ErpPurchaseInQualityPageReqVO pageReqVO) {
         return erpPurchaseInQualityMapper.selectPage(pageReqVO);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createReturnFromQuality(Long qualityId, Long userId) {
+        // 1. 获取质检单
+        ErpPurchaseInQualityDO quality = getRequiredPurchaseInQuality(qualityId);
+
+        // 2. 校验质检结果是否有不合格品
+        if (quality.getRejectCount() == null || quality.getRejectCount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw exception(PURCHASE_IN_QUALITY_NO_REJECT_ITEMS);
+        }
+
+        // 3. 获取入库单信息
+        ErpPurchaseInDO purchaseIn = erpPurchaseInMapper.selectById(quality.getPurchaseInId());
+        if (purchaseIn == null) {
+            throw exception(PURCHASE_IN_NOT_EXISTS);
+        }
+
+        // 4. 防重复检查：检查该入库单是否已创建过退货单
+        List<ErpPurchaseReturnDO> existingReturns = erpPurchaseReturnMapper.selectListByOrderId(purchaseIn.getOrderId());
+        if (CollUtil.isNotEmpty(existingReturns)) {
+            // 检查退货单是否关联了当前入库单（通过备注或创建时间判断）
+            for (ErpPurchaseReturnDO existingReturn : existingReturns) {
+                if (existingReturn.getRemark() != null && existingReturn.getRemark().contains(quality.getNo())) {
+                    log.info("[createReturnFromQuality] 质检单已创建过退货单，qualityId={}, returnId={}", qualityId, existingReturn.getId());
+                    return existingReturn.getId();
+                }
+            }
+        }
+
+        // 5. 获取质检项明细
+        List<ErpPurchaseInQualityItemDO> qualityItems = erpPurchaseInQualityItemMapper.selectListByQualityId(qualityId);
+        if (CollUtil.isEmpty(qualityItems)) {
+            throw exception(PURCHASE_IN_QUALITY_CHECK_FAIL_ITEMS);
+        }
+
+        // 5. 获取入库单明细（用于获取价格和税率信息）
+        List<ErpPurchaseInItemDO> purchaseInItems = erpPurchaseInItemMapper.selectListByInId(purchaseIn.getId());
+        Map<Long, ErpPurchaseInItemDO> purchaseInItemMap = convertMap(purchaseInItems, ErpPurchaseInItemDO::getId);
+
+        // 6. 构建退货单保存请求
+        cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO reqVO =
+                new cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO();
+        reqVO.setOrderId(purchaseIn.getOrderId());
+        reqVO.setAccountId(purchaseIn.getAccountId());
+        reqVO.setReturnTime(java.time.LocalDateTime.now());
+        reqVO.setRemark("质检不合格退货，质检单号：" + quality.getNo());
+
+        // 7. 构建退货项（只包含不合格品）
+        List<cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO.Item> returnItems =
+                new java.util.ArrayList<>();
+        for (ErpPurchaseInQualityItemDO qualityItem : qualityItems) {
+            if (qualityItem.getQaRejectCount() == null || qualityItem.getQaRejectCount().compareTo(BigDecimal.ZERO) <= 0) {
+                continue; // 无不合品，跳过
+            }
+
+            // 从入库单明细中获取价格和税率信息
+            ErpPurchaseInItemDO purchaseInItem = purchaseInItemMap.get(qualityItem.getPurchaseInItemId());
+            if (purchaseInItem == null) {
+                continue;
+            }
+
+            cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO.Item returnItem =
+                    new cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO.Item();
+            returnItem.setWarehouseId(qualityItem.getWarehouseId());
+            returnItem.setProductId(qualityItem.getProductId());
+            returnItem.setProductUnitId(purchaseInItem.getProductUnitId());
+            returnItem.setCount(qualityItem.getQaRejectCount());
+            returnItem.setOrderItemId(purchaseInItem.getOrderItemId());
+            returnItem.setProductPrice(purchaseInItem.getProductPrice());
+            returnItem.setTaxPercent(purchaseInItem.getTaxPercent());
+
+            returnItems.add(returnItem);
+        }
+
+        if (returnItems.isEmpty()) {
+            throw exception(PURCHASE_IN_QUALITY_NO_REJECT_ITEMS);
+        }
+        reqVO.setItems(returnItems);
+
+        // 8. 创建退货单
+        Long returnId = erpPurchaseReturnService.createPurchaseReturn(reqVO);
+
+        log.info("[createReturnFromQuality] 从质检创建退货单成功，qualityId={}, returnId={}", qualityId, returnId);
+        return returnId;
     }
 
     /**

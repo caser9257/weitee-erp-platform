@@ -26,4 +26,19 @@ public interface ErpLeaseContractService {
 
     List<ErpLeaseContractDO> getLeaseContractList();
 
+    /**
+     * 提交审批
+     */
+    void submitApproval(Long id);
+
+    /**
+     * 审批通过
+     */
+    void approve(Long id, String remark);
+
+    /**
+     * 审批驳回
+     */
+    void reject(Long id, String remark);
+
 }

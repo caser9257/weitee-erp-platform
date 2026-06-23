@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
+import { generateRoute, getRedirect } from '../src/utils/routerHelper.ts'
 
 import {
   buildPermissionRoutes
@@ -102,11 +103,92 @@ const testBuildPermissionRoutesPropagatesErrors = () => {
   )
 }
 
+const testGenerateRouteSkipsInvalidChildPaths = () => {
+  const routes = generateRoute([
+    {
+      path: '/erp',
+      name: 'ERP',
+      icon: 'ep:menu',
+      component: '',
+      componentName: 'ErpRoot',
+      redirect: '',
+      meta: {},
+      visible: true,
+      keepAlive: false,
+      children: [
+        {
+          path: null as unknown as string,
+          name: '非法菜单',
+          icon: 'ep:warning',
+          component: 'erp/invalid/index',
+          componentName: 'InvalidMenu',
+          redirect: '',
+          meta: {},
+          visible: true,
+          keepAlive: false
+        },
+        {
+          path: 'finance',
+          name: '财务管理',
+          icon: 'ep:money',
+          component: '',
+          componentName: 'FinanceRoot',
+          redirect: '',
+          meta: {},
+          visible: true,
+          keepAlive: false,
+          children: [
+            {
+              path: 'ledger',
+              name: '总账',
+              icon: 'ep:collection',
+              component: 'erp/finance/ledger/index',
+              componentName: 'FinanceLedger',
+              redirect: '',
+              meta: {},
+              visible: true,
+              keepAlive: false
+            }
+          ]
+        }
+      ]
+    } as any
+  ])
+
+  assert.equal(routes.length, 1)
+  assert.equal(routes[0].redirect, '/erp/finance/ledger')
+  assert.deepEqual(
+    routes[0].children?.map((child) => child.path),
+    ['finance']
+  )
+}
+
+const testGetRedirectFallsBackToParentWhenChildrenAreInvalid = () => {
+  assert.equal(
+    getRedirect('/erp', [
+      {
+        path: null as unknown as string,
+        name: '非法节点',
+        icon: '',
+        component: '',
+        componentName: 'InvalidNode',
+        redirect: '',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      } as any
+    ]),
+    '/erp'
+  )
+}
+
 const run = () => {
   testResolveViewModule()
   testCompatibilityViewExists()
   testBuildPermissionRoutes()
   testBuildPermissionRoutesPropagatesErrors()
+  testGenerateRouteSkipsInvalidChildPaths()
+  testGetRedirectFallsBackToParentWhenChildrenAreInvalid()
   console.log('permission-guard regression checks passed')
 }
 

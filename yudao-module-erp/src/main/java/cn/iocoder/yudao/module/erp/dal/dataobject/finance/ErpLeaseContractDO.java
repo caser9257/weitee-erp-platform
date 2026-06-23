@@ -78,7 +78,7 @@ public class ErpLeaseContractDO extends BaseDO {
     private Long costCenterId;
 
     /**
-     * 状态：0-草稿 10-生效 20-到期 30-终止
+     * 状态：0-草稿 5-审批中 10-生效 20-到期 30-终止
      */
     private Integer status;
 

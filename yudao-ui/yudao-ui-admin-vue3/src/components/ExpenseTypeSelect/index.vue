@@ -1,10 +1,11 @@
 <!-- ExpenseTypeSelect.vue - 费用类型选择组件 -->
 <template>
   <el-select
-    v-model="modelValue"
+    :model-value="modelValue"
     :placeholder="placeholder"
     :disabled="disabled"
     :clearable="clearable"
+    @update:model-value="handleChange"
     @change="handleChange"
   >
     <!-- 系统类型 -->

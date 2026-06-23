@@ -45,4 +45,13 @@ public interface ErpPurchaseInQualityService {
 
     PageResult<ErpPurchaseInQualityDO> getPurchaseInQualityPage(ErpPurchaseInQualityPageReqVO pageReqVO);
 
+    /**
+     * 从质检单创建采购退货单
+     *
+     * @param qualityId 质检单编号
+     * @param userId 操作人编号
+     * @return 退货单编号
+     */
+    Long createReturnFromQuality(Long qualityId, Long userId);
+
 }

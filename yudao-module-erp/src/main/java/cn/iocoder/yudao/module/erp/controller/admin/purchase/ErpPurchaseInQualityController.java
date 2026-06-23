@@ -276,4 +276,12 @@ public class ErpPurchaseInQualityController {
         return remainingCount.compareTo(BigDecimal.ZERO) > 0 ? remainingCount : BigDecimal.ZERO;
     }
 
+    @PostMapping("/create-return")
+    @Operation(summary = "从质检创建退货单")
+    @PreAuthorize("@ss.hasPermission('erp:purchase-in-quality:update')")
+    public CommonResult<Long> createReturnFromQuality(@RequestParam("qualityId") Long qualityId) {
+        Long returnId = purchaseInQualityService.createReturnFromQuality(qualityId, getLoginUserId());
+        return success(returnId);
+    }
+
 }

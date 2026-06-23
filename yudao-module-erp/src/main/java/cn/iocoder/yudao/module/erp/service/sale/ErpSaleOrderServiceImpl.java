@@ -17,11 +17,13 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderRejectLogDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.mrp.ErpMrpStockReservationMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderAuditLogMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderRejectLogMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOutMapper;
 import cn.iocoder.yudao.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpBusinessTypeConstants;
@@ -88,6 +90,8 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     private ErpMrpStockReservationMapper erpMrpStockReservationMapper;
     @Resource
     private ErpMrpStockReservationSummaryService mrpStockReservationSummaryService;
+    @Resource
+    private ErpSaleOutMapper erpSaleOutMapper;
 
     @Resource
     private ErpNoRedisDAO noRedisDAO;
@@ -557,6 +561,45 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         BigDecimal totalReturnCount = getSumValue(returnCountMap.values(), value -> value, BigDecimal::add, BigDecimal.ZERO);
         erpSaleOrderMapper.updateById(new ErpSaleOrderDO().setId(orderId).setReturnCount(totalReturnCount));
         saleOrderDeliveryReadyService.recalculate(orderId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSaleOrderReceiptPrice(Long orderId) {
+        // 1. 查询该订单下所有已审批的出库单
+        List<ErpSaleOutDO> saleOuts = erpSaleOutMapper.selectListByOrderIdAndStatus(
+                orderId, ErpAuditStatus.APPROVE.getStatus());
+
+        // 2. 汇总已收金额
+        BigDecimal totalReceiptPrice = saleOuts.stream()
+                .map(saleOut -> saleOut.getReceiptPrice() != null ? saleOut.getReceiptPrice() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 3. 获取订单总价
+        ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
+        if (order == null) {
+            return;
+        }
+        BigDecimal totalPrice = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
+
+        // 4. 计算收款状态
+        Integer receiptStatus;
+        if (totalReceiptPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            receiptStatus = 0; // 未收款
+        } else if (totalReceiptPrice.compareTo(totalPrice) >= 0) {
+            receiptStatus = 2; // 全额收款
+        } else {
+            receiptStatus = 1; // 部分收款
+        }
+
+        // 5. 更新销售订单
+        erpSaleOrderMapper.updateById(new ErpSaleOrderDO()
+                .setId(orderId)
+                .setReceiptPrice(totalReceiptPrice)
+                .setReceiptStatus(receiptStatus));
+
+        log.info("[updateSaleOrderReceiptPrice] 更新销售订单收款状态，orderId={}, receiptPrice={}, receiptStatus={}",
+                orderId, totalReceiptPrice, receiptStatus);
     }
 
     @Override

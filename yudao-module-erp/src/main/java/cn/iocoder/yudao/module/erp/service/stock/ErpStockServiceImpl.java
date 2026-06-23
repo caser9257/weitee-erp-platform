@@ -4,7 +4,11 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.module.erp.controller.admin.stock.vo.stock.ErpStockPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.stock.ErpStockMapper;
+import cn.iocoder.yudao.module.erp.framework.event.StockBelowSafetyEvent;
+import cn.iocoder.yudao.module.erp.service.mrp.ErpMaterialPlanRuleService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -25,6 +29,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.STOCK_COUNT_N
  */
 @Service
 @Validated
+@Slf4j
 public class ErpStockServiceImpl implements ErpStockService {
 
     /**
@@ -38,6 +43,10 @@ public class ErpStockServiceImpl implements ErpStockService {
     private ErpProductService productService;
     @Resource
     private ErpWarehouseService warehouseService;
+    @Resource
+    private ErpMaterialPlanRuleService materialPlanRuleService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     @Resource
     private ErpStockMapper erpStockMapper;
@@ -113,7 +122,42 @@ public class ErpStockServiceImpl implements ErpStockService {
         }
 
         // 4. 返回最新库存
-        return stock.getCount().add(count);
+        BigDecimal newCount = stock.getCount().add(count);
+
+        // 5. 检查是否低于安全库存（仅在库存减少时检查）
+        if (count.compareTo(BigDecimal.ZERO) < 0) {
+            checkAndPublishStockAlert(productId, warehouseId, newCount);
+        }
+
+        return newCount;
+    }
+
+    /**
+     * 检查并发布库存预警事件
+     */
+    private void checkAndPublishStockAlert(Long productId, Long warehouseId, BigDecimal newCount) {
+        try {
+            // 查询安全库存规则
+            cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpMaterialPlanRuleDO rule =
+                    materialPlanRuleService.getRuleByProductId(productId);
+            if (rule == null || rule.getSafetyStock() == null || rule.getSafetyStock().compareTo(BigDecimal.ZERO) <= 0) {
+                return; // 没有设置安全库存，不做预警
+            }
+
+            BigDecimal safetyStock = rule.getSafetyStock();
+
+            // 检查是否低于安全库存
+            if (newCount.compareTo(safetyStock) < 0) {
+                BigDecimal shortage = safetyStock.subtract(newCount);
+                // 发布预警事件（异步处理）
+                eventPublisher.publishEvent(new StockBelowSafetyEvent(
+                        productId, warehouseId, newCount, safetyStock, shortage));
+                log.info("[checkAndPublishStockAlert] 库存低于安全库存，已发布预警事件，productId={}, currentCount={}, safetyStock={}, shortage={}",
+                        productId, newCount, safetyStock, shortage);
+            }
+        } catch (Exception e) {
+            log.error("[checkAndPublishStockAlert] 检查库存预警失败，productId={}", productId, e);
+        }
     }
 
     @Override

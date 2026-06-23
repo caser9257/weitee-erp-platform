@@ -128,4 +128,20 @@ public class ErpPurchaseOrderDO extends BaseDO {
      */
     private BigDecimal returnCount;
 
+    // ========== 付款状态（财务闭环） ==========
+
+    /**
+     * 付款状态
+     *
+     * 枚举值：
+     * - 0: 未付款
+     * - 1: 部分付款
+     * - 2: 全额付款
+     */
+    private Integer paymentStatus;
+    /**
+     * 已付款金额，单位：元
+     */
+    private BigDecimal paymentPrice;
+
 }

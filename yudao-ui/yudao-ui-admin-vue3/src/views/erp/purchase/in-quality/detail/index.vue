@@ -65,6 +65,14 @@
             >
               去执行入库
             </el-button>
+            <el-button
+              v-if="showCreateReturnAction"
+              type="danger"
+              :loading="createReturnLoading"
+              @click="handleCreateReturn"
+            >
+              转退货单
+            </el-button>
           </div>
         </div>
       </ContentWrap>
@@ -753,6 +761,40 @@ const canNavigateToStockExecute = computed(() => {
 })
 
 const showNavigateStockExecuteAction = computed(() => canNavigateToStockExecute.value)
+
+// 转退货单：质检完成且有不合格品时显示
+const showCreateReturnAction = computed(() => {
+  const order = qualityOrder.value
+  if (!order) return false
+  // 质检已完成且有不合格品
+  return Number(order.status) === PURCHASE_IN_QUALITY_STATUS.DONE &&
+    toNumber(order.rejectCount) > 0
+})
+
+const createReturnLoading = ref(false)
+
+const handleCreateReturn = async () => {
+  try {
+    await ElMessageBox.confirm(
+      `确认从质检单 ${qualityOrder.value?.no || ''} 创建采购退货单？将包含 ${erpCountInputFormatter(qualityOrder.value?.rejectCount || 0)} 不合格品。`,
+      '创建退货单',
+      { type: 'warning' }
+    )
+
+    createReturnLoading.value = true
+    const returnId = await PurchaseInQualityApi.createReturnFromQuality(qualityOrder.value!.id!)
+    ElMessage.success(`退货单创建成功，单号：${returnId}`)
+
+    // 跳转到退货单编辑页面
+    router.push(`/erp/purchase/return?id=${returnId}`)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '创建退货单失败')
+    }
+  } finally {
+    createReturnLoading.value = false
+  }
+}
 
 const stockExecuteAlertMessage = computed(() => {
   const order = qualityOrder.value

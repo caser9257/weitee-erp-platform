@@ -5,7 +5,6 @@
       <div class="page-header">
         <div class="page-header__main">
           <div class="page-header__title">租赁合同管理</div>
-          <div class="page-header__desc">管理仪器设备租赁合同、租金排程</div>
         </div>
         <div class="page-header__actions">
           <el-button type="primary" @click="handleCreate">
@@ -31,6 +30,7 @@
           <el-form-item label="状态">
             <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
               <el-option label="草稿" :value="0" />
+              <el-option label="审批中" :value="5" />
               <el-option label="生效" :value="10" />
               <el-option label="到期" :value="20" />
               <el-option label="终止" :value="30" />
@@ -55,7 +55,7 @@
           <template #default="{ row }">
             <div>
               <div class="font-semibold">{{ row.name }}</div>
-              <div class="text-slate-400 text-xs font-mono">{{ row.no }}</div>
+              <div class="text-[var(--erp-slate-400)] text-xs font-mono">{{ row.no }}</div>
             </div>
           </template>
         </el-table-column>
@@ -82,12 +82,22 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
+        <el-table-column label="操作" width="250" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="row.status === 0" link type="primary" @click="handleSubmitApproval(row)">提交审批</el-button>
+            <el-button v-if="row.status === 5" link type="success" @click="handleApprove(row)">通过</el-button>
+            <el-button v-if="row.status === 5" link type="warning" @click="handleReject(row)">驳回</el-button>
+            <el-button v-if="row.status === 0" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="row.status === 0" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <div class="empty-state">
+            <Icon icon="ep:document" size="48" class="empty-state__icon" />
+            <div class="empty-state__text">暂无租赁合同数据</div>
+            <div class="empty-state__hint">点击"新增合同"按钮创建第一个租赁合同</div>
+          </div>
+        </template>
       </el-table>
       <div class="table-footer">
         <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" @pagination="loadData" />
@@ -140,6 +150,19 @@
               <el-input-number v-model="formData.paymentCycle" :min="1" class="!w-full" />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="成本中心">
+              <el-tree-select
+                v-model="formData.costCenterId"
+                :data="deptList"
+                :props="{ label: 'name', value: 'id' }"
+                placeholder="请选择成本中心"
+                clearable
+                filterable
+                class="!w-full"
+              />
+            </el-form-item>
+          </el-col>
           <el-col :span="24">
             <el-form-item label="备注">
               <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注" />
@@ -159,6 +182,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/config/axios'
+import { formatMoney } from '@/utils/formatMoney'
 
 defineOptions({ name: 'ErpLeaseContract' })
 
@@ -170,6 +194,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const formRef = ref()
 const supplierList = ref<any[]>([])
+const deptList = ref<any[]>([])
 
 const queryParams = reactive({
   pageNo: 1,
@@ -202,18 +227,13 @@ const formRules = {
   monthlyRent: [{ required: true, message: '请输入月租金', trigger: 'blur' }]
 }
 
-const formatMoney = (value?: number | string | null) => {
-  const n = Number(value || 0)
-  return `¥${n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
 const statusLabel = (status: number) => {
-  const map: Record<number, string> = { 0: '草稿', 10: '生效', 20: '到期', 30: '终止' }
+  const map: Record<number, string> = { 0: '草稿', 5: '审批中', 10: '生效', 20: '到期', 30: '终止' }
   return map[status] || '未知'
 }
 
 const statusTagType = (status: number) => {
-  const map: Record<number, string> = { 0: 'info', 10: 'success', 20: 'warning', 30: 'danger' }
+  const map: Record<number, string> = { 0: 'info', 5: 'warning', 10: 'success', 20: 'warning', 30: 'danger' }
   return map[status] || 'info'
 }
 
@@ -279,8 +299,49 @@ const handleDelete = async (row: any) => {
   await loadData()
 }
 
+const handleSubmitApproval = async (row: any) => {
+  await ElMessageBox.confirm('确认提交审批？', '提示', { type: 'warning' })
+  await request.put({ url: '/erp/lease-contract/submit-approval', params: { id: row.id } })
+  ElMessage.success('已提交审批')
+  await loadData()
+}
+
+const handleApprove = async (row: any) => {
+  await ElMessageBox.confirm('确认审批通过？', '提示', { type: 'warning' })
+  await request.put({ url: '/erp/lease-contract/approve', params: { id: row.id } })
+  ElMessage.success('审批通过')
+  await loadData()
+}
+
+const handleReject = async (row: any) => {
+  await ElMessageBox.confirm('确认驳回？', '提示', { type: 'warning' })
+  await request.put({ url: '/erp/lease-contract/reject', params: { id: row.id } })
+  ElMessage.success('已驳回')
+  await loadData()
+}
+
+const loadDeptList = async () => {
+  try {
+    const data = await request.get({ url: '/system/dept/list-all-simple' })
+    deptList.value = data || []
+  } catch (e) {
+    console.error('加载部门列表失败', e)
+  }
+}
+
+const loadSupplierList = async () => {
+  try {
+    const data = await request.get({ url: '/erp/supplier/list-all-simple' })
+    supplierList.value = data || []
+  } catch (e) {
+    console.error('加载供应商列表失败', e)
+  }
+}
+
 onMounted(() => {
   loadData()
+  loadDeptList()
+  loadSupplierList()
 })
 </script>
 
@@ -306,12 +367,6 @@ onMounted(() => {
   color: var(--erp-slate-900);
 }
 
-.page-header__desc {
-  margin-top: 4px;
-  color: var(--erp-slate-500);
-  font-size: 12px;
-}
-
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -329,5 +384,29 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.empty-state__icon {
+  color: var(--erp-slate-300);
+  margin-bottom: 16px;
+}
+
+.empty-state__text {
+  font-size: 16px;
+  color: var(--erp-slate-500);
+  margin-bottom: 8px;
+}
+
+.empty-state__hint {
+  font-size: 14px;
+  color: var(--erp-slate-400);
 }
 </style>

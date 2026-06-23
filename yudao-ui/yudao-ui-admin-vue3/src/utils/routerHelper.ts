@@ -10,8 +10,8 @@ import {
 } from '@/utils/viewModuleResolver'
 
 /**
- * 娉ㄥ唽涓€涓紓姝ョ粍浠?
- * @param componentPath 渚?/bpm/oa/leave/detail
+ * 注册一个异步组件
+ * @param componentPath 例如 /bpm/oa/leave/detail
  */
 export const registerComponent = (componentPath: string) =>
   registerAsyncComponent(componentPath)
@@ -28,7 +28,7 @@ export const getParentLayout = () => {
     })
 }
 
-// 鎸夌収璺敱涓璵eta涓嬬殑rank绛夌骇鍗囧簭鏉ユ帓搴忚矾鐢?
+// 按照路由中meta下的rank等级升序来排序路由
 export const ascending = (arr: any[]) => {
   arr.forEach((v) => {
     if (v?.meta?.rank === null) v.meta.rank = undefined
@@ -58,11 +58,54 @@ export const getRawRoute = (route: RouteLocationNormalized): RouteLocationNormal
   }
 }
 
-// 鍚庣鎺у埗璺敱鐢熸垚
+const normalizeRoutePathValue = (path?: string | null) => {
+  return typeof path === 'string' ? path.trim() : ''
+}
+
+const buildRouteDebugLabel = (route: Partial<AppCustomRouteRecordRaw>) => {
+  return JSON.stringify({
+    id: (route as any)?.id,
+    name: route?.name,
+    path: route?.path,
+    component: route?.component,
+    parentId: route?.parentId
+  })
+}
+
+const warnInvalidRoute = (route: Partial<AppCustomRouteRecordRaw>, reason: string) => {
+  console.warn(`[router] skip invalid permission route: ${reason}`, buildRouteDebugLabel(route))
+}
+
+const filterValidRouteChildren = (
+  children: AppCustomRouteRecordRaw[] | undefined,
+  parentPath: string
+) => {
+  if (!children?.length) {
+    return []
+  }
+
+  return children.filter((child) => {
+    const childPath = normalizeRoutePathValue(child?.path)
+    if (childPath) {
+      return true
+    }
+    warnInvalidRoute(child, `child path is empty under parent "${parentPath}"`)
+    return false
+  })
+}
+
+// 后端控制路由生成
 export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecordRaw[] => {
   const res: AppRouteRecordRaw[] = []
   for (const route of routes) {
-    // 1. 鐢熸垚 meta 鑿滃崟鍏冩暟鎹?
+    const routePath = normalizeRoutePathValue(route.path)
+    if (!routePath) {
+      warnInvalidRoute(route, 'path is empty')
+      continue
+    }
+    const routeChildren = filterValidRouteChildren(route.children, routePath)
+
+    // 1. 生成 meta 菜单元数据
     const meta = {
       ...(route.meta || {}),
       title: route.name,
@@ -70,38 +113,37 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       hidden: !route.visible,
       noCache: !route.keepAlive,
       alwaysShow:
-        route.children &&
-        route.children.length > 0 &&
+        routeChildren.length > 0 &&
         (route.alwaysShow !== undefined ? route.alwaysShow : true)
     } as any
-    // 鐗规畩閫昏緫锛氬鏋滃悗绔厤缃殑 MenuDO.component 鍖呭惈 ?锛屽垯琛ㄧず闇€瑕佷紶閫掑弬鏁?
-    // 姝ゆ椂锛屾垜浠渶瑕佽В鏋愬弬鏁帮紝骞朵笖灏嗗弬鏁版斁鍒?meta.query 涓?
-    // 杩欐牱锛屽悗缁湪 Vue 鏂囦欢涓紝鍙互閫氳繃 const { currentRoute } = useRouter() 涓紝閫氳繃 meta.query 鑾峰彇鍒板弬鏁?
+// 特殊逻辑：如果后端配置的 MenuDO.component 包含 ?，则表示需要传递参数
+// 此时，我们需要解析参数，并且将参数放到 meta.query 中
+// 这样，后续在 Vue 文件中，可以通过 const { currentRoute } = useRouter() 中，通过 meta.query 获取到参数
     if (route.component && route.component.indexOf('?') > -1) {
       const query = route.component.split('?')[1]
       route.component = route.component.split('?')[0]
       meta.query = qs.parse(query)
     }
 
-    // 2. 鐢熸垚 data锛圓ppRouteRecordRaw锛?
-    // 璺敱鍦板潃杞瀛楁瘝澶у啓椹煎嘲锛屼綔涓鸿矾鐢卞悕绉帮紝閫傞厤keepAlive
+    // 2. 生成 data（AppRouteRecordRaw）
+// 路由地址转首字母大写驼峰，作为路由名称，适配keepAlive
     let data: AppRouteRecordRaw = {
       path:
-        route.path.indexOf('?') > -1 && !isUrl(route.path) ? route.path.split('?')[0] : route.path, // 娉ㄦ剰锛岄渶瑕佹帓闄?http 杩欑 url锛岄伩鍏嶅畠甯?? 鍙傛暟琚埅鍙栨帀
+        routePath.indexOf('?') > -1 && !isUrl(routePath) ? routePath.split('?')[0] : routePath, // 注意：需要排除 http 这种 url，避免它带 ? 参数被截取掉
       name:
         route.componentName && route.componentName.length > 0
           ? route.componentName
-          : toCamelCase(route.path, true),
+          : toCamelCase(routePath, true),
       redirect: route.redirect,
       meta: meta
     }
-    //澶勭悊椤剁骇闈炵洰褰曡矾鐢?
+// 处理顶级非目录路由
     if (!route.children && route.parentId == 0 && route.component) {
       data.component = Layout
       data.meta = {
         hidden: meta.hidden
       }
-      data.name = toCamelCase(route.path, true) + 'Parent'
+      data.name = toCamelCase(routePath, true) + 'Parent'
       data.redirect = ''
       meta.alwaysShow = true
       const childrenData: AppRouteRecordRaw = {
@@ -109,20 +151,20 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
         name:
           route.componentName && route.componentName.length > 0
             ? route.componentName
-            : toCamelCase(route.path, true),
+            : toCamelCase(routePath, true),
         redirect: route.redirect,
         meta: meta
       }
       const componentPath = resolveRouteComponentPath(route)
-      childrenData.component = resolveViewModule(componentPath, route.path)
+      childrenData.component = resolveViewModule(componentPath, routePath)
       data.children = [childrenData]
     } else {
-      // 鐩綍
-      if (route.children?.length) {
+      // 目录
+      if (routeChildren.length) {
         data.component = Layout
-        data.redirect = getRedirect(route.path, route.children)
-        // 澶栭摼
-      } else if (isUrl(route.path)) {
+        data.redirect = getRedirect(routePath, routeChildren)
+        // 外链
+      } else if (isUrl(routePath)) {
         data = {
           path: '/external-link',
           component: Layout,
@@ -131,14 +173,14 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
           },
           children: [data]
         } as AppRouteRecordRaw
-        // 鑿滃崟
+        // 菜单
       } else {
-        // 瀵瑰悗绔紶component缁勪欢璺緞鍜屼笉浼犲仛鍏煎锛堝鏋滃悗绔紶component缁勪欢璺緞锛岄偅涔坧ath鍙互闅忎究鍐欙紝濡傛灉涓嶄紶锛宑omponent缁勪欢璺緞浼氭牴path淇濇寔涓€鑷达級
+        // 对后端传component组件路径和不传做兼容（如果后端传component组件路径，那path可以随便写，如果不传，component组件路径会根据path保持一致）
         const componentPath = resolveRouteComponentPath(route)
-        data.component = resolveViewModule(componentPath, route.path)
+        data.component = resolveViewModule(componentPath, routePath)
       }
-      if (route.children) {
-        data.children = generateRoute(route.children)
+      if (routeChildren.length) {
+        data.children = generateRoute(routeChildren)
       }
     }
     res.push(data as AppRouteRecordRaw)
@@ -147,17 +189,37 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
 }
 
 export const getRedirect = (parentPath: string, children: AppCustomRouteRecordRaw[]) => {
-  if (!children || children.length == 0) {
+  const validChildren = filterValidRouteChildren(children, parentPath)
+  if (validChildren.length === 0) {
     return parentPath
   }
-  const path = generateRoutePath(parentPath, children[0].path)
-  // 閫掑綊瀛愯妭鐐?
-  if (children[0].children) return getRedirect(path, children[0].children)
+  const firstChild = validChildren[0]
+  const path = generateRoutePath(parentPath, firstChild.path)
+  // 递归子节点
+  if (firstChild.children?.length) {
+    return getRedirect(path, firstChild.children) || path
+  }
+  return path
 }
 
-const generateRoutePath = (parentPath: string, path: string) => {
+const generateRoutePath = (parentPath: string, path?: string | null) => {
+  const normalizedParentPath = normalizeRoutePathValue(parentPath)
+  const normalizedPath = normalizeRoutePathValue(path)
+
+  if (!normalizedParentPath) {
+    if (!normalizedPath) {
+      return '/'
+    }
+    return normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`
+  }
+  if (!normalizedPath) {
+    return normalizedParentPath
+  }
+
+  parentPath = normalizedParentPath
+  path = normalizedPath
   if (parentPath.endsWith('/')) {
-    parentPath = parentPath.slice(0, -1) // 绉婚櫎榛樿鐨?/
+    parentPath = parentPath.slice(0, -1) // 移除默认的 /
   }
   if (!path.startsWith('/')) {
     path = '/' + path
@@ -167,7 +229,7 @@ const generateRoutePath = (parentPath: string, path: string) => {
 
 export const pathResolve = (parentPath: string, path: string) => {
   if (isUrl(path)) return path
-  if (!path) return parentPath // 淇 path 涓虹┖鏃惰繑鍥?parentPath锛岄伩鍏嶆嫾鎺ュ嚭閿?https://t.zsxq.com/QVr6b
+  if (!path) return parentPath // 修复 path 为空时返回 parentPath，避免拼接出错
   const childPath = path.startsWith('/') ? path : `/${path}`
   return `${parentPath}${childPath}`.replace(/\/+/g, '/')
 }
@@ -180,7 +242,7 @@ const resolveRouteComponentPath = (route: AppCustomRouteRecordRaw) => {
   return 'common/menu-placeholder/index'
 }
 
-// 璺敱闄嶇骇
+// 路由降级
 export const flatMultiLevelRoutes = (routes: AppRouteRecordRaw[]) => {
   const modules: AppRouteRecordRaw[] = cloneDeep(routes)
   for (let index = 0; index < modules.length; index++) {
@@ -193,7 +255,7 @@ export const flatMultiLevelRoutes = (routes: AppRouteRecordRaw[]) => {
   return modules
 }
 
-// 灞傜骇鏄惁澶т簬2
+// 层级是否大于2
 const isMultipleRoute = (route: AppRouteRecordRaw) => {
   if (!route || !Reflect.has(route, 'children') || !route.children?.length) {
     return false
@@ -212,7 +274,7 @@ const isMultipleRoute = (route: AppRouteRecordRaw) => {
   return flag
 }
 
-// 鐢熸垚浜岀骇璺敱
+// 生成二级路由
 const promoteRouteLevel = (route: AppRouteRecordRaw) => {
   let router: Router | null = createRouter({
     routes: [route as RouteRecordRaw],
@@ -226,7 +288,7 @@ const promoteRouteLevel = (route: AppRouteRecordRaw) => {
   route.children = route.children?.map((item) => omit(item, 'children'))
 }
 
-// 娣诲姞鎵€鏈夊瓙鑿滃崟
+// 添加所有子菜单
 const addToChildren = (
   routes: RouteRecordNormalized[],
   children: AppRouteRecordRaw[],

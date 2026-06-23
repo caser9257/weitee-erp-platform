@@ -19,6 +19,7 @@ import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
+import cn.iocoder.yudao.module.erp.service.finance.ErpArStatementService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockBatchAllocationService;
@@ -85,6 +86,9 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
     @Resource
     @Lazy
     private ErpFinanceBizHookService financeBizHookService;
+    @Resource
+    @Lazy
+    private ErpArStatementService arStatementService;
     @Resource
     private ErpProjectLifecycleService projectLifecycleService;
     @Resource
@@ -231,6 +235,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         if (approve) {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,
                     defaultTime(saleOut.getOutTime(), saleOut.getCreateTime(), saleOut.getUpdateTime()).toLocalDate());
+            // 新增：创建应收台账
+            arStatementService.createStatementForSaleOut(saleOut);
             // 事务提交后异步触发项目生命周期刷新
             if (saleOut.getOrderId() != null) {
                 Long orderId = saleOut.getOrderId();
@@ -249,6 +255,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         } else {
             financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.SALE_OUT.getType(), id,
                     null, "销售出库反审核关闭双账套凭证");
+            // 新增：关闭应收台账
+            arStatementService.closeStatementByBiz(ErpBizTypeEnum.SALE_OUT.getType(), id, "销售出库反审核");
         }
     }
 

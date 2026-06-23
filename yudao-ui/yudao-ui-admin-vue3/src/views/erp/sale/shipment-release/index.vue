@@ -105,6 +105,7 @@
             <el-button link type="primary" @click.stop="checkRow(row)">校验</el-button>
             <el-button v-if="row.releaseStatus === 'FINANCE_REVIEW'" link type="success" @click.stop="approveRow(row)">通过</el-button>
             <el-button v-if="row.releaseStatus === 'FINANCE_REVIEW'" link type="danger" @click.stop="rejectRow(row)">驳回</el-button>
+            <el-button v-if="row.releaseStatus === 'RELEASED'" link type="success" @click.stop="openConvertDialog(row)">转出库单</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -155,6 +156,44 @@
         </div>
       </template>
     </el-drawer>
+
+    <!-- 转出库单 - 仓库选择弹窗 -->
+    <el-dialog
+      v-model="convertDialogVisible"
+      title="转出库单"
+      width="460px"
+      :close-on-click-modal="false"
+      class="convert-out-dialog"
+    >
+      <div class="convert-out-dialog__body">
+        <div class="convert-out-dialog__info">
+          <div class="convert-out-dialog__label">当前订单</div>
+          <div class="convert-out-dialog__value">{{ convertRow?.orderNo || '-' }}</div>
+          <div class="convert-out-dialog__meta">{{ convertRow?.customerName || '-' }}</div>
+        </div>
+        <el-form-item label="目标仓库" required>
+          <el-select
+            v-model="selectedWarehouseId"
+            placeholder="请选择目标仓库"
+            filterable
+            style="width: 100%"
+          >
+            <el-option
+              v-for="w in warehouseList"
+              :key="w.id"
+              :label="w.name"
+              :value="w.id"
+            />
+          </el-select>
+        </el-form-item>
+      </div>
+      <template #footer>
+        <div class="convert-out-dialog__footer">
+          <el-button @click="convertDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="convertLoading" @click="confirmConvert">确认创建</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -162,6 +201,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ShipmentReleaseApi, type ShipmentReleasePageVO, type ShipmentReleaseResultVO, type ShipmentReleaseStatsVO } from '@/api/erp/sale/shipment-release'
+import { WarehouseApi, type WarehouseVO } from '@/api/erp/stock/warehouse'
 
 defineOptions({ name: 'ErpShipmentReleasePage' })
 
@@ -174,6 +214,13 @@ const currentRow = ref<ShipmentReleasePageVO | null>(null)
 const checkResult = ref<ShipmentReleaseResultVO | null>(null)
 const queryParams = reactive({ pageNo: 1, pageSize: 20, orderNo: '', projectNo: '', contractNo: '', releaseStatus: '' })
 const queryFormRef = ref()
+
+// 转出库单相关状态
+const convertDialogVisible = ref(false)
+const convertLoading = ref(false)
+const warehouseList = ref<Pick<WarehouseVO, 'id' | 'name'>[]>([])
+const selectedWarehouseId = ref<number | undefined>(undefined)
+const convertRow = ref<ShipmentReleasePageVO | null>(null)
 
 const loadData = async () => {
   loading.value = true
@@ -238,6 +285,44 @@ const checkRow = async (row: ShipmentReleasePageVO) => {
   currentRow.value = row
   drawerVisible.value = true
   await runCheck()
+}
+
+/** 打开转出库单弹窗 */
+const openConvertDialog = async (row: ShipmentReleasePageVO) => {
+  convertRow.value = row
+  selectedWarehouseId.value = undefined
+  convertDialogVisible.value = true
+  // 加载仓库列表
+  try {
+    const res = await WarehouseApi.getWarehouseSimpleList()
+    warehouseList.value = (res || []).map((w: WarehouseVO) => ({ id: w.id, name: w.name }))
+  } catch {
+    warehouseList.value = []
+  }
+}
+
+/** 确认转出库单 */
+const confirmConvert = async () => {
+  if (!selectedWarehouseId.value) {
+    ElMessage.warning('请选择目标仓库')
+    return
+  }
+  if (!convertRow.value?.orderId) return
+
+  convertLoading.value = true
+  try {
+    const outId = await ShipmentReleaseApi.createSaleOutFromRelease(
+      convertRow.value.orderId,
+      selectedWarehouseId.value
+    )
+    ElMessage.success(`出库单创建成功，单号 ID：${outId}`)
+    convertDialogVisible.value = false
+    await loadData()
+  } catch (e: any) {
+    ElMessage.error(e?.message || '创建出库单失败')
+  } finally {
+    convertLoading.value = false
+  }
 }
 
 const formatReleaseRule = (value?: string) => {
@@ -437,6 +522,46 @@ onMounted(() => {
     }
 
     .drawer-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+  }
+
+  .convert-out-dialog {
+    .convert-out-dialog__body {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .convert-out-dialog__info {
+      padding: 14px 16px;
+      background: var(--erp-slate-50);
+      border: 1px solid var(--erp-slate-200);
+      border-radius: 10px;
+    }
+
+    .convert-out-dialog__label {
+      font-size: 12px;
+      color: var(--erp-slate-500);
+      margin-bottom: 4px;
+    }
+
+    .convert-out-dialog__value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--erp-slate-900);
+      font-family: var(--font-mono, 'JetBrains Mono', monospace);
+    }
+
+    .convert-out-dialog__meta {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--erp-slate-500);
+    }
+
+    .convert-out-dialog__footer {
       display: flex;
       justify-content: flex-end;
       gap: 12px;

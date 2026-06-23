@@ -5,7 +5,6 @@
       <div class="page-header">
         <div class="page-header__main">
           <div class="page-header__title">服务接收单</div>
-          <div class="page-header__desc">供应链确认仪器租赁服务完成，关联生产/研发成本中心</div>
         </div>
         <div class="page-header__actions">
           <el-button type="primary" @click="handleCreate">
@@ -54,7 +53,7 @@
           <template #default="{ row }">
             <div>
               <div class="font-semibold">{{ row.no }}</div>
-              <div class="text-slate-400 text-xs">{{ row.period }}</div>
+              <div class="text-[var(--erp-slate-400)] text-xs">{{ row.period }}</div>
             </div>
           </template>
         </el-table-column>
@@ -77,10 +76,17 @@
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <el-button v-if="row.status === 0" link type="primary" @click="handleConfirm(row)">确认</el-button>
-            <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="row.status === 0" link type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button v-if="row.status === 0" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <div class="empty-state">
+            <Icon icon="ep:document-checked" size="48" class="empty-state__icon" />
+            <div class="empty-state__text">暂无服务接收单数据</div>
+            <div class="empty-state__hint">点击"新增接收单"按钮创建第一个服务接收单</div>
+          </div>
+        </template>
       </el-table>
       <div class="table-footer">
         <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" @pagination="loadData" />
@@ -151,6 +157,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/config/axios'
+import { formatMoney } from '@/utils/formatMoney'
 
 defineOptions({ name: 'ErpServiceReceipt' })
 
@@ -191,11 +198,6 @@ const formRules = {
   receiptDate: [{ required: true, message: '请选择接收日期', trigger: 'change' }],
   period: [{ required: true, message: '请选择归属期间', trigger: 'change' }],
   amount: [{ required: true, message: '请输入金额', trigger: 'blur' }]
-}
-
-const formatMoney = (value?: number | string | null) => {
-  const n = Number(value || 0)
-  return `¥${n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 const statusLabel = (status: number) => {
@@ -360,5 +362,29 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.empty-state__icon {
+  color: var(--erp-slate-300);
+  margin-bottom: 16px;
+}
+
+.empty-state__text {
+  font-size: 16px;
+  color: var(--erp-slate-500);
+  margin-bottom: 8px;
+}
+
+.empty-state__hint {
+  font-size: 14px;
+  color: var(--erp-slate-400);
 }
 </style>

@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchPageReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchRespVO;
+import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpThreeWayMatchDO;
 import cn.iocoder.yudao.module.erp.service.finance.ErpThreeWayMatchService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,11 +34,9 @@ public class ErpThreeWayMatchController {
     @PostMapping("/match")
     @PreAuthorize("@ss.hasPermission('erp:three-way-match:match')")
     @Operation(summary = "执行三单匹配")
-    public CommonResult<Long> match(
-            @RequestParam("leaseContractId") Long leaseContractId,
-            @RequestParam("serviceReceiptId") Long serviceReceiptId,
-            @RequestParam("invoiceNo") String invoiceNo) {
-        return success(threeWayMatchService.match(leaseContractId, serviceReceiptId, invoiceNo));
+    public CommonResult<Long> match(@RequestBody @Valid ErpThreeWayMatchSaveReqVO reqVO) {
+        return success(threeWayMatchService.match(
+                reqVO.getLeaseContractId(), reqVO.getServiceReceiptId(), reqVO.getInvoiceNo()));
     }
 
     @GetMapping("/page")

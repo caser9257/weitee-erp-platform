@@ -86,5 +86,13 @@ export const ShipmentReleaseApi = {
 
   rejectFinance: async (orderId: number, approverId: number, reason: string) => {
     return await request.post({ url: `/erp/shipment-release/reject`, params: { orderId, approverId, reason } })
+  },
+
+  // 从放行创建出库单
+  createSaleOutFromRelease: async (orderId: number, warehouseId: number) => {
+    return await request.post<number>({
+      url: `/erp/shipment-release/create-sale-out`,
+      params: { orderId, warehouseId }
+    })
   }
 }

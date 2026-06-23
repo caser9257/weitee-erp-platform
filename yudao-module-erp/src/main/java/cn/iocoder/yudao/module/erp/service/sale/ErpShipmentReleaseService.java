@@ -62,4 +62,14 @@ public interface ErpShipmentReleaseService {
      */
     ShipmentReleaseStatsVO getReleaseStats();
 
+    /**
+     * 从发货放行创建出库单
+     *
+     * @param orderId 销售订单编号
+     * @param warehouseId 仓库编号
+     * @param userId 操作人编号
+     * @return 出库单编号
+     */
+    Long createSaleOutFromRelease(Long orderId, Long warehouseId, Long userId);
+
 }

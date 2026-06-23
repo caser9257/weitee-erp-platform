@@ -6,3 +6,5 @@
 /node_modules/*
 /dist*
 /src/main.ts
+# 第三方库打包文件
+/src/components/Tinyflow/ui/

@@ -74,8 +74,36 @@ public class ErpLeaseContractController {
     @PreAuthorize("@ss.hasPermission('erp:lease-contract:query')")
     @Operation(summary = "获取租赁合同列表")
     public CommonResult<List<ErpLeaseContractRespVO>> getLeaseContractList() {
+        // 注意：此接口返回全量数据，适用于下拉选择器等场景
+        // 如果数据量增长到千级以上，建议改为分页查询或添加查询条件过滤
         List<ErpLeaseContractDO> list = leaseContractService.getLeaseContractList();
         return success(BeanUtils.toBean(list, ErpLeaseContractRespVO.class));
+    }
+
+    @PutMapping("/submit-approval")
+    @PreAuthorize("@ss.hasPermission('erp:lease-contract:submit-approval')")
+    @Operation(summary = "提交审批")
+    public CommonResult<Boolean> submitApproval(@RequestParam("id") Long id) {
+        leaseContractService.submitApproval(id);
+        return success(true);
+    }
+
+    @PutMapping("/approve")
+    @PreAuthorize("@ss.hasPermission('erp:lease-contract:approve')")
+    @Operation(summary = "审批通过")
+    public CommonResult<Boolean> approve(@RequestParam("id") Long id,
+                                          @RequestParam(value = "remark", required = false) String remark) {
+        leaseContractService.approve(id, remark);
+        return success(true);
+    }
+
+    @PutMapping("/reject")
+    @PreAuthorize("@ss.hasPermission('erp:lease-contract:reject')")
+    @Operation(summary = "审批驳回")
+    public CommonResult<Boolean> reject(@RequestParam("id") Long id,
+                                         @RequestParam(value = "remark", required = false) String remark) {
+        leaseContractService.reject(id, remark);
+        return success(true);
     }
 
 }

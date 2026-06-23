@@ -207,4 +207,20 @@ public class ErpSaleOrderDO extends BaseDO {
      */
     private String acceptanceStatus;
 
+    // ========== 收款状态（财务闭环） ==========
+
+    /**
+     * 收款状态
+     *
+     * 枚举值：
+     * - 0: 未收款
+     * - 1: 部分收款
+     * - 2: 全额收款
+     */
+    private Integer receiptStatus;
+    /**
+     * 已收款金额，单位：元
+     */
+    private BigDecimal receiptPrice;
+
 }

@@ -1,5 +1,5 @@
 ﻿<template>
-  <Dialog v-model="dialogVisible" title="閮ㄩ棬瀵煎叆" width="400">
+  <Dialog v-model="dialogVisible" title="部门导入" width="400">
     <el-upload
       ref="uploadRef"
       v-model:file-list="fileList"
@@ -15,27 +15,28 @@
       drag
     >
       <Icon icon="ep:upload" />
-      <div class="el-upload__text">灏嗘枃浠舵嫋鍒版澶勶紝鎴?em>鐐瑰嚮涓婁紶</em></div>
+      <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
       <template #tip>
         <div class="el-upload__tip text-center">
           <div class="el-upload__tip">
             <el-checkbox v-model="updateSupport" />
-            鏄惁鏇存柊宸茬粡瀛樺湪鐨勯儴闂ㄦ暟鎹?          </div>
-          <span>浠呭厑璁稿鍏?xls銆亁lsx 鏍煎紡鏂囦欢銆?/span>
+            是否更新已经存在的部门数据
+          </div>
+          <span>仅允许导入 xls、xlsx 格式文件。</span>
           <el-link
             :underline="false"
             style="font-size: 12px; vertical-align: baseline"
             type="primary"
             @click="importTemplate"
           >
-            涓嬭浇妯℃澘
+            下载模板
           </el-link>
         </div>
       </template>
     </el-upload>
     <template #footer>
-      <el-button :disabled="formLoading" type="primary" @click="submitForm">纭?瀹?/el-button>
-      <el-button @click="dialogVisible = false">鍙?娑?/el-button>
+      <el-button :disabled="formLoading" type="primary" @click="submitForm">确 定</el-button>
+      <el-button @click="dialogVisible = false">取 消</el-button>
     </template>
   </Dialog>
 </template>
@@ -54,11 +55,11 @@ const formLoading = ref(false)
 const uploadRef = ref()
 const importUrl =
   import.meta.env.VITE_BASE_URL + import.meta.env.VITE_API_URL + '/system/dept/import'
-const uploadHeaders = ref()
-const fileList = ref([])
+const uploadHeaders = ref<Record<string, string>>({})
+const fileList = ref<any[]>([])
 const updateSupport = ref(false)
 
-/** 鎵撳紑寮圭獥 */
+/** 打开弹窗 */
 const open = () => {
   dialogVisible.value = true
   updateSupport.value = false
@@ -67,38 +68,36 @@ const open = () => {
 }
 defineExpose({ open })
 
-/** 鎻愪氦琛ㄥ崟 */
+/** 提交表单 */
 const submitForm = async () => {
   if (fileList.value.length === 0) {
-    message.error('璇蜂笂浼犳枃浠?)
+    message.error('请上传文件')
     return
   }
-  uploadHeaders.value = {
-    Authorization: 'Bearer ' + getAccessToken()
-  }
+  uploadHeaders.value = buildUploadHeaders()
   formLoading.value = true
   uploadRef.value?.submit()
 }
 
 const emits = defineEmits(['success'])
 
-/** 鏂囦欢涓婁紶鎴愬姛 */
+/** 文件上传成功 */
 const submitFormSuccess = (response: any) => {
   if (response.code !== 0) {
-    message.error(response.msg)
+    message.error(response.msg || '导入失败，请稍后重试')
     resetForm()
     return
   }
   const data = response.data
-  let text = '瀵煎叆鎴愬姛鏁伴噺锛? + data.createDeptNames.length + '锛?
+  let text = '导入成功数量：' + data.createDeptNames.length + ';'
   for (const name of data.createDeptNames) {
     text += '< ' + name + ' >'
   }
-  text += '鏇存柊鎴愬姛鏁伴噺锛? + data.updateDeptNames.length + '锛?
+  text += '更新成功数量：' + data.updateDeptNames.length + ';'
   for (const name of data.updateDeptNames) {
     text += '< ' + name + ' >'
   }
-  text += '瀵煎叆澶辫触鏁伴噺锛? + Object.keys(data.failureDeptNames).length + '锛?
+  text += '导入失败数量：' + Object.keys(data.failureDeptNames).length + ';'
   for (const name in data.failureDeptNames) {
     text += '< ' + name + ': ' + data.failureDeptNames[name] + ' >'
   }
@@ -108,28 +107,37 @@ const submitFormSuccess = (response: any) => {
   emits('success')
 }
 
-/** 涓婁紶閿欒鎻愮ず */
-const submitFormError = () => {
-  message.error('涓婁紶澶辫触锛岃鎮ㄩ噸鏂颁笂浼狅紒')
+/** 上传错误提示 */
+const submitFormError = (): void => {
+  message.error('上传失败，请您重新上传！')
   formLoading.value = false
 }
 
-/** 閲嶇疆琛ㄥ崟 */
+/** 重置表单 */
 const resetForm = async () => {
   formLoading.value = false
+  uploadHeaders.value = buildUploadHeaders()
   await nextTick()
   uploadRef.value?.clearFiles()
 }
 
-/** 鏂囦欢鏁拌秴鍑烘彁绀?*/
-const handleExceed = () => {
-  message.error('鏈€澶氬彧鑳戒笂浼犱竴涓枃浠讹紒')
+/** 文件数超出提示 */
+const handleExceed = (): void => {
+  message.error('最多只能上传一个文件！')
 }
 
-/** 涓嬭浇妯℃澘 */
+/** 组装上传请求头 */
+const buildUploadHeaders = () => {
+  const headers: Record<string, string> = {
+    Authorization: 'Bearer ' + getAccessToken()
+  }
+
+  return headers
+}
+
+/** 下载模板 */
 const importTemplate = async () => {
   const res = await DeptApi.importDeptTemplate()
-  download.excel(res, '閮ㄩ棬瀵煎叆妯℃澘.xls')
+  download.excel(res, '部门导入模板.xls')
 }
 </script>
-

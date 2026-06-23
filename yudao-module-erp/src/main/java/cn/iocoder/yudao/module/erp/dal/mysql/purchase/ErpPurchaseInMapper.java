@@ -141,4 +141,10 @@ public interface ErpPurchaseInMapper extends BaseMapperX<ErpPurchaseInDO> {
                 .eq(ErpPurchaseInDO::getStatus, ErpAuditStatus.APPROVE.getStatus()));
     }
 
+    default List<ErpPurchaseInDO> selectListByOrderIdAndStatus(Long orderId, Integer status) {
+        return selectList(new LambdaQueryWrapper<ErpPurchaseInDO>()
+                .eq(ErpPurchaseInDO::getOrderId, orderId)
+                .eq(ErpPurchaseInDO::getStatus, status));
+    }
+
 }

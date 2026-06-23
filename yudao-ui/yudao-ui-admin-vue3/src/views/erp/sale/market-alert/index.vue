@@ -5,7 +5,6 @@
       <div class="page-header">
         <div class="page-header__main">
           <div class="page-header__title">市场预警与统计</div>
-          <div class="page-header__desc">监控订单执行异常，及时预警处理</div>
         </div>
         <div class="page-header__actions">
           <el-button type="primary" :loading="checking" @click="handleCheck">
@@ -124,6 +123,13 @@
             <el-button link type="info" @click="handleViewOrder(row)">查看订单</el-button>
           </template>
         </el-table-column>
+        <template #empty>
+          <div class="empty-state">
+            <Icon icon="ep:circle-check" size="48" class="empty-state__icon" />
+            <div class="empty-state__text">暂无预警记录</div>
+            <div class="empty-state__hint">当前没有需要处理的预警，系统会自动监控订单异常</div>
+          </div>
+        </template>
       </el-table>
     </ContentWrap>
 
@@ -155,40 +161,17 @@ import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { formatDate } from '@/utils/formatTime'
+import { MarketAlertApi, type MarketAlertRuleVO, type MarketAlertRecordVO } from '@/api/erp/sale/market-alert'
 
 defineOptions({ name: 'ErpMarketAlertPage' })
 
 const router = useRouter()
 
-// API 接口
-const MarketAlertApi = {
-  getAlertRules: async () => {
-    const { request } = await import('@/config/axios')
-    return await request.get({ url: '/erp/market-alert/rules' })
-  },
-  getCurrentAlerts: async () => {
-    const { request } = await import('@/config/axios')
-    return await request.get({ url: '/erp/market-alert/list' })
-  },
-  checkAndTriggerAlerts: async () => {
-    const { request } = await import('@/config/axios')
-    return await request.post({ url: '/erp/market-alert/check' })
-  },
-  updateAlertRule: async (rule: any) => {
-    const { request } = await import('@/config/axios')
-    return await request.put({ url: '/erp/market-alert/rules', data: rule })
-  },
-  handleAlert: async (id: number, remark?: string) => {
-    const { request } = await import('@/config/axios')
-    return await request.put({ url: '/erp/market-alert/handle', params: { id, remark } })
-  }
-}
-
 const loading = ref(false)
 const checking = ref(false)
 const showRuleDialog = ref(false)
-const rules = ref<any[]>([])
-const alerts = ref<any[]>([])
+const rules = ref<MarketAlertRuleVO[]>([])
+const alerts = ref<MarketAlertRecordVO[]>([])
 
 const receiptOverdueCount = computed(() => alerts.value.filter(a => a.ruleCode === 'RECEIPT_OVERDUE').length)
 const deliveryOverdueCount = computed(() => alerts.value.filter(a => a.ruleCode === 'DELIVERY_OVERDUE').length)
@@ -473,5 +456,29 @@ onMounted(() => {
     color: var(--erp-slate-600);
     font-size: 13px;
   }
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.empty-state__icon {
+  color: var(--erp-slate-300);
+  margin-bottom: 16px;
+}
+
+.empty-state__text {
+  font-size: 16px;
+  color: var(--erp-slate-500);
+  margin-bottom: 8px;
+}
+
+.empty-state__hint {
+  font-size: 14px;
+  color: var(--erp-slate-400);
 }
 </style>

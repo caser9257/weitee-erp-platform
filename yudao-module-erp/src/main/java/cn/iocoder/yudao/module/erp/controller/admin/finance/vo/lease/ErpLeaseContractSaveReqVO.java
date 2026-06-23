@@ -5,6 +5,7 @@ import lombok.Data;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -17,10 +18,12 @@ public class ErpLeaseContractSaveReqVO {
 
     @Schema(description = "合同编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "LC-2026-001")
     @NotEmpty(message = "合同编号不能为空")
+    @Size(max = 64, message = "合同编号长度不能超过 64")
     private String no;
 
     @Schema(description = "合同名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "检测仪器租赁合同")
     @NotEmpty(message = "合同名称不能为空")
+    @Size(max = 200, message = "合同名称长度不能超过 200")
     private String name;
 
     @Schema(description = "供应商ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
@@ -49,9 +52,11 @@ public class ErpLeaseContractSaveReqVO {
     private Long costCenterId;
 
     @Schema(description = "备注", example = "检测设备租赁")
+    @Size(max = 500, message = "备注长度不能超过 500")
     private String remark;
 
     @Schema(description = "合同附件URL")
+    @Size(max = 500, message = "合同附件URL长度不能超过 500")
     private String fileUrl;
 
 }

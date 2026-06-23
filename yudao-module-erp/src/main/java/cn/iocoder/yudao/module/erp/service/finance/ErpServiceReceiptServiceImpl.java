@@ -46,6 +46,10 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
         if (receipt == null) {
             throw exception(SERVICE_RECEIPT_NOT_EXISTS);
         }
+        // 只有草稿状态才能编辑
+        if (receipt.getStatus() != 0) {
+            throw exception(SERVICE_RECEIPT_STATUS_INVALID);
+        }
         BeanUtils.copyProperties(reqVO, receipt);
         serviceReceiptMapper.updateById(receipt);
     }
@@ -53,6 +57,14 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteServiceReceipt(Long id) {
+        ErpServiceReceiptDO receipt = serviceReceiptMapper.selectById(id);
+        if (receipt == null) {
+            throw exception(SERVICE_RECEIPT_NOT_EXISTS);
+        }
+        // 只有草稿状态才能删除
+        if (receipt.getStatus() != 0) {
+            throw exception(SERVICE_RECEIPT_STATUS_INVALID);
+        }
         serviceReceiptMapper.deleteById(id);
     }
 

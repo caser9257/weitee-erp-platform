@@ -68,6 +68,12 @@ public interface ErpSaleOutMapper extends BaseMapperX<ErpSaleOutDO> {
         return selectList(ErpSaleOutDO::getOrderId, orderId);
     }
 
+    default List<ErpSaleOutDO> selectListByOrderIdAndStatus(Long orderId, Integer status) {
+        return selectList(new LambdaQueryWrapper<ErpSaleOutDO>()
+                .eq(ErpSaleOutDO::getOrderId, orderId)
+                .eq(ErpSaleOutDO::getStatus, status));
+    }
+
     default List<ErpSaleOutDO> selectApprovedListForBatchRebuild(Long id, Integer limit) {
         return selectList(new LambdaQueryWrapper<ErpSaleOutDO>()
                 .eq(ErpSaleOutDO::getStatus, ErpAuditStatus.APPROVE.getStatus())

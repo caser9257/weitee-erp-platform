@@ -116,7 +116,6 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
 
     /**
      * 事务内执行折旧生成（核心逻辑）
-     * 只做本地数据库操作，不调用外部 API
      */
     @Transactional(rollbackFor = Exception.class)
     public Integer doGenerateDepreciation(String period, List<ErpFinanceAssetDO> assets,

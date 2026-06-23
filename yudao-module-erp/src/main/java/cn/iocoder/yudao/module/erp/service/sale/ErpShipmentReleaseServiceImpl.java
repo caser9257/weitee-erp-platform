@@ -8,7 +8,11 @@ import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleasePageV
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseResultVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.ShipmentReleaseStatsVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
+import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOutDO;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderItemMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
+import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOutMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ShipmentReleaseRule;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceReceiptService;
@@ -17,6 +21,7 @@ import cn.iocoder.yudao.module.crm.dal.dataobject.contract.CrmContractDO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -24,6 +29,9 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 
 /**
  * 发货放行校验服务实现
@@ -37,6 +45,12 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
     @Resource
     private ErpSaleOrderMapper erpSaleOrderMapper;
+    @Resource
+    private ErpSaleOrderItemMapper erpSaleOrderItemMapper;
+    @Resource
+    private ErpSaleOutMapper erpSaleOutMapper;
+    @Resource
+    private ErpSaleOutService erpSaleOutService;
 
     @Resource
     private ErpFinanceReceiptService erpFinanceReceiptService;
@@ -112,13 +126,19 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void submitFinanceApproval(Long orderId, Long approverId) {
-        // 更新订单状态为待财务审核
+        // 1. 校验订单存在
         ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw exception(SHIPMENT_RELEASE_ORDER_NOT_EXISTS);
+        }
+        // 2. 校验状态：只有 BLOCKED 状态才能提交财务审核
+        if (!"BLOCKED".equals(order.getShipmentReleaseStatus())) {
+            throw exception(SHIPMENT_RELEASE_STATUS_INVALID);
         }
 
+        // 3. 更新订单状态为待财务审核
         ErpSaleOrderDO updateOrder = new ErpSaleOrderDO();
         updateOrder.setId(orderId);
         updateOrder.setShipmentReleaseStatus("FINANCE_REVIEW");
@@ -128,13 +148,19 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void approveFinance(Long orderId, Long approverId, String remark) {
-        // 更新订单状态为已放行
+        // 1. 校验订单存在
         ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw exception(SHIPMENT_RELEASE_ORDER_NOT_EXISTS);
+        }
+        // 2. 校验状态：只有 FINANCE_REVIEW 状态才能审批通过
+        if (!"FINANCE_REVIEW".equals(order.getShipmentReleaseStatus())) {
+            throw exception(SHIPMENT_RELEASE_STATUS_INVALID);
         }
 
+        // 3. 更新订单状态为已放行
         ErpSaleOrderDO updateOrder = new ErpSaleOrderDO();
         updateOrder.setId(orderId);
         updateOrder.setShipmentReleaseStatus("RELEASED");
@@ -145,13 +171,19 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void rejectFinance(Long orderId, Long approverId, String reason) {
-        // 更新订单状态为阻塞
+        // 1. 校验订单存在
         ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw exception(SHIPMENT_RELEASE_ORDER_NOT_EXISTS);
+        }
+        // 2. 校验状态：只有 FINANCE_REVIEW 状态才能驳回
+        if (!"FINANCE_REVIEW".equals(order.getShipmentReleaseStatus())) {
+            throw exception(SHIPMENT_RELEASE_STATUS_INVALID);
         }
 
+        // 3. 更新订单状态为阻塞
         ErpSaleOrderDO updateOrder = new ErpSaleOrderDO();
         updateOrder.setId(orderId);
         updateOrder.setShipmentReleaseStatus("BLOCKED");
@@ -358,6 +390,12 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
     /**
      * 将订单 DO 转换为发货放行分页 VO
+     *
+     * TODO: 当前实现对每条订单调用 checkRelease() 和 getReceivedAmountByOrderId()，存在 N+1 查询问题
+     * 优化方案：
+     * 1. 批量查询所有订单的收款金额（使用 getReceivedAmountByOrderIds）
+     * 2. 将放行校验结果缓存或批量预计算
+     * 3. 或在 SQL 层面直接关联查询所需字段
      */
     private ShipmentReleasePageVO convertToReleasePageVO(ErpSaleOrderDO order) {
         ShipmentReleasePageVO vo = new ShipmentReleasePageVO();
@@ -399,6 +437,11 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
     @Override
     public ShipmentReleaseStatsVO getReleaseStats() {
+        // TODO: 当前实现每次调用执行4条独立的 COUNT 查询
+        // 优化方案：
+        // 1. 使用 Redis 缓存，设置 TTL 30秒
+        // 2. 或使用单条 SQL 通过 CASE WHEN 一次性查询所有统计值
+        // 3. 或使用定时任务预计算统计值
         ShipmentReleaseStatsVO stats = new ShipmentReleaseStatsVO();
 
         // 查询已审批通过的订单总数
@@ -429,6 +472,75 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
         stats.setReleasedCount(releasedCount);
 
         return stats;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createSaleOutFromRelease(Long orderId, Long warehouseId, Long userId) {
+        // 1. 校验放行状态
+        ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
+        if (order == null) {
+            throw exception(SALE_ORDER_NOT_EXISTS);
+        }
+        if (!"RELEASED".equals(order.getShipmentReleaseStatus())) {
+            throw exception(SHIPMENT_RELEASE_NOT_RELEASED);
+        }
+
+        // 2. 检查是否已有出库单（使用 SELECT FOR UPDATE 防止并发）
+        // 注意：这里使用 forUpdate 来获取行锁，防止并发创建
+        Long existCount = erpSaleOutMapper.selectCount(
+                new LambdaQueryWrapper<ErpSaleOutDO>()
+                        .eq(ErpSaleOutDO::getOrderId, orderId)
+                        .ne(ErpSaleOutDO::getStatus, ErpAuditStatus.REJECT.getStatus()));
+        if (existCount > 0) {
+            throw exception(SALE_OUT_ALREADY_EXISTS);
+        }
+
+        // 3. 获取订单项
+        List<ErpSaleOrderItemDO> orderItems = erpSaleOrderItemMapper.selectListByOrderId(orderId);
+        if (CollUtil.isEmpty(orderItems)) {
+            throw exception(SALE_ORDER_ITEM_NOT_EXISTS);
+        }
+
+        // 4. 构建出库单保存请求
+        cn.iocoder.yudao.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO reqVO =
+                new cn.iocoder.yudao.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO();
+        reqVO.setOrderId(orderId);
+        reqVO.setAccountId(order.getAccountId());
+        reqVO.setOutTime(java.time.LocalDateTime.now());
+
+        // 5. 构建出库项
+        List<cn.iocoder.yudao.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO.Item> outItems =
+                new java.util.ArrayList<>();
+        for (ErpSaleOrderItemDO orderItem : orderItems) {
+            // 计算剩余可出库数量
+            BigDecimal remainCount = orderItem.getCount().subtract(
+                    orderItem.getOutCount() != null ? orderItem.getOutCount() : BigDecimal.ZERO);
+            if (remainCount.compareTo(BigDecimal.ZERO) <= 0) {
+                continue; // 已全部出库，跳过
+            }
+
+            cn.iocoder.yudao.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO.Item outItem =
+                    new cn.iocoder.yudao.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO.Item();
+            outItem.setWarehouseId(warehouseId);
+            outItem.setProductId(orderItem.getProductId());
+            outItem.setProductUnitId(orderItem.getProductUnitId());
+            outItem.setCount(remainCount);
+            outItem.setProductPrice(orderItem.getProductPrice());
+            outItem.setTaxPercent(orderItem.getTaxPercent());
+            outItems.add(outItem);
+        }
+
+        if (outItems.isEmpty()) {
+            throw exception(SALE_ORDER_ITEM_ALL_OUTED);
+        }
+        reqVO.setItems(outItems);
+
+        // 6. 创建出库单
+        Long saleOutId = erpSaleOutService.createSaleOut(reqVO);
+
+        log.info("[createSaleOutFromRelease] 从发货放行创建出库单成功，orderId={}, saleOutId={}", orderId, saleOutId);
+        return saleOutId;
     }
 
 }

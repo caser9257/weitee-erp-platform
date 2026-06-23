@@ -19,6 +19,7 @@ import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
+import cn.iocoder.yudao.module.erp.service.finance.ErpArStatementService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import cn.iocoder.yudao.module.erp.service.stock.ErpStockRecordService;
@@ -75,6 +76,9 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
     @Resource
     @Lazy
     private ErpFinanceBizHookService financeBizHookService;
+    @Resource
+    @Lazy
+    private ErpArStatementService arStatementService;
 
     @Resource
     private AdminUserApi adminUserApi;
@@ -211,9 +215,13 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         if (approve) {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.SALE_RETURN.getType(), id,
                     defaultTime(saleReturn.getReturnTime(), saleReturn.getCreateTime(), saleReturn.getUpdateTime()).toLocalDate());
+            // 新增：创建应收台账（负向）
+            arStatementService.createStatementForSaleReturn(saleReturn);
         } else {
             financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.SALE_RETURN.getType(), id,
                     null, "销售退货反审核关闭双账套凭证");
+            // 新增：关闭应收台账
+            arStatementService.closeStatementByBiz(ErpBizTypeEnum.SALE_RETURN.getType(), id, "销售退货反审核");
         }
     }
 

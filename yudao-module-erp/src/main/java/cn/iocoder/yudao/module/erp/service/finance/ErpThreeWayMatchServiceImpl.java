@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.finance;
 
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
+import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.match.ErpThreeWayMatchPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpLeaseContractDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpServiceReceiptDO;
@@ -43,6 +44,7 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
     private ErpApInvoiceService erpApInvoiceService;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo) {
         // 1. 获取合同和接收单
         ErpLeaseContractDO contract = leaseContractMapper.selectById(leaseContractId);
@@ -55,13 +57,31 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
             throw exception(THREE_WAY_MATCH_RECEIPT_NOT_EXISTS);
         }
 
-        // 2. 从发票系统查询发票金额（安全：不信任前端传入的金额）
+        // 2. 幂等检查：同一合同+接收单不允许重复匹配
+        long existingCount = threeWayMatchMapper.selectCount(
+                new LambdaQueryWrapperX<ErpThreeWayMatchDO>()
+                        .eq(ErpThreeWayMatchDO::getLeaseContractId, leaseContractId)
+                        .eq(ErpThreeWayMatchDO::getServiceReceiptId, serviceReceiptId)
+        );
+        if (existingCount > 0) {
+            log.warn("[match] 重复匹配请求，leaseContractId={}, serviceReceiptId={}", leaseContractId, serviceReceiptId);
+            // 返回已存在的匹配记录ID
+            ErpThreeWayMatchDO existingMatch = threeWayMatchMapper.selectOne(
+                    new LambdaQueryWrapperX<ErpThreeWayMatchDO>()
+                            .eq(ErpThreeWayMatchDO::getLeaseContractId, leaseContractId)
+                            .eq(ErpThreeWayMatchDO::getServiceReceiptId, serviceReceiptId)
+                            .last("LIMIT 1")
+            );
+            return existingMatch.getId();
+        }
+
+        // 3. 从发票系统查询发票金额（安全：不信任前端传入的金额）
         BigDecimal invoiceAmount = erpApInvoiceService.getAmountByInvoiceNo(invoiceNo);
         if (invoiceAmount == null) {
             throw exception(THREE_WAY_MATCH_INVOICE_NOT_EXISTS);
         }
 
-        // 2. 执行匹配
+        // 4. 执行匹配
         BigDecimal contractAmount = contract.getMonthlyRent();
         BigDecimal receiptAmount = receipt.getAmount();
 
@@ -73,7 +93,8 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
             matchResult = 1; // 完全匹配
             matchRemark = "三单金额完全一致";
         } else if (contractAmount.compareTo(receiptAmount) == 0
-                || receiptAmount.compareTo(invoiceAmount) == 0) {
+                || receiptAmount.compareTo(invoiceAmount) == 0
+                || contractAmount.compareTo(invoiceAmount) == 0) {
             matchResult = 2; // 部分匹配
             matchRemark = "部分金额一致，需人工确认";
         } else {
@@ -81,7 +102,7 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
             matchRemark = "三单金额不一致";
         }
 
-        // 3. 保存匹配记录
+        // 5. 保存匹配记录
         ErpThreeWayMatchDO match = ErpThreeWayMatchDO.builder()
                 .leaseContractId(leaseContractId)
                 .leaseContractNo(contract.getNo())
@@ -130,14 +151,13 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
         }
 
         // TODO: 生成应付台账 - 需要实现 AP Statement 生成逻辑
-        // ErpApStatementDO apStatement = new ErpApStatementDO();
-        // apStatement.set...
-        // apStatementMapper.insert(apStatement);
+        // 当前实现：确认后状态变为"已确认"(10)，而非"已生成应付"(20)
+        // 待 AP Statement 功能实现后，应在生成成功后才将状态更新为 20
         log.warn("[confirmMatch] 应付台账生成功能尚未实现，matchId={}", id);
 
-        // 更新状态为已确认(10)，而非已生成应付(20)
-        // 只有在应付台账实际生成成功后，才能标记为20
-        match.setStatus(10); // 已确认
+        // 更新状态为已确认(10)
+        // 状态说明：0-待匹配 -> 10-已确认 -> 20-已生成应付（待实现）
+        match.setStatus(10);
         threeWayMatchMapper.updateById(match);
 
         log.info("[confirmMatch] 三单匹配已确认，matchId={}", id);

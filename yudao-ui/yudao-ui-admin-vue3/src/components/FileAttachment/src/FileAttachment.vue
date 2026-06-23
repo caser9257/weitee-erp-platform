@@ -35,8 +35,8 @@
 
     <!-- 空状态 -->
     <div v-else class="file-attachment__empty">
-      <Icon icon="ep:folder-opened" size="24" class="text-slate-300" />
-      <span class="text-slate-400 text-sm">暂无附件</span>
+      <Icon icon="ep:folder-opened" size="24" class="text-[var(--erp-slate-300)]" />
+      <span class="text-[var(--erp-slate-400)] text-sm">暂无附件</span>
     </div>
 
     <!-- 上传按钮 -->
