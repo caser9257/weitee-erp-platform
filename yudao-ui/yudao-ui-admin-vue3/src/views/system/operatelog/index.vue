@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="系统日志" url="https://doc.iocoder.cn/system-log/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -10,12 +8,12 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="操作人" prop="userId">
+      <el-form-item label="操作�? prop="userId">
         <el-select
           v-model="queryParams.userId"
           clearable
           filterable
-          placeholder="请输入操作人员"
+          placeholder="请输入操作人�?
           class="!w-240px"
         >
           <el-option
@@ -29,13 +27,13 @@
       <el-form-item label="操作模块" prop="type">
         <el-input
           v-model="queryParams.type"
-          placeholder="请输入操作模块"
+          placeholder="请输入操作模�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="操作名" prop="subType">
+      <el-form-item label="操作�? prop="subType">
         <el-input
           v-model="queryParams.subType"
           placeholder="请输入操作名"
@@ -58,7 +56,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -67,7 +65,7 @@
       <el-form-item label="业务编号" prop="bizId">
         <el-input
           v-model="queryParams.bizId"
-          placeholder="请输入业务编号"
+          placeholder="请输入业务编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -93,9 +91,9 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
       <el-table-column label="日志编号" align="center" prop="id" width="100" />
-      <el-table-column label="操作人" align="center" prop="userName" width="120" />
+      <el-table-column label="操作�? align="center" prop="userName" width="120" />
       <el-table-column label="操作模块" align="center" prop="type" width="120" />
-      <el-table-column label="操作名" align="center" prop="subType" width="160" />
+      <el-table-column label="操作�? align="center" prop="subType" width="160" />
       <el-table-column label="操作内容" align="center" prop="action" />
       <el-table-column
         label="操作时间"
@@ -128,7 +126,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <OperateLogDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -144,8 +142,8 @@ defineOptions({ name: 'SystemOperateLog' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -156,7 +154,7 @@ const queryParams = reactive({
   createTime: [],
   bizId: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -192,7 +190,7 @@ const openDetail = (data: OperateLogApi.OperateLogVO) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -204,7 +202,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 获得用户列表

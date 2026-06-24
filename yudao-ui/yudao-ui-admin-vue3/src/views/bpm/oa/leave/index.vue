@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="审批接入（业务表单）" url="https://doc.iocoder.cn/bpm/use-business-form/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -31,7 +29,7 @@
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
           end-placeholder="结束日期"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
         />
@@ -56,7 +54,7 @@
           v-model="queryParams.reason"
           class="!w-240px"
           clearable
-          placeholder="请输入原因"
+          placeholder="请输入原�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -81,7 +79,7 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
       <el-table-column align="center" label="申请编号" prop="id" />
-      <el-table-column align="center" label="状态" prop="status">
+      <el-table-column align="center" label="状�? prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" :value="scope.row.status" />
         </template>
@@ -89,7 +87,7 @@
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="开始时间"
+        label="开始时�?
         prop="startTime"
         width="180"
       />
@@ -171,11 +169,11 @@ defineOptions({ name: 'BpmOALeave' })
 
 const message = useMessage() // 消息弹窗
 const router = useRouter() // 路由
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -184,7 +182,7 @@ const queryParams = reactive({
   reason: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -238,10 +236,10 @@ const handleDetail = (row: LeaveApi.LeaveVO) => {
 /** 取消请假操作 */
 const cancelLeave = async (row) => {
   // 二次确认
-  const { value } = await ElMessageBox.prompt('请输入取消原因', '取消流程', {
+  const { value } = await ElMessageBox.prompt('请输入取消原�?, '取消流程', {
     confirmButtonText: t('common.ok'),
     cancelButtonText: t('common.cancel'),
-    inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空格
+    inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空�?
     inputErrorMessage: '取消原因不能为空'
   })
   // 发起取消
@@ -268,7 +266,7 @@ watch(
   }
 )
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

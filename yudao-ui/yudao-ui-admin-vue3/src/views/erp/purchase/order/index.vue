@@ -1,14 +1,12 @@
 <template>
-  <doc-alert title="【采购】采购订单、入库、退货" url="https://doc.iocoder.cn/erp/purchase/" />
-
-  <ContentWrap v-if="traceActive" class="purchase-order-page__trace-card">
+<ContentWrap v-if="traceActive" class="purchase-order-page__trace-card">
     <div class="purchase-order-trace">
       <div class="purchase-order-trace__text">
-        当前按销售订单
+        当前按销售订�?
         <el-tag class="mx-8px" type="success">{{ traceLabel }}</el-tag>
         追踪采购订单
       </div>
-      <el-button link type="primary" @click="clearTraceFilter">清除筛选</el-button>
+      <el-button link type="primary" @click="clearTraceFilter">清除筛�?/el-button>
     </div>
   </ContentWrap>
 
@@ -22,7 +20,7 @@
       </div>
       <div class="purchase-order-empty__title">当前账号没有采购订单查看权限</div>
       <div class="purchase-order-empty__desc">
-        销售追踪入口已阻止采购订单查询，请联系管理员分配采购订单查看权限。
+        销售追踪入口已阻止采购订单查询，请联系管理员分配采购订单查看权限�?
       </div>
       <div class="purchase-order-empty__actions">
         <el-button type="primary" @click="goBackFromUnauthorizedState">
@@ -44,15 +42,15 @@
         <el-form-item label="订单单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入订单单号"
+            placeholder="请输入订单单�?
             clearable
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="供应商" prop="supplierId">
+        <el-form-item label="供应�? prop="supplierId">
           <el-select
             v-model="queryParams.supplierId"
-            placeholder="请选择供应商"
+            placeholder="请选择供应�?
             clearable
             filterable
           >
@@ -79,7 +77,7 @@
             v-model="queryParams.orderTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             range-separator="-"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -102,8 +100,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="创建人" prop="creator">
-            <el-select v-model="queryParams.creator" placeholder="请选择创建人" clearable filterable>
+          <el-form-item label="创建�? prop="creator">
+            <el-select v-model="queryParams.creator" placeholder="请选择创建�? clearable filterable>
               <el-option
                 v-for="item in userList"
                 :key="item.id"
@@ -112,8 +110,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+          <el-form-item label="状�? prop="status">
+            <el-select v-model="queryParams.status" placeholder="请选择状�? clearable>
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -124,22 +122,22 @@
           </el-form-item>
           <el-form-item label="入库进度" prop="inStatus">
             <el-select v-model="queryParams.inStatus" placeholder="请选择入库进度" clearable>
-              <el-option label="未入库" value="0" />
+              <el-option label="未入�? value="0" />
               <el-option label="部分入库" value="1" />
               <el-option label="全部入库" value="2" />
             </el-select>
           </el-form-item>
-          <el-form-item label="退货进度" prop="returnStatus">
-            <el-select v-model="queryParams.returnStatus" placeholder="请选择退货进度" clearable>
-              <el-option label="未退货" value="0" />
-              <el-option label="部分退货" value="1" />
-              <el-option label="全部退货" value="2" />
+          <el-form-item label="退货进�? prop="returnStatus">
+            <el-select v-model="queryParams.returnStatus" placeholder="请选择退货进�? clearable>
+              <el-option label="未退�? value="0" />
+              <el-option label="部分退�? value="1" />
+              <el-option label="全部退�? value="2" />
             </el-select>
           </el-form-item>
           <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="请输入备注"
+              placeholder="请输入备�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -149,7 +147,7 @@
 
       <div class="purchase-order-query__footer">
         <el-button link type="primary" @click="toggleAdvancedSearch">
-          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+          {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
           <span v-if="advancedFilterCount" class="purchase-order-query__filter-count">
             {{ advancedFilterCount }}
           </span>
@@ -270,7 +268,7 @@
           <div class="ledger-party">
             <div class="ledger-party__supplier">{{ row.supplierName || '-' }}</div>
             <div class="ledger-party__meta" :title="row.sourceOrderNos || '-'">
-              <span class="ledger-party__tag">来源销售</span>
+              <span class="ledger-party__tag">来源销�?/span>
               <span class="ledger-party__text">{{ row.sourceOrderNos || '-' }}</span>
             </div>
             <div class="ledger-party__meta">
@@ -304,7 +302,7 @@
             </div>
             <div class="ledger-progress__section">
               <div class="ledger-progress__top">
-                <span>退货进度</span>
+                <span>退货进�?/span>
                 <strong>
                   {{ formatCount(row.returnCount) }} /
                   {{ formatCount(normalizeNumber(row.inCount) || normalizeNumber(row.totalCount)) }}
@@ -320,19 +318,19 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="财务结算（元）" min-width="124" align="right">
+      <el-table-column label="财务结算（元�? min-width="124" align="right">
         <template #default="{ row }">
           <div class="ledger-finance">
             <div class="ledger-finance__amount">{{ formatCurrency(row.totalPrice) }}</div>
             <div class="ledger-finance__meta">货款 {{ formatCurrency(row.totalProductPrice) }}</div>
             <div class="ledger-finance__sub">税额 {{ formatCurrency(row.totalTaxPrice) }}</div>
             <div class="ledger-finance__sub">
-              {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订金' }}
+              {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订�? }}
             </div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="付款状态" min-width="100" align="center">
+      <el-table-column label="付款状�? min-width="100" align="center">
         <template #default="{ row }">
           <span
             class="payment-tag"
@@ -342,14 +340,14 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="已付金额（元）" min-width="110" align="right">
+      <el-table-column label="已付金额（元�? min-width="110" align="right">
         <template #default="{ row }">
           <div class="ledger-payment-amount">
             {{ formatPaymentPrice(row.paymentPrice) }}
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="状态 / 入库" min-width="110">
+      <el-table-column label="状�?/ 入库" min-width="110">
         <template #default="{ row }">
           <div class="ledger-status">
             <div class="ledger-status__badges">
@@ -488,7 +486,7 @@
             <div class="purchase-order-mobile-card__party">
               <div class="purchase-order-mobile-card__supplier">{{ row.supplierName || '-' }}</div>
               <div class="purchase-order-mobile-card__detail">
-                <span class="purchase-order-mobile-card__detail-tag">来源销售</span>
+                <span class="purchase-order-mobile-card__detail-tag">来源销�?/span>
                 <span>{{ row.sourceOrderNos || '-' }}</span>
               </div>
               <div class="purchase-order-mobile-card__detail">
@@ -504,7 +502,7 @@
               <span>货款 {{ formatCurrency(row.totalProductPrice) }}</span>
               <span>税额 {{ formatCurrency(row.totalTaxPrice) }}</span>
               <span>
-                {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订金' }}
+                {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订�? }}
               </span>
               <span class="purchase-order-mobile-card__payment">
                 已付 {{ formatPaymentPrice(row.paymentPrice) }}
@@ -529,7 +527,7 @@
             </div>
             <div class="purchase-order-mobile-card__metric">
               <div class="purchase-order-mobile-card__metric-top">
-                <span>退货进度</span>
+                <span>退货进�?/span>
                 <strong>
                   {{ formatCount(row.returnCount) }} /
                   {{ formatCount(normalizeNumber(row.inCount) || normalizeNumber(row.totalCount)) }}
@@ -605,7 +603,7 @@
     </div>
 
     <div class="purchase-order-page__footer">
-      <div class="purchase-order-page__record-count">共 {{ total }} 条记录</div>
+      <div class="purchase-order-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         v-model:page="queryParams.pageNo"
         v-model:limit="queryParams.pageSize"
@@ -761,12 +759,12 @@ const traceLabel = computed(() => {
 })
 const unauthorizedBackLabel = computed(() => {
   if (route.query.traceFrom === 'closure-workbench') {
-    return '返回闭环工作台'
+    return '返回闭环工作�?
   }
   if (route.query.traceFrom === 'mrp-trace') {
     return '返回 MRP 追踪'
   }
-  return '返回销售订单台账'
+  return '返回销售订单台�?
 })
 
 const advancedFilterCount = computed(() => {
@@ -820,7 +818,7 @@ const resolvePaymentStatusLabel = (paymentStatus?: number) => {
       return '全额付款'
     case 0:
     default:
-      return '未付款'
+      return '未付�?
   }
 }
 
@@ -909,12 +907,12 @@ const resolveReturnText = (row: PurchaseOrderVO) => {
   const base = normalizeNumber(row.inCount) || normalizeNumber(row.totalCount)
   const returnCount = normalizeNumber(row.returnCount)
   if (returnCount <= 0) {
-    return '未退货'
+    return '未退�?
   }
   if (returnCount >= base && base > 0) {
-    return '已全部退货'
+    return '已全部退�?
   }
-  return '部分退货'
+  return '部分退�?
 }
 
 const resolveInboundResultTagType = (row: PurchaseOrderVO): 'info' | 'warning' | 'success' => {
@@ -1335,7 +1333,7 @@ const handleCancelApproval = async (row: PurchaseOrderVO) => {
     return
   }
   try {
-    const { value } = await ElMessageBox.prompt('请输入撤回原因', '撤回审批', {
+    const { value } = await ElMessageBox.prompt('请输入撤回原�?, '撤回审批', {
       confirmButtonText: t('common.ok'),
       cancelButtonText: t('common.cancel'),
       inputPattern: /^[\s\S]*.*\S[\s\S]*$/,

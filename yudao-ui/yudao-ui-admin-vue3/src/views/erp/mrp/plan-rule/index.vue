@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="【MRP】计划参数" url="https://doc.iocoder.cn/erp/mrp/" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -26,11 +24,11 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="状�? prop="status">
         <el-select
           v-model="queryParams.status"
           clearable
-          placeholder="请选择状态"
+          placeholder="请选择状�?
           class="plan-rule-query-select"
         >
           <el-option
@@ -95,7 +93,7 @@
         </template>
       </el-table-column>
       <el-table-column label="安全库存" align="center" prop="safetyStock" min-width="100" />
-      <el-table-column label="最小批量" align="center" prop="minOrderQty" min-width="100" />
+      <el-table-column label="最小批�? align="center" prop="minOrderQty" min-width="100" />
       <el-table-column label="倍量" align="center" prop="orderMultiple" min-width="100" />
       <el-table-column label="固定批量" align="center" prop="fixedOrderQty" min-width="100">
         <template #default="scope">
@@ -103,9 +101,9 @@
           <span v-else>--</span>
         </template>
       </el-table-column>
-      <el-table-column label="采购提前期" align="center" prop="purchaseLeadDay" min-width="110" />
-      <el-table-column label="生产提前期" align="center" prop="makeLeadDay" min-width="110" />
-      <el-table-column label="默认供应商" align="center" prop="defaultSupplierName" min-width="140">
+      <el-table-column label="采购提前�? align="center" prop="purchaseLeadDay" min-width="110" />
+      <el-table-column label="生产提前�? align="center" prop="makeLeadDay" min-width="110" />
+      <el-table-column label="默认供应�? align="center" prop="defaultSupplierName" min-width="140">
         <template #default="scope">
           <span>{{ scope.row.defaultSupplierName || findSupplierName(scope.row.defaultSupplierId) || '--' }}</span>
         </template>
@@ -113,7 +111,7 @@
       <el-table-column label="缺料预警" align="center" prop="shortageWarnFlag" width="100">
         <template #default="scope">
           <el-tag :type="scope.row.shortageWarnFlag ? 'success' : 'info'">
-            {{ scope.row.shortageWarnFlag ? '开启' : '关闭' }}
+            {{ scope.row.shortageWarnFlag ? '开�? : '关闭' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -126,7 +124,7 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status" width="90">
+      <el-table-column label="状�? align="center" prop="status" width="90">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>

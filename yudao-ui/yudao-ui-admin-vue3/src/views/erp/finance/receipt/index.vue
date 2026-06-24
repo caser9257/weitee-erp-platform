@@ -1,10 +1,5 @@
 <template>
-  <doc-alert
-    title="【财务】采购付款、销售收款"
-    url="https://doc.iocoder.cn/sale/finance-payment-receipt/"
-  />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -15,7 +10,7 @@
         <el-form-item label="收款单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入收款单号"
+            placeholder="请输入收款单�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -26,7 +21,7 @@
             v-model="queryParams.receiptTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
             class="!w-full"
@@ -48,12 +43,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="创建人" prop="creator">
+        <el-form-item label="创建�? prop="creator">
           <el-select
             v-model="queryParams.creator"
             clearable
             filterable
-            placeholder="请选择创建人"
+            placeholder="请选择创建�?
             class="!w-full"
           >
             <el-option
@@ -96,8 +91,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
+        <el-form-item label="状�? prop="status">
+          <el-select v-model="queryParams.status" placeholder="请选择状�? clearable class="!w-full">
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
               :key="dict.value"
@@ -109,7 +104,7 @@
         <el-form-item label="业务单号" prop="bizNo">
           <el-input
             v-model="queryParams.bizNo"
-            placeholder="请输入业务单号"
+            placeholder="请输入业务单�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -118,7 +113,7 @@
         <el-form-item label="备注" prop="remark">
           <el-input
             v-model="queryParams.remark"
-            placeholder="请输入备注"
+            placeholder="请输入备�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -176,7 +171,7 @@
     </div>
 
     <div v-if="listErrorMessage && !list.length" class="finance-receipt-page__state">
-      <el-result icon="error" title="收款单加载失败" :sub-title="listErrorMessage">
+      <el-result icon="error" title="收款单加载失�? :sub-title="listErrorMessage">
         <template #extra>
           <el-button type="primary" @click="getList">重试</el-button>
         </template>
@@ -202,17 +197,17 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="客户与单据" min-width="220">
+          <el-table-column label="客户与单�? min-width="220">
             <template #default="{ row }">
               <div class="finance-receipt-page__primary-cell">
                 <span class="finance-receipt-page__primary-text">{{ row.customerName || '-' }}</span>
                 <span class="finance-receipt-page__muted-text" :title="row.bizNo || '-'">
-                  {{ row.bizNo || '未关联业务单号' }}
+                  {{ row.bizNo || '未关联业务单�? }}
                 </span>
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="人员与账户" min-width="200">
+          <el-table-column label="人员与账�? min-width="200">
             <template #default="{ row }">
               <div class="finance-receipt-page__primary-cell">
                 <span class="finance-receipt-page__muted-text">{{ row.financeUserName || '-' }}</span>
@@ -220,7 +215,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="创建人" align="center" prop="creatorName" min-width="120" />
+          <el-table-column label="创建�? align="center" prop="creatorName" min-width="120" />
           <el-table-column
             label="合计收款"
             align="right"
@@ -245,7 +240,7 @@
             class-name="font-mono"
             :formatter="erpPriceTableColumnFormatter"
           />
-          <el-table-column label="状态" align="center" fixed="right" width="90" prop="status">
+          <el-table-column label="状�? align="center" fixed="right" width="90" prop="status">
             <template #default="{ row }">
               <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
             </template>
@@ -289,7 +284,7 @@
                 @click="handleUpdateStatus(row.id, 10)"
                 v-hasPermi="['erp:finance-receipt:update-status']"
               >
-                反审核
+                反审�?
               </el-button>
               <el-button
                 link
@@ -309,7 +304,7 @@
       <el-empty
         v-else
         class="finance-receipt-page__state"
-        description="暂无收款单数据"
+        description="暂无收款单数�?
       />
 
       <Pagination
@@ -407,7 +402,7 @@ const getList = async () => {
     )
   } catch {
     if (!list.value.length) {
-      listErrorMessage.value = '请检查网络或稍后重试。'
+      listErrorMessage.value = '请检查网络或稍后重试�?
     }
   } finally {
     loadingList.value = false
@@ -458,11 +453,16 @@ const handleUpdateStatus = async (id?: number, status?: number) => {
   if (!id || !status || statusLoadingId.value) {
     return
   }
+  const isApprove = status === 20
   try {
-    await message.confirm(`确定${status === 20 ? '审核' : '反审核'}该收款单吗？`)
+    await message.confirm(`确定${isApprove ? '审核' : '反审�?}该收款单吗？`)
     statusLoadingId.value = id
-    await FinanceReceiptApi.updateFinanceReceiptStatus(id, status)
-    message.success(`${status === 20 ? '审核' : '反审核'}成功`)
+    if (isApprove) {
+      await FinanceReceiptApi.approveFinanceReceipt(id)
+    } else {
+      await FinanceReceiptApi.unapproveFinanceReceipt(id)
+    }
+    message.success(`${isApprove ? '审核' : '反审�?}成功`)
     await getList()
   } catch (error) {
     if (!isActionCanceled(error)) {
@@ -478,7 +478,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await FinanceReceiptApi.exportFinanceReceipt(queryParams)
-    download.excel(data, '收款单.xls')
+    download.excel(data, '收款�?xls')
   } catch (error) {
     if (!isActionCanceled(error)) {
       throw error

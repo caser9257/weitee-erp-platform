@@ -1,10 +1,5 @@
 <template>
-  <doc-alert
-    title="【库存】库存调拨、库存盘点"
-    url="https://doc.iocoder.cn/erp/stock-move-check/"
-  />
-
-  <ContentWrap class="stock-move-page__filter-card">
+<ContentWrap class="stock-move-page__filter-card">
     <div class="stock-move-page__title">库存调拨台账</div>
     <el-form
       ref="queryFormRef"
@@ -16,7 +11,7 @@
         <el-form-item label="调拨单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入调拨单号"
+            placeholder="请输入调拨单�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -36,7 +31,7 @@
             v-model="queryParams.moveTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             range-separator="-"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -64,8 +59,8 @@
           v-if="advancedSearchVisible"
           class="stock-move-query__grid stock-move-query__grid--advanced"
         >
-          <el-form-item label="创建人" prop="creator">
-            <el-select v-model="queryParams.creator" clearable filterable placeholder="请选择创建人">
+          <el-form-item label="创建�? prop="creator">
+            <el-select v-model="queryParams.creator" clearable filterable placeholder="请选择创建�?>
               <el-option
                 v-for="item in userList"
                 :key="item.id"
@@ -74,8 +69,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
+          <el-form-item label="状�? prop="status">
+            <el-select v-model="queryParams.status" clearable placeholder="请选择状�?>
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -87,7 +82,7 @@
           <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="请输入备注"
+              placeholder="请输入备�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -97,7 +92,7 @@
 
       <div class="stock-move-query__footer">
         <el-button link type="primary" @click="toggleAdvancedSearch">
-          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+          {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
           <span v-if="advancedFilterCount" class="stock-move-query__filter-count">
             {{ advancedFilterCount }}
           </span>
@@ -124,7 +119,7 @@
           @click="openForm('create')"
           v-hasPermi="['erp:stock-move:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增调拨单
+          <Icon icon="ep:plus" class="mr-5px" /> 新增调拨�?
         </el-button>
         <el-button
           v-if="canExportStockMove"
@@ -203,7 +198,7 @@
             <div class="ledger-amount">{{ formatCurrency(row.totalPrice) }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" min-width="96" fixed="right">
+        <el-table-column label="状�? min-width="96" fixed="right">
           <template #default="{ row }">
             <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
           </template>
@@ -256,7 +251,7 @@
     </div>
 
     <div class="stock-move-page__footer">
-      <div class="stock-move-page__record-count">共 {{ total }} 条记录</div>
+      <div class="stock-move-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -395,7 +390,7 @@ const getAllActionDescriptors = (row: StockMoveListRow): StockMoveActionDescript
   if (canUpdateStockMoveStatus) {
     actions.push({
       key: 'toggleStatus',
-      label: canApprove(row) ? '审批' : '反审批',
+      label: canApprove(row) ? '审批' : '反审�?,
       type: canApprove(row) ? 'primary' : 'danger',
       disabled: isUpdatingStatus(row.id),
       loading: isUpdatingStatus(row.id)
@@ -499,7 +494,7 @@ const handleUpdateStatus = async (row: StockMoveListRow) => {
     return
   }
   const nextStatus = canApprove(row) ? 20 : 10
-  const actionText = nextStatus === 20 ? '审批' : '反审批'
+  const actionText = nextStatus === 20 ? '审批' : '反审�?
   try {
     await message.confirm(`确定${actionText}该调拨单吗？`)
     setIdsLoading(statusUpdatingIds, [row.id], true)
@@ -517,7 +512,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await StockMoveApi.exportStockMove(queryParams)
-    download.excel(data, '库存调拨单.xls')
+    download.excel(data, '库存调拨�?xls')
   } catch {
   } finally {
     exportLoading.value = false

@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="OAuth 2.0（SSO 单点登录)" url="https://doc.iocoder.cn/oauth2/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="用户编号" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -34,7 +32,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="客户端编号" prop="clientId">
+      <el-form-item label="客户端编�? prop="clientId">
         <el-input
           v-model="queryParams.clientId"
           placeholder="请输入客户端编号"
@@ -106,11 +104,11 @@ import * as OAuth2AccessTokenApi from '@/api/system/oauth2/token'
 defineOptions({ name: 'SystemTokenClient' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -118,7 +116,7 @@ const queryParams = reactive({
   userType: undefined,
   clientId: null
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -144,11 +142,11 @@ const resetQuery = () => {
   handleQuery()
 }
 
-/** 强制退出操作 */
+/** 强制退出操�?*/
 const handleForceLogout = async (accessToken: string) => {
   try {
-    // 删除的二次确认
-    await message.confirm('是否要强制退出用户')
+    // 删除的二次确�?
+    await message.confirm('是否要强制退出用�?)
     // 发起删除
     await OAuth2AccessTokenApi.deleteAccessToken(accessToken)
     message.success(t('common.success'))
@@ -157,7 +155,7 @@ const handleForceLogout = async (accessToken: string) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

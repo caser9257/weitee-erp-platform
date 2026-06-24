@@ -1,10 +1,5 @@
 <template>
-  <doc-alert
-    title="【库存】库存调拨、库存盘点"
-    url="https://doc.iocoder.cn/erp/stock-move-check/"
-  />
-
-  <ContentWrap class="stock-check-page__filter-card">
+<ContentWrap class="stock-check-page__filter-card">
     <div class="stock-check-page__title">库存盘点台账</div>
     <el-form
       ref="queryFormRef"
@@ -16,7 +11,7 @@
         <el-form-item label="盘点单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入盘点单号"
+            placeholder="请输入盘点单�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -36,7 +31,7 @@
             v-model="queryParams.checkTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             range-separator="-"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -59,8 +54,8 @@
           v-if="advancedSearchVisible"
           class="stock-check-query__grid stock-check-query__grid--advanced"
         >
-          <el-form-item label="创建人" prop="creator">
-            <el-select v-model="queryParams.creator" clearable filterable placeholder="请选择创建人">
+          <el-form-item label="创建�? prop="creator">
+            <el-select v-model="queryParams.creator" clearable filterable placeholder="请选择创建�?>
               <el-option
                 v-for="item in userList"
                 :key="item.id"
@@ -69,19 +64,19 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
+          <el-form-item label="状�? prop="status">
+            <el-select v-model="queryParams.status" clearable placeholder="请选择状�?>
               <el-option label="草稿" :value="StockCheckStatus.DRAFT" />
-              <el-option label="盘点中" :value="StockCheckStatus.COUNTING" />
-              <el-option label="审核中" :value="StockCheckStatus.REVIEWING" />
-              <el-option label="已审核" :value="StockCheckStatus.APPROVED" />
-              <el-option label="已关闭" :value="StockCheckStatus.CLOSED" />
+              <el-option label="盘点�? :value="StockCheckStatus.COUNTING" />
+              <el-option label="审核�? :value="StockCheckStatus.REVIEWING" />
+              <el-option label="已审�? :value="StockCheckStatus.APPROVED" />
+              <el-option label="已关�? :value="StockCheckStatus.CLOSED" />
             </el-select>
           </el-form-item>
           <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="请输入备注"
+              placeholder="请输入备�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -91,7 +86,7 @@
 
       <div class="stock-check-query__footer">
         <el-button link type="primary" @click="toggleAdvancedSearch">
-          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+          {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
           <span v-if="advancedFilterCount" class="stock-check-query__filter-count">
             {{ advancedFilterCount }}
           </span>
@@ -118,7 +113,7 @@
           @click="openForm('create')"
           v-hasPermi="['erp:stock-check:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增盘点单
+          <Icon icon="ep:plus" class="mr-5px" /> 新增盘点�?
         </el-button>
         <el-button
           v-if="canExportStockCheck"
@@ -197,7 +192,7 @@
             <div class="ledger-amount">{{ formatCurrency(row.totalPrice) }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" min-width="96" fixed="right">
+        <el-table-column label="状�? min-width="96" fixed="right">
           <template #default="{ row }">
             <el-tag :type="getStatusTagType(row.status)">
               {{ getStatusLabel(row.status) }}
@@ -252,7 +247,7 @@
     </div>
 
     <div class="stock-check-page__footer">
-      <div class="stock-check-page__record-count">共 {{ total }} 条记录</div>
+      <div class="stock-check-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -348,10 +343,10 @@ const formatDateValue = (value?: Date | string | number) =>
 const getStatusLabel = (status: number) => {
   const statusMap: Record<number, string> = {
     [StockCheckStatus.DRAFT]: '草稿',
-    [StockCheckStatus.COUNTING]: '盘点中',
-    [StockCheckStatus.REVIEWING]: '审核中',
-    [StockCheckStatus.APPROVED]: '已审核',
-    [StockCheckStatus.CLOSED]: '已关闭'
+    [StockCheckStatus.COUNTING]: '盘点�?,
+    [StockCheckStatus.REVIEWING]: '审核�?,
+    [StockCheckStatus.APPROVED]: '已审�?,
+    [StockCheckStatus.CLOSED]: '已关�?
   }
   return statusMap[status] || '未知'
 }
@@ -401,7 +396,7 @@ const getAllActionDescriptors = (row: StockCheckListRow): StockCheckActionDescri
     actions.push({ key: 'edit', label: '编辑' })
   }
   if (canUpdateStockCheckStatus) {
-    // 启动盘点（DRAFT → COUNTING）
+    // 启动盘点（DRAFT �?COUNTING�?
     if (canStartCounting(row)) {
       actions.push({
         key: 'startCounting',
@@ -411,7 +406,7 @@ const getAllActionDescriptors = (row: StockCheckListRow): StockCheckActionDescri
         loading: isUpdatingStatus(row.id)
       })
     }
-    // 提交审核（COUNTING → REVIEWING）
+    // 提交审核（COUNTING �?REVIEWING�?
     if (canSubmitForReview(row)) {
       actions.push({
         key: 'submitForReview',
@@ -421,7 +416,7 @@ const getAllActionDescriptors = (row: StockCheckListRow): StockCheckActionDescri
         loading: isUpdatingStatus(row.id)
       })
     }
-    // 审核通过（REVIEWING → CLOSED）
+    // 审核通过（REVIEWING �?CLOSED�?
     if (canApprove(row)) {
       actions.push({
         key: 'approve',
@@ -540,7 +535,7 @@ const handleUpdateStatus = async (row: StockCheckListRow) => {
     return
   }
   const nextStatus = canApprove(row) ? 20 : 10
-  const actionText = nextStatus === 20 ? '审批' : '反审批'
+  const actionText = nextStatus === 20 ? '审批' : '反审�?
   try {
     await message.confirm(`确定${actionText}该盘点单吗？`)
     setIdsLoading(statusUpdatingIds, [row.id], true)
@@ -558,7 +553,7 @@ const handleStartCounting = async (row: StockCheckListRow) => {
     return
   }
   try {
-    await message.confirm('确定启动盘点吗？将生成库存快照并冻结仓库。')
+    await message.confirm('确定启动盘点吗？将生成库存快照并冻结仓库�?)
     setIdsLoading(statusUpdatingIds, [row.id], true)
     await StockCheckApi.startCounting(row.id)
     message.success('启动盘点成功')
@@ -590,7 +585,7 @@ const handleApprove = async (row: StockCheckListRow) => {
     return
   }
   try {
-    await message.confirm('确定审核通过吗？将自动生成凭证并解冻仓库。')
+    await message.confirm('确定审核通过吗？将自动生成凭证并解冻仓库�?)
     setIdsLoading(statusUpdatingIds, [row.id], true)
     await StockCheckApi.approveAndClose(row.id)
     message.success('审核通过成功')
@@ -622,7 +617,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await StockCheckApi.exportStockCheck(queryParams)
-    download.excel(data, '库存盘点单.xls')
+    download.excel(data, '库存盘点�?xls')
   } catch {
   } finally {
     exportLoading.value = false

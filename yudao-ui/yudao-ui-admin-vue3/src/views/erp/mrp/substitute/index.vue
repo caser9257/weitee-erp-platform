@@ -1,17 +1,15 @@
 <template>
-  <doc-alert title="【ERP】替代料台账" url="https://doc.iocoder.cn/erp/mrp/" />
-
-  <ContentWrap class="substitute-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
+<ContentWrap class="substitute-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="substitute-page__header">
       <div>
-        <div class="substitute-page__title">替代料台账</div>
-        <div class="substitute-page__count">共 {{ total }} 条记录</div>
+        <div class="substitute-page__title">替代料台�?/div>
+        <div class="substitute-page__count">�?{{ total }} 条记�?/div>
       </div>
     </div>
   </ContentWrap>
 
   <ContentWrap class="substitute-page__filter-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('emerald')">
-    <div class="substitute-page__section-title">筛选条件</div>
+    <div class="substitute-page__section-title">筛选条�?/div>
 
     <el-alert
       v-if="optionLoadFailed"
@@ -52,12 +50,12 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="替代料" prop="substituteMaterialId">
+        <el-form-item label="替代�? prop="substituteMaterialId">
           <el-select
             v-model="queryParams.substituteMaterialId"
             clearable
             filterable
-            placeholder="请选择替代料"
+            placeholder="请选择替代�?
             :loading="optionLoading"
           >
             <el-option v-for="item in productOptions" :key="item.id" :label="item.name" :value="item.id" />
@@ -66,8 +64,8 @@
 
         <el-form-item label="自动推荐" prop="enableAutoRecommend">
           <el-select v-model="queryParams.enableAutoRecommend" clearable placeholder="请选择">
-            <el-option label="是" :value="true" />
-            <el-option label="否" :value="false" />
+            <el-option label="�? :value="true" />
+            <el-option label="�? :value="false" />
           </el-select>
         </el-form-item>
       </div>
@@ -119,7 +117,7 @@
             <div class="substitute-empty__icon">
               <Icon icon="ep:warning-filled" />
             </div>
-            <div class="substitute-empty__title">替代料列表加载失败</div>
+            <div class="substitute-empty__title">替代料列表加载失�?/div>
             <el-button type="primary" plain :disabled="!canRetryList" @click="handleRetryList">
               重试加载
             </el-button>
@@ -128,7 +126,7 @@
             <div class="substitute-empty__icon">
               <Icon icon="ep:box" />
             </div>
-            <div class="substitute-empty__title">暂无替代料记录</div>
+            <div class="substitute-empty__title">暂无替代料记�?/div>
           </div>
         </template>
 
@@ -152,7 +150,7 @@
                 <span class="substitute-relation__value">{{ row.materialName || '-' }}</span>
               </div>
               <div class="substitute-relation__row">
-                <span class="substitute-relation__label">替代料</span>
+                <span class="substitute-relation__label">替代�?/span>
                 <span class="substitute-relation__value substitute-relation__value--strong">
                   {{ row.substituteMaterialName || '-' }}
                 </span>
@@ -165,7 +163,7 @@
           <template #default="{ row }">
             <div class="substitute-tags">
               <span class="substitute-pill substitute-pill--primary">
-                优先级 {{ row.priority ?? '-' }}
+                优先�?{{ row.priority ?? '-' }}
               </span>
               <span class="substitute-pill substitute-pill--success">
                 比例 {{ formatQty(row.replaceRatio) }}
@@ -196,7 +194,7 @@
     </div>
 
     <div class="substitute-page__footer">
-      <div class="substitute-page__record-count">共 {{ total }} 条记录</div>
+      <div class="substitute-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         v-model:page="queryParams.pageNo"
         v-model:limit="queryParams.pageSize"
@@ -246,7 +244,7 @@ const summaryCards = computed(() => [
   { label: '总记录数', value: formatCount(total.value), icon: 'ep:document', colorClass: 'stat-icon--blue' },
   { label: '自动推荐', value: formatCount(autoRecommendCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
   { label: '手动维护', value: formatCount(list.value.length - autoRecommendCount.value), icon: 'ep:edit', colorClass: 'stat-icon--amber' },
-  { label: '当前页', value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
+  { label: '当前�?, value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
 ])
 
 const formatCount = (value?: number | string | null) => {
@@ -307,7 +305,7 @@ const getList = async () => {
     list.value = []
     total.value = 0
     listLoadFailed.value = true
-    message.error(error?.message || '替代料列表加载失败')
+    message.error(error?.message || '替代料列表加载失�?)
   } finally {
     loadingList.value = false
   }

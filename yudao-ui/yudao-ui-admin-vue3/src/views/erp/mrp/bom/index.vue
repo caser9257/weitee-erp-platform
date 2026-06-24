@@ -1,11 +1,9 @@
 <template>
-  <doc-alert title="制造BOM" url="https://doc.iocoder.cn/erp/bom/" />
-
-  <ContentWrap class="bom-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
+<ContentWrap class="bom-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="bom-page__header">
       <div>
         <div class="bom-page__title">制造BOM</div>
-        <div class="bom-page__count">共 {{ total }} 条记录</div>
+        <div class="bom-page__count">�?{{ total }} 条记�?/div>
       </div>
       <div class="bom-page__actions">
         <el-button
@@ -21,7 +19,7 @@
   </ContentWrap>
 
   <ContentWrap class="bom-page__filter-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('emerald')">
-    <div class="bom-page__section-title">筛选条件</div>
+    <div class="bom-page__section-title">筛选条�?/div>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -33,7 +31,7 @@
           <el-input
             v-model="queryParams.bomCode"
             clearable
-            placeholder="请输入制造 BOM 编码"
+            placeholder="请输入制�?BOM 编码"
             @keyup.enter="handleQuery"
           />
         </el-form-item>
@@ -53,11 +51,11 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状�? prop="status">
           <el-select
             v-model="queryParams.status"
             clearable
-            placeholder="请选择状态"
+            placeholder="请选择状�?
           >
             <el-option
               v-for="item in BOM_STATUS_OPTIONS"
@@ -108,14 +106,14 @@
       <el-table-column label="成品" prop="productName" min-width="180" />
       <el-table-column label="版本" prop="version" width="120" align="center" />
       <el-table-column label="来源研发BOM" prop="sourceRdBomId" width="140" align="center" />
-      <el-table-column label="状态" width="120" align="center">
+      <el-table-column label="状�? width="120" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '已生效' : '草稿/停用' }}
+            {{ row.status === 1 ? '已生�? : '草稿/停用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="物料数" width="100" align="center">
+      <el-table-column label="物料�? width="100" align="center">
         <template #default="{ row }">
           {{ row.items?.length || 0 }}
         </template>
@@ -189,7 +187,7 @@ const message = useMessage()
 const { t } = useI18n()
 
 const BOM_STATUS_OPTIONS = [
-  { label: '已生效', value: 1 },
+  { label: '已生�?, value: 1 },
   { label: '草稿/停用', value: 0 }
 ]
 
@@ -215,10 +213,10 @@ const queryParams = reactive<BomPageReqVO>({
 // 统计卡片
 const activeCount = computed(() => list.value.filter((item) => item.status === 1).length)
 const summaryCards = computed(() => [
-  { label: '总BOM数', value: formatCount(total.value), icon: 'ep:document', colorClass: 'stat-icon--blue' },
-  { label: '已生效', value: formatCount(activeCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
+  { label: '总BOM�?, value: formatCount(total.value), icon: 'ep:document', colorClass: 'stat-icon--blue' },
+  { label: '已生�?, value: formatCount(activeCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
   { label: '草稿/停用', value: formatCount(list.value.length - activeCount.value), icon: 'ep:clock', colorClass: 'stat-icon--amber' },
-  { label: '当前页', value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
+  { label: '当前�?, value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
 ])
 
 const formatCount = (value?: number | string | null) => {
@@ -287,7 +285,7 @@ const handleUpdateStatus = async (id?: number, status?: number) => {
   }
   statusLoadingId.value = id
   try {
-    await message.confirm(status === 1 ? '确认将该制造 BOM 生效吗？' : '确认将该制造 BOM 停用吗？')
+    await message.confirm(status === 1 ? '确认将该制�?BOM 生效吗？' : '确认将该制�?BOM 停用吗？')
     await BomApi.updateBomStatus(id, status)
     message.success(t('common.updateSuccess'))
     await getList()

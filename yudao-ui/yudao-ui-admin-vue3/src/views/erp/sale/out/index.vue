@@ -1,14 +1,12 @@
 <template>
-  <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
-
-  <ContentWrap class="sale-out-page__filter-card">
-    <div class="sale-out-page__title">销售出库台账</div>
+<ContentWrap class="sale-out-page__filter-card">
+    <div class="sale-out-page__title">销售出库台�?/div>
     <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="sale-out-query">
       <div class="sale-out-query__grid sale-out-query__grid--primary">
         <el-form-item label="出库单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入出库单号"
+            placeholder="请输入出库单�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -31,7 +29,7 @@
         <el-form-item label="关联订单" prop="orderNo">
           <el-input
             v-model="queryParams.orderNo"
-            placeholder="请输入关联订单"
+            placeholder="请输入关联订�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -41,7 +39,7 @@
             v-model="queryParams.outTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             range-separator="-"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -81,12 +79,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="创建人" prop="creator">
+          <el-form-item label="创建�? prop="creator">
             <el-select
               v-model="queryParams.creator"
               clearable
               filterable
-              placeholder="请选择创建人"
+              placeholder="请选择创建�?
             >
               <el-option
                 v-for="item in userList"
@@ -111,15 +109,15 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="收款状态" prop="receiptStatus">
-            <el-select v-model="queryParams.receiptStatus" placeholder="请选择收款状态" clearable>
-              <el-option label="未收款" value="0" />
+          <el-form-item label="收款状�? prop="receiptStatus">
+            <el-select v-model="queryParams.receiptStatus" placeholder="请选择收款状�? clearable>
+              <el-option label="未收�? value="0" />
               <el-option label="部分收款" value="1" />
               <el-option label="全部收款" value="2" />
             </el-select>
           </el-form-item>
-          <el-form-item label="审核状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择审核状态" clearable>
+          <el-form-item label="审核状�? prop="status">
+            <el-select v-model="queryParams.status" placeholder="请选择审核状�? clearable>
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -131,7 +129,7 @@
           <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="请输入备注"
+              placeholder="请输入备�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -141,7 +139,7 @@
 
       <div class="sale-out-query__footer">
         <el-button link type="primary" @click="toggleAdvancedSearch">
-          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+          {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
           <span v-if="advancedFilterCount" class="sale-out-query__filter-count">
             {{ advancedFilterCount }}
           </span>
@@ -218,11 +216,11 @@
           <div class="ledger-order">
             <div class="ledger-order__no">{{ row.no || '-' }}</div>
             <div class="ledger-order__meta">出库 {{ formatDateValue(row.outTime) }}</div>
-            <div class="ledger-order__meta">创建人 {{ row.creatorName || '-' }}</div>
+            <div class="ledger-order__meta">创建�?{{ row.creatorName || '-' }}</div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="客户与订单" min-width="132">
+      <el-table-column label="客户与订�? min-width="132">
         <template #default="{ row }">
           <div class="ledger-party">
             <div class="ledger-party__customer">{{ row.customerName || '-' }}</div>
@@ -268,7 +266,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="金额结算（元）" min-width="116" align="right">
+      <el-table-column label="金额结算（元�? min-width="116" align="right">
         <template #default="{ row }">
           <div class="ledger-finance">
             <div class="ledger-finance__amount">{{ formatCurrency(row.totalPrice) }}</div>
@@ -277,7 +275,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="状态" min-width="96">
+      <el-table-column label="状�? min-width="96">
         <template #default="{ row }">
           <div class="ledger-status">
             <div class="ledger-status__badges">
@@ -330,7 +328,7 @@
               :disabled="isUpdatingStatus(row.id)"
               @click="handleCommand('reverseApprove', row)"
             >
-              反审批
+              反审�?
             </el-button>
             <el-button
               v-if="canRemove"
@@ -363,7 +361,7 @@
               <div class="sale-out-mobile-card__no">{{ row.no || '-' }}</div>
               <div class="sale-out-mobile-card__meta">
                 <span>出库 {{ formatDateValue(row.outTime) }}</span>
-                <span>创建人 {{ row.creatorName || '-' }}</span>
+                <span>创建�?{{ row.creatorName || '-' }}</span>
               </div>
             </div>
             <div class="sale-out-mobile-card__status">
@@ -452,7 +450,7 @@
               :disabled="isUpdatingStatus(row.id)"
               @click="handleCommand('reverseApprove', row)"
             >
-              反审批
+              反审�?
             </el-button>
             <el-button
               v-if="canRemove"
@@ -484,7 +482,7 @@
     </div>
 
     <div class="sale-out-page__footer">
-      <div class="sale-out-page__record-count">共 {{ total }} 条记录</div>
+      <div class="sale-out-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -621,10 +619,10 @@ const getReceiptStatusLabel = (row: SaleOutListRow) => {
   const totalPrice = normalizeNumber(row.totalPrice)
   const receiptPrice = normalizeNumber(row.receiptPrice)
   if (receiptPrice <= 0 || totalPrice <= 0) {
-    return '未收款'
+    return '未收�?
   }
   if (receiptPrice >= totalPrice) {
-    return '已收清'
+    return '已收�?
   }
   return '部分收款'
 }
@@ -753,10 +751,10 @@ const handleUpdateStatus = async (id: number, status: number) => {
     return
   }
   try {
-    await message.confirm(`确定${status === 20 ? '审批' : '反审批'}该出库吗？`)
+    await message.confirm(`确定${status === 20 ? '审批' : '反审�?}该出库吗？`)
     setIdsLoading(statusUpdatingIds, [id], true)
     await SaleOutApi.updateSaleOutStatus(id, status)
-    message.success(`${status === 20 ? '审批' : '反审批'}成功`)
+    message.success(`${status === 20 ? '审批' : '反审�?}成功`)
     await getList()
   } catch {
   } finally {
@@ -786,7 +784,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await SaleOutApi.exportSaleOut(queryParams)
-    download.excel(data, '销售出库.xls')
+    download.excel(data, '销售出�?xls')
   } catch {
   } finally {
     exportLoading.value = false

@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="邮件配置" url="https://doc.iocoder.cn/mail" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -12,13 +10,13 @@
       <el-form-item label="邮箱" prop="mail">
         <el-input
           v-model="queryParams.mail"
-          placeholder="请输入邮箱"
+          placeholder="请输入邮�?
           clearable
           class="!w-240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="用户名" prop="username">
+      <el-form-item label="用户�? prop="username">
         <el-input
           v-model="queryParams.username"
           placeholder="请输入用户名"
@@ -32,7 +30,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -68,15 +66,15 @@
       <el-table-column type="selection" width="55" />
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column label="邮箱" align="center" prop="mail" />
-      <el-table-column label="用户名" align="center" prop="username" />
-      <el-table-column label="SMTP 服务器域名" align="center" prop="host" />
-      <el-table-column label="SMTP 服务器端口" align="center" prop="port" />
-      <el-table-column label="是否开启 SSL" align="center" prop="sslEnable">
+      <el-table-column label="用户�? align="center" prop="username" />
+      <el-table-column label="SMTP 服务器域�? align="center" prop="host" />
+      <el-table-column label="SMTP 服务器端�? align="center" prop="port" />
+      <el-table-column label="是否开�?SSL" align="center" prop="sslEnable">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.sslEnable" />
         </template>
       </el-table-column>
-      <el-table-column label="是否开启 STARTTLS" align="center" prop="starttlsEnable">
+      <el-table-column label="是否开�?STARTTLS" align="center" prop="starttlsEnable">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.starttlsEnable" />
         </template>
@@ -118,7 +116,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <MailAccountForm ref="formRef" @success="getList" />
 </template>
 <script lang="ts" setup>
@@ -129,13 +127,13 @@ import MailAccountForm from './MailAccountForm.vue'
 
 defineOptions({ name: 'SystemMailAccount' })
 
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const message = useMessage() // 消息弹窗
 
 const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryFormRef = ref() // 搜索的表单
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
+const queryFormRef = ref() // 搜索的表�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -177,7 +175,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await MailAccountApi.deleteMailAccount(id)
@@ -195,7 +193,7 @@ const handleRowCheckboxChange = (rows: MailAccountApi.MailAccountVO[]) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await MailAccountApi.deleteMailAccountList(checkedIds.value)
@@ -206,7 +204,7 @@ const handleDeleteBatch = async () => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

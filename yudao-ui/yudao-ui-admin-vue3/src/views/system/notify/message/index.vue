@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="站内信配置" url="https://doc.iocoder.cn/notify/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="用户编号" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -37,7 +35,7 @@
       <el-form-item label="模板编码" prop="templateCode">
         <el-input
           v-model="queryParams.templateCode"
-          placeholder="请输入模板编码"
+          placeholder="请输入模板编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -63,7 +61,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -150,7 +148,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <NotifyMessageDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -162,8 +160,8 @@ import NotifyMessageDetail from './NotifyMessageDetail.vue'
 defineOptions({ name: 'SystemNotifyMessage' })
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -173,7 +171,7 @@ const queryParams = reactive({
   templateType: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -205,7 +203,7 @@ const openDetail = (data: NotifyMessageApi.NotifyMessageVO) => {
   detailRef.value.open(data)
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

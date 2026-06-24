@@ -1,14 +1,6 @@
 <template>
-  <doc-alert title="审批通过、不通过、驳回" url="https://doc.iocoder.cn/bpm/task-todo-done/" />
-  <doc-alert title="审批加签、减签" url="https://doc.iocoder.cn/bpm/sign/" />
-  <doc-alert
-    title="审批转办、委派、抄送"
-    url="https://doc.iocoder.cn/bpm/task-delegation-and-cc/"
-  />
-  <doc-alert title="审批加签、减签" url="https://doc.iocoder.cn/bpm/sign/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -21,7 +13,7 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入任务名称"
+          placeholder="请输入任务名�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -47,7 +39,7 @@
           />
         </el-select>
       </el-form-item>
-      <!-- 高级筛选 -->
+      <!-- 高级筛�?-->
       <el-form-item class="absolute right-0">
         <el-popover
           :visible="showPopover"
@@ -58,11 +50,11 @@
         >
           <template #reference>
             <el-button @click="showPopover = !showPopover">
-              <Icon icon="ep:plus" class="mr-5px" />高级筛选
+              <Icon icon="ep:plus" class="mr-5px" />高级筛�?
             </el-button>
           </template>
           <el-form-item
-            label="所属流程"
+            label="所属流�?
             class="font-bold"
             label-position="top"
             prop="processDefinitionKey"
@@ -87,7 +79,7 @@
               v-model="queryParams.createTime"
               value-format="YYYY-MM-DD HH:mm:ss"
               type="daterange"
-              start-placeholder="开始日期"
+              start-placeholder="开始日�?
               end-placeholder="结束日期"
               :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
               class="w-240px!"
@@ -123,7 +115,7 @@
       </el-table-column>
       <el-table-column
         align="center"
-        label="发起人"
+        label="发起�?
         prop="processInstance.startUser.nickname"
         width="100"
       />
@@ -177,8 +169,8 @@ const { push } = useRouter() // 路由
 const route = useRoute()
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const processDefinitionList = ref<any[]>([]) // 流程定义列表
 const queryParams = reactive({
   pageNo: 1,
@@ -188,9 +180,9 @@ const queryParams = reactive({
   processDefinitionKey: '',
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const categoryList = ref<CategoryVO[]>([]) // 流程分类列表
-const showPopover = ref(false) // 高级筛选是否展示
+const showPopover = ref(false) // 高级筛选是否展�?
 
 const applyRouteQuery = () => {
   const { processDefinitionKey, name } = route.query
@@ -242,7 +234,7 @@ const handleAudit = (row: any) => {
   })
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   applyRouteQuery()
   categoryList.value = await CategoryApi.getCategorySimpleList()

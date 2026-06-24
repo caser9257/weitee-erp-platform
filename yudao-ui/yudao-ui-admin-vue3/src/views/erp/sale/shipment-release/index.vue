@@ -102,10 +102,10 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click.stop="checkRow(row)">校验</el-button>
-            <el-button v-if="row.releaseStatus === 'FINANCE_REVIEW'" link type="success" @click.stop="approveRow(row)">通过</el-button>
-            <el-button v-if="row.releaseStatus === 'FINANCE_REVIEW'" link type="danger" @click.stop="rejectRow(row)">驳回</el-button>
-            <el-button v-if="row.releaseStatus === 'RELEASED'" link type="success" @click.stop="openConvertDialog(row)">转出库单</el-button>
+            <el-button link type="primary" @click.stop="checkRow(row)" v-hasPermi="['erp:shipment-release:check']">校验</el-button>
+            <el-button v-if="row.releaseStatus === 'FINANCE_REVIEW'" link type="success" @click.stop="approveRow(row)" v-hasPermi="['erp:shipment-release:approve']">通过</el-button>
+            <el-button v-if="row.releaseStatus === 'FINANCE_REVIEW'" link type="danger" @click.stop="rejectRow(row)" v-hasPermi="['erp:shipment-release:reject']">驳回</el-button>
+            <el-button v-if="row.releaseStatus === 'RELEASED'" link type="success" @click.stop="openConvertDialog(row)" v-hasPermi="['erp:shipment-release:check']">转出库单</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -264,7 +264,7 @@ const runCheck = async () => {
 const approveRow = async (row: ShipmentReleasePageVO) => {
   await ElMessageBox.prompt('请输入审核意见（可选）', '财务审核通过', { confirmButtonText: '通过', cancelButtonText: '取消', inputPlaceholder: '审核意见' })
     .then(async ({ value }) => {
-      await ShipmentReleaseApi.approveFinance(row.orderId, 0, value)
+      await ShipmentReleaseApi.approveFinance(row.orderId, value)
       ElMessage.success('已通过')
       await loadData()
     })
@@ -274,7 +274,7 @@ const approveRow = async (row: ShipmentReleasePageVO) => {
 const rejectRow = async (row: ShipmentReleasePageVO) => {
   await ElMessageBox.prompt('请输入驳回原因', '财务审核驳回', { confirmButtonText: '驳回', cancelButtonText: '取消', inputPlaceholder: '驳回原因' })
     .then(async ({ value }) => {
-      await ShipmentReleaseApi.rejectFinance(row.orderId, 0, value)
+      await ShipmentReleaseApi.rejectFinance(row.orderId, value)
       ElMessage.success('已驳回')
       await loadData()
     })

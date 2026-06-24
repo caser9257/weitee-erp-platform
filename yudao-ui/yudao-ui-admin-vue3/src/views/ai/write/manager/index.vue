@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 写作助手" url="https://doc.iocoder.cn/ai/write/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -14,7 +12,7 @@
         <el-select
           v-model="queryParams.userId"
           clearable
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           class="!w-240px"
         >
           <el-option
@@ -60,7 +58,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -100,7 +98,7 @@
         width="180"
         show-overflow-tooltip
       />
-      <el-table-column label="生成的内容" align="center" prop="generatedContent" width="180" />
+      <el-table-column label="生成的内�? align="center" prop="generatedContent" width="180" />
       <el-table-column label="原文" align="center" prop="originalContent" width="180" />
       <el-table-column label="长度" align="center" prop="length">
         <template #default="scope">
@@ -164,12 +162,12 @@ import * as UserApi from '@/api/system/user'
 defineOptions({ name: 'AiWriteManager' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const router = useRouter() // 路由
 
 const loading = ref(true) // 列表的加载中
-const list = ref<AiWriteRespVo[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<AiWriteRespVo[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive<AiWritePageReqVO>({
   pageNo: 1,
   pageSize: 10,
@@ -178,7 +176,7 @@ const queryParams = reactive<AiWritePageReqVO>({
   platform: undefined,
   createTime: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const userList = ref<UserApi.UserVO[]>([]) // 用户列表
 
 /** 查询列表 */
@@ -208,7 +206,7 @@ const resetQuery = () => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await WriteApi.deleteWrite(id)
@@ -218,7 +216,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   getList()
   // 获得用户列表

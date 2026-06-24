@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="上传下载" url="https://doc.iocoder.cn/file/" />
-
-  <!-- 搜索 -->
+<!-- 搜索 -->
   <ContentWrap>
     <el-form
       class="-mb-15px"
@@ -10,7 +8,7 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="配置名" prop="name">
+      <el-form-item label="配置�? prop="name">
         <el-input
           v-model="queryParams.name"
           placeholder="请输入配置名"
@@ -19,10 +17,10 @@
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="存储器" prop="storage">
+      <el-form-item label="存储�? prop="storage">
         <el-select
           v-model="queryParams.storage"
-          placeholder="请选择存储器"
+          placeholder="请选择存储�?
           clearable
           class="!w-240px"
         >
@@ -39,7 +37,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -74,14 +72,14 @@
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
       <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="配置名" align="center" prop="name" />
-      <el-table-column label="存储器" align="center" prop="storage">
+      <el-table-column label="配置�? align="center" prop="name" />
+      <el-table-column label="存储�? align="center" prop="storage">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_FILE_STORAGE" :value="scope.row.storage" />
         </template>
       </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="主配置" align="center" prop="primary">
+      <el-table-column label="主配�? align="center" prop="primary">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.master" />
         </template>
@@ -110,7 +108,7 @@
             @click="handleMaster(scope.row.id)"
             v-hasPermi="['infra:file-config:update']"
           >
-            主配置
+            主配�?
           </el-button>
           <el-button link type="primary" @click="handleTest(scope.row.id)"> 测试 </el-button>
           <el-button
@@ -133,7 +131,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <FileConfigForm ref="formRef" @success="getList" />
 </template>
 <script lang="ts" setup>
@@ -145,11 +143,11 @@ import { dateFormatter } from '@/utils/formatTime'
 defineOptions({ name: 'InfraFileConfig' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -157,7 +155,7 @@ const queryParams = reactive({
   storage: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -192,7 +190,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await FileConfigApi.deleteFileConfig(id)
@@ -210,7 +208,7 @@ const handleRowCheckboxChange = (rows) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await FileConfigApi.deleteFileConfigList(checkedIds.value)
@@ -221,10 +219,10 @@ const handleDeleteBatch = async () => {
   } catch {}
 }
 
-/** 主配置按钮操作 */
+/** 主配置按钮操�?*/
 const handleMaster = async (id) => {
   try {
-    await message.confirm('是否确认修改配置编号为"' + id + '"的数据项为主配置?')
+    await message.confirm('是否确认修改配置编号�?' + id + '"的数据项为主配置?')
     await FileConfigApi.updateFileConfigMaster(id)
     message.success(t('common.updateSuccess'))
     await getList()
@@ -235,12 +233,12 @@ const handleMaster = async (id) => {
 const handleTest = async (id) => {
   try {
     const response = await FileConfigApi.testFileConfig(id)
-    await message.confirm('是否要访问该文件？', '测试上传成功')
+    await message.confirm('是否要访问该文件�?, '测试上传成功')
     window.open(response, '_blank')
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

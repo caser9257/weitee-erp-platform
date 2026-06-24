@@ -1,9 +1,4 @@
 <template>
-  <doc-alert title="代码生成（单表）" url="https://doc.iocoder.cn/new-feature/" />
-  <doc-alert title="代码生成（树表）" url="https://doc.iocoder.cn/new-feature/tree/" />
-  <doc-alert title="代码生成（主子表）" url="https://doc.iocoder.cn/new-feature/master-sub/" />
-  <doc-alert title="单元测试" url="https://doc.iocoder.cn/unit-test/" />
-
   <!-- 搜索 -->
   <ContentWrap>
     <el-form
@@ -13,7 +8,7 @@
       class="-mb-15px"
       label-width="68px"
     >
-      <el-form-item label="表名称" prop="tableName">
+      <el-form-item label="表名�? prop="tableName">
         <el-input
           v-model="queryParams.tableName"
           class="!w-240px"
@@ -22,7 +17,7 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="表描述" prop="tableComment">
+      <el-form-item label="表描�? prop="tableComment">
         <el-input
           v-model="queryParams.tableComment"
           class="!w-240px"
@@ -37,7 +32,7 @@
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
           end-placeholder="结束日期"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
         />
@@ -72,18 +67,18 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column align="center" label="数据源">
+      <el-table-column align="center" label="数据�?>
         <template #default="scope">
           {{
             dataSourceConfigList.find((config) => config.id === scope.row.dataSourceConfigId)?.name
           }}
         </template>
       </el-table-column>
-      <el-table-column align="center" label="表名称" prop="tableName" width="200" />
+      <el-table-column align="center" label="表名�? prop="tableName" width="200" />
       <el-table-column
         :show-overflow-tooltip="true"
         align="center"
-        label="表描述"
+        label="表描�?
         prop="tableComment"
         width="200"
       />
@@ -158,7 +153,7 @@
 
   <!-- 弹窗：导入表 -->
   <ImportTable ref="importRef" @success="getList" />
-  <!-- 弹窗：预览代码 -->
+  <!-- 弹窗：预览代�?-->
   <PreviewCode ref="previewRef" />
 </template>
 <script lang="ts" setup>
@@ -172,12 +167,12 @@ import PreviewCode from './PreviewCode.vue'
 defineOptions({ name: 'InfraCodegen' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const { push } = useRouter() // 路由跳转
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -185,8 +180,8 @@ const queryParams = reactive({
   tableComment: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
-const dataSourceConfigList = ref<DataSourceConfigApi.DataSourceConfigVO[]>([]) // 数据源列表
+const queryFormRef = ref() // 搜索的表�?
+const dataSourceConfigList = ref<DataSourceConfigApi.DataSourceConfigVO[]>([]) // 数据源列�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -232,7 +227,7 @@ const handlePreview = (row: CodegenApi.CodegenTableVO) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await CodegenApi.deleteCodegenTable(id)
@@ -250,7 +245,7 @@ const handleRowCheckboxChange = (rows: CodegenApi.CodegenTableVO[]) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await CodegenApi.deleteCodegenTableList(checkedIds.value)
@@ -266,7 +261,7 @@ const handleSyncDB = async (row: CodegenApi.CodegenTableVO) => {
   // 基于 DB 同步
   const tableName = row.tableName
   try {
-    await message.confirm('确认要强制同步' + tableName + '表结构吗?', t('common.reminder'))
+    await message.confirm('确认要强制同�? + tableName + '表结构吗?', t('common.reminder'))
     await CodegenApi.syncCodegenFromDB(row.id)
     message.success('同步成功')
   } catch {}
@@ -278,10 +273,10 @@ const handleGenTable = async (row: CodegenApi.CodegenTableVO) => {
   download.zip(res, 'codegen-' + row.className + '.zip')
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
-  // 加载数据源列表
+  // 加载数据源列�?
   dataSourceConfigList.value = await DataSourceConfigApi.getDataSourceConfigList()
 })
 </script>

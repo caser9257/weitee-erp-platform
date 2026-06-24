@@ -1,11 +1,9 @@
 <template>
-  <doc-alert title="【ERP】净需求策略" url="https://doc.iocoder.cn/erp/mrp/" />
-
-  <ContentWrap class="netting-policy-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
+<ContentWrap class="netting-policy-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="netting-policy-page__header">
       <div>
-        <div class="netting-policy-page__title">净需求策略</div>
-        <div class="netting-policy-page__count">共 {{ total }} 条记录</div>
+        <div class="netting-policy-page__title">净需求策�?/div>
+        <div class="netting-policy-page__count">�?{{ total }} 条记�?/div>
       </div>
       <div class="netting-policy-page__actions">
         <el-button
@@ -21,7 +19,7 @@
   </ContentWrap>
 
   <ContentWrap class="netting-policy-page__filter-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('emerald')">
-    <div class="netting-policy-page__section-title">筛选条件</div>
+    <div class="netting-policy-page__section-title">筛选条�?/div>
 
     <el-form
       ref="queryFormRef"
@@ -34,7 +32,7 @@
           <el-input
             v-model="queryParams.code"
             clearable
-            placeholder="请输入策略编码"
+            placeholder="请输入策略编�?
             @keyup.enter="handleQuery"
           />
         </el-form-item>
@@ -43,7 +41,7 @@
           <el-input
             v-model="queryParams.name"
             clearable
-            placeholder="请输入策略名称"
+            placeholder="请输入策略名�?
             @keyup.enter="handleQuery"
           />
         </el-form-item>
@@ -59,8 +57,8 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
+        <el-form-item label="状�? prop="status">
+          <el-select v-model="queryParams.status" clearable placeholder="请选择状�?>
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
               :key="dict.value"
@@ -118,7 +116,7 @@
             <div class="netting-policy-empty__icon">
               <Icon icon="ep:warning-filled" />
             </div>
-            <div class="netting-policy-empty__title">净需求策略加载失败</div>
+            <div class="netting-policy-empty__title">净需求策略加载失�?/div>
             <el-button type="primary" plain :disabled="!canRetryList" @click="handleRetryList">
               重试加载
             </el-button>
@@ -127,7 +125,7 @@
             <div class="netting-policy-empty__icon">
               <Icon icon="ep:document" />
             </div>
-            <div class="netting-policy-empty__title">暂无净需求策略</div>
+            <div class="netting-policy-empty__title">暂无净需求策�?/div>
           </div>
         </template>
 
@@ -150,7 +148,7 @@
               <span v-for="item in row.businessTypes" :key="item" class="netting-policy-pill netting-policy-pill--neutral">
                 {{ getBusinessTypeLabel(item) }}
               </span>
-              <span v-if="!row.businessTypes?.length" class="netting-policy-tags__empty">未绑定</span>
+              <span v-if="!row.businessTypes?.length" class="netting-policy-tags__empty">未绑�?/span>
             </div>
           </template>
         </el-table-column>
@@ -168,10 +166,10 @@
                 class="netting-policy-pill"
                 :class="row.enableFlag ? 'netting-policy-pill--success' : 'netting-policy-pill--warning'"
               >
-                {{ row.enableFlag ? '已启用' : '已停用' }}
+                {{ row.enableFlag ? '已启�? : '已停�? }}
               </span>
               <span class="netting-policy-pill netting-policy-pill--info">
-                组件 {{ row.lines?.length || 0 }} 项
+                组件 {{ row.lines?.length || 0 }} �?
               </span>
             </div>
           </template>
@@ -213,7 +211,7 @@
     </div>
 
     <div class="netting-policy-page__footer">
-      <div class="netting-policy-page__record-count">共 {{ total }} 条记录</div>
+      <div class="netting-policy-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -269,9 +267,9 @@ const enabledCount = computed(() => list.value.filter((item) => item.enableFlag)
 const defaultCount = computed(() => list.value.filter((item) => item.defaultFlag).length)
 const summaryCards = computed(() => [
   { label: '总策略数', value: formatCount(total.value), icon: 'ep:document', colorClass: 'stat-icon--blue' },
-  { label: '已启用', value: formatCount(enabledCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
+  { label: '已启�?, value: formatCount(enabledCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
   { label: '默认策略', value: formatCount(defaultCount.value), icon: 'ep:key', colorClass: 'stat-icon--amber' },
-  { label: '当前页', value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
+  { label: '当前�?, value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
 ])
 
 const formatCount = (value?: number | string | null) => {
@@ -332,7 +330,7 @@ const getList = async () => {
     list.value = []
     total.value = 0
     listLoadFailed.value = true
-    message.error(error?.message || '净需求策略列表加载失败，请重试')
+    message.error(error?.message || '净需求策略列表加载失败，请重�?)
   } finally {
     listLoading.value = false
   }
@@ -368,7 +366,7 @@ const handleDelete = async (row: MrpNettingPolicyVO) => {
   }
   deletingId.value = row.id
   try {
-    await message.confirm(`确认删除策略【${row.name}】吗？`)
+    await message.confirm(`确认删除策略�?{row.name}】吗？`)
     await MrpNettingPolicyApi.deletePolicy(row.id)
     message.success('删除成功')
     await getList()

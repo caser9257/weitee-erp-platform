@@ -1,14 +1,12 @@
 <template>
-  <doc-alert title="ERP 手册（功能开启）" url="https://doc.iocoder.cn/erp/build/" />
-
-  <div class="flex flex-col">
-    <!-- 销售/采购的全局统计 -->
+<div class="flex flex-col">
+    <!-- 销�?采购的全局统计 -->
     <el-row :gutter="16" class="row">
       <el-col :md="6" :sm="12" :xs="24" :loading="loading">
-        <SummaryCard title="今日销售" :value="saleSummary?.todayPrice" />
+        <SummaryCard title="今日销�? :value="saleSummary?.todayPrice" />
       </el-col>
       <el-col :md="6" :sm="12" :xs="24" :loading="loading">
-        <SummaryCard title="昨日销售" :value="saleSummary?.yesterdayPrice" />
+        <SummaryCard title="昨日销�? :value="saleSummary?.yesterdayPrice" />
       </el-col>
       <el-col :md="6" :sm="12" :xs="24" :loading="loading">
         <SummaryCard title="今日采购" :value="purchaseSummary?.todayPrice" />
@@ -17,10 +15,10 @@
         <SummaryCard title="昨日采购" :value="purchaseSummary?.yesterdayPrice" />
       </el-col>
       <el-col :md="6" :sm="12" :xs="24" :loading="loading">
-        <SummaryCard title="本月销售" :value="saleSummary?.monthPrice" />
+        <SummaryCard title="本月销�? :value="saleSummary?.monthPrice" />
       </el-col>
       <el-col :md="6" :sm="12" :xs="24" :loading="loading">
-        <SummaryCard title="今年销售" :value="saleSummary?.yearPrice" />
+        <SummaryCard title="今年销�? :value="saleSummary?.yearPrice" />
       </el-col>
       <el-col :md="6" :sm="12" :xs="24" :loading="loading">
         <SummaryCard title="本月采购" :value="purchaseSummary?.monthPrice" />
@@ -29,11 +27,11 @@
         <SummaryCard title="今年采购" :value="purchaseSummary?.yearPrice" />
       </el-col>
     </el-row>
-    <!-- 销售/采购的时段统计 -->
+    <!-- 销�?采购的时段统�?-->
     <el-row :gutter="16" class="row">
-      <!-- 销售统计 -->
+      <!-- 销售统�?-->
       <el-col :md="12" :sm="12" :xs="24" :loading="loading">
-        <TimeSummaryChart title="销售统计" :value="saleTimeSummaryList" />
+        <TimeSummaryChart title="销售统�? :value="saleTimeSummaryList" />
       </el-col>
       <!-- 采购统计 -->
       <el-col :md="12" :sm="12" :xs="24" :loading="loading">
@@ -59,11 +57,11 @@ import {
 /** 商城首页 */
 defineOptions({ name: 'ErpHome' })
 
-const loading = ref(true) // 加载中
+const loading = ref(true) // 加载�?
 
-/** 获得销售统计 */
-const saleSummary = ref<ErpSaleSummaryRespVO>() // 销售概况统计
-const saleTimeSummaryList = ref<ErpSaleTimeSummaryRespVO[]>() // 销售时段统计
+/** 获得销售统�?*/
+const saleSummary = ref<ErpSaleSummaryRespVO>() // 销售概况统�?
+const saleTimeSummaryList = ref<ErpSaleTimeSummaryRespVO[]>() // 销售时段统�?
 const getSaleSummary = async () => {
   saleSummary.value = await SaleStatisticsApi.getSaleSummary()
   saleTimeSummaryList.value = await SaleStatisticsApi.getSaleTimeSummary()
@@ -77,7 +75,7 @@ const getPurchaseSummary = async () => {
   purchaseTimeSummaryList.value = await PurchaseStatisticsApi.getPurchaseTimeSummary()
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   loading.value = true
   await Promise.all([getSaleSummary(), getPurchaseSummary()])

@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 绘图创作" url="https://doc.iocoder.cn/ai/image/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -14,7 +12,7 @@
         <el-select
           v-model="queryParams.userId"
           clearable
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           class="!w-240px"
         >
           <el-option
@@ -35,10 +33,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="绘画状态" prop="status">
+      <el-form-item label="绘画状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择绘画状态"
+          placeholder="请选择绘画状�?
           clearable
           class="!w-240px"
         >
@@ -70,7 +68,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -111,7 +109,7 @@
         </template>
       </el-table-column>
       <el-table-column label="模型" align="center" prop="model" width="180" />
-      <el-table-column label="绘画状态" align="center" prop="status" width="100">
+      <el-table-column label="绘画状�? align="center" prop="status" width="100">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.AI_IMAGE_STATUS" :value="scope.row.status" />
         </template>
@@ -127,7 +125,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="提示词" align="center" prop="prompt" width="180" />
+      <el-table-column label="提示�? align="center" prop="prompt" width="180" />
       <el-table-column
         label="创建时间"
         align="center"
@@ -173,11 +171,11 @@ import { AiImageStatusEnum } from '@/views/ai/utils/constants'
 defineOptions({ name: 'AiImageManager' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<ImageVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<ImageVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -187,7 +185,7 @@ const queryParams = reactive({
   publicStatus: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const userList = ref<UserApi.UserVO[]>([]) // 用户列表
 
 /** 查询列表 */
@@ -217,7 +215,7 @@ const resetQuery = () => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ImageApi.deleteImage(id)
@@ -232,8 +230,8 @@ const handleUpdatePublicStatusChange = async (row: ImageVO) => {
   try {
     // 修改状态的二次确认
     const text = row.publicStatus ? '公开' : '私有'
-    await message.confirm('确认要"' + text + '"该图片吗?')
-    // 发起修改状态
+    await message.confirm('确认�?' + text + '"该图片吗?')
+    // 发起修改状�?
     await ImageApi.updateImage({
       id: row.id,
       publicStatus: row.publicStatus
@@ -244,7 +242,7 @@ const handleUpdatePublicStatusChange = async (row: ImageVO) => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   getList()
   // 获得用户列表

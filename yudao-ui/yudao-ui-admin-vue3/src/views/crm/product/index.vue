@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="【产品】产品管理、产品分类" url="https://doc.iocoder.cn/crm/product/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,14 +11,14 @@
       <el-form-item label="产品名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入产品名称"
+          placeholder="请输入产品名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
+      <el-form-item label="状�? prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择状�? clearable class="!w-240px">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.CRM_PRODUCT_STATUS)"
             :key="dict.value"
@@ -67,19 +65,19 @@
       </el-table-column>
       <el-table-column label="产品编码" align="center" prop="no" />
       <el-table-column
-        label="价格（元）"
+        label="价格（元�?
         align="center"
         prop="price"
         :formatter="erpPriceTableColumnFormatter"
         width="100"
       />
       <el-table-column label="产品描述" align="center" prop="description" width="150" />
-      <el-table-column label="上架状态" align="center" prop="status" width="120">
+      <el-table-column label="上架状�? align="center" prop="status" width="120">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.CRM_PRODUCT_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="负责人" align="center" prop="ownerUserName" width="120" />
+      <el-table-column label="负责�? align="center" prop="ownerUserName" width="120" />
       <el-table-column
         label="更新时间"
         align="center"
@@ -87,7 +85,7 @@
         :formatter="dateFormatter"
         width="180px"
       />
-      <el-table-column label="创建人" align="center" prop="creatorName" width="120" />
+      <el-table-column label="创建�? align="center" prop="creatorName" width="120" />
       <el-table-column
         label="创建时间"
         align="center"
@@ -125,7 +123,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ProductForm ref="formRef" @success="getList" />
 </template>
 
@@ -140,18 +138,18 @@ import { erpPriceTableColumnFormatter } from '@/utils'
 defineOptions({ name: 'CrmProduct' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: undefined,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -193,7 +191,7 @@ const openDetail = (id: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ProductApi.deleteProduct(id)
@@ -206,7 +204,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -223,7 +221,7 @@ onActivated(() => {
   getList()
 })
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

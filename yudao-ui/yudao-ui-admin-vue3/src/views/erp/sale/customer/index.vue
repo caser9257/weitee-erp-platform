@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入名称"
+          placeholder="请输入名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -22,7 +20,7 @@
       <el-form-item label="手机号码" prop="mobile">
         <el-input
           v-model="queryParams.mobile"
-          placeholder="请输入手机号码"
+          placeholder="请输入手机号�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -31,7 +29,7 @@
       <el-form-item label="联系电话" prop="telephone">
         <el-input
           v-model="queryParams.telephone"
-          placeholder="请输入联系电话"
+          placeholder="请输入联系电�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -65,13 +63,13 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="名称" align="center" prop="name" />
-      <el-table-column label="联系人" align="center" prop="contact" />
+      <el-table-column label="联系�? align="center" prop="contact" />
       <el-table-column label="手机号码" align="center" prop="mobile" />
       <el-table-column label="联系电话" align="center" prop="telephone" />
       <el-table-column label="电子邮箱" align="center" prop="email" />
       <el-table-column label="备注" align="center" prop="remark" />
       <el-table-column label="排序" align="center" prop="sort" />
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -106,7 +104,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <CustomerForm ref="formRef" @success="getList" />
 </template>
 
@@ -121,11 +119,11 @@ import CustomerForm from './CustomerForm.vue'
 defineOptions({ name: 'ErpCustomer' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<CustomerVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<CustomerVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -133,7 +131,7 @@ const queryParams = reactive({
   mobile: undefined,
   telephone: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -169,7 +167,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await CustomerApi.deleteCustomer(id)
@@ -182,7 +180,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -194,7 +192,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

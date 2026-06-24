@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 对话聊天" url="https://doc.iocoder.cn/ai/chat/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="角色名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入角色名称"
+          placeholder="请输入角色名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -22,7 +20,7 @@
       <el-form-item label="角色类别" prop="category">
         <el-input
           v-model="queryParams.category"
-          placeholder="请输入角色类别"
+          placeholder="请输入角色类�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -71,16 +69,16 @@
       <el-table-column label="角色类别" align="center" prop="category" />
       <el-table-column label="角色描述" align="center" prop="description" />
       <el-table-column label="角色设定" align="center" prop="systemMessage" />
-      <el-table-column label="知识库" align="center" prop="knowledgeIds">
+      <el-table-column label="知识�? align="center" prop="knowledgeIds">
         <template #default="scope">
           <span v-if="!scope.row.knowledgeIds || scope.row.knowledgeIds.length === 0">-</span>
-          <span v-else>引用 {{ scope.row.knowledgeIds.length }} 个</span>
+          <span v-else>引用 {{ scope.row.knowledgeIds.length }} �?/span>
         </template>
       </el-table-column>
       <el-table-column label="工具" align="center" prop="toolIds">
         <template #default="scope">
           <span v-if="!scope.row.toolIds || scope.row.toolIds.length === 0">-</span>
-          <span v-else>引用 {{ scope.row.toolIds.length }} 个</span>
+          <span v-else>引用 {{ scope.row.toolIds.length }} �?/span>
         </template>
       </el-table-column>
       <el-table-column label="是否公开" align="center" prop="publicStatus">
@@ -88,7 +86,7 @@
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.publicStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -124,7 +122,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ChatRoleForm ref="formRef" @success="getList" />
 </template>
 
@@ -137,11 +135,11 @@ import ChatRoleForm from './ChatRoleForm.vue'
 defineOptions({ name: 'AiChatRole' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<ChatRoleVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<ChatRoleVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -149,7 +147,7 @@ const queryParams = reactive({
   category: undefined,
   publicStatus: true
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -184,7 +182,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ChatRoleApi.deleteChatRole(id)
@@ -194,7 +192,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

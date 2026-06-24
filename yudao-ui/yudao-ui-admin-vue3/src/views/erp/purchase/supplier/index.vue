@@ -1,13 +1,11 @@
 <template>
-  <doc-alert title="【采购】供应商" url="https://doc.iocoder.cn/erp/purchase/" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="supplier-query">
       <div class="supplier-query__grid">
         <el-form-item label="名称" prop="name">
           <el-input
             v-model="queryParams.name"
-            placeholder="请输入名称"
+            placeholder="请输入名�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -15,7 +13,7 @@
         <el-form-item label="手机号码" prop="mobile">
           <el-input
             v-model="queryParams.mobile"
-            placeholder="请输入手机号码"
+            placeholder="请输入手机号�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -23,7 +21,7 @@
         <el-form-item label="联系电话" prop="telephone">
           <el-input
             v-model="queryParams.telephone"
-            placeholder="请输入联系电话"
+            placeholder="请输入联系电�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -98,19 +96,19 @@
             <div class="supplier-empty__icon">
               <Icon icon="ep:box" />
             </div>
-            <div class="supplier-empty__title">暂无供应商记录</div>
+            <div class="supplier-empty__title">暂无供应商记�?/div>
           </div>
         </template>
         <el-table-column width="36" type="selection" />
         <el-table-column label="名称" align="center" prop="name" />
-        <el-table-column label="联系人" align="center" prop="contact" />
+        <el-table-column label="联系�? align="center" prop="contact" />
         <el-table-column label="手机号码" align="center" prop="mobile" />
         <el-table-column label="联系电话" align="center" prop="telephone" />
         <el-table-column label="电子邮箱" align="center" prop="email" />
         <el-table-column label="传真" align="center" prop="fax" />
         <el-table-column label="备注" align="center" prop="remark" />
         <el-table-column label="排序" align="center" prop="sort" />
-        <el-table-column label="状态" align="center" prop="status">
+        <el-table-column label="状�? align="center" prop="status">
           <template #default="scope">
             <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
           </template>
@@ -146,7 +144,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <SupplierForm ref="formRef" @success="getList" />
   <SupplierBatchEditDrawer ref="batchEditDrawerRef" @success="handleBatchEditSuccess" />
 </template>
@@ -158,16 +156,16 @@ import { SupplierApi, SupplierVO } from '@/api/erp/purchase/supplier'
 import SupplierForm from './SupplierForm.vue'
 import SupplierBatchEditDrawer from './components/SupplierBatchEditDrawer.vue'
 
-/** ERP 供应商 列表 */
+/** ERP 供应�?列表 */
 defineOptions({ name: 'ErpSupplier' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
 const listLoadFailed = ref(false)
-const list = ref<SupplierVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<SupplierVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const tableRef = ref()
 const queryParams = reactive({
   pageNo: 1,
@@ -176,7 +174,7 @@ const queryParams = reactive({
   mobile: undefined,
   telephone: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const selectedRows = ref<SupplierVO[]>([])
 const batchEditDrawerRef = ref()
@@ -231,7 +229,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await SupplierApi.deleteSupplier(id)
@@ -247,7 +245,7 @@ const handleSelectionChange = (rows: SupplierVO[]) => {
 
 const openBatchEditDrawer = () => {
   if (!selectedIds.value.length) {
-    message.warning('请先选择要修改的供应商')
+    message.warning('请先选择要修改的供应�?)
     return
   }
   batchEditDrawerRef.value?.open({
@@ -263,19 +261,19 @@ const handleBatchEditSuccess = async (_result: unknown) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
     const data = await SupplierApi.exportSupplier(queryParams)
-    download.excel(data, 'ERP 供应商.xls')
+    download.excel(data, 'ERP 供应�?xls')
   } catch {
   } finally {
     exportLoading.value = false
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

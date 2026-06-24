@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【客户】客户管理、公海客户" url="https://doc.iocoder.cn/crm/customer/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -34,11 +31,11 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入姓名"
+          placeholder="请输入姓�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="手机号" prop="mobile">
+      <el-form-item label="手机�? prop="mobile">
         <el-input
           v-model="queryParams.mobile"
           class="!w-240px"
@@ -52,7 +49,7 @@
           v-model="queryParams.telephone"
           class="!w-240px"
           clearable
-          placeholder="请输入电话"
+          placeholder="请输入电�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -61,7 +58,7 @@
           v-model="queryParams.wechat"
           class="!w-240px"
           clearable
-          placeholder="请输入微信"
+          placeholder="请输入微�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -70,7 +67,7 @@
           v-model="queryParams.email"
           class="!w-240px"
           clearable
-          placeholder="请输入电子邮箱"
+          placeholder="请输入电子邮�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -106,10 +103,10 @@
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
-      <el-table-column align="center" fixed="left" label="联系人姓名" prop="name" width="160">
+      <el-table-column align="center" fixed="left" label="联系人姓�? prop="name" width="160">
         <template #default="scope">
           <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
             {{ scope.row.name }}
@@ -132,7 +129,7 @@
       <el-table-column align="center" label="邮箱" prop="email" width="180" />
       <el-table-column align="center" label="职位" prop="post" width="120" />
       <el-table-column align="center" label="地址" prop="detailAddress" width="120" />
-      <el-table-column align="center" label="关键决策人" prop="master" width="100">
+      <el-table-column align="center" label="关键决策�? prop="master" width="100">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.master" />
         </template>
@@ -161,12 +158,12 @@
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="最后跟进时间"
+        label="最后跟进时�?
         prop="contactLastTime"
         width="180px"
       />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="120" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100" />
+      <el-table-column align="center" label="负责�? prop="ownerUserName" width="120" />
+      <el-table-column align="center" label="所属部�? prop="ownerUserDeptName" width="100" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
@@ -181,7 +178,7 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="120" />
+      <el-table-column align="center" label="创建�? prop="creatorName" width="120" />
       <el-table-column align="center" fixed="right" label="操作" width="200">
         <template #default="scope">
           <el-button
@@ -212,7 +209,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ContactForm ref="formRef" @success="getList" />
 </template>
 
@@ -228,15 +225,15 @@ import { TabsPaneContext } from 'element-plus'
 defineOptions({ name: 'CrmContact' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   mobile: undefined,
   telephone: undefined,
   email: undefined,
@@ -244,7 +241,7 @@ const queryParams = reactive({
   name: undefined,
   wechat: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 const customerList = ref<CustomerApi.CustomerVO[]>([]) // 客户列表
@@ -288,7 +285,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ContactApi.deleteContact(id)
@@ -301,19 +298,19 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
     const data = await ContactApi.exportContact(queryParams)
-    download.excel(data, '联系人.xls')
+    download.excel(data, '联系�?xls')
   } catch {
   } finally {
     exportLoading.value = false
   }
 }
 
-/** 打开联系人详情 */
+/** 打开联系人详�?*/
 const { push } = useRouter()
 const openDetail = (id: number) => {
   push({ name: 'CrmContactDetail', params: { id } })
@@ -324,7 +321,7 @@ const openCustomerDetail = (id: number) => {
   push({ name: 'CrmCustomerDetail', params: { id } })
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   customerList.value = await CustomerApi.getCustomerSimpleList()

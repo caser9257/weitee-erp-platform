@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="站内信配置" url="https://doc.iocoder.cn/notify/" />
-
-  <!-- 搜索工作栏 -->
+<!-- 搜索工作�?-->
   <ContentWrap>
     <el-form
       class="-mb-15px"
@@ -13,7 +11,7 @@
       <el-form-item label="模板名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入模板名称"
+          placeholder="请输入模板名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -22,16 +20,16 @@
       <el-form-item label="模板编号" prop="code">
         <el-input
           v-model="queryParams.code"
-          placeholder="请输入模版编码"
+          placeholder="请输入模版编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择开启状态"
+          placeholder="请选择开启状�?
           clearable
           class="!w-240px"
         >
@@ -48,7 +46,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -109,7 +107,7 @@
         width="200"
         :show-overflow-tooltip="true"
       />
-      <el-table-column label="开启状态" align="center" prop="status" width="80">
+      <el-table-column label="开启状�? align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -160,9 +158,9 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <NotifyTemplateForm ref="formRef" @success="getList" />
-  <!-- 表单弹窗：测试发送 -->
+  <!-- 表单弹窗：测试发�?-->
   <NotifyTemplateSendForm ref="sendFormRef" />
 </template>
 <script lang="ts" setup>
@@ -175,11 +173,11 @@ import NotifyTemplateSendForm from './NotifyTemplateSendForm.vue'
 defineOptions({ name: 'NotifySmsTemplate' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -188,7 +186,7 @@ const queryParams = reactive({
   code: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -223,7 +221,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await NotifyTemplateApi.deleteNotifyTemplate(id)
@@ -241,7 +239,7 @@ const handleRowCheckboxChange = (rows: NotifyTemplateApi.NotifyTemplateVO[]) => 
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await NotifyTemplateApi.deleteNotifyTemplateList(checkedIds.value)
@@ -258,7 +256,7 @@ const openSendForm = (row: NotifyTemplateApi.NotifyTemplateVO) => {
   sendFormRef.value.open(row.id)
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

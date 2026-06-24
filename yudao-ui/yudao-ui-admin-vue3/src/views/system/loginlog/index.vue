@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="系统日志" url="https://doc.iocoder.cn/system-log/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="用户名称" prop="username">
         <el-input
           v-model="queryParams.username"
-          placeholder="请输入用户名称"
+          placeholder="请输入用户名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -33,7 +31,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -66,7 +64,7 @@
       </el-table-column>
       <el-table-column label="用户名称" align="center" prop="username" width="180" />
       <el-table-column label="登录地址" align="center" prop="userIp" width="180" />
-      <el-table-column label="浏览器" align="center" prop="userAgent" />
+      <el-table-column label="浏览�? align="center" prop="userAgent" />
       <el-table-column label="登陆结果" align="center" prop="result">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_LOGIN_RESULT" :value="scope.row.result" />
@@ -101,7 +99,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <LoginLogDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -116,8 +114,8 @@ defineOptions({ name: 'SystemLoginLog' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -125,7 +123,7 @@ const queryParams = reactive({
   userIp: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -161,7 +159,7 @@ const openDetail = (data: LoginLogApi.LoginLogVO) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -173,7 +171,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

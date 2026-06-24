@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="【通用】跟进记录、待办事项" url="https://doc.iocoder.cn/crm/follow-up/" />
-
-  <el-row :gutter="20">
+<el-row :gutter="20">
     <el-col :span="4" class="min-w-[200px]">
       <div class="side-item-list">
         <div
@@ -64,12 +62,12 @@ const leftSides = ref([
     count: customerTodayContactCount
   },
   {
-    name: '分配给我的线索',
+    name: '分配给我的线�?,
     menu: 'clueFollow',
     count: clueFollowCount
   },
   {
-    name: '分配给我的客户',
+    name: '分配给我的客�?,
     menu: 'customerFollow',
     count: customerFollowCount
   },
@@ -79,22 +77,22 @@ const leftSides = ref([
     count: customerPutPoolRemindCount
   },
   {
-    name: '待审核合同',
+    name: '待审核合�?,
     menu: 'contractAudit',
     count: contractAuditCount
   },
   {
-    name: '待审核回款',
+    name: '待审核回�?,
     menu: 'receivableAudit',
     count: receivableAuditCount
   },
   {
-    name: '待回款提醒',
+    name: '待回款提�?,
     menu: 'receivablePlanRemind',
     count: receivablePlanRemindCount
   },
   {
-    name: '即将到期的合同',
+    name: '即将到期的合�?,
     menu: 'contractRemind',
     count: contractRemindCount
   }
@@ -127,7 +125,7 @@ onActivated(async () => {
   getCount()
 })
 
-/** 初始化 */
+/** 初始�?*/
 onMounted(async () => {
   getCount()
 })

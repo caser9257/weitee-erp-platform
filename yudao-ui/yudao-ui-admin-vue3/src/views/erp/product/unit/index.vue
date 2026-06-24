@@ -1,11 +1,9 @@
 <template>
-  <doc-alert title="【产品】产品信息、分类、单位" url="https://doc.iocoder.cn/erp/product/" />
-
-  <ContentWrap class="product-unit-page__header-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
+<ContentWrap class="product-unit-page__header-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="product-unit-page__header">
       <div>
-        <div class="product-unit-page__title">单位与换算</div>
-        <div class="product-unit-page__count">共 {{ total }} 条记录</div>
+        <div class="product-unit-page__title">单位与换�?/div>
+        <div class="product-unit-page__count">�?{{ total }} 条记�?/div>
       </div>
       <div class="product-unit-page__actions">
         <el-button
@@ -28,7 +26,7 @@
   </ContentWrap>
 
   <ContentWrap class="product-unit-page__filter-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('emerald')">
-    <div class="product-unit-page__section-title">筛选条件</div>
+    <div class="product-unit-page__section-title">筛选条�?/div>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -40,12 +38,12 @@
           <el-input
             v-model="queryParams.name"
             clearable
-            placeholder="请输入单位名字"
+            placeholder="请输入单位名�?
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="单位状态" prop="status">
-          <el-select v-model="queryParams.status" clearable placeholder="请选择单位状态">
+        <el-form-item label="单位状�? prop="status">
+          <el-select v-model="queryParams.status" clearable placeholder="请选择单位状�?>
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
               :key="dict.value"
@@ -74,7 +72,7 @@
       <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true" class="product-unit-table">
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="名字" align="center" prop="name" />
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -110,7 +108,7 @@
     </div>
 
     <div class="product-unit-page__footer">
-      <div class="product-unit-page__record-count">共 {{ total }} 条记录</div>
+      <div class="product-unit-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -120,7 +118,7 @@
     </div>
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ProductUnitForm ref="formRef" @success="getList" />
 </template>
 
@@ -136,18 +134,18 @@ import { getToneCardClass } from '../../stock/shared/stockTone'
 defineOptions({ name: 'ErpProductUnit' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<ProductUnitVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<ProductUnitVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: undefined,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -183,7 +181,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ProductUnitApi.deleteProductUnit(id)
@@ -196,7 +194,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -208,7 +206,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

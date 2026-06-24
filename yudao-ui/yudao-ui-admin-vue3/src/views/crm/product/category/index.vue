@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="【产品】产品管理、产品分类" url="https://doc.iocoder.cn/crm/product/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入名称"
+          placeholder="请输入名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -69,7 +67,7 @@
     </el-table>
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ProductCategoryForm ref="formRef" @success="getList" />
 </template>
 
@@ -82,14 +80,14 @@ import { handleTree } from '@/utils/tree'
 defineOptions({ name: 'CrmProductCategory' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<any[]>([]) // 列表的数据
+const list = ref<any[]>([]) // 列表的数�?
 const queryParams = reactive({
   name: null
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -122,7 +120,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ProductCategoryApi.deleteProductCategory(id)
@@ -132,7 +130,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

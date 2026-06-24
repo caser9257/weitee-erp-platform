@@ -1,13 +1,11 @@
 <template>
-  <doc-alert title="【财务】账簿管理" url="https://doc.iocoder.cn/erp/" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-ledger-page__query-form">
       <div class="finance-ledger-page__query-grid">
         <el-form-item label="账簿编码" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入账簿编码"
+            placeholder="请输入账簿编�?
             clearable
             class="!w-full"
             @keyup.enter="handleQuery"
@@ -16,14 +14,14 @@
         <el-form-item label="账簿名称" prop="name">
           <el-input
             v-model="queryParams.name"
-            placeholder="请输入账簿名称"
+            placeholder="请输入账簿名�?
             clearable
             class="!w-full"
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="启用状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="请选择启用状态" clearable class="!w-full">
+        <el-form-item label="启用状�? prop="status">
+          <el-select v-model="queryParams.status" placeholder="请选择启用状�? clearable class="!w-full">
             <el-option
               v-for="item in COMMON_STATUS_OPTIONS"
               :key="item.value"
@@ -34,14 +32,14 @@
         </el-form-item>
         <el-form-item label="默认账簿" prop="defaultStatus">
           <el-select v-model="queryParams.defaultStatus" placeholder="请选择默认账簿" clearable class="!w-full">
-            <el-option label="是" :value="true" />
-            <el-option label="否" :value="false" />
+            <el-option label="�? :value="true" />
+            <el-option label="�? :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input
             v-model="queryParams.remark"
-            placeholder="请输入备注"
+            placeholder="请输入备�?
             clearable
             class="!w-full"
             @keyup.enter="handleQuery"
@@ -101,7 +99,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="启用状态" align="center" width="110">
+          <el-table-column label="启用状�? align="center" width="110">
             <template #default="{ row }">
               <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
             </template>
@@ -109,7 +107,7 @@
           <el-table-column label="默认账簿" align="center" width="110">
             <template #default="{ row }">
               <el-tag :type="row.defaultStatus ? 'success' : 'info'" effect="light" round>
-                {{ row.defaultStatus ? '是' : '否' }}
+                {{ row.defaultStatus ? '�? : '�? }}
               </el-tag>
             </template>
           </el-table-column>
@@ -264,7 +262,7 @@ const toggleDefaultStatus = async (row: ErpFinanceLedgerVO) => {
   }
   const nextValue = !row.defaultStatus
   try {
-    await message.confirm(`确认${nextValue ? '设为' : '取消'}“${row.name || '-'}”为默认账簿吗？`)
+    await message.confirm(`确认${nextValue ? '设为' : '取消'}�?{row.name || '-'}”为默认账簿吗？`)
     defaultStatusLoadingId.value = row.id
     await FinanceLedgerApi.updateLedgerDefaultStatus(row.id, nextValue)
     message.success(nextValue ? '设为默认成功' : '取消默认成功')

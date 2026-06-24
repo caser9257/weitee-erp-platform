@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="邮件配置" url="https://doc.iocoder.cn/mail" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="模板编码" prop="code">
         <el-input
           v-model="queryParams.code"
-          placeholder="请输入模板编码"
+          placeholder="请输入模板编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -22,7 +20,7 @@
       <el-form-item label="模板名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入模板名称"
+          placeholder="请输入模板名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -43,10 +41,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="开启状态" prop="status">
+      <el-form-item label="开启状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择开启状态"
+          placeholder="请选择开启状�?
           clearable
           class="!w-240px"
         >
@@ -63,7 +61,7 @@
           v-model="queryParams.createTime"
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           class="!w-240px"
         />
@@ -136,7 +134,7 @@
         width="120"
         :show-overflow-tooltip="true"
       />
-      <el-table-column label="开启状态" align="center" prop="status" width="80">
+      <el-table-column label="开启状�? align="center" prop="status" width="80">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -186,9 +184,9 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <MailTemplateForm ref="formRef" @success="getList" />
-  <!-- 表单弹窗：测试发送 -->
+  <!-- 表单弹窗：测试发�?-->
   <MailTemplateSendForm ref="sendFormRef" />
 </template>
 <script lang="ts" setup>
@@ -202,12 +200,12 @@ import MailTemplateSendForm from './MailTemplateSendForm.vue'
 defineOptions({ name: 'SystemMailTemplate' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryFormRef = ref() // 搜索的表单
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
+const queryFormRef = ref() // 搜索的表�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -249,7 +247,7 @@ const openForm = (type: string, id?: number) => {
   formRef.value.open(type, id)
 }
 
-/** 发送邮件按钮 */
+/** 发送邮件按�?*/
 const sendFormRef = ref()
 const openSendForm = (id: number) => {
   sendFormRef.value.open(id)
@@ -258,7 +256,7 @@ const openSendForm = (id: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await MailTemplateApi.deleteMailTemplate(id)
@@ -276,7 +274,7 @@ const handleRowCheckboxChange = (rows: MailTemplateApi.MailTemplateVO[]) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await MailTemplateApi.deleteMailTemplateList(checkedIds.value)
@@ -293,7 +291,7 @@ const getAccountMail = (accountId: number) => {
   return account?.mail || ''
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 加载邮箱账号列表

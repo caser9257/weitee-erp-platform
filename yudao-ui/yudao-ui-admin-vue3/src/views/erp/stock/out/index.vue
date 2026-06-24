@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="【库存】其他入库、其他出库" url="https://doc.iocoder.cn/erp/stock-in-out/" />
-
-  <ContentWrap class="stock-out-page__filter-card">
+<ContentWrap class="stock-out-page__filter-card">
     <div class="stock-out-page__title">其他出库台账</div>
     <el-form
       ref="queryFormRef"
@@ -13,7 +11,7 @@
         <el-form-item label="出库单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入出库单号"
+            placeholder="请输入出库单�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -33,7 +31,7 @@
             v-model="queryParams.outTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             range-separator="-"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -66,8 +64,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="创建人" prop="creator">
-            <el-select v-model="queryParams.creator" clearable filterable placeholder="请选择创建人">
+          <el-form-item label="创建�? prop="creator">
+            <el-select v-model="queryParams.creator" clearable filterable placeholder="请选择创建�?>
               <el-option
                 v-for="item in userList"
                 :key="item.id"
@@ -76,8 +74,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
+          <el-form-item label="状�? prop="status">
+            <el-select v-model="queryParams.status" clearable placeholder="请选择状�?>
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -89,7 +87,7 @@
           <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="请输入备注"
+              placeholder="请输入备�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -99,7 +97,7 @@
 
       <div class="stock-out-query__footer">
         <el-button link type="primary" @click="toggleAdvancedSearch">
-          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+          {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
           <span v-if="advancedFilterCount" class="stock-out-query__filter-count">
             {{ advancedFilterCount }}
           </span>
@@ -126,7 +124,7 @@
           @click="openForm('create')"
           v-hasPermi="['erp:stock-out:create']"
         >
-          <Icon icon="ep:plus" class="mr-5px" /> 新增出库单
+          <Icon icon="ep:plus" class="mr-5px" /> 新增出库�?
         </el-button>
         <el-button
           v-if="canExportStockOut"
@@ -210,7 +208,7 @@
             <div class="ledger-amount">{{ formatCurrency(row.totalPrice) }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="状态" min-width="96" fixed="right">
+        <el-table-column label="状�? min-width="96" fixed="right">
           <template #default="{ row }">
             <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
           </template>
@@ -260,7 +258,7 @@
     </div>
 
     <div class="stock-out-page__footer">
-      <div class="stock-out-page__record-count">共 {{ total }} 条记录</div>
+      <div class="stock-out-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -389,7 +387,7 @@ const getAllActionDescriptors = (row: StockOutListRow): StockOutActionDescriptor
   if (canUpdateStockOutStatus) {
     actions.push({
       key: 'toggleStatus',
-      label: canApprove(row) ? '审批' : '反审批',
+      label: canApprove(row) ? '审批' : '反审�?,
       type: canApprove(row) ? 'primary' : 'danger',
       disabled: isUpdatingStatus(row.id),
       loading: isUpdatingStatus(row.id)
@@ -495,7 +493,7 @@ const handleUpdateStatus = async (row: StockOutListRow) => {
     return
   }
   const nextStatus = canApprove(row) ? 20 : 10
-  const actionText = nextStatus === 20 ? '审批' : '反审批'
+  const actionText = nextStatus === 20 ? '审批' : '反审�?
   try {
     await message.confirm(`确定${actionText}该出库单吗？`)
     setIdsLoading(statusUpdatingIds, [row.id], true)
@@ -513,7 +511,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await StockOutApi.exportStockOut(queryParams)
-    download.excel(data, '其他出库单.xls')
+    download.excel(data, '其他出库�?xls')
   } catch {
   } finally {
     exportLoading.value = false

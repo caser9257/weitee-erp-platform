@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="工作流手册" url="https://doc.iocoder.cn/bpm/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -10,8 +8,8 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="发起人" prop="startUserId">
-        <el-select v-model="queryParams.startUserId" placeholder="请选择发起人" class="!w-240px">
+      <el-form-item label="发起�? prop="startUserId">
+        <el-select v-model="queryParams.startUserId" placeholder="请选择发起�? class="!w-240px">
           <el-option
             v-for="user in userList"
             :key="user.id"
@@ -23,13 +21,13 @@
       <el-form-item label="流程名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入流程名称"
+          placeholder="请输入流程名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="所属流程" prop="processDefinitionId">
+      <el-form-item label="所属流�? prop="processDefinitionId">
         <el-input
           v-model="queryParams.processDefinitionId"
           placeholder="请输入流程定义的编号"
@@ -53,10 +51,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="流程状态" prop="status">
+      <el-form-item label="流程状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择流程状态"
+          placeholder="请选择流程状�?
           clearable
           class="!w-240px"
         >
@@ -73,7 +71,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -97,9 +95,9 @@
         min-width="100"
         fixed="left"
       />
-      <el-table-column label="流程发起人" align="center" prop="startUser.nickname" width="120" />
+      <el-table-column label="流程发起�? align="center" prop="startUser.nickname" width="120" />
       <el-table-column label="发起部门" align="center" prop="startUser.deptName" width="120" />
-      <el-table-column label="流程状态" prop="status" width="120">
+      <el-table-column label="流程状�? prop="status" width="120">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" :value="scope.row.status" />
         </template>
@@ -171,16 +169,16 @@ import { CategoryApi } from '@/api/bpm/category'
 import * as UserApi from '@/api/system/user'
 import { cancelProcessInstanceByAdmin } from '@/api/bpm/processInstance'
 
-// 它和【我的流程】的差异是，该菜单可以看全部的流程实例
+// 它和【我的流程】的差异是，该菜单可以看全部的流程实�?
 defineOptions({ name: 'BpmProcessInstanceManager' })
 
 const router = useRouter() // 路由
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -191,7 +189,7 @@ const queryParams = reactive({
   status: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const categoryList = ref([]) // 流程分类列表
 const userList = ref<any[]>([]) // 用户列表
 
@@ -232,10 +230,10 @@ const handleDetail = (row) => {
 /** 取消按钮操作 */
 const handleCancel = async (row) => {
   // 二次确认
-  const { value } = await ElMessageBox.prompt('请输入取消原因', '取消流程', {
+  const { value } = await ElMessageBox.prompt('请输入取消原�?, '取消流程', {
     confirmButtonText: t('common.ok'),
     cancelButtonText: t('common.cancel'),
-    inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空格
+    inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空�?
     inputErrorMessage: '取消原因不能为空'
   })
   // 发起取消
@@ -250,7 +248,7 @@ onActivated(() => {
   getList()
 })
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   categoryList.value = await CategoryApi.getCategorySimpleList()

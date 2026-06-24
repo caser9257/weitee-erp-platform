@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="工作流手册" url="https://doc.iocoder.cn/bpm/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -10,7 +8,7 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="分类名" prop="name">
+      <el-form-item label="分类�? prop="name">
         <el-input
           v-model="queryParams.name"
           placeholder="请输入分类名"
@@ -22,16 +20,16 @@
       <el-form-item label="分类标志" prop="code">
         <el-input
           v-model="queryParams.code"
-          placeholder="请输入分类标志"
+          placeholder="请输入分类标�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="分类状态" prop="status">
+      <el-form-item label="分类状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择分类状态"
+          placeholder="请选择分类状�?
           clearable
           class="!w-240px"
         >
@@ -48,7 +46,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -73,10 +71,10 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="分类编号" align="center" prop="id" />
-      <el-table-column label="分类名" align="center" prop="name" />
+      <el-table-column label="分类�? align="center" prop="name" />
       <el-table-column label="分类标志" align="center" prop="code" />
       <el-table-column label="分类描述" align="center" prop="description" />
-      <el-table-column label="分类状态" align="center" prop="status">
+      <el-table-column label="分类状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -119,7 +117,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <CategoryForm ref="formRef" @success="getList" />
 </template>
 
@@ -133,11 +131,11 @@ import CategoryForm from './CategoryForm.vue'
 defineOptions({ name: 'BpmCategory' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<CategoryVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<CategoryVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -146,7 +144,7 @@ const queryParams = reactive({
   status: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -182,7 +180,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await CategoryApi.deleteCategory(id)
@@ -192,7 +190,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

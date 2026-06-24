@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 手册" url="https://doc.iocoder.cn/ai/build/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="模型名字" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入模型名字"
+          placeholder="请输入模型名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -22,7 +20,7 @@
       <el-form-item label="模型标识" prop="model">
         <el-input
           v-model="queryParams.model"
-          placeholder="请输入模型标识"
+          placeholder="请输入模型标�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -31,7 +29,7 @@
       <el-form-item label="模型平台" prop="platform">
         <el-input
           v-model="queryParams.platform"
-          placeholder="请输入模型平台"
+          placeholder="请输入模型平�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -55,7 +53,7 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
-      <el-table-column label="所属平台" align="center" prop="platform" min-width="100">
+      <el-table-column label="所属平�? align="center" prop="platform" min-width="100">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.AI_PLATFORM" :value="scope.row.platform" />
         </template>
@@ -73,14 +71,14 @@
         </template>
       </el-table-column>
       <el-table-column label="排序" align="center" prop="sort" min-width="80" />
-      <el-table-column label="状态" align="center" prop="status" min-width="80">
+      <el-table-column label="状�? align="center" prop="status" min-width="80">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column label="温度参数" align="center" prop="temperature" min-width="80" />
-      <el-table-column label="回复数 Token 数" align="center" prop="maxTokens" min-width="140" />
-      <el-table-column label="上下文数量" align="center" prop="maxContexts" min-width="100" />
+      <el-table-column label="回复�?Token �? align="center" prop="maxTokens" min-width="140" />
+      <el-table-column label="上下文数�? align="center" prop="maxContexts" min-width="100" />
       <el-table-column label="操作" align="center" width="180" fixed="right">
         <template #default="scope">
           <el-button
@@ -111,7 +109,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ModelForm ref="formRef" @success="getList" />
 </template>
 
@@ -125,11 +123,11 @@ import { ApiKeyApi, ApiKeyVO } from '@/api/ai/model/apiKey'
 defineOptions({ name: 'AiModel' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<ModelVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<ModelVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -137,7 +135,7 @@ const queryParams = reactive({
   model: undefined,
   platform: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const apiKeyList = ref([] as ApiKeyVO[]) // API 密钥列表
 
 /** 查询列表 */
@@ -173,7 +171,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ModelApi.deleteModel(id)
@@ -183,7 +181,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 获得下拉数据

@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="【财务】采购付款" url="https://doc.iocoder.cn/sale/finance-payment-receipt/" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -12,7 +10,7 @@
         <el-form-item label="付款单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入付款单号"
+            placeholder="请输入付款单�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -23,18 +21,18 @@
             v-model="queryParams.paymentTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
             class="!w-full"
           />
         </el-form-item>
-        <el-form-item label="供应商" prop="supplierId">
+        <el-form-item label="供应�? prop="supplierId">
           <el-select
             v-model="queryParams.supplierId"
             clearable
             filterable
-            placeholder="请选择供应商"
+            placeholder="请选择供应�?
             class="!w-full"
           >
             <el-option
@@ -45,12 +43,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="创建人" prop="creator">
+        <el-form-item label="创建�? prop="creator">
           <el-select
             v-model="queryParams.creator"
             clearable
             filterable
-            placeholder="请选择创建人"
+            placeholder="请选择创建�?
             class="!w-full"
           >
             <el-option
@@ -93,8 +91,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
+        <el-form-item label="状�? prop="status">
+          <el-select v-model="queryParams.status" placeholder="请选择状�? clearable class="!w-full">
             <el-option
               v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
               :key="dict.value"
@@ -106,7 +104,7 @@
         <el-form-item label="业务单号" prop="bizNo">
           <el-input
             v-model="queryParams.bizNo"
-            placeholder="请输入业务单号"
+            placeholder="请输入业务单�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -115,7 +113,7 @@
         <el-form-item label="备注" prop="remark">
           <el-input
             v-model="queryParams.remark"
-            placeholder="请输入备注"
+            placeholder="请输入备�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -173,7 +171,7 @@
     </div>
 
     <div v-if="listErrorMessage && !list.length" class="finance-payment-page__state">
-      <el-result icon="error" title="付款单加载失败" :sub-title="listErrorMessage">
+      <el-result icon="error" title="付款单加载失�? :sub-title="listErrorMessage">
         <template #extra>
           <el-button type="primary" @click="getList">重试</el-button>
         </template>
@@ -204,12 +202,12 @@
               <div class="finance-payment-page__primary-cell">
                 <span class="finance-payment-page__primary-text">{{ row.supplierName || '-' }}</span>
                 <span class="finance-payment-page__muted-text" :title="row.bizNo || '-'">
-                  {{ row.bizNo || '未关联业务单号' }}
+                  {{ row.bizNo || '未关联业务单�? }}
                 </span>
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="人员与账户" min-width="200">
+          <el-table-column label="人员与账�? min-width="200">
             <template #default="{ row }">
               <div class="finance-payment-page__primary-cell">
                 <span class="finance-payment-page__muted-text">{{ row.financeUserName || '-' }}</span>
@@ -217,7 +215,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="创建人" align="center" prop="creatorName" min-width="120" />
+          <el-table-column label="创建�? align="center" prop="creatorName" min-width="120" />
           <el-table-column
             label="合计付款"
             align="right"
@@ -242,7 +240,7 @@
             class-name="font-mono"
             :formatter="erpPriceTableColumnFormatter"
           />
-          <el-table-column label="状态" align="center" fixed="right" width="90" prop="status">
+          <el-table-column label="状�? align="center" fixed="right" width="90" prop="status">
             <template #default="{ row }">
               <el-tag
                 size="small"
@@ -328,7 +326,7 @@
         </el-table>
       </div>
 
-      <el-empty v-else class="finance-payment-page__state" description="暂无付款单数据" />
+      <el-empty v-else class="finance-payment-page__state" description="暂无付款单数�? />
 
       <Pagination
         v-if="total > 0"
@@ -458,7 +456,7 @@ const getList = async () => {
     total.value = data.total || 0
   } catch {
     if (!list.value.length) {
-      listErrorMessage.value = '请检查网络或稍后重试。'
+      listErrorMessage.value = '请检查网络或稍后重试�?
     }
   } finally {
     loadingList.value = false
@@ -515,7 +513,7 @@ const handleCancelApproval = async (row?: FinancePaymentVO) => {
     return
   }
   try {
-    const { value } = await ElMessageBox.prompt('请输入撤回原因', '撤回审批', {
+    const { value } = await ElMessageBox.prompt('请输入撤回原�?, '撤回审批', {
       confirmButtonText: '确认撤回',
       cancelButtonText: '取消',
       inputPattern: /^[\s\S]*.*\S[\s\S]*$/,
@@ -543,7 +541,7 @@ const handleVoid = async (row?: FinancePaymentVO) => {
     return
   }
   try {
-    const { value } = await ElMessageBox.prompt('请输入作废原因', '作废付款单', {
+    const { value } = await ElMessageBox.prompt('请输入作废原�?, '作废付款�?, {
       confirmButtonText: '确认作废',
       cancelButtonText: '取消',
       inputPattern: /^[\s\S]*.*\S[\s\S]*$/,
@@ -571,7 +569,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await FinancePaymentApi.exportFinancePayment(queryParams)
-    download.excel(data, '付款单.xls')
+    download.excel(data, '付款�?xls')
   } catch (error) {
     if (!isActionCanceled(error)) {
       throw error

@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="【ERP】计划管理" url="https://doc.iocoder.cn/erp/mrp/" />
-
-  <ContentWrap>
+<ContentWrap>
     <div class="mrp-plan-header">MRP 计划列表</div>
     <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="mrp-plan-query-form">
       <el-form-item label="计划编号" prop="planNo">
@@ -22,8 +20,8 @@
           class="!w-full"
         />
       </el-form-item>
-      <el-form-item label="运行状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="全部状态" clearable class="!w-full">
+      <el-form-item label="运行状�? prop="status">
+        <el-select v-model="queryParams.status" placeholder="全部状�? clearable class="!w-full">
           <el-option
             v-for="item in planStatusOptions"
             :key="item.value"
@@ -37,7 +35,7 @@
           v-model="queryParams.planDate"
           type="daterange"
           value-format="YYYY-MM-DD"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           class="!w-full"
         />
@@ -65,7 +63,7 @@
       </div>
 
       <el-table v-loading="loading" :data="list" :show-overflow-tooltip="false" class="mrp-plan-table">
-        <el-table-column label="计划标识（名称/编号）" min-width="260">
+        <el-table-column label="计划标识（名�?编号�? min-width="260">
           <template #default="{ row }">
             <div class="mrp-plan-identity">
               <div class="mrp-plan-identity__title">{{ row.planName || '-' }}</div>
@@ -73,7 +71,7 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="运行状态" align="center" width="120">
+        <el-table-column label="运行状�? align="center" width="120">
           <template #default="{ row }">
             <span class="mrp-plan-status-chip" :class="getPlanStatusClass(row.status)">
               {{ getPlanStatusLabel(row.status) }}
@@ -84,17 +82,17 @@
           <template #default="{ row }">
             <div class="mrp-plan-time-stack">
               <div class="mrp-plan-time-stack__item">
-                <span class="mrp-plan-time-stack__label">起</span>
+                <span class="mrp-plan-time-stack__label">�?/span>
                 <span class="mrp-plan-time-stack__value">{{ formatPlanDate(row.planStartDate) }}</span>
               </div>
               <div class="mrp-plan-time-stack__item">
-                <span class="mrp-plan-time-stack__label">止</span>
+                <span class="mrp-plan-time-stack__label">�?/span>
                 <span class="mrp-plan-time-stack__value">{{ formatPlanDate(row.planEndDate) }}</span>
               </div>
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="系统时间（创建/运行）" min-width="210">
+        <el-table-column label="系统时间（创�?运行�? min-width="210">
           <template #default="{ row }">
             <div class="mrp-plan-time-stack">
               <div class="mrp-plan-time-stack__item">
@@ -179,14 +177,14 @@
       v-loading="planFormLoading"
     >
       <el-form-item label="计划名称" prop="planName">
-        <el-input v-model="planFormData.planName" placeholder="请输入计划名称" />
+        <el-input v-model="planFormData.planName" placeholder="请输入计划名�? />
       </el-form-item>
       <el-form-item label="计划区间" prop="planDateRange">
         <el-date-picker
           v-model="planDateRange"
           type="daterange"
           value-format="YYYY-MM-DD"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           class="!w-1/1"
         />
@@ -196,7 +194,7 @@
           v-model="planFormData.remark"
           type="textarea"
           :rows="3"
-          placeholder="请输入备注"
+          placeholder="请输入备�?
         />
       </el-form-item>
     </el-form>
@@ -213,8 +211,8 @@
     @close="resetResultDialogState"
   >
     <el-tabs v-model="resultTab">
-      <el-tab-pane :label="`运算结果（${resultList.length}）`" name="result" />
-      <el-tab-pane :label="`缺料清单（${shortageList.length}）`" name="shortage" />
+      <el-tab-pane :label="`运算结果�?{resultList.length}）`" name="result" />
+      <el-tab-pane :label="`缺料清单�?{shortageList.length}）`" name="shortage" />
     </el-tabs>
 
     <el-alert
@@ -246,11 +244,11 @@
       <el-form :model="resultFilterForm" label-width="70px" class="mb-12px">
         <el-row :gutter="12">
           <el-col :xl="8" :lg="8" :md="12" :sm="24" :xs="24">
-            <el-form-item label="关键字" class="!mb-12px">
+            <el-form-item label="关键�? class="!mb-12px">
               <el-input
                 v-model="resultFilterForm.keyword"
                 clearable
-                placeholder="请输入母项 / 物料 / 销售单号"
+                placeholder="请输入母�?/ 物料 / 销售单�?
               />
             </el-form-item>
           </el-col>
@@ -291,7 +289,7 @@
           <el-col :xl="5" :lg="24" :md="12" :sm="24" :xs="24">
             <el-form-item label-width="0" class="!mb-12px">
               <div class="flex w-full flex-wrap items-center justify-end gap-8px max-sm:justify-start">
-                <el-checkbox v-model="resultFilterForm.onlySkipped">仅看已跳过</el-checkbox>
+                <el-checkbox v-model="resultFilterForm.onlySkipped">仅看已跳�?/el-checkbox>
                 <el-button :disabled="!hasResultFilters" @click="handleResetResultFilters">
                   重置
                 </el-button>
@@ -315,7 +313,7 @@
         v-if="resultActiveFilterTags.length > 0"
         class="mb-12px flex flex-wrap items-center gap-8px rounded-4px border border-[var(--el-border-color-light)] px-12px py-10px"
       >
-        <span class="text-13px text-[var(--el-text-color-secondary)]">当前筛选</span>
+        <span class="text-13px text-[var(--el-text-color-secondary)]">当前筛�?/span>
         <el-tag
           v-for="item in resultActiveFilterTags"
           :key="item.key"
@@ -324,7 +322,7 @@
         >
           {{ item.label }}
         </el-tag>
-        <el-button link type="primary" @click="handleClearAllResultFilters">清空全部筛选</el-button>
+        <el-button link type="primary" @click="handleClearAllResultFilters">清空全部筛�?/el-button>
       </div>
 
       <div class="mb-12px rounded-4px border border-[var(--el-border-color-light)] p-12px">
@@ -362,7 +360,7 @@
               :disabled="resultLoading"
               @click="handleReviewFilterSkipped"
             >
-              <div class="mrp-summary-card__label">已跳过</div>
+              <div class="mrp-summary-card__label">已跳�?/div>
               <div class="mrp-summary-card__value">{{ resultReviewSummary.skippedCount }}</div>
             </button>
           </el-col>
@@ -387,7 +385,7 @@
             :disabled="resultLoading"
             @click="handleReviewFilterAll"
           >
-            清空复盘筛选
+            清空复盘筛�?
           </el-button>
           <el-tag
             v-for="item in resultReviewSummary.skipReasonBreakdown"
@@ -403,7 +401,7 @@
             v-if="resultReviewSummary.skipReasonBreakdown.length === 0"
             class="text-[var(--el-text-color-placeholder)]"
           >
-            无
+            �?
           </span>
         </div>
       </div>
@@ -436,11 +434,11 @@
             <span v-html="renderKeywordHighlight(scope.row.materialName, resultFilterForm.keyword)"></span>
           </template>
         </el-table-column>
-        <el-table-column label="毛需求" prop="grossDemandQty" align="center" min-width="110" />
+        <el-table-column label="毛需�? prop="grossDemandQty" align="center" min-width="110" />
         <el-table-column label="现存" prop="availableStockQty" align="center" min-width="110" />
-        <el-table-column label="在途" prop="incomingQty" align="center" min-width="110" />
+        <el-table-column label="在�? prop="incomingQty" align="center" min-width="110" />
         <el-table-column label="在制" prop="wipQty" align="center" min-width="110" />
-        <el-table-column label="净需求" prop="netDemandQty" align="center" min-width="110">
+        <el-table-column label="净需�? prop="netDemandQty" align="center" min-width="110">
           <template #default="scope">
             <el-tag type="danger">{{ formatQty(scope.row.netDemandQty) }}</el-tag>
           </template>
@@ -461,7 +459,7 @@
           </template>
         </el-table-column>
         <el-table-column label="建议日期" prop="suggestDate" align="center" width="120" />
-        <el-table-column label="需求日期" prop="demandDate" align="center" width="120" />
+        <el-table-column label="需求日�? prop="demandDate" align="center" width="120" />
         <el-table-column label="来源销售单" prop="sourceOrderId" align="center" min-width="110">
           <template #default="scope">
             <span v-html="renderKeywordHighlight(scope.row.sourceOrderId, resultFilterForm.keyword)"></span>
@@ -481,11 +479,11 @@
       <el-form :model="shortageFilterForm" label-width="70px" class="mb-12px">
         <el-row :gutter="12">
           <el-col :xl="12" :lg="12" :md="12" :sm="24" :xs="24">
-            <el-form-item label="关键字" class="!mb-12px">
+            <el-form-item label="关键�? class="!mb-12px">
               <el-input
                 v-model="shortageFilterForm.keyword"
                 clearable
-                placeholder="请输入母项 / 物料 / 销售单号"
+                placeholder="请输入母�?/ 物料 / 销售单�?
               />
             </el-form-item>
           </el-col>
@@ -515,7 +513,7 @@
         v-if="shortageActiveFilterTags.length > 0"
         class="mb-12px flex flex-wrap items-center gap-8px rounded-4px border border-[var(--el-border-color-light)] px-12px py-10px"
       >
-        <span class="text-13px text-[var(--el-text-color-secondary)]">当前筛选</span>
+        <span class="text-13px text-[var(--el-text-color-secondary)]">当前筛�?/span>
         <el-tag
           v-for="item in shortageActiveFilterTags"
           :key="item.key"
@@ -525,7 +523,7 @@
           {{ item.label }}
         </el-tag>
         <el-button link type="primary" @click="handleClearAllShortageFilters">
-          清空全部筛选
+          清空全部筛�?
         </el-button>
       </div>
 
@@ -543,18 +541,18 @@
                 <el-table :data="row.substitutes" border size="small">
                   <el-table-column type="index" label="#" width="56" align="center" />
                   <el-table-column label="替代物料" prop="substituteMaterialName" min-width="180" />
-                  <el-table-column label="优先级" prop="priority" width="100" align="center" />
+                  <el-table-column label="优先�? prop="priority" width="100" align="center" />
                   <el-table-column label="替换比例" prop="replaceRatio" width="120" align="center" />
                   <el-table-column label="自动推荐" width="120" align="center">
                     <template #default="{ row: substitute }">
-                      {{ substitute.enableAutoRecommend ? '是' : '否' }}
+                      {{ substitute.enableAutoRecommend ? '�? : '�? }}
                     </template>
                   </el-table-column>
                   <el-table-column label="排序" prop="sort" width="100" align="center" />
                   <el-table-column label="备注" prop="remark" min-width="160" />
                 </el-table>
               </template>
-              <el-empty v-else description="暂无替代料推荐" />
+              <el-empty v-else description="暂无替代料推�? />
             </div>
           </template>
         </el-table-column>
@@ -586,12 +584,12 @@
             <el-tag type="warning">{{ formatQty(scope.row.shortageQty) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="替代料推荐" align="center" min-width="120">
+        <el-table-column label="替代料推�? align="center" min-width="120">
           <template #default="scope">
             {{ formatShortageSubstituteSummary(scope.row.substitutes) }}
           </template>
         </el-table-column>
-        <el-table-column label="需求日期" prop="requiredDate" align="center" width="120" />
+        <el-table-column label="需求日�? prop="requiredDate" align="center" width="120" />
         <el-table-column label="来源销售单" prop="sourceOrderId" align="center" min-width="110">
           <template #default="scope">
             <span v-html="renderKeywordHighlight(scope.row.sourceOrderId, shortageFilterForm.keyword)"></span>
@@ -666,10 +664,10 @@ const queryParams = reactive<MrpPlanPageReqVO>({
 })
 
 const planStatusOptions = [
-  { label: '待运行', value: PLAN_DRAFT_STATUS, type: 'info' as TagType },
-  { label: '运行中', value: PLAN_RUNNING_STATUS, type: 'warning' as TagType },
-  { label: '已完成', value: PLAN_FINISHED_STATUS, type: 'success' as TagType },
-  { label: '已关闭', value: PLAN_CLOSED_STATUS, type: 'danger' as TagType },
+  { label: '待运�?, value: PLAN_DRAFT_STATUS, type: 'info' as TagType },
+  { label: '运行�?, value: PLAN_RUNNING_STATUS, type: 'warning' as TagType },
+  { label: '已完�?, value: PLAN_FINISHED_STATUS, type: 'success' as TagType },
+  { label: '已关�?, value: PLAN_CLOSED_STATUS, type: 'danger' as TagType },
   { label: '异常中止', value: PLAN_FAILED_STATUS, type: 'danger' as TagType }
 ]
 
@@ -741,11 +739,11 @@ const formatDateTimeText = (value?: string | number) => {
 }
 
 const getRunPlanConfirmText = (row: MrpPlanVO) => {
-  return `确定${getRunPlanActionLabel(row.status)}【${row.planName}】吗？`
+  return `确定${getRunPlanActionLabel(row.status)}�?{row.planName}】吗？`
 }
 
 const getRunPlanSuccessText = (row: MrpPlanVO) => {
-  return row.status === PLAN_FAILED_STATUS ? 'MRP 计划已重新提交后台运行' : 'MRP 计划已提交后台运行'
+  return row.status === PLAN_FAILED_STATUS ? 'MRP 计划已重新提交后台运�? : 'MRP 计划已提交后台运�?
 }
 
 const getSuggestTypeLabel = (type?: string) => {
@@ -773,23 +771,23 @@ const getBusinessTypeLabel = (businessType?: string) => {
 
 const getSkipReasonLabel = (skipReason?: string) => {
   if (!skipReason) {
-    return '无'
+    return '�?
   }
   if (skipReason === 'MRP_DISABLED') {
-    return '系统未参与'
+    return '系统未参�?
   }
   if (skipReason === 'CUSTOMER_SUPPLIED_CUSTOMER_OWNED') {
-    return '客供业务下客户供料，不参与运算'
+    return '客供业务下客户供料，不参与运�?
   }
   if (skipReason === 'TOLL_MANUFACTURING_DEFAULT_SKIP') {
-    return '来料加工默认跳过非公司供料'
+    return '来料加工默认跳过非公司供�?
   }
   return skipReason
 }
 
 const getSupplyModeLabel = (row: MrpResultVO) => {
   if (Number(row.netDemandQty ?? 0) <= 0) {
-    return '无建议'
+    return '无建�?
   }
   return getSuggestTypeLabel(row.suggestType)
 }
@@ -807,7 +805,7 @@ const formatTraceLevel = (value?: number | null) => {
   if (value === undefined || value === null) {
     return '-'
   }
-  return value === 0 ? '第 0 层' : `第 ${value} 层`
+  return value === 0 ? '�?0 �? : `�?${value} 层`
 }
 
 const formatShortageSubstituteSummary = (substitutes?: MrpShortageSubstituteVO[]) => {
@@ -844,7 +842,7 @@ const getList = async () => {
     total.value = 0
     Array.from(planPollingTimers.keys()).forEach((planId) => stopPlanPolling(planId))
     console.error('[MrpPlanPage][getList] error', error)
-    message.error('MRP 计划列表加载失败，请刷新后重试')
+    message.error('MRP 计划列表加载失败，请刷新后重�?)
   } finally {
     loading.value = false
   }
@@ -937,7 +935,7 @@ const planFormData = reactive<MrpPlanSaveReqVO>({
 })
 const planDateRange = ref<string[]>([])
 const planFormRules = reactive({
-  planName: [{ required: true, message: '请输入计划名称', trigger: 'blur' }],
+  planName: [{ required: true, message: '请输入计划名�?, trigger: 'blur' }],
   planDateRange: [
     {
       validator: (_rule, _value, callback) => {
@@ -1180,17 +1178,17 @@ const resultActiveFilterTags = computed<FilterTagItem[]>(() => {
   if (resultFilterForm.businessType) {
     tags.push({
       key: 'businessType',
-      label: `业务类型：${getBusinessTypeLabel(resultFilterForm.businessType)}`
+      label: `业务类型�?{getBusinessTypeLabel(resultFilterForm.businessType)}`
     })
   }
   if (resultFilterForm.skipReason) {
     tags.push({
       key: 'skipReason',
-      label: `跳过原因：${getSkipReasonLabel(resultFilterForm.skipReason)}`
+      label: `跳过原因�?{getSkipReasonLabel(resultFilterForm.skipReason)}`
     })
   }
   if (resultFilterForm.onlyActive) {
-    tags.push({ key: 'onlyActive', label: '复盘：参与运算' })
+    tags.push({ key: 'onlyActive', label: '复盘：参与运�? })
   } else if (resultFilterForm.onlySkipped && !resultFilterForm.skipReason) {
     tags.push({ key: 'onlySkipped', label: '复盘：仅看已跳过' })
   }
@@ -1207,14 +1205,14 @@ const shortageActiveFilterTags = computed<FilterTagItem[]>(() => {
 
 const resultExportSummary = computed(() => {
   return resultActiveFilterTags.value.length > 0
-    ? resultActiveFilterTags.value.map((item) => item.label).join('；')
-    : '无筛选'
+    ? resultActiveFilterTags.value.map((item) => item.label).join('�?)
+    : '无筛�?
 })
 
 const shortageExportSummary = computed(() => {
   return shortageActiveFilterTags.value.length > 0
-    ? shortageActiveFilterTags.value.map((item) => item.label).join('；')
-    : '无筛选'
+    ? shortageActiveFilterTags.value.map((item) => item.label).join('�?)
+    : '无筛�?
 })
 
 const canExportResult = computed(() => {
@@ -1273,7 +1271,7 @@ const buildExportMetaRows = (tabLabel: string, summary: string) => {
   return [
     ['计划名称', currentResultPlanName.value || 'MRP计划'],
     ['导出页签', tabLabel],
-    ['筛选摘要', summary]
+    ['筛选摘�?, summary]
   ]
 }
 
@@ -1392,16 +1390,16 @@ const handleExportResult = async () => {
       [
         '母项',
         '物料',
-        '毛需求',
+        '毛需�?,
         '现存',
-        '在途',
+        '在�?,
         '在制',
-        '净需求',
+        '净需�?,
         '供应方式',
         '业务类型',
         '跳过原因',
         '建议日期',
-        '需求日期',
+        '需求日�?,
         '来源销售单'
       ],
       filteredResultList.value.map((item) => [
@@ -1438,7 +1436,7 @@ const handleExportShortage = async () => {
   try {
     downloadCsv(
       buildExportFileName('缺料清单'),
-      ['母项', '缺料物料', '缺料数量', '替代料推荐', '需求日期', '来源销售单'],
+      ['母项', '缺料物料', '缺料数量', '替代料推�?, '需求日�?, '来源销售单'],
       filteredShortageList.value.map((item) => [
         item.rootProductName,
         item.materialName,
@@ -1486,7 +1484,7 @@ const openResultDialog = async (row: MrpPlanVO) => {
     if (currentRequestId !== resultRequestId.value) {
       return
     }
-    resultLoadError.value = error?.message || '结果加载失败，请关闭后重试'
+    resultLoadError.value = error?.message || '结果加载失败，请关闭后重�?
   } finally {
     if (currentRequestId === resultRequestId.value) {
       resultLoading.value = false

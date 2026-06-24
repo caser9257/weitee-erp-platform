@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="项目中心" url="https://doc.iocoder.cn/erp/project/" />
-
-  <ContentWrap class="search-wrap">
+<ContentWrap class="search-wrap">
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -12,7 +10,7 @@
       <el-form-item label="项目编号" prop="no">
         <el-input
           v-model="queryParams.no"
-          placeholder="请输入项目编号"
+          placeholder="请输入项目编�?
           clearable
           @keyup.enter="handleQuery"
         />
@@ -20,7 +18,7 @@
       <el-form-item label="项目名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入项目名称"
+          placeholder="请输入项目名�?
           clearable
           @keyup.enter="handleQuery"
         />
@@ -28,16 +26,16 @@
       <el-form-item label="业务类型" prop="businessType">
         <el-select v-model="queryParams.businessType" placeholder="请选择业务类型" clearable>
           <el-option label="自研产品" value="SELF_RESEARCH" />
-          <el-option label="客供料" value="CUSTOMER_SUPPLIED" />
+          <el-option label="客供�? value="CUSTOMER_SUPPLIED" />
           <el-option label="来料加工" value="TOLL_MANUFACTURING" />
           <el-option label="工艺验证" value="PROCESS_VALIDATION" />
         </el-select>
       </el-form-item>
       <el-form-item label="风险等级" prop="riskLevel">
         <el-select v-model="queryParams.riskLevel" placeholder="请选择风险等级" clearable>
-          <el-option label="低" value="LOW" />
-          <el-option label="中" value="MEDIUM" />
-          <el-option label="高" value="HIGH" />
+          <el-option label="�? value="LOW" />
+          <el-option label="�? value="MEDIUM" />
+          <el-option label="�? value="HIGH" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -87,24 +85,24 @@
         </template>
       </el-table-column>
       <el-table-column label="客户" prop="customerName" min-width="140" />
-      <el-table-column label="PC负责人" min-width="120">
+      <el-table-column label="PC负责�? min-width="120">
         <template #default="{ row }">
           {{ row.planCoordinatorName || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="PC状态" width="110" align="center">
+      <el-table-column label="PC状�? width="110" align="center">
         <template #default="{ row }">
           <el-tag size="small" :type="getRoleStatusType(row.pcStatus)">
             {{ getRoleStatusLabel(row.pcStatus) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="MC负责人" min-width="120">
+      <el-table-column label="MC负责�? min-width="120">
         <template #default="{ row }">
           {{ row.materialControllerName || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="MC状态" width="110" align="center">
+      <el-table-column label="MC状�? width="110" align="center">
         <template #default="{ row }">
           <el-tag size="small" :type="getRoleStatusType(row.mcStatus)">
             {{ getRoleStatusLabel(row.mcStatus) }}
@@ -125,7 +123,7 @@
         width="120"
         :formatter="dateFormatter2"
       />
-      <el-table-column label="状态" prop="status" align="center" width="100">
+      <el-table-column label="状�? prop="status" align="center" width="100">
         <template #default="{ row }">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
         </template>
@@ -206,7 +204,7 @@
                 </div>
               </template>
               <div class="role-line">
-                <span class="label">负责人</span>
+                <span class="label">负责�?/span>
                 <span class="value">{{ detailProject.planCoordinatorName || '-' }}</span>
               </div>
               <div class="role-line">
@@ -227,7 +225,7 @@
                 >
                   PC确认
                 </el-button>
-                <span class="hint">仅当前 PC 负责人且状态未完成时可确认</span>
+                <span class="hint">仅当�?PC 负责人且状态未完成时可确认</span>
               </div>
             </el-card>
           </el-col>
@@ -243,7 +241,7 @@
                 </div>
               </template>
               <div class="role-line">
-                <span class="label">负责人</span>
+                <span class="label">负责�?/span>
                 <span class="value">{{ detailProject.materialControllerName || '-' }}</span>
               </div>
               <div class="role-line">
@@ -264,7 +262,7 @@
                 >
                   MC确认
                 </el-button>
-                <span class="hint">仅当前 MC 负责人且状态未完成时可确认</span>
+                <span class="hint">仅当�?MC 负责人且状态未完成时可确认</span>
               </div>
             </el-card>
           </el-col>
@@ -276,7 +274,7 @@
               <template #header>
                 <div class="section-header">
                   <span>待办任务</span>
-                  <el-tag size="small" type="info">{{ detailTodoTasks.length }} 条</el-tag>
+                  <el-tag size="small" type="info">{{ detailTodoTasks.length }} �?/el-tag>
                 </div>
               </template>
 
@@ -287,7 +285,7 @@
                       {{ getTaskRoleLabel(row.roleCode) }}
                     </template>
                   </el-table-column>
-                  <el-table-column label="状态" width="100" align="center">
+                  <el-table-column label="状�? width="100" align="center">
                     <template #default="{ row }">
                       <el-tag size="small" :type="getTaskStatusType(row.taskStatus)">
                         {{ getTaskStatusLabel(row.taskStatus) }}
@@ -322,7 +320,7 @@
                 <el-descriptions-item label="来源项目">
                   {{ detailProject.sourceProjectId || '-' }}
                 </el-descriptions-item>
-                <el-descriptions-item label="销售订单">
+                <el-descriptions-item label="销售订�?>
                   {{ detailProject.saleOrderId || '-' }}
                 </el-descriptions-item>
                 <el-descriptions-item label="客户">
@@ -357,14 +355,14 @@
       label-width="100px"
     >
       <el-form-item label="当前阶段" prop="currentStageCode">
-        <el-input v-model="pcConfirmForm.currentStageCode" placeholder="请输入阶段编码" />
+        <el-input v-model="pcConfirmForm.currentStageCode" placeholder="请输入阶段编�? />
       </el-form-item>
       <el-form-item label="确认备注" prop="remark">
         <el-input
           v-model="pcConfirmForm.remark"
           type="textarea"
           :rows="4"
-          placeholder="请输入 PC 确认备注"
+          placeholder="请输�?PC 确认备注"
         />
       </el-form-item>
     </el-form>
@@ -388,7 +386,7 @@
           v-model="mcConfirmForm.remark"
           type="textarea"
           :rows="4"
-          placeholder="请输入 MC 确认备注"
+          placeholder="请输�?MC 确认备注"
         />
       </el-form-item>
     </el-form>
@@ -501,7 +499,7 @@ const getBusinessTypeLabel = (type?: string) => {
     case 'SELF_RESEARCH':
       return '自研产品'
     case 'CUSTOMER_SUPPLIED':
-      return '客供料'
+      return '客供�?
     case 'TOLL_MANUFACTURING':
       return '来料加工'
     case 'PROCESS_VALIDATION':
@@ -529,11 +527,11 @@ const getBusinessTypeTagType = (type?: string) => {
 const getRiskLabel = (level?: string) => {
   switch (level) {
     case 'HIGH':
-      return '高'
+      return '�?
     case 'MEDIUM':
-      return '中'
+      return '�?
     case 'LOW':
-      return '低'
+      return '�?
     default:
       return '-'
   }
@@ -555,9 +553,9 @@ const getRiskTagType = (level?: string) => {
 const getRoleStatusLabel = (status?: string) => {
   switch (status) {
     case 'DONE':
-      return '已确认'
+      return '已确�?
     case 'PENDING':
-      return '待确认'
+      return '待确�?
     default:
       return status || '-'
   }
@@ -588,11 +586,11 @@ const getTaskRoleLabel = (roleCode?: string) => {
 const getTaskStatusLabel = (status?: string) => {
   switch (status) {
     case 'DONE':
-      return '已完成'
+      return '已完�?
     case 'TODO':
-      return '待处理'
+      return '待处�?
     case 'PENDING':
-      return '处理中'
+      return '处理�?
     default:
       return status || '-'
   }

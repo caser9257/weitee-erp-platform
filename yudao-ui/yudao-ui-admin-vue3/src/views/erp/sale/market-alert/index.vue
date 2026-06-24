@@ -7,7 +7,7 @@
           <div class="page-header__title">市场预警与统计</div>
         </div>
         <div class="page-header__actions">
-          <el-button type="primary" :loading="checking" @click="handleCheck">
+          <el-button type="primary" :loading="checking" @click="handleCheck" v-hasPermi="['erp:market-alert:check']">
             <Icon icon="ep:warning" class="mr-5px" /> 检查预警
           </el-button>
           <el-button :loading="loading" @click="loadData">
@@ -63,7 +63,7 @@
     <ContentWrap class="market-alert-page__rules">
       <div class="section-header">
         <div class="section-header__title">预警规则</div>
-        <el-button link type="primary" @click="showRuleDialog = true">
+        <el-button link type="primary" @click="showRuleDialog = true" v-hasPermi="['erp:market-alert:update']">
           <Icon icon="ep:setting" class="mr-5px" /> 配置规则
         </el-button>
       </div>
@@ -119,7 +119,7 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="handleAlert(row)">处理</el-button>
+            <el-button link type="primary" @click="handleAlert(row)" v-hasPermi="['erp:market-alert:handle']">处理</el-button>
             <el-button link type="info" @click="handleViewOrder(row)">查看订单</el-button>
           </template>
         </el-table-column>

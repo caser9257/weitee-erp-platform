@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【回款】回款管理、回款计划" url="https://doc.iocoder.cn/crm/receivable/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -16,7 +13,7 @@
           v-model="queryParams.no"
           class="!w-240px"
           clearable
-          placeholder="请输入回款编号"
+          placeholder="请输入回款编�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -72,7 +69,7 @@
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" fixed="left" label="回款编号" prop="no" width="180">
@@ -113,7 +110,7 @@
       />
       <el-table-column
         align="center"
-        label="回款金额(元)"
+        label="回款金额(�?"
         prop="price"
         width="140"
         :formatter="erpPriceTableColumnFormatter"
@@ -126,13 +123,13 @@
       <el-table-column align="center" label="备注" prop="remark" width="200" />
       <el-table-column
         align="center"
-        label="合同金额（元）"
+        label="合同金额（元�?
         prop="contract.totalPrice"
         width="140"
         :formatter="erpPriceTableColumnFormatter"
       />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="120" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100px" />
+      <el-table-column align="center" label="负责�? prop="ownerUserName" width="120" />
+      <el-table-column align="center" label="所属部�? prop="ownerUserDeptName" width="100px" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
@@ -147,8 +144,8 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="120" />
-      <el-table-column align="center" fixed="right" label="回款状态" prop="auditStatus" width="120">
+      <el-table-column align="center" label="创建�? prop="creatorName" width="120" />
+      <el-table-column align="center" fixed="right" label="回款状�? prop="auditStatus" width="120">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.CRM_AUDIT_STATUS" :value="scope.row.auditStatus" />
         </template>
@@ -201,7 +198,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ReceivableForm ref="formRef" @success="getList" />
 </template>
 <script lang="ts" setup>
@@ -217,18 +214,18 @@ import { erpPriceTableColumnFormatter } from '@/utils'
 defineOptions({ name: 'Receivable' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   no: undefined,
   customerId: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 const customerList = ref<CustomerApi.CustomerVO[]>([]) // 客户列表
@@ -272,7 +269,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ReceivableApi.deleteReceivable(id)
@@ -284,9 +281,9 @@ const handleDelete = async (id: number) => {
 
 /** 提交审核 **/
 const handleSubmit = async (row: ReceivableApi.ReceivableVO) => {
-  await message.confirm(`您确定提交编号为【${row.no}】的回款审核吗？`)
+  await message.confirm(`您确定提交编号为�?{row.no}】的回款审核吗？`)
   await ReceivableApi.submitReceivable(row.id)
-  message.success('提交审核成功！')
+  message.success('提交审核成功�?)
   await getList()
 }
 
@@ -314,7 +311,7 @@ const openContractDetail = (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -326,7 +323,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 获得客户列表

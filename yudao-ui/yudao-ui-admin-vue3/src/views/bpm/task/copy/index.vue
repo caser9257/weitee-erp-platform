@@ -1,12 +1,7 @@
-<!-- 工作流 - 抄送我的流程 -->
+<!-- 工作�?- 抄送我的流�?-->
 <template>
-  <doc-alert
-    title="审批转办、委派、抄送"
-    url="https://doc.iocoder.cn/bpm/task-delegation-and-cc/"
-  />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form ref="queryFormRef" :inline="true" class="-mb-15px" label-width="68px">
       <el-form-item label="流程名称" prop="name">
         <el-input
@@ -14,16 +9,16 @@
           @keyup.enter="handleQuery"
           class="!w-240px"
           clearable
-          placeholder="请输入流程名称"
+          placeholder="请输入流程名�?
         />
       </el-form-item>
-      <el-form-item label="抄送时间" prop="createTime">
+      <el-form-item label="抄送时�? prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
           end-placeholder="结束日期"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
         />
@@ -44,8 +39,8 @@
   <!-- 列表 -->
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
-      <!-- TODO 芋艿：增加摘要 -->
-      <el-table-column align="center" label="流程名" prop="processInstanceName" min-width="180" />
+      <!-- TODO 芋艿：增加摘�?-->
+      <el-table-column align="center" label="流程�? prop="processInstanceName" min-width="180" />
       <el-table-column label="摘要" prop="summary" min-width="180">
         <template #default="scope">
           <div class="flex flex-col" v-if="scope.row.summary && scope.row.summary.length > 0">
@@ -57,7 +52,7 @@
       </el-table-column>
       <el-table-column
         align="center"
-        label="流程发起人"
+        label="流程发起�?
         prop="startUser.nickname"
         min-width="100"
       />
@@ -68,14 +63,14 @@
         prop="processInstanceStartTime"
         width="180"
       />
-      <el-table-column align="center" label="抄送节点" prop="activityName" min-width="180" />
+      <el-table-column align="center" label="抄送节�? prop="activityName" min-width="180" />
       <el-table-column align="center" label="抄送人" min-width="100">
         <template #default="scope"> {{ scope.row.createUser?.nickname || '系统' }} </template>
       </el-table-column>
-      <el-table-column align="center" label="抄送意见" prop="reason" width="150" />
+      <el-table-column align="center" label="抄送意�? prop="reason" width="150" />
       <el-table-column
         align="center"
-        label="抄送时间"
+        label="抄送时�?
         prop="createTime"
         width="180"
         :formatter="dateFormatter"
@@ -104,8 +99,8 @@ defineOptions({ name: 'BpmProcessInstanceCopy' })
 const { push } = useRouter() // 路由
 
 const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -113,7 +108,7 @@ const queryParams = reactive({
   processInstanceName: '',
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询任务列表 */
 const getList = async () => {
@@ -154,7 +149,7 @@ const resetQuery = () => {
   handleQuery()
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

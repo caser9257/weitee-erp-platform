@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【回款】回款管理、回款计划" url="https://doc.iocoder.cn/crm/receivable/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -31,7 +28,7 @@
           v-model="queryParams.contractNo"
           class="!w-240px"
           clearable
-          placeholder="请输入合同编号"
+          placeholder="请输入合同编�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -71,7 +68,7 @@
   <ContentWrap>
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" fixed="left" label="客户名称" prop="customerName" width="150">
@@ -95,7 +92,7 @@
       </el-table-column>
       <el-table-column
         align="center"
-        label="计划回款金额（元）"
+        label="计划回款金额（元�?
         prop="price"
         width="160"
         :formatter="erpPriceTableColumnFormatter"
@@ -121,10 +118,10 @@
         </template>
       </el-table-column>
       <el-table-column align="center" label="备注" prop="remark" />
-      <el-table-column label="负责人" prop="ownerUserName" width="120" />
+      <el-table-column label="负责�? prop="ownerUserName" width="120" />
       <el-table-column
         align="center"
-        label="实际回款金额（元）"
+        label="实际回款金额（元�?
         prop="receivable.price"
         width="160"
       >
@@ -144,7 +141,7 @@
       />
       <el-table-column
         align="center"
-        label="实际回款金额（元）"
+        label="实际回款金额（元�?
         prop="receivable.price"
         width="160"
       >
@@ -169,7 +166,7 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
+      <el-table-column align="center" label="创建�? prop="creatorName" width="100px" />
       <el-table-column align="center" fixed="right" label="操作" width="180px">
         <template #default="scope">
           <el-button
@@ -209,7 +206,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ReceivablePlanForm ref="formRef" @success="getList" />
   <ReceivableForm ref="receivableFormRef" @success="getList" />
 </template>
@@ -228,19 +225,19 @@ import ReceivableForm from '@/views/crm/receivable/ReceivableForm.vue'
 defineOptions({ name: 'ReceivablePlan' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   customerId: undefined,
   contractNo: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 const customerList = ref<CustomerApi.CustomerVO[]>([]) // 客户列表
@@ -290,7 +287,7 @@ const openReceivableForm = (row: ReceivablePlanApi.ReceivablePlanVO) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ReceivablePlanApi.deleteReceivablePlan(id)
@@ -303,7 +300,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -326,7 +323,7 @@ const openCustomerDetail = (id: number) => {
   push({ name: 'CrmCustomerDetail', params: { id } })
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 获得客户列表

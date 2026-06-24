@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="功能权限" url="https://doc.iocoder.cn/resource-permission" />
-  <doc-alert title="数据权限" url="https://doc.iocoder.cn/data-permission" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -16,7 +13,7 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入角色名称"
+          placeholder="请输入角色名�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -25,12 +22,12 @@
           v-model="queryParams.code"
           class="!w-240px"
           clearable
-          placeholder="请输入角色标识"
+          placeholder="请输入角色标�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" class="!w-240px" clearable placeholder="请选择状态">
+      <el-form-item label="状�? prop="status">
+        <el-select v-model="queryParams.status" class="!w-240px" clearable placeholder="请选择状�?>
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
             :key="dict.value"
@@ -45,7 +42,7 @@
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
           end-placeholder="结束日期"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
         />
@@ -106,7 +103,7 @@
       <el-table-column align="center" label="角色标识" prop="code" />
       <el-table-column align="center" label="显示顺序" prop="sort" />
       <el-table-column align="center" label="备注" prop="remark" />
-      <el-table-column align="center" label="状态" prop="status">
+      <el-table-column align="center" label="状�? prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -168,11 +165,11 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <RoleForm ref="formRef" @success="getList" />
-  <!-- 表单弹窗：菜单权限 -->
+  <!-- 表单弹窗：菜单权�?-->
   <RoleAssignMenuForm ref="assignMenuFormRef" @success="getList" />
-  <!-- 表单弹窗：数据权限 -->
+  <!-- 表单弹窗：数据权�?-->
   <RoleDataPermissionForm ref="dataPermissionFormRef" @success="getList" />
 </template>
 <script lang="ts" setup>
@@ -187,11 +184,11 @@ import RoleDataPermissionForm from './RoleDataPermissionForm.vue'
 defineOptions({ name: 'SystemRole' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -200,7 +197,7 @@ const queryParams = reactive({
   status: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询角色列表 */
@@ -248,7 +245,7 @@ const openAssignMenuForm = async (row: RoleApi.RoleVO) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await RoleApi.deleteRole(id)
@@ -266,7 +263,7 @@ const handleRowCheckboxChange = (rows: RoleApi.RoleVO[]) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await RoleApi.deleteRoleList(checkedIds.value)
@@ -280,7 +277,7 @@ const handleDeleteBatch = async () => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -292,7 +289,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 */
+/** 初始�?*/
 onMounted(() => {
   getList()
 })

@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="代码生成（树表）" url="https://doc.iocoder.cn/new-feature/tree/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="名字" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入名字"
+          placeholder="请输入名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -24,7 +22,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -107,7 +105,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <Demo02CategoryForm ref="formRef" @success="getList" />
 </template>
 
@@ -121,10 +119,10 @@ import Demo02CategoryForm from './Demo02CategoryForm.vue'
 defineOptions({ name: 'Demo02Category' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref([]) // 列表的数据
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -132,7 +130,7 @@ const queryParams = reactive({
   parentId: null,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const total = ref(0) // 列表的总数
 
@@ -169,7 +167,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await Demo02CategoryApi.deleteDemo02Category(id)
@@ -182,7 +180,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -196,7 +194,7 @@ const handleExport = async () => {
 
 /** 展开/折叠操作 */
 const isExpandAll = ref(true) // 是否展开，默认全部展开
-const refreshTable = ref(true) // 重新渲染表格状态
+const refreshTable = ref(true) // 重新渲染表格状�?
 const toggleExpandAll = async () => {
   refreshTable.value = false
   isExpandAll.value = !isExpandAll.value
@@ -204,7 +202,7 @@ const toggleExpandAll = async () => {
   refreshTable.value = true
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

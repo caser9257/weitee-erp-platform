@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -10,10 +8,10 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="退货单号" prop="no">
+      <el-form-item label="退货单�? prop="no">
         <el-input
           v-model="queryParams.no"
-          placeholder="请输入退货单号"
+          placeholder="请输入退货单�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -35,12 +33,12 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="退货时间" prop="outTime">
+      <el-form-item label="退货时�? prop="outTime">
         <el-date-picker
           v-model="queryParams.outTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -51,7 +49,7 @@
           v-model="queryParams.customerId"
           clearable
           filterable
-          placeholder="请选择供客户"
+          placeholder="请选择供客�?
           class="!w-240px"
         >
           <el-option
@@ -78,12 +76,12 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="创建人" prop="creator">
+      <el-form-item label="创建�? prop="creator">
         <el-select
           v-model="queryParams.creator"
           clearable
           filterable
-          placeholder="请选择创建人"
+          placeholder="请选择创建�?
           class="!w-240px"
         >
           <el-option
@@ -97,7 +95,7 @@
       <el-form-item label="关联订单" prop="orderNo">
         <el-input
           v-model="queryParams.orderNo"
-          placeholder="请输入关联订单"
+          placeholder="请输入关联订�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -119,22 +117,22 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="退款状态" prop="refundStatus">
+      <el-form-item label="退款状�? prop="refundStatus">
         <el-select
           v-model="queryParams.refundStatus"
-          placeholder="请选择退款状态"
+          placeholder="请选择退款状�?
           clearable
           class="!w-240px"
         >
-          <el-option label="未退款" value="0" />
-          <el-option label="部分退款" value="1" />
-          <el-option label="全部退款" value="2" />
+          <el-option label="未退�? value="0" />
+          <el-option label="部分退�? value="1" />
+          <el-option label="全部退�? value="2" />
         </el-select>
       </el-form-item>
-      <el-form-item label="审核状态" prop="status">
+      <el-form-item label="审核状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择审核状态"
+          placeholder="请选择审核状�?
           clearable
           class="!w-240px"
         >
@@ -149,7 +147,7 @@
       <el-form-item label="备注" prop="remark">
         <el-input
           v-model="queryParams.remark"
-          placeholder="请输入备注"
+          placeholder="请输入备�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -198,19 +196,19 @@
       @selection-change="handleSelectionChange"
     >
       <el-table-column width="30" label="选择" type="selection" />
-      <el-table-column min-width="180" label="退货单号" align="center" prop="no" />
+      <el-table-column min-width="180" label="退货单�? align="center" prop="no" />
       <el-table-column label="产品信息" align="center" prop="productNames" min-width="200" />
       <el-table-column label="客户" align="center" prop="customerName" />
       <el-table-column
-        label="退货时间"
+        label="退货时�?
         align="center"
         prop="returnTime"
         :formatter="dateFormatter2"
         width="120px"
       />
-      <el-table-column label="创建人" align="center" prop="creatorName" />
+      <el-table-column label="创建�? align="center" prop="creatorName" />
       <el-table-column
-        label="总数量"
+        label="总数�?
         align="center"
         prop="totalCount"
         :formatter="erpCountTableColumnFormatter"
@@ -235,7 +233,7 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="审核状态" align="center" fixed="right" width="90" prop="status">
+      <el-table-column label="审核状�? align="center" fixed="right" width="90" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="scope.row.status" />
         </template>
@@ -274,7 +272,7 @@
             v-hasPermi="['erp:sale-return:update-status']"
             v-else
           >
-            反审批
+            反审�?
           </el-button>
           <el-button
             link
@@ -296,7 +294,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <SaleReturnForm ref="formRef" @success="getList" />
 </template>
 
@@ -318,15 +316,15 @@ import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { AccountApi, AccountVO } from '@/api/erp/finance/account'
 
-/** ERP 销售退货列表 */
+/** ERP 销售退货列�?*/
 defineOptions({ name: 'ErpSaleReturn' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<SaleReturnVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<SaleReturnVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -342,7 +340,7 @@ const queryParams = reactive({
   creator: undefined,
   refundStatus: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const productList = ref<ProductVO[]>([]) // 产品列表
 const customerList = ref<CustomerVO[]>([]) // 客户列表
@@ -383,7 +381,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (ids: number[]) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await SaleReturnApi.deleteSaleReturn(ids)
@@ -394,14 +392,14 @@ const handleDelete = async (ids: number[]) => {
   } catch {}
 }
 
-/** 审批/反审批操作 */
+/** 审批/反审批操�?*/
 const handleUpdateStatus = async (id: number, status: number) => {
   try {
-    // 审批的二次确认
-    await message.confirm(`确定${status === 20 ? '审批' : '反审批'}该退货吗？`)
+    // 审批的二次确�?
+    await message.confirm(`确定${status === 20 ? '审批' : '反审�?}该退货吗？`)
     // 发起审批
     await SaleReturnApi.updateSaleReturnStatus(id, status)
-    message.success(`${status === 20 ? '审批' : '反审批'}成功`)
+    message.success(`${status === 20 ? '审批' : '反审�?}成功`)
     // 刷新列表
     await getList()
   } catch {}
@@ -410,12 +408,12 @@ const handleUpdateStatus = async (id: number, status: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
     const data = await SaleReturnApi.exportSaleReturn(queryParams)
-    download.excel(data, '销售退货.xls')
+    download.excel(data, '销售退�?xls')
   } catch {
   } finally {
     exportLoading.value = false
@@ -428,10 +426,10 @@ const handleSelectionChange = (rows: SaleReturnVO[]) => {
   selectionList.value = rows
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
-  // 加载产品、仓库列表、客户
+  // 加载产品、仓库列表、客�?
   productList.value = await ProductApi.getProductSimpleList()
   customerList.value = await CustomerApi.getCustomerSimpleList()
   userList.value = await UserApi.getSimpleUserList()

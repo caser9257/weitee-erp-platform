@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="站内信配置" url="https://doc.iocoder.cn/notify/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="是否已读" prop="readStatus">
         <el-select
           v-model="queryParams.readStatus"
-          placeholder="请选择状态"
+          placeholder="请选择状�?
           clearable
           class="!w-240px"
         >
@@ -25,12 +23,12 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="发送时间" prop="createTime">
+      <el-form-item label="发送时�? prop="createTime">
         <el-date-picker
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -61,7 +59,7 @@
       <el-table-column type="selection" :selectable="selectable" :reserve-selection="true" />
       <el-table-column label="发送人" align="center" prop="templateNickname" width="180" />
       <el-table-column
-        label="发送时间"
+        label="发送时�?
         align="center"
         prop="createTime"
         width="200"
@@ -111,7 +109,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <MyNotifyMessageDetail ref="detailRef" />
 </template>
 
@@ -126,16 +124,16 @@ defineOptions({ name: 'SystemMyNotify' })
 const message = useMessage() // 消息
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   readStatus: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
-const tableRef = ref() // 表格的 Ref
+const queryFormRef = ref() // 搜索的表�?
+const tableRef = ref() // 表格�?Ref
 const selectedIds = ref<number[]>([]) // 表格的选中 ID 数组
 
 /** 查询列表 */
@@ -178,10 +176,10 @@ const handleReadOne = async (id) => {
   await getList()
 }
 
-/** 标记全部站内信已读 **/
+/** 标记全部站内信已�?**/
 const handleUpdateAll = async () => {
   await NotifyMessageApi.updateAllNotifyMessageRead()
-  message.success('全部已读成功！')
+  message.success('全部已读成功�?)
   tableRef.value.clearSelection()
   await getList()
 }
@@ -192,7 +190,7 @@ const handleUpdateList = async () => {
     return
   }
   await NotifyMessageApi.updateNotifyMessageRead(selectedIds.value)
-  message.success('批量已读成功！')
+  message.success('批量已读成功�?)
   tableRef.value.clearSelection()
   await getList()
 }
@@ -211,7 +209,7 @@ const handleSelectionChange = (array: NotifyMessageApi.NotifyMessageVO[]) => {
   array.forEach((row) => selectedIds.value.push(row.id))
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

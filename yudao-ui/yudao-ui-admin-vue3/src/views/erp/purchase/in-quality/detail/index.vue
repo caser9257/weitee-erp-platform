@@ -67,6 +67,7 @@
             </el-button>
             <el-button
               v-if="showCreateReturnAction"
+              v-hasPermi="['erp:purchase-in-quality:update']"
               type="danger"
               :loading="createReturnLoading"
               @click="handleCreateReturn"

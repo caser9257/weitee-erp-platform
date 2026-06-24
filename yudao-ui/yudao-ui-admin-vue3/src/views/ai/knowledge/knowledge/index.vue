@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 知识库" url="https://doc.iocoder.cn/ai/knowledge/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -10,7 +8,7 @@
       :inline="true"
       label-width="95px"
     >
-      <el-form-item label="知识库名称" prop="name">
+      <el-form-item label="知识库名�? prop="name">
         <el-input
           v-model="queryParams.name"
           placeholder="请输入知识库名称"
@@ -39,7 +37,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-220px"
@@ -64,9 +62,9 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="编号" align="center" prop="id" />
-      <el-table-column label="知识库名称" align="center" prop="name" />
-      <el-table-column label="知识库描述" align="center" prop="description" />
-      <el-table-column label="向量化模型" align="center" prop="embeddingModel" />
+      <el-table-column label="知识库名�? align="center" prop="name" />
+      <el-table-column label="知识库描�? align="center" prop="description" />
+      <el-table-column label="向量化模�? align="center" prop="embeddingModel" />
       <el-table-column label="是否启用" align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
@@ -125,7 +123,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <KnowledgeForm ref="formRef" @success="getList" />
 </template>
 
@@ -136,15 +134,15 @@ import { KnowledgeApi, KnowledgeVO } from '@/api/ai/knowledge/knowledge'
 import KnowledgeForm from './KnowledgeForm.vue'
 import { useRouter } from 'vue-router'
 
-/** AI 知识库列表 */
+/** AI 知识库列�?*/
 defineOptions({ name: 'Knowledge' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<KnowledgeVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<KnowledgeVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -152,7 +150,7 @@ const queryParams = reactive({
   status: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -187,7 +185,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await KnowledgeApi.deleteKnowledge(id)
@@ -206,7 +204,7 @@ const handleDocument = (id: number) => {
   })
 }
 
-/** 跳转到文档召回测试页面 */
+/** 跳转到文档召回测试页�?*/
 const handleRetrieval = (id: number) => {
   router.push({
     name: 'AiKnowledgeRetrieval',
@@ -214,7 +212,7 @@ const handleRetrieval = (id: number) => {
   })
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

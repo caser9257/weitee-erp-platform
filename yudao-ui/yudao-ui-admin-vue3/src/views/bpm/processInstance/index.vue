@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="流程发起、取消、重新发起" url="https://doc.iocoder.cn/bpm/process-instance/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入流程名称"
+          placeholder="请输入流程名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -43,7 +41,7 @@
       <el-form-item label="" prop="status" class="absolute right-[130px]">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择流程状态"
+          placeholder="请选择流程状�?
           clearable
           class="!w-155px"
           @change="handleQuery"
@@ -57,7 +55,7 @@
         </el-select>
       </el-form-item>
 
-      <!-- 高级筛选 -->
+      <!-- 高级筛�?-->
       <el-form-item class="absolute right-0">
         <el-popover
           :visible="showPopover"
@@ -68,11 +66,11 @@
         >
           <template #reference>
             <el-button @click="showPopover = !showPopover">
-              <Icon icon="ep:plus" class="mr-5px" />高级筛选
+              <Icon icon="ep:plus" class="mr-5px" />高级筛�?
             </el-button>
           </template>
           <el-form-item
-            label="所属流程"
+            label="所属流�?
             class="font-bold"
             label-position="top"
             prop="processDefinitionKey"
@@ -97,7 +95,7 @@
               v-model="queryParams.createTime"
               value-format="YYYY-MM-DD HH:mm:ss"
               type="daterange"
-              start-placeholder="开始日期"
+              start-placeholder="开始日�?
               end-placeholder="结束日期"
               :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
               class="!w-240px"
@@ -135,9 +133,9 @@
         min-width="100"
         fixed="left"
       />
-      <el-table-column label="流程状态" prop="status" min-width="200">
+      <el-table-column label="流程状�? prop="status" min-width="200">
         <template #default="scope">
-          <!-- 审批中状态 -->
+          <!-- 审批中状�?-->
           <template
             v-if="
               scope.row.status === BpmProcessInstanceStatus.RUNNING && scope.row.tasks?.length > 0
@@ -149,7 +147,7 @@
                 <el-button link type="primary" @click="handleDetail(scope.row)">
                   {{ scope.row.tasks[0].assigneeUser?.nickname }}
                 </el-button>
-                ({{ scope.row.tasks[0].name }}) 审批中
+                ({{ scope.row.tasks[0].name }}) 审批�?
               </span>
             </template>
             <!-- 多人审批 -->
@@ -158,11 +156,11 @@
                 <el-button link type="primary" @click="handleDetail(scope.row)">
                   {{ scope.row.tasks[0].assigneeUser?.nickname }}
                 </el-button>
-                等 {{ scope.row.tasks.length }} 人 ({{ scope.row.tasks[0].name }})审批中
+                �?{{ scope.row.tasks.length }} �?({{ scope.row.tasks[0].name }})审批�?
               </span>
             </template>
           </template>
-          <!-- 非审批中状态 -->
+          <!-- 非审批中状�?-->
           <template v-else>
             <dict-tag :type="DICT_TYPE.BPM_PROCESS_INSTANCE_STATUS" :value="scope.row.status" />
           </template>
@@ -242,11 +240,11 @@ defineOptions({ name: 'BpmProcessInstanceMy' })
 
 const router = useRouter() // 路由
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const processDefinitionList = ref<any[]>([]) // 流程定义列表
 const queryParams = reactive({
   pageNo: 1,
@@ -257,9 +255,9 @@ const queryParams = reactive({
   status: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const categoryList = ref<CategoryVO[]>([]) // 流程分类列表
-const showPopover = ref(false) // 高级筛选是否展示
+const showPopover = ref(false) // 高级筛选是否展�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -311,7 +309,7 @@ const handleCreate = async (row?: ProcessInstanceVO) => {
       }
       if (!canRestartSaleOrderBusinessRecord(saleOrder)) {
         if (saleOrder.status === 20) {
-          message.warning('该销售订单当前已审核完成，不能基于历史流程重新发起')
+          message.warning('该销售订单当前已审核完成，不能基于历史流程重新发�?)
           return
         }
         if (saleOrder.status === 10 && saleOrder.processInstanceId) {
@@ -346,10 +344,10 @@ const handleDetail = (row: ProcessInstanceVO) => {
 /** 取消按钮操作 */
 const handleCancel = async (row: ProcessInstanceVO) => {
   // 二次确认
-  const { value } = await ElMessageBox.prompt('请输入取消原因', '取消流程', {
+  const { value } = await ElMessageBox.prompt('请输入取消原�?, '取消流程', {
     confirmButtonText: t('common.ok'),
     cancelButtonText: t('common.cancel'),
-    inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空格
+    inputPattern: /^[\s\S]*.*\S[\s\S]*$/, // 判断非空，且非空�?
     inputErrorMessage: '取消原因不能为空'
   })
   // 发起取消
@@ -364,7 +362,7 @@ onActivated(() => {
   getList()
 })
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   categoryList.value = await CategoryApi.getCategorySimpleList()

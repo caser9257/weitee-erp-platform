@@ -118,6 +118,11 @@
             <Icon icon="ep:refresh-right" class="mr-5px" />
             反过账
           </el-button>
+          <el-divider direction="vertical" />
+          <el-button size="small" type="danger" plain :disabled="listLoading || voucherBusy" @click="openIntegrityCheckDialog">
+            <Icon icon="ep:warning" class="mr-5px" />
+            完整性检查
+          </el-button>
         </div>
       </div>
 
@@ -208,18 +213,28 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" fixed="right" align="center" width="220">
+            <el-table-column label="操作" fixed="right" align="center" width="260">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
                   <el-button link type="primary" :disabled="detailLoading || rowBusy(row.id)" @click="openDetailDrawer(row.id)">
                     查看
                   </el-button>
                   <el-button
+                    v-if="canRecompute(row)"
+                    link
+                    type="warning"
+                    :disabled="rowBusy(row.id)"
+                    :loading="rowActionLoadingId === row.id && rowActionType === 'recompute'"
+                    @click="handleRecompute(row)"
+                  >
+                    重算
+                  </el-button>
+                  <el-button
                     v-if="canReverse(row)"
                     link
                     type="danger"
                     :disabled="rowBusy(row.id)"
-                    :loading="rowActionLoadingId === row.id"
+                    :loading="rowActionLoadingId === row.id && rowActionType === 'reverse'"
                     @click="handleReverse(row)"
                   >
                     冲销
@@ -304,6 +319,110 @@
       <template #footer>
         <el-button size="small" type="danger" :loading="reverseSubmitting" @click="submitReverseForm">确定</el-button>
         <el-button size="small" :disabled="reverseSubmitting" @click="reverseDialogVisible = false">取消</el-button>
+      </template>
+    </Dialog>
+
+    <Dialog v-model="integrityCheckDialogVisible" title="凭证完整性检查" width="720px" scroll maxHeight="76vh" @closed="clearIntegrityCheckDialog">
+      <div class="finance-shell__context-card finance-shell__dialog-card">
+        <div class="finance-shell__context-main">
+          <div class="finance-shell__context-title">凭证完整性检查</div>
+          <div class="finance-shell__context-subtitle">检查已审核业务单据是否生成了对应的财务凭证</div>
+        </div>
+      </div>
+      <el-form ref="integrityCheckFormRef" :model="integrityCheckForm" :rules="integrityCheckFormRules" label-width="88px" :disabled="integrityCheckLoading">
+        <div class="finance-shell__dialog-grid">
+          <el-form-item label="业务类型" prop="bizType">
+            <el-select v-model="integrityCheckForm.bizType" placeholder="请选择业务类型" class="!w-full">
+              <el-option v-for="item in bizTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="账簿" prop="ledgerId">
+            <el-select v-model="integrityCheckForm.ledgerId" placeholder="全部账簿" clearable filterable class="!w-full">
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="开始日期" prop="startDate">
+            <el-date-picker v-model="integrityCheckForm.startDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择开始日期" class="!w-full" />
+          </el-form-item>
+          <el-form-item label="结束日期" prop="endDate">
+            <el-date-picker v-model="integrityCheckForm.endDate" type="date" value-format="YYYY-MM-DD" placeholder="请选择结束日期" class="!w-full" />
+          </el-form-item>
+        </div>
+      </el-form>
+
+      <!-- 检查结果 -->
+      <div v-if="integrityCheckResult" class="mt-16px">
+        <el-divider content-position="left">检查结果</el-divider>
+
+        <!-- 统计卡片 -->
+        <div class="finance-shell__metric-grid mb-12px">
+          <div class="finance-shell__metric-card" :class="{ 'finance-shell__metric-card--danger': integrityCheckResult.missingCount > 0 }">
+            <div class="finance-shell__metric-label">缺失凭证</div>
+            <div class="finance-shell__metric-value">{{ integrityCheckResult.missingCount }}</div>
+          </div>
+          <div class="finance-shell__metric-card" :class="{ 'finance-shell__metric-card--danger': integrityCheckResult.unbalancedCount > 0 }">
+            <div class="finance-shell__metric-label">借贷不平衡</div>
+            <div class="finance-shell__metric-value">{{ integrityCheckResult.unbalancedCount }}</div>
+          </div>
+        </div>
+
+        <!-- 缺失凭证列表 -->
+        <div v-if="integrityCheckResult.missingVouchers?.length" class="mb-12px">
+          <div class="finance-shell__section-title mb-8px">缺失凭证的业务单据</div>
+          <el-table :data="integrityCheckResult.missingVouchers" stripe class="finance-shell__table finance-shell__table--dense" max-height="240">
+            <el-table-column label="业务类型" prop="bizTypeName" width="100" />
+            <el-table-column label="单据编号" prop="bizNo" min-width="160" />
+            <el-table-column label="单据ID" prop="bizId" width="100" align="right" />
+            <el-table-column label="账簿" prop="ledgerName" width="120" />
+            <el-table-column label="状态" prop="statusName" width="100" />
+          </el-table>
+        </div>
+
+        <!-- 不平衡凭证列表 -->
+        <div v-if="integrityCheckResult.unbalancedVouchers?.length" class="mb-12px">
+          <div class="finance-shell__section-title mb-8px">借贷不平衡的凭证</div>
+          <el-table :data="integrityCheckResult.unbalancedVouchers" stripe class="finance-shell__table finance-shell__table--dense" max-height="240">
+            <el-table-column label="凭证号" prop="voucherNo" min-width="160" />
+            <el-table-column label="借方合计" min-width="120" align="right">
+              <template #default="{ row }">{{ formatAmount(row.totalDebit) }}</template>
+            </el-table-column>
+            <el-table-column label="贷方合计" min-width="120" align="right">
+              <template #default="{ row }">{{ formatAmount(row.totalCredit) }}</template>
+            </el-table-column>
+            <el-table-column label="差额" min-width="120" align="right">
+              <template #default="{ row }">
+                <span :class="{ 'text-red-500': row.difference !== 0 }">{{ formatAmount(row.difference) }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- 全部正常提示 -->
+        <el-alert
+          v-if="integrityCheckResult.missingCount === 0 && integrityCheckResult.unbalancedCount === 0"
+          title="凭证完整性检查通过，未发现问题"
+          type="success"
+          :closable="false"
+          show-icon
+        />
+      </div>
+
+      <template #footer>
+        <el-button size="small" type="primary" :loading="integrityCheckLoading" @click="submitIntegrityCheck">
+          <Icon icon="ep:search" class="mr-5px" />
+          检查
+        </el-button>
+        <el-button
+          v-if="integrityCheckResult?.missingCount && integrityCheckResult.missingCount > 0"
+          size="small"
+          type="danger"
+          :loading="batchRecomputeLoading"
+          @click="submitBatchRecompute"
+        >
+          <Icon icon="ep:refresh" class="mr-5px" />
+          批量重算 ({{ integrityCheckResult.missingCount }})
+        </el-button>
+        <el-button size="small" :disabled="integrityCheckLoading" @click="integrityCheckDialogVisible = false">关闭</el-button>
       </template>
     </Dialog>
 
@@ -410,6 +529,7 @@ import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinancePeriodVO, FinancePeriodApi } from '@/api/erp/finance/period'
 import { FinanceVoucherTemplateApi, ErpFinanceVoucherTemplateVO } from '@/api/erp/finance/voucher-template'
 import { ErpFinanceVoucherPageReqVO, ErpFinanceVoucherVO, FinanceVoucherApi } from '@/api/erp/finance/voucher'
+import type { ErpFinanceVoucherIntegrityCheckReqVO, ErpFinanceVoucherIntegrityCheckRespVO } from '@/api/erp/finance/voucher'
 
 defineOptions({ name: 'ErpFinanceVoucher' })
 
@@ -429,6 +549,11 @@ const reverseSubmitting = ref(false)
 const detailDrawerOpen = ref(false)
 const generateDialogVisible = ref(false)
 const reverseDialogVisible = ref(false)
+const integrityCheckDialogVisible = ref(false)
+const integrityCheckLoading = ref(false)
+const batchRecomputeLoading = ref(false)
+const integrityCheckResult = ref<ErpFinanceVoucherIntegrityCheckRespVO | null>(null)
+const rowActionType = ref<'recompute' | 'reverse' | ''>('')
 const listErrorMessage = ref('')
 const detailErrorMessage = ref('')
 const ledgerOptions = ref<ErpFinanceLedgerVO[]>([])
@@ -464,6 +589,13 @@ const reverseForm = reactive({
   voucherTime: undefined as string | undefined,
   remark: ''
 })
+const integrityCheckFormRef = ref()
+const integrityCheckForm = reactive<ErpFinanceVoucherIntegrityCheckReqVO>({
+  bizType: undefined as unknown as number,
+  ledgerId: undefined,
+  startDate: '',
+  endDate: ''
+})
 const bizTypeOptions = [
   { label: '采购入库', value: ErpBizType.PURCHASE_IN },
   { label: '采购退货', value: ErpBizType.PURCHASE_RETURN },
@@ -483,6 +615,11 @@ const generateFormRules = {
   templateId: [{ required: true, message: '凭证模板不能为空', trigger: 'change' }]
 }
 const reverseFormRules = { remark: [{ required: false }] }
+const integrityCheckFormRules = {
+  bizType: [{ required: true, message: '业务类型不能为空', trigger: 'change' }],
+  startDate: [{ required: true, message: '开始日期不能为空', trigger: 'change' }],
+  endDate: [{ required: true, message: '结束日期不能为空', trigger: 'change' }]
+}
 
 const isActionCanceled = (error: unknown) => error === 'cancel' || error === 'close'
 const rowBusy = (id?: number) => id != null && rowActionLoadingId.value === id
@@ -684,9 +821,37 @@ const handleBatchAction = async (action: 'approve' | 'cancelApprove' | 'post' | 
 
 const canReverse = (row: ErpFinanceVoucherVO) => row.status === 30 && !row.reverseFromVoucherId && !row.reverseVoucherId
 
+const canRecompute = (row: ErpFinanceVoucherVO) => {
+  // 已生成或已作废的凭证可以重算
+  return row.status === 10 || row.status === 50
+}
+
+const handleRecompute = async (row: ErpFinanceVoucherVO) => {
+  if (!row.id || !row.bizType || !row.bizId || rowActionLoadingId.value) return
+  await message.confirm(`确认重算凭证 ${row.voucherNo} 吗？这将删除当前凭证并重新生成。`)
+  rowActionLoadingId.value = row.id
+  rowActionType.value = 'recompute'
+  try {
+    await FinanceVoucherApi.recomputeVoucher({
+      bizType: row.bizType,
+      bizId: row.bizId,
+      remark: '手动重算'
+    })
+    message.success('重算成功')
+    await getList()
+    if (detailDrawerOpen.value && currentVoucherId.value) {
+      await loadDetail(currentVoucherId.value)
+    }
+  } finally {
+    rowActionLoadingId.value = undefined
+    rowActionType.value = ''
+  }
+}
+
 const handleReverse = async (row: ErpFinanceVoucherVO) => {
   if (!row.id || rowActionLoadingId.value) return
   rowActionLoadingId.value = row.id
+  rowActionType.value = 'reverse'
   reverseTarget.value = row
   reverseForm.voucherTime = undefined
   reverseForm.remark = ''
@@ -761,10 +926,62 @@ const clearGenerateDialog = () => {
 const clearReverseDialog = () => {
   reverseTarget.value = undefined
   rowActionLoadingId.value = undefined
+  rowActionType.value = ''
   reverseSubmitting.value = false
   reverseFormRef.value?.clearValidate?.()
   reverseForm.voucherTime = undefined
   reverseForm.remark = ''
+}
+
+const openIntegrityCheckDialog = () => {
+  integrityCheckResult.value = null
+  integrityCheckForm.bizType = bizTypeOptions[0]?.value
+  integrityCheckForm.ledgerId = queryParams.ledgerId
+  // 默认查询最近30天
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - 30)
+  integrityCheckForm.startDate = startDate.toISOString().split('T')[0]
+  integrityCheckForm.endDate = endDate.toISOString().split('T')[0]
+  integrityCheckDialogVisible.value = true
+}
+
+const submitIntegrityCheck = async () => {
+  if (integrityCheckLoading.value) return
+  await integrityCheckFormRef.value?.validate()
+  integrityCheckLoading.value = true
+  try {
+    integrityCheckResult.value = await FinanceVoucherApi.checkIntegrity(integrityCheckForm)
+    if (integrityCheckResult.value.missingCount === 0 && integrityCheckResult.value.unbalancedCount === 0) {
+      message.success('凭证完整性检查通过')
+    } else {
+      message.warning(`发现 ${integrityCheckResult.value.missingCount} 条缺失凭证，${integrityCheckResult.value.unbalancedCount} 条不平衡凭证`)
+    }
+  } finally {
+    integrityCheckLoading.value = false
+  }
+}
+
+const submitBatchRecompute = async () => {
+  if (batchRecomputeLoading.value || !integrityCheckResult.value?.missingCount) return
+  await message.confirm(`确认批量重算 ${integrityCheckResult.value.missingCount} 条缺失凭证吗？`)
+  batchRecomputeLoading.value = true
+  try {
+    const count = await FinanceVoucherApi.batchRecompute(integrityCheckForm)
+    message.success(`批量重算完成，成功生成 ${count} 条凭证`)
+    // 重新检查
+    await submitIntegrityCheck()
+    await getList()
+  } finally {
+    batchRecomputeLoading.value = false
+  }
+}
+
+const clearIntegrityCheckDialog = () => {
+  integrityCheckResult.value = null
+  integrityCheckLoading.value = false
+  batchRecomputeLoading.value = false
+  integrityCheckFormRef.value?.clearValidate?.()
 }
 
 const handleRefresh = async () => {
@@ -997,5 +1214,31 @@ onMounted(async () => {
   .finance-voucher-page :deep(.finance-shell__query-grid) {
     grid-template-columns: 1fr;
   }
+}
+
+/* 完整性检查弹窗样式 */
+.finance-voucher-page :deep(.finance-shell__metric-card--danger) {
+  border-color: #fecdd3;
+  background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%);
+}
+
+.finance-voucher-page :deep(.finance-shell__metric-card--danger .finance-shell__metric-value) {
+  color: #e11d48;
+}
+
+.finance-voucher-page :deep(.finance-shell__dialog-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+
+.finance-voucher-page :deep(.finance-shell__section-title) {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.text-red-500 {
+  color: #ef4444;
 }
 </style>

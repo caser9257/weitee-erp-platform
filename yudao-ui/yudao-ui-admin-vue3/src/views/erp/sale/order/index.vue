@@ -1,9 +1,7 @@
 <template>
   <div class="sale-order-page">
-    <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
-
-    <ContentWrap class="sale-order-page__filter-card">
-      <div class="sale-order-page__title">销售订单管理</div>
+<ContentWrap class="sale-order-page__filter-card">
+      <div class="sale-order-page__title">销售订单管�?/div>
       <el-form
         ref="queryFormRef"
         :model="queryParams"
@@ -14,7 +12,7 @@
           <el-form-item label="订单单号" prop="no">
             <el-input
               v-model="queryParams.no"
-              placeholder="请输入订单单号"
+              placeholder="请输入订单单�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -54,7 +52,7 @@
               v-model="queryParams.orderTime"
               value-format="YYYY-MM-DD HH:mm:ss"
               type="daterange"
-              start-placeholder="开始日期"
+              start-placeholder="开始日�?
               end-placeholder="结束日期"
               range-separator="-"
               :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -87,18 +85,18 @@
                 v-model="queryParams.deliveryDate"
                 value-format="YYYY-MM-DD HH:mm:ss"
                 type="daterange"
-                start-placeholder="开始日期"
+                start-placeholder="开始日�?
                 end-placeholder="结束日期"
                 range-separator="-"
                 :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
               />
             </el-form-item>
-            <el-form-item label="创建人" prop="creator">
+            <el-form-item label="创建�? prop="creator">
               <el-select
                 v-model="queryParams.creator"
                 clearable
                 filterable
-                placeholder="请选择创建人"
+                placeholder="请选择创建�?
               >
                 <el-option
                   v-for="item in userList"
@@ -108,8 +106,8 @@
                 />
               </el-select>
             </el-form-item>
-            <el-form-item label="状态" prop="status">
-              <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+            <el-form-item label="状�? prop="status">
+              <el-select v-model="queryParams.status" placeholder="请选择状�? clearable>
                 <el-option
                   v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                   :key="dict.value"
@@ -121,23 +119,23 @@
             <el-form-item label="备注" prop="remark">
               <el-input
                 v-model="queryParams.remark"
-                placeholder="请输入备注"
+                placeholder="请输入备�?
                 clearable
                 @keyup.enter="handleQuery"
               />
             </el-form-item>
             <el-form-item label="出库进度" prop="outStatus">
               <el-select v-model="queryParams.outStatus" placeholder="请选择出库进度" clearable>
-                <el-option label="未出库" value="0" />
+                <el-option label="未出�? value="0" />
                 <el-option label="部分出库" value="1" />
                 <el-option label="全部出库" value="2" />
               </el-select>
             </el-form-item>
-            <el-form-item label="退货进度" prop="returnStatus">
-              <el-select v-model="queryParams.returnStatus" placeholder="请选择退货进度" clearable>
-                <el-option label="未退货" value="0" />
-                <el-option label="部分退货" value="1" />
-                <el-option label="全部退货" value="2" />
+            <el-form-item label="退货进�? prop="returnStatus">
+              <el-select v-model="queryParams.returnStatus" placeholder="请选择退货进�? clearable>
+                <el-option label="未退�? value="0" />
+                <el-option label="部分退�? value="1" />
+                <el-option label="全部退�? value="2" />
               </el-select>
             </el-form-item>
           </div>
@@ -145,7 +143,7 @@
 
         <div class="sale-order-query__footer">
           <el-button link type="primary" @click="toggleAdvancedSearch">
-            {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+            {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
             <span v-if="advancedFilterCount" class="sale-order-query__filter-count">
               {{ advancedFilterCount }}
             </span>
@@ -181,7 +179,7 @@
             :disabled="closureWorkbenchNavigating || loading || exportLoading"
             v-hasPermi="['erp:sale-order:query']"
           >
-            <Icon icon="ep:data-analysis" class="mr-5px" /> 闭环工作台
+            <Icon icon="ep:data-analysis" class="mr-5px" /> 闭环工作�?
           </el-button>
           <el-button
             v-if="toolbarState.showExport"
@@ -260,13 +258,13 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="客户与项目" min-width="180">
+          <el-table-column label="客户与项�? min-width="180">
             <template #default="{ row }">
               <div class="ledger-party">
                 <div class="ledger-party__customer">{{ row.customerName || '-' }}</div>
                 <div class="ledger-party__project">
                   <span class="ledger-party__project-tag">项目</span>
-                  <span>{{ row.projectName || '未关联项目' }}</span>
+                  <span>{{ row.projectName || '未关联项�? }}</span>
                 </div>
               </div>
             </template>
@@ -297,7 +295,7 @@
                 </div>
                 <div class="ledger-progress__section">
                   <div class="ledger-progress__top">
-                    <span>退货进度</span>
+                    <span>退货进�?/span>
                     <strong
                       >{{ formatCount(row.returnCount) }} /
                       {{ formatCount(row.totalCount) }}</strong
@@ -313,15 +311,15 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="财务结算（元）" min-width="170" align="right">
+          <el-table-column label="财务结算（元�? min-width="170" align="right">
             <template #default="{ row }">
               <div class="ledger-finance">
                 <div class="ledger-finance__amount">{{ formatCurrency(row.totalPrice) }}</div>
                 <div class="ledger-finance__meta">
                   {{
                     normalizeNumber(row.depositPrice) > 0
-                      ? `已收订金：${formatCurrency(row.depositPrice)}`
-                      : '无订金'
+                      ? `已收订金�?{formatCurrency(row.depositPrice)}`
+                      : '无订�?
                   }}
                 </div>
                 <div class="ledger-finance__sub"
@@ -330,7 +328,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="收款状态" min-width="100" align="center">
+          <el-table-column label="收款状�? min-width="100" align="center">
             <template #default="{ row }">
               <div class="ledger-receipt-status">
                 <el-tag
@@ -343,7 +341,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="已收金额（元）" min-width="130" align="right">
+          <el-table-column label="已收金额（元�? min-width="130" align="right">
             <template #default="{ row }">
               <div class="ledger-receipt-amount">
                 <span class="ledger-receipt-amount__value font-mono">
@@ -352,7 +350,7 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column label="状态 / 交付" min-width="150">
+          <el-table-column label="状�?/ 交付" min-width="150">
             <template #default="{ row }">
               <div class="ledger-status">
                 <div class="ledger-status__badges">
@@ -522,7 +520,7 @@
                 <div class="sale-order-mobile-card__customer">{{ row.customerName || '-' }}</div>
                 <div class="sale-order-mobile-card__project">
                   <span class="sale-order-mobile-card__project-tag">项目</span>
-                  <span>{{ row.projectName || '未关联项目' }}</span>
+                  <span>{{ row.projectName || '未关联项�? }}</span>
                 </div>
               </div>
               <div class="sale-order-mobile-card__finance">
@@ -534,7 +532,7 @@
                   {{
                     normalizeNumber(row.depositPrice) > 0
                       ? `已收订金 ${formatCurrency(row.depositPrice)}`
-                      : '无订金'
+                      : '无订�?
                   }}
                 </span>
                 <span>货款 {{ formatCurrency(row.totalProductPrice) }}</span>
@@ -543,7 +541,7 @@
 
             <div class="sale-order-mobile-card__receipt">
               <div class="sale-order-mobile-card__receipt-item">
-                <span class="sale-order-mobile-card__receipt-label">收款状态</span>
+                <span class="sale-order-mobile-card__receipt-label">收款状�?/span>
                 <el-tag
                   size="small"
                   effect="light"
@@ -579,7 +577,7 @@
               </div>
               <div class="sale-order-mobile-card__metric">
                 <div class="sale-order-mobile-card__metric-top">
-                  <span>退货进度</span>
+                  <span>退货进�?/span>
                   <strong
                     >{{ formatCount(row.returnCount) }} / {{ formatCount(row.totalCount) }}</strong
                   >
@@ -707,7 +705,7 @@
       </div>
 
       <div class="sale-order-page__footer">
-        <div class="sale-order-page__record-count">共 {{ total }} 条记录</div>
+        <div class="sale-order-page__record-count">�?{{ total }} 条记�?/div>
         <Pagination
           :total="total"
           v-model:page="queryParams.pageNo"
@@ -922,7 +920,7 @@ const resolveDeliveryReadyLabel = (status?: string) => {
     return '部分就绪'
   }
   if (status === DELIVERY_READY_STATUS.READY_TO_SHIP) {
-    return '可发货'
+    return '可发�?
   }
   return '暂无可发'
 }
@@ -937,7 +935,7 @@ const resolveDeliveryReadyTagType = (status?: string) => {
   return 'info'
 }
 
-// 收款状态：0-未收款 1-部分收款 2-全额收款
+// 收款状态：0-未收�?1-部分收款 2-全额收款
 const RECEIPT_STATUS = {
   UNRECEIVED: 0,
   PARTIAL: 1,
@@ -951,7 +949,7 @@ const resolveReceiptStatusLabel = (status?: number) => {
   if (status === RECEIPT_STATUS.FULL) {
     return '全额收款'
   }
-  return '未收款'
+  return '未收�?
 }
 
 const resolveReceiptStatusTagClass = (status?: number) => {
@@ -1115,7 +1113,7 @@ const openSubmitDialog = (row: SaleOrderListRow) => {
 
 const handleCancelApproval = async (row: SaleOrderListRow) => {
   try {
-    const { value } = await ElMessageBox.prompt('请输入撤回原因', '撤回审批', {
+    const { value } = await ElMessageBox.prompt('请输入撤回原�?, '撤回审批', {
       confirmButtonText: t('common.ok'),
       cancelButtonText: t('common.cancel'),
       inputPattern: /^[\s\S]*.*\S[\s\S]*$/,
@@ -1132,7 +1130,7 @@ const handleCancelApproval = async (row: SaleOrderListRow) => {
 
 const handleProcessDetail = (row: SaleOrderListRow) => {
   if (!row.processInstanceId) {
-    message.warning('当前销售订单暂无审批流程')
+    message.warning('当前销售订单暂无审批流�?)
     return
   }
   push({
@@ -1148,7 +1146,7 @@ const handleExport = async () => {
     await message.exportConfirm()
     exportLoading.value = true
     const data = await SaleOrderApi.exportSaleOrder(queryParams)
-    download.excel(data, '销售订单.xls')
+    download.excel(data, '销售订�?xls')
   } catch {
   } finally {
     exportLoading.value = false
@@ -1161,7 +1159,7 @@ const handleSelectionChange = (rows: SaleOrderListRow[]) => {
 
 const openBatchEditDrawer = () => {
   if (!batchEditableSelectionRows.value.length) {
-    message.warning('请先选择可批量编辑的销售订单')
+    message.warning('请先选择可批量编辑的销售订�?)
     return
   }
   batchEditDrawerRef.value?.open({

@@ -1,12 +1,9 @@
 <template>
-  <doc-alert title="【合同】合同管理、合同提醒" url="https://doc.iocoder.cn/crm/contract/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap class="contract-page__header-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="contract-page__header">
       <div>
-        <div class="contract-page__title">客户与合同评审</div>
-        <div class="contract-page__count">共 {{ total }} 条记录</div>
+        <div class="contract-page__title">客户与合同评�?/div>
+        <div class="contract-page__count">�?{{ total }} 条记�?/div>
       </div>
       <div class="contract-page__actions">
         <el-button
@@ -29,7 +26,7 @@
   </ContentWrap>
 
   <ContentWrap class="contract-page__filter-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('emerald')">
-    <div class="contract-page__section-title">筛选条件</div>
+    <div class="contract-page__section-title">筛选条�?/div>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -41,7 +38,7 @@
           <el-input
             v-model="queryParams.no"
             clearable
-            placeholder="请输入合同编号"
+            placeholder="请输入合同编�?
             @keyup.enter="handleQuery"
           />
         </el-form-item>
@@ -49,7 +46,7 @@
           <el-input
             v-model="queryParams.name"
             clearable
-            placeholder="请输入合同名称"
+            placeholder="请输入合同名�?
             @keyup.enter="handleQuery"
           />
         </el-form-item>
@@ -88,7 +85,7 @@
       <el-tabs v-model="activeName" @tab-click="handleTabClick">
         <el-tab-pane label="我负责的" name="1" />
         <el-tab-pane label="我参与的" name="2" />
-        <el-tab-pane label="下属负责的" name="3" />
+        <el-tab-pane label="下属负责�? name="3" />
       </el-tabs>
     </div>
 
@@ -97,7 +94,7 @@
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" fixed="left" label="合同编号" prop="no" width="180" />
@@ -132,7 +129,7 @@
       </el-table-column>
       <el-table-column
         align="center"
-        label="合同金额（元）"
+        label="合同金额（元�?
         prop="totalPrice"
         width="140"
         :formatter="erpPriceTableColumnFormatter"
@@ -146,7 +143,7 @@
       />
       <el-table-column
         align="center"
-        label="合同开始时间"
+        label="合同开始时�?
         prop="startTime"
         width="120"
         :formatter="dateFormatter2"
@@ -158,7 +155,7 @@
         width="120"
         :formatter="dateFormatter2"
       />
-      <el-table-column align="center" label="客户签约人" prop="contactName" width="130">
+      <el-table-column align="center" label="客户签约�? prop="contactName" width="130">
         <template #default="scope">
           <el-link
             :underline="false"
@@ -169,7 +166,7 @@
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="公司签约人" prop="signUserName" width="130" />
+      <el-table-column align="center" label="公司签约�? prop="signUserName" width="130" />
       <el-table-column align="center" label="备注" prop="remark" width="200" />
       <el-table-column
         align="center"
@@ -192,12 +189,12 @@
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="最后跟进时间"
+        label="最后跟进时�?
         prop="contactLastTime"
         width="180px"
       />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="120" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100px" />
+      <el-table-column align="center" label="负责�? prop="ownerUserName" width="120" />
+      <el-table-column align="center" label="所属部�? prop="ownerUserDeptName" width="100px" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
@@ -212,8 +209,8 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="120" />
-      <el-table-column align="center" fixed="right" label="合同状态" prop="auditStatus" width="120">
+      <el-table-column align="center" label="创建�? prop="creatorName" width="120" />
+      <el-table-column align="center" fixed="right" label="合同状�? prop="auditStatus" width="120">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.CRM_AUDIT_STATUS" :value="scope.row.auditStatus" />
         </template>
@@ -269,7 +266,7 @@
     </div>
 
     <div class="contract-page__footer">
-      <div class="contract-page__record-count">共 {{ total }} 条记录</div>
+      <div class="contract-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -279,7 +276,7 @@
     </div>
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ContractForm ref="formRef" @success="getList" />
 </template>
 <script lang="ts" setup>
@@ -296,21 +293,21 @@ import { getToneCardClass } from '../../erp/stock/shared/stockTone'
 defineOptions({ name: 'CrmContract' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   name: null,
   customerId: null,
   orderDate: [],
   no: null
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 const customerList = ref<CustomerApi.CustomerVO[]>([]) // 客户列表
@@ -354,7 +351,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ContractApi.deleteContract(id)
@@ -367,7 +364,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -381,9 +378,9 @@ const handleExport = async () => {
 
 /** 提交审核 **/
 const handleSubmit = async (row: ContractApi.ContractVO) => {
-  await message.confirm(`您确定提交【${row.name}】审核吗？`)
+  await message.confirm(`您确定提交�?{row.name}】审核吗？`)
   await ContractApi.submitContract(row.id)
-  message.success('提交审核成功！')
+  message.success('提交审核成功�?)
   await getList()
 }
 
@@ -403,7 +400,7 @@ const openCustomerDetail = (id: number) => {
   push({ name: 'CrmCustomerDetail', params: { id } })
 }
 
-/** 打开联系人详情 */
+/** 打开联系人详�?*/
 const openContactDetail = (id: number) => {
   push({ name: 'CrmContactDetail', params: { id } })
 }
@@ -413,7 +410,7 @@ const openBusinessDetail = (id: number) => {
   push({ name: 'CrmBusinessDetail', params: { id } })
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   customerList.value = await CustomerApi.getCustomerSimpleList()

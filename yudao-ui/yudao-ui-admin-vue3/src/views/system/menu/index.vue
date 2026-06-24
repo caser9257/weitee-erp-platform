@@ -1,8 +1,5 @@
 <template>
-  <doc-alert title="功能权限" url="https://doc.iocoder.cn/resource-permission" />
-  <doc-alert title="菜单路由" url="https://doc.iocoder.cn/vue3/route/" />
-
-  <!-- 搜索工作栏 -->
+  <!-- 搜索工作�?-->
   <ContentWrap>
     <el-form
       ref="queryFormRef"
@@ -16,16 +13,16 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入菜单名称"
+          placeholder="请输入菜单名�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="状�? prop="status">
         <el-select
           v-model="queryParams.status"
           class="!w-240px"
           clearable
-          placeholder="请选择菜单状态"
+          placeholder="请选择菜单状�?
         >
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
@@ -83,7 +80,7 @@
     </el-auto-resizer>
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <MenuForm ref="formRef" @success="getList" />
 </template>
 <script lang="tsx" setup>
@@ -144,12 +141,12 @@ const columns = [
   },
   {
     key: 'status',
-    title: '状态',
+    title: '状�?,
     dataKey: 'status',
     width: 60,
     fixed: TableV2FixedDir.RIGHT,
     cellRenderer: ({ rowData }) => {
-      // 检查权限
+      // 检查权�?
       if (!checkPermi(['system:menu:update'])) {
         return <DictTag type={DICT_TYPE.COMMON_STATUS} value={rowData.status} />
       }
@@ -204,7 +201,7 @@ const columns = [
           </ElButton>
         )
       }
-      // 如果没有权限，返回 null
+      // 如果没有权限，返�?null
       if (buttons.length === 0) {
         return null
       }
@@ -215,20 +212,20 @@ const columns = [
 ]
 
 const { wsCache } = useCache()
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
-const list = ref<any[]>([]) // 列表的数据
+const list = ref<any[]>([]) // 列表的数�?
 const queryParams = reactive({
   name: undefined,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
-const isExpandAll = ref(false) // 是否展开，默认全部折叠
-const refreshTable = ref(true) // 重新渲染表格状态
+const queryFormRef = ref() // 搜索的表�?
+const isExpandAll = ref(false) // 是否展开，默认全部折�?
+const refreshTable = ref(true) // 重新渲染表格状�?
 
-// 添加展开行控制
+// 添加展开行控�?
 const expandedRowKeys = ref<number[]>([])
 
 /** 查询列表 */
@@ -262,10 +259,10 @@ const openForm = (type: string, id?: number, parentId?: number) => {
 /** 展开/折叠操作 */
 const toggleExpandAll = () => {
   if (!isExpandAll.value) {
-    // 展开所有
+    // 展开所�?
     expandedRowKeys.value = list.value.map((item) => item.id)
   } else {
-    // 折叠所有
+    // 折叠所�?
     expandedRowKeys.value = []
   }
   isExpandAll.value = !isExpandAll.value
@@ -275,10 +272,10 @@ const toggleExpandAll = () => {
 const refreshMenu = async () => {
   try {
     await message.confirm('即将更新缓存刷新浏览器！', '刷新菜单缓存')
-    // 清空，从而触发刷新
+    // 清空，从而触发刷�?
     wsCache.delete(CACHE_KEY.USER)
     wsCache.delete(CACHE_KEY.ROLE_ROUTERS)
-    // 刷新浏览器
+    // 刷新浏览�?
     location.reload()
   } catch {}
 }
@@ -286,7 +283,7 @@ const refreshMenu = async () => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await MenuApi.deleteMenu(id)
@@ -296,13 +293,13 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 开启/关闭菜单的状态 */
-const menuStatusUpdating = ref({}) // 菜单状态更新中的 menu 映射。key：菜单编号，value：是否更新中
+/** 开�?关闭菜单的状�?*/
+const menuStatusUpdating = ref({}) // 菜单状态更新中�?menu 映射。key：菜单编号，value：是否更新中
 const handleStatusChanged = async (menu: MenuVO, val: number) => {
-  // 1. 标记 menu.id 更新中
+  // 1. 标记 menu.id 更新�?
   menuStatusUpdating.value[menu.id] = true
   try {
-    // 2. 发起更新状态
+    // 2. 发起更新状�?
     menu.status = val
     await MenuApi.updateMenu(menu)
   } finally {
@@ -311,7 +308,7 @@ const handleStatusChanged = async (menu: MenuVO, val: number) => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

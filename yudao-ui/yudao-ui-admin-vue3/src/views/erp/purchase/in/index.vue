@@ -1,24 +1,22 @@
 <template>
-  <doc-alert title="【采购】采购订单、入库、退货" url="https://doc.iocoder.cn/erp/purchase/" />
-
-  <ContentWrap class="purchase-in-page__filter-card">
+<ContentWrap class="purchase-in-page__filter-card">
     <div class="purchase-in-page__title">采购入库台账</div>
     <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="purchase-in-query">
       <div class="purchase-in-query__grid purchase-in-query__grid--primary">
         <el-form-item label="入库单号" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入入库单号"
+            placeholder="请输入入库单�?
             clearable
             @keyup.enter="handleQuery"
           />
         </el-form-item>
-        <el-form-item label="供应商" prop="supplierId">
+        <el-form-item label="供应�? prop="supplierId">
           <el-select
             v-model="queryParams.supplierId"
             clearable
             filterable
-            placeholder="请选择供应商"
+            placeholder="请选择供应�?
           >
             <el-option
               v-for="item in supplierList"
@@ -31,7 +29,7 @@
         <el-form-item label="关联订单" prop="orderNo">
           <el-input
             v-model="queryParams.orderNo"
-            placeholder="请输入关联订单"
+            placeholder="请输入关联订�?
             clearable
             @keyup.enter="handleQuery"
           />
@@ -41,7 +39,7 @@
             v-model="queryParams.inTime"
             value-format="YYYY-MM-DD HH:mm:ss"
             type="daterange"
-            start-placeholder="开始日期"
+            start-placeholder="开始日�?
             end-placeholder="结束日期"
             range-separator="-"
             :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
@@ -84,12 +82,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="创建人" prop="creator">
+          <el-form-item label="创建�? prop="creator">
             <el-select
               v-model="queryParams.creator"
               clearable
               filterable
-              placeholder="请选择创建人"
+              placeholder="请选择创建�?
             >
               <el-option
                 v-for="item in userList"
@@ -114,19 +112,19 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="付款状态" prop="paymentStatus">
+          <el-form-item label="付款状�? prop="paymentStatus">
             <el-select
               v-model="queryParams.paymentStatus"
-              placeholder="请选择付款状态"
+              placeholder="请选择付款状�?
               clearable
             >
-              <el-option label="未付款" value="0" />
+              <el-option label="未付�? value="0" />
               <el-option label="部分付款" value="1" />
               <el-option label="全部付款" value="2" />
             </el-select>
           </el-form-item>
-          <el-form-item label="审核状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择审核状态" clearable>
+          <el-form-item label="审核状�? prop="status">
+            <el-select v-model="queryParams.status" placeholder="请选择审核状�? clearable>
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -135,8 +133,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="质检状态" prop="qaStatus">
-            <el-select v-model="queryParams.qaStatus" placeholder="请选择质检状态" clearable>
+          <el-form-item label="质检状�? prop="qaStatus">
+            <el-select v-model="queryParams.qaStatus" placeholder="请选择质检状�? clearable>
               <el-option
                 v-for="item in QA_STATUS_OPTIONS"
                 :key="item.value"
@@ -148,7 +146,7 @@
           <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="请输入备注"
+              placeholder="请输入备�?
               clearable
               @keyup.enter="handleQuery"
             />
@@ -158,7 +156,7 @@
 
       <div class="purchase-in-query__footer">
         <el-button link type="primary" @click="toggleAdvancedSearch">
-          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+          {{ advancedSearchVisible ? '收起高级筛�? : '展开高级筛�? }}
           <span v-if="advancedFilterCount" class="purchase-in-query__filter-count">
             {{ advancedFilterCount }}
           </span>
@@ -260,7 +258,7 @@
             <div class="ledger-order__no">{{ row.no || '-' }}</div>
             <div class="ledger-order__meta">入库 {{ formatDateValue(row.inTime) }}</div>
             <div class="ledger-order__meta">创建 {{ formatDateValue(row.createTime) }}</div>
-            <div class="ledger-order__meta">创建人 {{ row.creatorName || '-' }}</div>
+            <div class="ledger-order__meta">创建�?{{ row.creatorName || '-' }}</div>
           </div>
         </template>
       </el-table-column>
@@ -291,7 +289,7 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="金额结算（元）" min-width="124" align="right">
+      <el-table-column label="金额结算（元�? min-width="124" align="right">
         <template #default="{ row }">
           <div class="ledger-finance">
             <div class="ledger-finance__amount">{{ formatCurrency(row.totalPrice) }}</div>
@@ -331,13 +329,13 @@
               />
             </div>
             <div class="ledger-progress__summary">
-              <span>不合格 {{ formatCount(row.qaRejectCount) }}</span>
-              <span>剩余待入库 {{ formatCount(row.remainingStockInCount) }}</span>
+              <span>不合�?{{ formatCount(row.qaRejectCount) }}</span>
+              <span>剩余待入�?{{ formatCount(row.remainingStockInCount) }}</span>
             </div>
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="状态" min-width="108">
+      <el-table-column label="状�? min-width="108">
         <template #default="{ row }">
           <div class="ledger-status">
             <div class="ledger-status__badges">
@@ -427,7 +425,7 @@
               <div class="purchase-in-mobile-card__meta">
                 <span>入库 {{ formatDateValue(row.inTime) }}</span>
                 <span>创建 {{ formatDateValue(row.createTime) }}</span>
-                <span>创建人 {{ row.creatorName || '-' }}</span>
+                <span>创建�?{{ row.creatorName || '-' }}</span>
               </div>
             </div>
             <div class="purchase-in-mobile-card__status">
@@ -506,8 +504,8 @@
           </div>
 
           <div class="purchase-in-mobile-card__summary-bar">
-            <span>不合格 {{ formatCount(row.qaRejectCount) }}</span>
-            <span>剩余待入库 {{ formatCount(row.remainingStockInCount) }}</span>
+            <span>不合�?{{ formatCount(row.qaRejectCount) }}</span>
+            <span>剩余待入�?{{ formatCount(row.remainingStockInCount) }}</span>
           </div>
 
           <div v-if="row.lastRejectReason" class="purchase-in-mobile-card__reject">
@@ -571,7 +569,7 @@
     </div>
 
     <div class="purchase-in-page__footer">
-      <div class="purchase-in-page__record-count">共 {{ total }} 条记录</div>
+      <div class="purchase-in-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -638,7 +636,7 @@ const QA_STATUS_OPTIONS = [
   { label: '待质检', value: PURCHASE_IN_QA_STATUS.TO_INSPECT },
   { label: '部分合格', value: PURCHASE_IN_QA_STATUS.PARTIAL },
   { label: '全部合格', value: PURCHASE_IN_QA_STATUS.PASSED },
-  { label: '全部不合格', value: PURCHASE_IN_QA_STATUS.REJECTED }
+  { label: '全部不合�?, value: PURCHASE_IN_QA_STATUS.REJECTED }
 ]
 
 type PurchaseInActionKey =
@@ -843,12 +841,12 @@ const resolvePurchaseSourceBatchSummary = (row: PurchaseInVO) => {
     )
   )
   if (!batchNos.length) {
-    return '未关联来源批次'
+    return '未关联来源批�?
   }
   if (batchNos.length <= 2) {
     return batchNos.join(' / ')
   }
-  return `${batchNos.slice(0, 2).join(' / ')} 等 ${batchNos.length} 个来源批次`
+  return `${batchNos.slice(0, 2).join(' / ')} �?${batchNos.length} 个来源批次`
 }
 
 const getRemainingPay = (row: PurchaseInVO) =>
@@ -861,7 +859,7 @@ const getPaymentStatusLabel = (row: PurchaseInVO) => {
     return '付款 未付'
   }
   if (paymentPrice >= totalPrice) {
-    return '付款 已结清'
+    return '付款 已结�?
   }
   return '付款 部分支付'
 }
@@ -1101,7 +1099,7 @@ const openForm = (type: string, id?: number, purchaseOrderId?: number) => {
 const openBatchEditDrawer = () => {
   const rows = batchEditSelectionRows.value
   if (!rows.length) {
-    message.warning('请先选择可修改的采购入库单')
+    message.warning('请先选择可修改的采购入库�?)
     return
   }
   batchEditDrawerRef.value?.open({
@@ -1160,7 +1158,7 @@ const handleCancelApproval = async (row: PurchaseInVO) => {
     return
   }
   try {
-    const { value } = await ElMessageBox.prompt('请输入撤回原因', '撤回审批', {
+    const { value } = await ElMessageBox.prompt('请输入撤回原�?, '撤回审批', {
       confirmButtonText: t('common.ok'),
       cancelButtonText: t('common.cancel'),
       inputPattern: /^[\s\S]*.*\S[\s\S]*$/,
@@ -1194,7 +1192,7 @@ const handleProcessDetail = (row: PurchaseInVO) => {
 
 const handleQualityDetail = (row: PurchaseInVO) => {
   if (!row.id) {
-    message.warning('当前采购入库单编号不能为空')
+    message.warning('当前采购入库单编号不能为�?)
     return
   }
   push({

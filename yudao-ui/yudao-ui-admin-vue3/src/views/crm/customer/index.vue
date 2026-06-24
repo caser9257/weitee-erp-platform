@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【客户】客户管理、公海客户" url="https://doc.iocoder.cn/crm/customer/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -16,7 +13,7 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入客户名称"
+          placeholder="请输入客户名�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -25,16 +22,16 @@
           v-model="queryParams.mobile"
           class="!w-240px"
           clearable
-          placeholder="请输入手机"
+          placeholder="请输入手�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="所属行业" prop="industryId">
+      <el-form-item label="所属行�? prop="industryId">
         <el-select
           v-model="queryParams.industryId"
           class="!w-240px"
           clearable
-          placeholder="请选择所属行业"
+          placeholder="请选择所属行�?
         >
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.CRM_CUSTOMER_INDUSTRY)"
@@ -110,7 +107,7 @@
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" fixed="left" label="客户名称" prop="name" width="160">
@@ -146,12 +143,12 @@
         width="180px"
       />
       <el-table-column align="center" label="备注" prop="remark" width="200" />
-      <el-table-column align="center" label="锁定状态" prop="lockStatus">
+      <el-table-column align="center" label="锁定状�? prop="lockStatus">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.lockStatus" />
         </template>
       </el-table-column>
-      <el-table-column align="center" label="成交状态" prop="dealStatus">
+      <el-table-column align="center" label="成交状�? prop="dealStatus">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.dealStatus" />
         </template>
@@ -159,17 +156,17 @@
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="最后跟进时间"
+        label="最后跟进时�?
         prop="contactLastTime"
         width="180px"
       />
-      <el-table-column align="center" label="最后跟进记录" prop="contactLastContent" width="200" />
+      <el-table-column align="center" label="最后跟进记�? prop="contactLastContent" width="200" />
       <el-table-column align="center" label="地址" prop="detailAddress" width="180" />
       <el-table-column align="center" label="距离进入公海天数" prop="poolDay" width="140">
-        <template #default="scope"> {{ scope.row.poolDay }} 天</template>
+        <template #default="scope"> {{ scope.row.poolDay }} �?/template>
       </el-table-column>
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="100px" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100px" />
+      <el-table-column align="center" label="负责�? prop="ownerUserName" width="100px" />
+      <el-table-column align="center" label="所属部�? prop="ownerUserDeptName" width="100px" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
@@ -184,7 +181,7 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
+      <el-table-column align="center" label="创建�? prop="creatorName" width="100px" />
       <el-table-column align="center" fixed="right" label="操作" min-width="150">
         <template #default="scope">
           <el-button
@@ -215,7 +212,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <CustomerForm ref="formRef" @success="getList" />
   <CustomerImportForm ref="importFormRef" @success="getList" />
 </template>
@@ -232,15 +229,15 @@ import { TabsPaneContext } from 'element-plus'
 defineOptions({ name: 'CrmCustomer' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   name: '',
   mobile: '',
   industryId: undefined,
@@ -248,7 +245,7 @@ const queryParams = reactive({
   source: undefined,
   pool: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 
@@ -297,7 +294,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await CustomerApi.deleteCustomer(id)
@@ -316,7 +313,7 @@ const handleImport = () => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -336,7 +333,7 @@ watch(
   }
 )
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

@@ -1,7 +1,4 @@
 <template>
-  <doc-alert title="【客户】客户管理、公海客户" url="https://doc.iocoder.cn/crm/customer/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
     <el-form
       ref="formRef"
@@ -27,14 +24,14 @@
         <!-- 表单 -->
         <el-form-item label="客户公海规则设置" prop="enabled">
           <el-radio-group v-model="formData.enabled" @change="changeEnable" class="ml-4">
-            <el-radio :value="false" size="large">不启用</el-radio>
+            <el-radio :value="false" size="large">不启�?/el-radio>
             <el-radio :value="true" size="large">启用</el-radio>
           </el-radio-group>
         </el-form-item>
         <div v-if="formData.enabled">
           <el-form-item>
             <el-input-number class="mr-2" v-model="formData.contactExpireDays" />
-            天不跟进或
+            天不跟进�?
             <el-input-number class="mx-2" v-model="formData.dealExpireDays" />
             天未成交
           </el-form-item>
@@ -44,13 +41,13 @@
               @change="changeNotifyEnable"
               class="ml-4"
             >
-              <el-radio :value="false" size="large">不提醒</el-radio>
+              <el-radio :value="false" size="large">不提�?/el-radio>
               <el-radio :value="true" size="large">提醒</el-radio>
             </el-radio-group>
           </el-form-item>
           <div v-if="formData.notifyEnabled">
             <el-form-item>
-              提前 <el-input-number class="mx-2" v-model="formData.notifyDays" /> 天提醒
+              提前 <el-input-number class="mx-2" v-model="formData.notifyDays" /> 天提�?
             </el-form-item>
           </div>
         </div>
@@ -65,7 +62,7 @@ import { CardTitle } from '@/components/Card'
 defineOptions({ name: 'CrmCustomerPoolConfig' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const formLoading = ref(false)
 const formData = ref({

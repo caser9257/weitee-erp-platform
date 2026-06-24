@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="OAuth 2.0（SSO 单点登录)" url="https://doc.iocoder.cn/oauth2/" />
-
-  <!-- 搜索 -->
+<!-- 搜索 -->
   <ContentWrap>
     <el-form
       class="-mb-15px"
@@ -10,7 +8,7 @@
       :inline="true"
       label-width="68px"
     >
-      <el-form-item label="应用名" prop="name">
+      <el-form-item label="应用�? prop="name">
         <el-input
           v-model="queryParams.name"
           placeholder="请输入应用名"
@@ -19,8 +17,8 @@
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
+      <el-form-item label="状�? prop="status">
+        <el-select v-model="queryParams.status" placeholder="请选择状�? clearable class="!w-240px">
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
             :key="dict.value"
@@ -57,24 +55,24 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" @selection-change="handleRowCheckboxChange">
       <el-table-column type="selection" width="55" />
-      <el-table-column label="客户端编号" align="center" prop="clientId" />
-      <el-table-column label="客户端密钥" align="center" prop="secret" />
-      <el-table-column label="应用名" align="center" prop="name" />
+      <el-table-column label="客户端编�? align="center" prop="clientId" />
+      <el-table-column label="客户端密�? align="center" prop="secret" />
+      <el-table-column label="应用�? align="center" prop="name" />
       <el-table-column label="应用图标" align="center" prop="logo">
         <template #default="scope">
           <img width="40px" height="40px" :src="scope.row.logo" />
         </template>
       </el-table-column>
-      <el-table-column label="状态" align="center" prop="status">
+      <el-table-column label="状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column label="访问令牌的有效期" align="center" prop="accessTokenValiditySeconds">
-        <template #default="scope">{{ scope.row.accessTokenValiditySeconds }} 秒</template>
+        <template #default="scope">{{ scope.row.accessTokenValiditySeconds }} �?/template>
       </el-table-column>
       <el-table-column label="刷新令牌的有效期" align="center" prop="refreshTokenValiditySeconds">
-        <template #default="scope">{{ scope.row.refreshTokenValiditySeconds }} 秒</template>
+        <template #default="scope">{{ scope.row.refreshTokenValiditySeconds }} �?/template>
       </el-table-column>
       <el-table-column label="授权类型" align="center" prop="authorizedGrantTypes">
         <template #default="scope">
@@ -126,7 +124,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ClientForm ref="formRef" @success="getList" />
 </template>
 <script lang="ts" setup>
@@ -138,18 +136,18 @@ import ClientForm from './ClientForm.vue'
 defineOptions({ name: 'SystemOAuth2Client' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: null,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -184,7 +182,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ClientApi.deleteOAuth2Client(id)
@@ -202,7 +200,7 @@ const handleRowCheckboxChange = (rows: ClientApi.OAuth2ClientVO[]) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await ClientApi.deleteOAuth2ClientList(checkedIds.value)
@@ -213,7 +211,7 @@ const handleDeleteBatch = async () => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

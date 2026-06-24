@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【客户】客户管理、公海客户" url="https://doc.iocoder.cn/crm/customer/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -16,7 +13,7 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入客户名称"
+          placeholder="请输入客户名�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -25,16 +22,16 @@
           v-model="queryParams.mobile"
           class="!w-240px"
           clearable
-          placeholder="请输入手机"
+          placeholder="请输入手�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="所属行业" prop="industryId">
+      <el-form-item label="所属行�? prop="industryId">
         <el-select
           v-model="queryParams.industryId"
           class="!w-240px"
           clearable
-          placeholder="请选择所属行业"
+          placeholder="请选择所属行�?
         >
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.CRM_CUSTOMER_INDUSTRY)"
@@ -133,7 +130,7 @@
         width="180px"
       />
       <el-table-column align="center" label="备注" prop="remark" width="200" />
-      <el-table-column align="center" label="成交状态" prop="dealStatus">
+      <el-table-column align="center" label="成交状�? prop="dealStatus">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.dealStatus" />
         </template>
@@ -141,11 +138,11 @@
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="最后跟进时间"
+        label="最后跟进时�?
         prop="contactLastTime"
         width="180px"
       />
-      <el-table-column align="center" label="最后跟进记录" prop="contactLastContent" width="200" />
+      <el-table-column align="center" label="最后跟进记�? prop="contactLastContent" width="200" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
@@ -160,7 +157,7 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
+      <el-table-column align="center" label="创建�? prop="creatorName" width="100px" />
     </el-table>
     <!-- 分页 -->
     <Pagination
@@ -183,8 +180,8 @@ defineOptions({ name: 'CrmCustomerPool' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = ref({
   pageNo: 1,
   pageSize: 10,
@@ -196,7 +193,7 @@ const queryParams = ref({
   sceneType: undefined,
   pool: true
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -243,7 +240,7 @@ const openDetail = (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -263,7 +260,7 @@ watch(
   }
 )
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

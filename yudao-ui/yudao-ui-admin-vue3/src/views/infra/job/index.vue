@@ -1,10 +1,6 @@
 <template>
-  <doc-alert title="定时任务" url="https://doc.iocoder.cn/job/" />
-  <doc-alert title="异步任务" url="https://doc.iocoder.cn/async-task/" />
-  <doc-alert title="消息队列" url="https://doc.iocoder.cn/message-queue/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -15,16 +11,16 @@
       <el-form-item label="任务名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入任务名称"
+          placeholder="请输入任务名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="任务状态" prop="status">
+      <el-form-item label="任务状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择任务状态"
+          placeholder="请选择任务状�?
           clearable
           class="!w-240px"
         >
@@ -39,7 +35,7 @@
       <el-form-item label="处理器的名字" prop="handlerName">
         <el-input
           v-model="queryParams.handlerName"
-          placeholder="请输入处理器的名字"
+          placeholder="请输入处理器的名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -87,14 +83,14 @@
       <el-table-column type="selection" width="55" />
       <el-table-column label="任务编号" align="center" prop="id" />
       <el-table-column label="任务名称" align="center" prop="name" />
-      <el-table-column label="任务状态" align="center" prop="status">
+      <el-table-column label="任务状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_JOB_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column label="处理器的名字" align="center" prop="handlerName" />
       <el-table-column label="处理器的参数" align="center" prop="handlerParam" />
-      <el-table-column label="CRON 表达式" align="center" prop="cronExpression" />
+      <el-table-column label="CRON 表达�? align="center" prop="cronExpression" />
       <el-table-column label="操作" align="center" width="200">
         <template #default="scope">
           <el-button
@@ -111,7 +107,7 @@
             @click="handleChangeStatus(scope.row)"
             v-hasPermi="['infra:job:update']"
           >
-            {{ scope.row.status === InfraJobStatusEnum.STOP ? '开启' : '暂停' }}
+            {{ scope.row.status === InfraJobStatusEnum.STOP ? '开�? : '暂停' }}
           </el-button>
           <el-button
             type="danger"
@@ -129,7 +125,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="handleRun" v-if="checkPermi(['infra:job:trigger'])">
-                  执行一次
+                  执行一�?
                 </el-dropdown-item>
                 <el-dropdown-item command="openDetail" v-if="checkPermi(['infra:job:query'])">
                   任务详细
@@ -152,9 +148,9 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <JobForm ref="formRef" @success="getList" />
-  <!-- 表单弹窗：查看 -->
+  <!-- 表单弹窗：查�?-->
   <JobDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -168,13 +164,13 @@ import { InfraJobStatusEnum } from '@/utils/constants'
 
 defineOptions({ name: 'InfraJob' })
 
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const message = useMessage() // 消息弹窗
 const { push } = useRouter() // 路由
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -182,7 +178,7 @@ const queryParams = reactive({
   status: undefined,
   handlerName: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -212,7 +208,7 @@ const resetQuery = () => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -230,13 +226,13 @@ const openForm = (type: string, id?: number) => {
   formRef.value.open(type, id)
 }
 
-/** 修改状态操作 */
+/** 修改状态操�?*/
 const handleChangeStatus = async (row: JobApi.JobVO) => {
   try {
     // 修改状态的二次确认
-    const text = row.status === InfraJobStatusEnum.STOP ? '开启' : '关闭'
+    const text = row.status === InfraJobStatusEnum.STOP ? '开�? : '关闭'
     await message.confirm(
-      '确认要' + text + '定时任务编号为"' + row.id + '"的数据项?',
+      '确认�? + text + '定时任务编号�?' + row.id + '"的数据项?',
       t('common.reminder')
     )
     const status =
@@ -251,7 +247,7 @@ const handleChangeStatus = async (row: JobApi.JobVO) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await JobApi.deleteJob(id)
@@ -269,7 +265,7 @@ const handleRowCheckboxChange = (rows: JobApi.JobVO[]) => {
 
 const handleDeleteBatch = async () => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起批量删除
     await JobApi.deleteJobList(checkedIds.value)
@@ -297,11 +293,11 @@ const handleCommand = (command, row) => {
   }
 }
 
-/** 执行一次 */
+/** 执行一�?*/
 const handleRun = async (row: JobApi.JobVO) => {
   try {
     // 二次确认
-    await message.confirm('确认要立即执行一次' + row.name + '?', t('common.reminder'))
+    await message.confirm('确认要立即执行一�? + row.name + '?', t('common.reminder'))
     // 提交执行
     await JobApi.runJob(row.id)
     message.success('执行成功')
@@ -325,7 +321,7 @@ const handleJobLog = (id?: number) => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

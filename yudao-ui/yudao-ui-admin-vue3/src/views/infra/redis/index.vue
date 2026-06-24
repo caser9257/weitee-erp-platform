@@ -1,7 +1,4 @@
 <template>
-  <doc-alert title="Redis 缓存" url="https://doc.iocoder.cn/redis-cache/" />
-  <doc-alert title="本地缓存" url="https://doc.iocoder.cn/local-cache/" />
-
   <el-scrollbar height="calc(100vh - 88px - 40px - 50px)">
     <el-row>
       <!-- 基本信息 -->
@@ -20,7 +17,7 @@
             <el-descriptions-item label="客户端数 :">
               {{ cache?.info?.connected_clients }}
             </el-descriptions-item>
-            <el-descriptions-item label="运行时间(天) :">
+            <el-descriptions-item label="运行时间(�? :">
               {{ cache?.info?.uptime_in_days }}
             </el-descriptions-item>
             <el-descriptions-item label="使用内存 :">
@@ -32,8 +29,8 @@
             <el-descriptions-item label="内存配置 :">
               {{ cache?.info?.maxmemory_human }}
             </el-descriptions-item>
-            <el-descriptions-item label="AOF是否开启 :">
-              {{ cache?.info?.aof_enabled == '0' ? '否' : '是' }}
+            <el-descriptions-item label="AOF是否开�?:">
+              {{ cache?.info?.aof_enabled == '0' ? '�? : '�? }}
             </el-descriptions-item>
             <el-descriptions-item label="RDB是否成功 :">
               {{ cache?.info?.rdb_last_bgsave_status }}
@@ -54,7 +51,7 @@
           <Echart :options="commandStatsRefChika" :height="420" />
         </el-card>
       </el-col>
-      <!-- 内存使用量统计 -->
+      <!-- 内存使用量统�?-->
       <el-col :span="12" class="mt-3">
         <el-card class="ml-3" :gutter="12" shadow="hover">
           <Echart :options="usedmemoryEchartChika" :height="420" />
@@ -77,13 +74,13 @@ const readRedisInfo = async () => {
 // 内存使用情况
 const usedmemoryEchartChika = reactive<any>({
   title: {
-    // 仪表盘标题。
+    // 仪表盘标题�?
     text: '内存使用情况',
     left: 'center',
-    show: true, // 是否显示标题,默认 true。
-    offsetCenter: [0, '20%'], //相对于仪表盘中心的偏移位置，数组第一项是水平方向的偏移，第二项是垂直方向的偏移。可以是绝对的数值，也可以是相对于仪表盘半径的百分比。
-    color: 'yellow', // 文字的颜色,默认 #333。
-    fontSize: 20 // 文字的字体大小,默认 15。
+    show: true, // 是否显示标题,默认 true�?
+    offsetCenter: [0, '20%'], //相对于仪表盘中心的偏移位置，数组第一项是水平方向的偏移，第二项是垂直方向的偏移。可以是绝对的数值，也可以是相对于仪表盘半径的百分比�?
+    color: 'yellow', // 文字的颜�?默认 #333�?
+    fontSize: 20 // 文字的字体大�?默认 15�?
   },
   toolbox: {
     show: false,
@@ -94,12 +91,12 @@ const usedmemoryEchartChika = reactive<any>({
   },
   series: [
     {
-      name: '峰值',
+      name: '峰�?,
       type: 'gauge',
       min: 0,
       max: 50,
       splitNumber: 10,
-      //这是指针的颜色
+      //这是指针的颜�?
       color: '#F5C74E',
       radius: '85%',
       center: ['50%', '50%'],
@@ -114,7 +111,7 @@ const usedmemoryEchartChika = reactive<any>({
             [0.8, '#00FFFF'],
             [1, '#FF0000']
           ],
-          //width: 6 外框的大小（环的宽度）
+          //width: 6 外框的大小（环的宽度�?
           width: 10
         }
       },
@@ -128,10 +125,10 @@ const usedmemoryEchartChika = reactive<any>({
         }
       },
       splitLine: {
-        // 分隔线
+        // 分隔�?
         length: 20, // 属性length控制线长
         lineStyle: {
-          // 属性lineStyle（详见lineStyle）控制线条样式
+          // 属性lineStyle（详见lineStyle）控制线条样�?
           color: '#76D9D7'
         }
       },
@@ -141,14 +138,14 @@ const usedmemoryEchartChika = reactive<any>({
         fontSize: 15
       },
       pointer: {
-        // 指针的大小
+        // 指针的大�?
         width: 7,
         show: true
       },
       detail: {
         textStyle: {
           fontWeight: 'normal',
-          // 里面文字下的数值大小（50）
+          // 里面文字下的数值大小（50�?
           fontSize: 15,
           color: '#FFFFFF'
         },
@@ -209,7 +206,7 @@ const commandStatsRefChika = reactive({
 
 /** 加载数据 */
 const getSummary = () => {
-  // 初始化命令图表
+  // 初始化命令图�?
   initCommandStatsChart()
   usedMemoryInstance()
 }
@@ -239,18 +236,18 @@ const usedMemoryInstance = async () => {
   try {
     const data = await RedisApi.getCache()
     cache.value = data
-    // 仪表盘详情，用于显示数据。
+    // 仪表盘详情，用于显示数据�?
     usedmemoryEchartChika.series[0].detail = {
-      show: true, // 是否显示详情,默认 true。
-      offsetCenter: [0, '50%'], // 相对于仪表盘中心的偏移位置，数组第一项是水平方向的偏移，第二项是垂直方向的偏移。可以是绝对的数值，也可以是相对于仪表盘半径的百分比。
-      color: 'auto', // 文字的颜色,默认 auto。
-      fontSize: 30, // 文字的字体大小,默认 15。
+      show: true, // 是否显示详情,默认 true�?
+      offsetCenter: [0, '50%'], // 相对于仪表盘中心的偏移位置，数组第一项是水平方向的偏移，第二项是垂直方向的偏移。可以是绝对的数值，也可以是相对于仪表盘半径的百分比�?
+      color: 'auto', // 文字的颜�?默认 auto�?
+      fontSize: 30, // 文字的字体大�?默认 15�?
       formatter: cache.value!.info.used_memory_human // 格式化函数或者字符串
     }
 
     usedmemoryEchartChika.series[0].data[0] = {
       value: cache.value!.info.used_memory_human,
-      name: '内存消耗'
+      name: '内存消�?
     }
     console.log(cache.value!.info)
     usedmemoryEchartChika.tooltip = {
@@ -259,7 +256,7 @@ const usedMemoryInstance = async () => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   // 读取 redis 信息
   readRedisInfo()

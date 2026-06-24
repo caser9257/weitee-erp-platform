@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="地区 & IP" url="https://doc.iocoder.cn/area-and-ip/" />
-
-  <!-- 操作栏 -->
+<!-- 操作�?-->
   <ContentWrap>
     <el-button type="primary" plain @click="openForm()">
       <Icon icon="ep:plus" class="mr-5px" /> IP 查询
@@ -28,7 +26,7 @@
     </div>
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <AreaForm ref="formRef" />
 </template>
 <script setup lang="tsx">
@@ -38,14 +36,14 @@ import * as AreaApi from '@/api/system/area'
 
 defineOptions({ name: 'SystemArea' })
 
-// 表格的 column 字段
+// 表格�?column 字段
 const columns: Column[] = [
   {
-    dataKey: 'id', // 需要渲染当前列的数据字段
-    title: '编号', // 显示在单元格表头的文本
-    width: 400, // 当前列的宽度，必须设置
-    fixed: true, // 是否固定列
-    key: 'id' // 树形展开对应的 key
+    dataKey: 'id', // 需要渲染当前列的数据字�?
+    title: '编号', // 显示在单元格表头的文�?
+    width: 400, // 当前列的宽度，必须设�?
+    fixed: true, // 是否固定�?
+    key: 'id' // 树形展开对应�?key
   },
   {
     dataKey: 'name',
@@ -54,7 +52,7 @@ const columns: Column[] = [
   }
 ]
 const loading = ref(true) // 列表的加载中
-const list = ref([]) // 表格的数据
+const list = ref([]) // 表格的数�?
 
 /** 获得数据列表 */
 const getList = async () => {
@@ -72,7 +70,7 @@ const openForm = () => {
   formRef.value.open()
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

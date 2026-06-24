@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="系统日志" url="https://doc.iocoder.cn/system-log/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="用户编号" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -34,7 +32,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="应用名" prop="applicationName">
+      <el-form-item label="应用�? prop="applicationName">
         <el-input
           v-model="queryParams.applicationName"
           placeholder="请输入应用名"
@@ -48,7 +46,7 @@
           v-model="queryParams.beginTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -57,13 +55,13 @@
       <el-form-item label="执行时长" prop="duration">
         <el-input
           v-model="queryParams.duration"
-          placeholder="请输入执行时长"
+          placeholder="请输入执行时�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="结果码" prop="resultCode">
+      <el-form-item label="结果�? prop="resultCode">
         <el-input
           v-model="queryParams.resultCode"
           placeholder="请输入结果码"
@@ -98,7 +96,7 @@
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
         </template>
       </el-table-column>
-      <el-table-column label="应用名" align="center" prop="applicationName" width="150" />
+      <el-table-column label="应用�? align="center" prop="applicationName" width="150" />
       <el-table-column label="请求方法" align="center" prop="requestMethod" width="80" />
       <el-table-column label="请求地址" align="center" prop="requestUrl" width="500" />
       <el-table-column label="请求时间" align="center" prop="beginTime" width="180">
@@ -115,7 +113,7 @@
         </template>
       </el-table-column>
       <el-table-column label="操作模块" align="center" prop="operateModule" width="180" />
-      <el-table-column label="操作名" align="center" prop="operateName" width="180" />
+      <el-table-column label="操作�? align="center" prop="operateName" width="180" />
       <el-table-column label="操作类型" align="center" prop="operateType">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_OPERATE_TYPE" :value="scope.row.operateType" />
@@ -143,7 +141,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <ApiAccessLogDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -158,8 +156,8 @@ defineOptions({ name: 'InfraApiAccessLog' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -171,7 +169,7 @@ const queryParams = reactive({
   resultCode: null,
   beginTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -207,7 +205,7 @@ const openDetail = (data: ApiAccessLogApi.ApiAccessLogVO) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -219,7 +217,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

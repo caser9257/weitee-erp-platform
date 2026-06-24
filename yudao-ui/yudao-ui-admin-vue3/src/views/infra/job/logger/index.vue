@@ -1,10 +1,6 @@
 <template>
-  <doc-alert title="定时任务" url="https://doc.iocoder.cn/job/" />
-  <doc-alert title="异步任务" url="https://doc.iocoder.cn/async-task/" />
-  <doc-alert title="消息队列" url="https://doc.iocoder.cn/message-queue/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -15,18 +11,18 @@
       <el-form-item label="处理器的名字" prop="handlerName">
         <el-input
           v-model="queryParams.handlerName"
-          placeholder="请输入处理器的名字"
+          placeholder="请输入处理器的名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="开始执行时间" prop="beginTime">
+      <el-form-item label="开始执行时�? prop="beginTime">
         <el-date-picker
           v-model="queryParams.beginTime"
           type="date"
           value-format="YYYY-MM-DD HH:mm:ss"
-          placeholder="选择开始执行时间"
+          placeholder="选择开始执行时�?
           clearable
           class="!w-240px"
         />
@@ -42,10 +38,10 @@
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="任务状态" prop="status">
+      <el-form-item label="任务状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择任务状态"
+          placeholder="请选择任务状�?
           clearable
           class="!w-240px"
         >
@@ -80,7 +76,7 @@
       <el-table-column label="任务编号" align="center" prop="jobId" />
       <el-table-column label="处理器的名字" align="center" prop="handlerName" />
       <el-table-column label="处理器的参数" align="center" prop="handlerParam" />
-      <el-table-column label="第几次执行" align="center" prop="executeIndex" />
+      <el-table-column label="第几次执�? align="center" prop="executeIndex" />
       <el-table-column label="执行时间" align="center" width="170s">
         <template #default="scope">
           <span>{{ formatDate(scope.row.beginTime) + ' ~ ' + formatDate(scope.row.endTime) }}</span>
@@ -91,7 +87,7 @@
           <span>{{ scope.row.duration + ' 毫秒' }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="任务状态" align="center" prop="status">
+      <el-table-column label="任务状�? align="center" prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_JOB_LOG_STATUS" :value="scope.row.status" />
         </template>
@@ -118,7 +114,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：查看 -->
+  <!-- 表单弹窗：查�?-->
   <JobLogDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -134,8 +130,8 @@ const message = useMessage() // 消息弹窗
 const { query } = useRoute() // 查询参数
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -145,7 +141,7 @@ const queryParams = reactive({
   endTime: undefined,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -181,7 +177,7 @@ const openDetail = (rowId?: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -193,7 +189,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

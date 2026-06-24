@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="短信配置" url="https://doc.iocoder.cn/sms/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -10,7 +8,7 @@
       :inline="true"
       label-width="100px"
     >
-      <el-form-item label="手机号" prop="mobile">
+      <el-form-item label="手机�? prop="mobile">
         <el-input
           v-model="queryParams.mobile"
           placeholder="请输入手机号"
@@ -32,7 +30,7 @@
             :value="channel.id"
             :label="
               channel.signature +
-              `【 ${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`
+              `�?${getDictLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code)}】`
             "
           />
         </el-select>
@@ -40,16 +38,16 @@
       <el-form-item label="模板编号" prop="templateId">
         <el-input
           v-model="queryParams.templateId"
-          placeholder="请输入模板编号"
+          placeholder="请输入模板编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="发送状态" prop="sendStatus">
+      <el-form-item label="发送状�? prop="sendStatus">
         <el-select
           v-model="queryParams.sendStatus"
-          placeholder="请选择发送状态"
+          placeholder="请选择发送状�?
           clearable
           class="!w-240px"
         >
@@ -61,20 +59,20 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="发送时间" prop="sendTime">
+      <el-form-item label="发送时�? prop="sendTime">
         <el-date-picker
           v-model="queryParams.sendTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="接收状态" prop="receiveStatus">
+      <el-form-item label="接收状�? prop="receiveStatus">
         <el-select
           v-model="queryParams.receiveStatus"
-          placeholder="请选择接收状态"
+          placeholder="请选择接收状�?
           clearable
           class="!w-240px"
         >
@@ -91,7 +89,7 @@
           v-model="queryParams.receiveTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           class="!w-240px"
         />
@@ -123,7 +121,7 @@
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="手机号" align="center" prop="mobile" width="120">
+      <el-table-column label="手机�? align="center" prop="mobile" width="120">
         <template #default="scope">
           <div>{{ scope.row.mobile }}</div>
           <div v-if="scope.row.userType && scope.row.userId">
@@ -133,13 +131,13 @@
         </template>
       </el-table-column>
       <el-table-column label="短信内容" align="center" prop="templateContent" width="300" />
-      <el-table-column label="发送状态" align="center" width="180">
+      <el-table-column label="发送状�? align="center" width="180">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_SEND_STATUS" :value="scope.row.sendStatus" />
           <div>{{ formatDate(scope.row.sendTime) }}</div>
         </template>
       </el-table-column>
-      <el-table-column label="接收状态" align="center" width="180">
+      <el-table-column label="接收状�? align="center" width="180">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_SMS_RECEIVE_STATUS" :value="scope.row.receiveStatus" />
           <div>{{ formatDate(scope.row.receiveTime) }}</div>
@@ -181,7 +179,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <SmsLogDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -197,9 +195,9 @@ defineOptions({ name: 'SystemSmsLog' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryFormRef = ref() // 搜索的表单
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
+const queryFormRef = ref() // 搜索的表�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -241,7 +239,7 @@ const resetQuery = () => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -259,7 +257,7 @@ const openDetail = (data: SmsLogApi.SmsLogVO) => {
   detailRef.value.open(data)
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 加载渠道列表

@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【线索】线索管理" url="https://doc.iocoder.cn/crm/clue/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -14,19 +11,19 @@
       <el-form-item label="线索名称" prop="name">
         <el-input
           v-model="queryParams.name"
-          placeholder="请输入线索名称"
+          placeholder="请输入线索名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="转化状态" prop="transformStatus">
+      <el-form-item label="转化状�? prop="transformStatus">
         <el-select v-model="queryParams.transformStatus" class="!w-240px">
-          <el-option :value="false" label="未转化" />
-          <el-option :value="true" label="已转化" />
+          <el-option :value="false" label="未转�? />
+          <el-option :value="true" label="已转�? />
         </el-select>
       </el-form-item>
-      <el-form-item label="手机号" prop="mobile">
+      <el-form-item label="手机�? prop="mobile">
         <el-input
           v-model="queryParams.mobile"
           placeholder="请输入手机号"
@@ -38,7 +35,7 @@
       <el-form-item label="电话" prop="telephone">
         <el-input
           v-model="queryParams.telephone"
-          placeholder="请输入电话"
+          placeholder="请输入电�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -68,7 +65,7 @@
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :stripe="true" :show-overflow-tooltip="true">
       <el-table-column label="线索名称" align="center" prop="name" fixed="left" width="160">
@@ -106,15 +103,15 @@
       />
       <el-table-column align="center" label="备注" prop="remark" width="200" />
       <el-table-column
-        label="最后跟进时间"
+        label="最后跟进时�?
         align="center"
         prop="contactLastTime"
         :formatter="dateFormatter"
         width="180px"
       />
-      <el-table-column align="center" label="最后跟进记录" prop="contactLastContent" width="200" />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="100px" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100" />
+      <el-table-column align="center" label="最后跟进记�? prop="contactLastContent" width="200" />
+      <el-table-column align="center" label="负责�? prop="ownerUserName" width="100px" />
+      <el-table-column align="center" label="所属部�? prop="ownerUserDeptName" width="100" />
       <el-table-column
         label="更新时间"
         align="center"
@@ -129,7 +126,7 @@
         :formatter="dateFormatter"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
+      <el-table-column align="center" label="创建�? prop="creatorName" width="100px" />
       <el-table-column label="操作" align="center" min-width="110" fixed="right">
         <template #default="scope">
           <el-button
@@ -160,7 +157,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <ClueForm ref="formRef" @success="getList" />
 </template>
 
@@ -175,21 +172,21 @@ import { TabsPaneContext } from 'element-plus'
 defineOptions({ name: 'CrmClue' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   name: null,
   telephone: null,
   mobile: null,
   transformStatus: false
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 
@@ -238,7 +235,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await ClueApi.deleteClue(id)
@@ -251,7 +248,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -263,7 +260,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

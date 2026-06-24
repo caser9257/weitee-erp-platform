@@ -1,11 +1,9 @@
 <template>
-  <doc-alert title="物料清单（BOM）" url="https://doc.iocoder.cn/erp/bom/" />
-
-  <ContentWrap class="rd-bom-page__header-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
+<ContentWrap class="rd-bom-page__header-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="rd-bom-page__header">
       <div>
         <div class="rd-bom-page__title">标准 BOM</div>
-        <div class="rd-bom-page__count">共 {{ total }} 条记录</div>
+        <div class="rd-bom-page__count">�?{{ total }} 条记�?/div>
       </div>
       <div class="rd-bom-page__actions">
         <el-button
@@ -20,7 +18,7 @@
   </ContentWrap>
 
   <ContentWrap class="rd-bom-page__filter-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('emerald')">
-    <div class="rd-bom-page__section-title">筛选条件</div>
+    <div class="rd-bom-page__section-title">筛选条�?/div>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -32,7 +30,7 @@
           <el-input
             v-model="queryParams.bomCode"
             clearable
-            placeholder="请输入 BOM 编码"
+            placeholder="请输�?BOM 编码"
             @keyup.enter="handleQuery"
           />
         </el-form-item>
@@ -52,8 +50,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
+        <el-form-item label="状�? prop="status">
+          <el-select v-model="queryParams.status" clearable placeholder="请选择状�?>
             <el-option
               v-for="item in BOM_STATUS_OPTIONS"
               :key="item.value"
@@ -100,14 +98,14 @@
       <el-table-column label="BOM编码" prop="bomCode" min-width="160" />
       <el-table-column label="成品" prop="productName" min-width="180" />
       <el-table-column label="版本" prop="version" width="120" align="center" />
-      <el-table-column label="状态" width="100" align="center">
+      <el-table-column label="状�? width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '生效' : '停用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="物料数" width="100" align="center">
+      <el-table-column label="物料�? width="100" align="center">
         <template #default="{ row }">
           {{ row.items?.length || 0 }}
         </template>
@@ -138,7 +136,7 @@
     </div>
 
     <div class="rd-bom-page__footer">
-      <div class="rd-bom-page__record-count">共 {{ total }} 条记录</div>
+      <div class="rd-bom-page__record-count">�?{{ total }} 条记�?/div>
       <Pagination
         :total="total"
         v-model:page="queryParams.pageNo"
@@ -193,10 +191,10 @@ const queryParams = reactive<BomPageReqVO>({
 // 统计卡片
 const activeCount = computed(() => list.value.filter((item) => item.status === 1).length)
 const summaryCards = computed(() => [
-  { label: '总BOM数', value: formatCount(total.value), icon: 'ep:document', colorClass: 'stat-icon--blue' },
-  { label: '已生效', value: formatCount(activeCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
+  { label: '总BOM�?, value: formatCount(total.value), icon: 'ep:document', colorClass: 'stat-icon--blue' },
+  { label: '已生�?, value: formatCount(activeCount.value), icon: 'ep:circle-check', colorClass: 'stat-icon--green' },
   { label: '草稿/停用', value: formatCount(list.value.length - activeCount.value), icon: 'ep:clock', colorClass: 'stat-icon--amber' },
-  { label: '当前页', value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
+  { label: '当前�?, value: formatCount(list.value.length), icon: 'ep:list', colorClass: 'stat-icon--slate' }
 ])
 
 const formatCount = (value?: number | string | null) => {

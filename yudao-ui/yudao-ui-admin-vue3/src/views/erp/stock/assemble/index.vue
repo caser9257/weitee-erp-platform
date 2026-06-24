@@ -1,12 +1,10 @@
 <template>
-  <doc-alert title="【库存】库存组装、库存拆卸" url="https://doc.iocoder.cn/erp/stock/" />
-
-  <ContentWrap class="stock-assemble-page__hero-card">
+<ContentWrap class="stock-assemble-page__hero-card">
     <div class="stock-assemble-page__hero">
       <div class="stock-assemble-page__hero-main">
         <div class="stock-assemble-page__title">组装与拆卸作业台</div>
         <div class="stock-assemble-page__badge-row">
-          <span class="stock-assemble-page__badge stock-assemble-page__badge--warning">功能待接入</span>
+          <span class="stock-assemble-page__badge stock-assemble-page__badge--warning">功能待接�?/span>
           <span class="stock-assemble-page__badge stock-assemble-page__badge--neutral">
             当前未发现已落地的组装拆卸单据流
           </span>
@@ -35,7 +33,7 @@
   <ContentWrap class="stock-assemble-page__entry-card">
     <div class="stock-assemble-page__section-head">
       <div class="stock-assemble-page__section-title">相关库存入口</div>
-      <div class="stock-assemble-page__section-tag">当前可先从以下页面完成库存追踪</div>
+      <div class="stock-assemble-page__section-tag">当前可先从以下页面完成库存追�?/div>
     </div>
 
     <div class="stock-assemble-entry-grid">
@@ -45,7 +43,7 @@
         </div>
         <div class="stock-assemble-entry-card__content">
           <div class="stock-assemble-entry-card__title">库存台账</div>
-          <div class="stock-assemble-entry-card__meta">查看产品在各仓库的当前结存</div>
+          <div class="stock-assemble-entry-card__meta">查看产品在各仓库的当前结�?/div>
         </div>
         <el-button
           type="primary"
@@ -64,7 +62,7 @@
         </div>
         <div class="stock-assemble-entry-card__content">
           <div class="stock-assemble-entry-card__title">库存流水</div>
-          <div class="stock-assemble-entry-card__meta">追踪库存增减来源与业务单号</div>
+          <div class="stock-assemble-entry-card__meta">追踪库存增减来源与业务单�?/div>
         </div>
         <el-button
           type="primary"

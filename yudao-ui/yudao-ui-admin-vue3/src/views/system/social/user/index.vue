@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="三方登录" url="https://doc.iocoder.cn/social-user/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -30,7 +28,7 @@
           v-model="queryParams.nickname"
           class="!w-240px"
           clearable
-          placeholder="请输入用户昵称"
+          placeholder="请输入用户昵�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -39,7 +37,7 @@
           v-model="queryParams.openid"
           class="!w-240px"
           clearable
-          placeholder="请输入社交 openid"
+          placeholder="请输入社�?openid"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -49,7 +47,7 @@
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
           end-placeholder="结束日期"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           type="daterange"
           value-format="YYYY-MM-DD HH:mm:ss"
         />
@@ -118,7 +116,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <SocialUserDetail ref="detailRef" />
 </template>
 
@@ -132,8 +130,8 @@ import { createImageViewer } from '@/components/ImageViewer'
 defineOptions({ name: 'SocialUser' })
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -142,7 +140,7 @@ const queryParams = reactive({
   nickname: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -180,7 +178,7 @@ const openDetail = (id: number) => {
   detailRef.value.open(id)
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

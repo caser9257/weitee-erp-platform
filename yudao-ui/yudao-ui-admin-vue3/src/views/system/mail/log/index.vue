@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="邮件配置" url="https://doc.iocoder.cn/mail" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="接收邮箱" prop="toMail">
         <el-input
           v-model="queryParams.toMail"
-          placeholder="请输入接收邮箱"
+          placeholder="请输入接收邮�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -37,16 +35,16 @@
       <el-form-item label="模板编号" prop="templateId">
         <el-input
           v-model="queryParams.templateId"
-          placeholder="请输入模板编号"
+          placeholder="请输入模板编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="发送状态" prop="sendStatus">
+      <el-form-item label="发送状�? prop="sendStatus">
         <el-select
           v-model="queryParams.sendStatus"
-          placeholder="请选择发送状态"
+          placeholder="请选择发送状�?
           clearable
           class="!w-240px"
         >
@@ -61,7 +59,7 @@
       <el-form-item label="用户编号" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -82,12 +80,12 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="发送时间" prop="sendTime">
+      <el-form-item label="发送时�? prop="sendTime">
         <el-date-picker
           v-model="queryParams.sendTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           class="!w-240px"
         />
@@ -113,7 +111,7 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column label="编号" align="center" prop="id" />
       <el-table-column
-        label="发送时间"
+        label="发送时�?
         align="center"
         prop="sendTime"
         width="180"
@@ -132,28 +130,28 @@
         <template #default="scope">
           <div class="text-left">
             <div v-if="scope.row.toMails && scope.row.toMails.length > 0">
-              收件：
+              收件�?
               <span v-for="(mail, index) in scope.row.toMails" :key="mail">
-                {{ mail }}<span v-if="index < scope.row.toMails.length - 1">、</span>
+                {{ mail }}<span v-if="index < scope.row.toMails.length - 1">�?/span>
               </span>
             </div>
             <div v-if="scope.row.ccMails && scope.row.ccMails.length > 0">
               抄送：
               <span v-for="(mail, index) in scope.row.ccMails" :key="mail">
-                {{ mail }}<span v-if="index < scope.row.ccMails.length - 1">、</span>
+                {{ mail }}<span v-if="index < scope.row.ccMails.length - 1">�?/span>
               </span>
             </div>
             <div v-if="scope.row.bccMails && scope.row.bccMails.length > 0">
               密送：
               <span v-for="(mail, index) in scope.row.bccMails" :key="mail">
-                {{ mail }}<span v-if="index < scope.row.bccMails.length - 1">、</span>
+                {{ mail }}<span v-if="index < scope.row.bccMails.length - 1">�?/span>
               </span>
             </div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="邮件标题" align="center" prop="templateTitle" width="200" />
-      <el-table-column label="发送状态" align="center" width="120">
+      <el-table-column label="发送状�? align="center" width="120">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_MAIL_SEND_STATUS" :value="scope.row.sendStatus" />
         </template>
@@ -186,7 +184,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <MailLogDetail ref="detailRef" />
 </template>
 <script lang="ts" setup>
@@ -202,9 +200,9 @@ defineOptions({ name: 'SystemMailLog' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(false) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
-const queryFormRef = ref() // 搜索的表单
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
+const queryFormRef = ref() // 搜索的表�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -246,7 +244,7 @@ const resetQuery = () => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -270,7 +268,7 @@ const getAccountMail = (accountId: number) => {
   return account?.mail || ''
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   await getList()
   // 加载邮箱账号列表

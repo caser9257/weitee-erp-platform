@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="系统日志" url="https://doc.iocoder.cn/system-log/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -13,7 +11,7 @@
       <el-form-item label="用户编号" prop="userId">
         <el-input
           v-model="queryParams.userId"
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
@@ -34,7 +32,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="应用名" prop="applicationName">
+      <el-form-item label="应用�? prop="applicationName">
         <el-input
           v-model="queryParams.applicationName"
           placeholder="请输入应用名"
@@ -48,16 +46,16 @@
           v-model="queryParams.exceptionTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="处理状态" prop="processStatus">
+      <el-form-item label="处理状�? prop="processStatus">
         <el-select
           v-model="queryParams.processStatus"
-          placeholder="请选择处理状态"
+          placeholder="请选择处理状�?
           clearable
           class="!w-240px"
         >
@@ -95,7 +93,7 @@
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
         </template>
       </el-table-column>
-      <el-table-column label="应用名" align="center" prop="applicationName" width="200" />
+      <el-table-column label="应用�? align="center" prop="applicationName" width="200" />
       <el-table-column label="请求方法" align="center" prop="requestMethod" width="80" />
       <el-table-column label="请求地址" align="center" prop="requestUrl" width="180" />
       <el-table-column
@@ -105,8 +103,8 @@
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="异常名" align="center" prop="exceptionName" width="180" />
-      <el-table-column label="处理状态" align="center" prop="processStatus">
+      <el-table-column label="异常�? align="center" prop="exceptionName" width="180" />
+      <el-table-column label="处理状�? align="center" prop="processStatus">
         <template #default="scope">
           <dict-tag
             :type="DICT_TYPE.INFRA_API_ERROR_LOG_PROCESS_STATUS"
@@ -131,7 +129,7 @@
             @click="handleProcess(scope.row.id, InfraApiErrorLogProcessStatusEnum.DONE)"
             v-hasPermi="['infra:api-error-log:update-status']"
           >
-            已处理
+            已处�?
           </el-button>
           <el-button
             link
@@ -140,7 +138,7 @@
             @click="handleProcess(scope.row.id, InfraApiErrorLogProcessStatusEnum.IGNORE)"
             v-hasPermi="['infra:api-error-log:update-status']"
           >
-            已忽略
+            已忽�?
           </el-button>
         </template>
       </el-table-column>
@@ -154,7 +152,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：详情 -->
+  <!-- 表单弹窗：详�?-->
   <ApiErrorLogDetail ref="detailRef" />
 </template>
 
@@ -171,8 +169,8 @@ defineOptions({ name: 'InfraApiErrorLog' })
 const message = useMessage() // 消息弹窗
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -183,7 +181,7 @@ const queryParams = reactive({
   processStatus: null,
   exceptionTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 
 /** 查询列表 */
@@ -216,12 +214,12 @@ const openDetail = (data: ApiErrorLogApi.ApiErrorLogVO) => {
   detailRef.value.open(data)
 }
 
-/** 处理已处理 / 已忽略的操作 **/
+/** 处理已处�?/ 已忽略的操作 **/
 const handleProcess = async (id: number, processStatus: number) => {
   try {
-    // 操作的二次确认
-    const type = processStatus === InfraApiErrorLogProcessStatusEnum.DONE ? '已处理' : '已忽略'
-    await message.confirm('确认标记为' + type + '?')
+    // 操作的二次确�?
+    const type = processStatus === InfraApiErrorLogProcessStatusEnum.DONE ? '已处�? : '已忽�?
+    await message.confirm('确认标记�? + type + '?')
     // 执行操作
     await ApiErrorLogApi.updateApiErrorLogPage(id, processStatus)
     await message.success(type)
@@ -233,7 +231,7 @@ const handleProcess = async (id: number, processStatus: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -245,7 +243,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

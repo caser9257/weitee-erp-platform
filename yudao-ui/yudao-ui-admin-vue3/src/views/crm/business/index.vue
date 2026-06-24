@@ -1,9 +1,6 @@
 <template>
-  <doc-alert title="【商机】商机管理、商机状态" url="https://doc.iocoder.cn/crm/business/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
-    <!-- 搜索工作栏 -->
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -16,7 +13,7 @@
           v-model="queryParams.name"
           class="!w-240px"
           clearable
-          placeholder="请输入商机名称"
+          placeholder="请输入商机名�?
           @keyup.enter="handleQuery"
         />
       </el-form-item>
@@ -52,7 +49,7 @@
     <el-tabs v-model="activeName" @tab-click="handleTabClick">
       <el-tab-pane label="我负责的" name="1" />
       <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
+      <el-tab-pane label="下属负责�? name="3" />
     </el-tabs>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" fixed="left" label="商机名称" prop="name" width="160">
@@ -76,7 +73,7 @@
       <el-table-column
         :formatter="erpPriceTableColumnFormatter"
         align="center"
-        label="商机金额（元）"
+        label="商机金额（元�?
         prop="totalPrice"
         width="140"
       />
@@ -95,12 +92,12 @@
         prop="contactNextTime"
         width="180px"
       />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="100px" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100px" />
+      <el-table-column align="center" label="负责�? prop="ownerUserName" width="100px" />
+      <el-table-column align="center" label="所属部�? prop="ownerUserDeptName" width="100px" />
       <el-table-column
         :formatter="dateFormatter"
         align="center"
-        label="最后跟进时间"
+        label="最后跟进时�?
         prop="contactLastTime"
         width="180px"
       />
@@ -118,7 +115,7 @@
         prop="createTime"
         width="180px"
       />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="100px" />
+      <el-table-column align="center" label="创建�? prop="creatorName" width="100px" />
       <el-table-column
         align="center"
         fixed="right"
@@ -163,7 +160,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <BusinessForm ref="formRef" @success="getList" />
 </template>
 
@@ -178,18 +175,18 @@ import { TabsPaneContext } from 'element-plus'
 defineOptions({ name: 'CrmBusiness' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1', // 默认�?activeName 相等
   name: null
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const exportLoading = ref(false) // 导出的加载中
 const activeName = ref('1') // 列表 tab
 
@@ -243,7 +240,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await BusinessApi.deleteBusiness(id)
@@ -256,7 +253,7 @@ const handleDelete = async (id: number) => {
 /** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
+    // 导出的二次确�?
     await message.exportConfirm()
     // 发起导出
     exportLoading.value = true
@@ -268,7 +265,7 @@ const handleExport = async () => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

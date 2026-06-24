@@ -1,10 +1,5 @@
 <template>
-  <doc-alert
-    title="【财务】采购付款、销售收款"
-    url="https://doc.iocoder.cn/sale/finance-payment-receipt/"
-  />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -15,7 +10,7 @@
         <el-form-item label="名称" prop="name">
           <el-input
             v-model="queryParams.name"
-            placeholder="请输入名称"
+            placeholder="请输入名�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -24,16 +19,16 @@
         <el-form-item label="编码" prop="no">
           <el-input
             v-model="queryParams.no"
-            placeholder="请输入编码"
+            placeholder="请输入编�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
           />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
+        <el-form-item label="状�? prop="status">
           <el-select
             v-model="queryParams.status"
-            placeholder="请选择状态"
+            placeholder="请选择状�?
             clearable
             class="!w-full"
           >
@@ -48,7 +43,7 @@
         <el-form-item label="备注" prop="remark">
           <el-input
             v-model="queryParams.remark"
-            placeholder="请输入备注"
+            placeholder="请输入备�?
             clearable
             @keyup.enter="handleQuery"
             class="!w-full"
@@ -119,7 +114,7 @@
               </span>
             </template>
           </el-table-column>
-          <el-table-column label="状态" align="center" width="110" prop="status">
+          <el-table-column label="状�? align="center" width="110" prop="status">
             <template #default="{ row }">
               <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
             </template>
@@ -238,7 +233,7 @@ const getList = async () => {
     total.value = data.total
   } catch {
     if (!list.value.length) {
-      listErrorMessage.value = '请检查网络或稍后重试。'
+      listErrorMessage.value = '请检查网络或稍后重试�?
     }
   } finally {
     loadingList.value = false
@@ -290,7 +285,7 @@ const handleDefaultStatusChange = async (row: AccountVO) => {
   const nextValue = row.defaultStatus
   try {
     const actionText = nextValue ? '设为' : '取消'
-    await message.confirm(`确认要${actionText}“${row.name}”默认账户吗？`)
+    await message.confirm(`确认�?{actionText}�?{row.name}”默认账户吗？`)
     defaultStatusLoadingId.value = row.id
     await AccountApi.updateAccountDefaultStatus(row.id, nextValue)
     message.success(`${actionText}默认账户成功`)

@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="工作流手册" url="https://doc.iocoder.cn/bpm/" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-table v-loading="loading" :data="list">
       <el-table-column label="定义编号" align="center" prop="id" min-width="250" />
       <el-table-column label="流程名称" align="center" prop="name" min-width="150" />
@@ -21,9 +19,9 @@
               class="box-item"
               effect="dark"
               placement="top"
-              :content="row.startUsers.map((user: any) => user.nickname).join('、')"
+              :content="row.startUsers.map((user: any) => user.nickname).join('�?)"
             >
-              {{ row.startUsers[0].nickname }}等 {{ row.startUsers.length }} 人可见
+              {{ row.startUsers[0].nickname }}�?{{ row.startUsers.length }} 人可�?
             </el-tooltip>
           </el-text>
         </template>
@@ -88,7 +86,7 @@
     />
   </ContentWrap>
 
-  <!-- 弹窗：表单详情 -->
+  <!-- 弹窗：表单详�?-->
   <Dialog title="表单详情" v-model="formDetailVisible" width="800">
     <form-create :rule="formDetailPreview.rule" :option="formDetailPreview.option" />
   </Dialog>
@@ -107,8 +105,8 @@ const { push } = useRouter() // 路由
 const { query } = useRoute() // 查询参数
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -127,7 +125,7 @@ const getList = async () => {
   }
 }
 
-/** 流程表单的详情按钮操作 */
+/** 流程表单的详情按钮操�?*/
 const formDetailVisible = ref(false)
 const formDetailPreview = ref({
   rule: [],
@@ -154,7 +152,7 @@ const openModelForm = async (id?: number) => {
   })
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

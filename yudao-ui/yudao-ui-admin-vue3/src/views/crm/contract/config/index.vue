@@ -1,7 +1,4 @@
 <template>
-  <doc-alert title="【合同】合同管理、合同提醒" url="https://doc.iocoder.cn/crm/contract/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
-
   <ContentWrap>
     <el-form
       ref="formRef"
@@ -27,13 +24,13 @@
             @change="changeNotifyEnable"
             class="ml-4"
           >
-            <el-radio :value="false" size="large">不提醒</el-radio>
+            <el-radio :value="false" size="large">不提�?/el-radio>
             <el-radio :value="true" size="large">提醒</el-radio>
           </el-radio-group>
         </el-form-item>
         <div v-if="formData.notifyEnabled">
           <el-form-item>
-            提前 <el-input-number class="mx-2" v-model="formData.notifyDays" /> 天提醒
+            提前 <el-input-number class="mx-2" v-model="formData.notifyDays" /> 天提�?
           </el-form-item>
         </div>
       </el-card>
@@ -47,7 +44,7 @@ import { CardTitle } from '@/components/Card'
 defineOptions({ name: 'CrmContractConfig' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const formLoading = ref(false)
 const formData = ref({

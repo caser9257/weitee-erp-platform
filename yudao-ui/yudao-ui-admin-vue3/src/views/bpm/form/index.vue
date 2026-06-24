@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="审批接入（流程表单）" url="https://doc.iocoder.cn/bpm/use-bpm-form/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -10,7 +8,7 @@
       class="-mb-15px"
       label-width="68px"
     >
-      <el-form-item label="表单名" prop="name">
+      <el-form-item label="表单�? prop="name">
         <el-input
           v-model="queryParams.name"
           class="!w-240px"
@@ -40,8 +38,8 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list">
       <el-table-column align="center" label="编号" prop="id" />
-      <el-table-column align="center" label="表单名" prop="name" />
-      <el-table-column align="center" label="状态" prop="status">
+      <el-table-column align="center" label="表单�? prop="name" />
+      <el-table-column align="center" label="状�? prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -94,7 +92,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单详情的弹窗 -->
+  <!-- 表单详情的弹�?-->
   <Dialog v-model="detailVisible" title="表单详情" width="800">
     <form-create :option="detailData.option" :rule="detailData.rule" />
   </Dialog>
@@ -109,18 +107,18 @@ import { setConfAndFields2 } from '@/utils/formCreate'
 defineOptions({ name: 'BpmForm' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 const { currentRoute, push } = useRouter() // 路由
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: null
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -155,7 +153,7 @@ const openForm = (type: string, id?: number) => {
     }
   }
   console.log(typeof id)
-  // 表单新建的时候id传的是event需要排除
+  // 表单新建的时候id传的是event需要排�?
   if (typeof id === 'number' || typeof id === 'string') {
     toRouter.query.id = id
   }
@@ -165,7 +163,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await FormApi.deleteForm(id)
@@ -188,7 +186,7 @@ const openDetail = async (rowId: number) => {
   // 弹窗打开
   detailVisible.value = true
 }
-/**表单保存返回后重新加载列表 */
+/**表单保存返回后重新加载列�?*/
 watch(
   () => currentRoute.value,
   () => {
@@ -198,7 +196,7 @@ watch(
     immediate: true
   }
 )
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

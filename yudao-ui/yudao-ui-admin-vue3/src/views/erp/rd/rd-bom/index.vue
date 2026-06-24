@@ -1,7 +1,5 @@
 <template>
-  <doc-alert title="研发BOM" url="https://doc.iocoder.cn/erp/bom/" />
-
-  <ContentWrap>
+<ContentWrap>
     <el-form
       ref="queryFormRef"
       :model="queryParams"
@@ -13,7 +11,7 @@
         <el-input
           v-model="queryParams.bomCode"
           clearable
-          placeholder="请输入研发 BOM 编码"
+          placeholder="请输入研�?BOM 编码"
           class="!w-240px"
           @keyup.enter="handleQuery"
         />
@@ -35,11 +33,11 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" prop="status">
+      <el-form-item label="状�? prop="status">
         <el-select
           v-model="queryParams.status"
           clearable
-          placeholder="请选择状态"
+          placeholder="请选择状�?
           class="!w-180px"
         >
           <el-option
@@ -77,16 +75,16 @@
       <el-table-column label="研发BOM编码" prop="bomCode" min-width="160" />
       <el-table-column label="成品" prop="productName" min-width="180" />
       <el-table-column label="版本" prop="version" width="120" align="center" />
-      <el-table-column label="状态" width="100" align="center">
+      <el-table-column label="状�? width="100" align="center">
         <template #default="{ row }">
           <el-tag :type="row.status === 1 ? 'success' : 'info'">
-            {{ row.status === 1 ? '已发布' : '草稿' }}
+            {{ row.status === 1 ? '已发�? : '草稿' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="已发布制造BOM" prop="publishedBomId" width="140" align="center" />
-      <el-table-column label="最近发布时间" prop="lastPublishedTime" width="180" align="center" />
-      <el-table-column label="物料数" width="100" align="center">
+      <el-table-column label="最近发布时�? prop="lastPublishedTime" width="180" align="center" />
+      <el-table-column label="物料�? width="100" align="center">
         <template #default="{ row }">
           {{ row.items?.length || 0 }}
         </template>
@@ -162,7 +160,7 @@ const message = useMessage()
 const { t } = useI18n()
 
 const RD_BOM_STATUS_OPTIONS = [
-  { label: '已发布', value: 1 },
+  { label: '已发�?, value: 1 },
   { label: '草稿', value: 0 }
 ]
 
@@ -232,9 +230,9 @@ const handlePublish = async (id?: number) => {
   }
   publishLoadingId.value = id
   try {
-    await message.confirm('确认将当前研发 BOM 发布为制造 BOM 草稿吗？')
+    await message.confirm('确认将当前研�?BOM 发布为制�?BOM 草稿吗？')
     await RdBomApi.publishRdBom(id)
-    message.success('发布成功，已生成制造 BOM 草稿')
+    message.success('发布成功，已生成制�?BOM 草稿')
     await getList()
   } catch {
   } finally {

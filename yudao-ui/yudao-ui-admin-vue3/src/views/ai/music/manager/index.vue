@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 音乐创作" url="https://doc.iocoder.cn/ai/music/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -14,7 +12,7 @@
         <el-select
           v-model="queryParams.userId"
           clearable
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           class="!w-240px"
         >
           <el-option
@@ -28,16 +26,16 @@
       <el-form-item label="音乐名称" prop="title">
         <el-input
           v-model="queryParams.title"
-          placeholder="请输入音乐名称"
+          placeholder="请输入音乐名�?
           clearable
           @keyup.enter="handleQuery"
           class="!w-240px"
         />
       </el-form-item>
-      <el-form-item label="音乐状态" prop="status">
+      <el-form-item label="音乐状�? prop="status">
         <el-select
           v-model="queryParams.status"
-          placeholder="请选择音乐状态"
+          placeholder="请选择音乐状�?
           clearable
           class="!w-240px"
         >
@@ -69,7 +67,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -107,7 +105,7 @@
           <span>{{ userList.find((item) => item.id === scope.row.userId)?.nickname }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="音乐状态" align="center" prop="status" width="100">
+      <el-table-column label="音乐状�? align="center" prop="status" width="100">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.AI_MUSIC_STATUS" :value="scope.row.status" />
         </template>
@@ -143,8 +141,8 @@
           </el-link>
         </template>
       </el-table-column>
-      <el-table-column label="时长（秒）" align="center" prop="duration" width="100" />
-      <el-table-column label="提示词" align="center" prop="prompt" width="180" />
+      <el-table-column label="时长（秒�? align="center" prop="duration" width="100" />
+      <el-table-column label="提示�? align="center" prop="prompt" width="180" />
       <el-table-column label="歌词" align="center" prop="lyric" width="180" />
       <el-table-column label="描述" align="center" prop="gptDescriptionPrompt" width="180" />
       <el-table-column label="生成模式" align="center" prop="generateMode" width="100">
@@ -213,11 +211,11 @@ import { AiMusicStatusEnum } from '@/views/ai/utils/constants'
 defineOptions({ name: 'AiMusicManager' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<MusicVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<MusicVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -228,7 +226,7 @@ const queryParams = reactive({
   createTime: [],
   publicStatus: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const userList = ref<UserApi.UserVO[]>([]) // 用户列表
 
 /** 查询列表 */
@@ -258,7 +256,7 @@ const resetQuery = () => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await MusicApi.deleteMusic(id)
@@ -273,8 +271,8 @@ const handleUpdatePublicStatusChange = async (row: MusicVO) => {
   try {
     // 修改状态的二次确认
     const text = row.publicStatus ? '公开' : '私有'
-    await message.confirm('确认要"' + text + '"该音乐吗?')
-    // 发起修改状态
+    await message.confirm('确认�?' + text + '"该音乐吗?')
+    // 发起修改状�?
     await MusicApi.updateMusic({
       id: row.id,
       publicStatus: row.publicStatus
@@ -285,7 +283,7 @@ const handleUpdatePublicStatusChange = async (row: MusicVO) => {
   }
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   getList()
   // 获得用户列表

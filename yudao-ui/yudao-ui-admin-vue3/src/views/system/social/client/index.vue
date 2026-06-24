@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="三方登录" url="https://doc.iocoder.cn/social-user/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       ref="queryFormRef"
       :inline="true"
@@ -10,7 +8,7 @@
       class="-mb-15px"
       label-width="130px"
     >
-      <el-form-item label="应用名" prop="name">
+      <el-form-item label="应用�? prop="name">
         <el-input
           v-model="queryParams.name"
           class="!w-240px"
@@ -49,7 +47,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="客户端编号" prop="clientId">
+      <el-form-item label="客户端编�? prop="clientId">
         <el-input
           v-model="queryParams.clientId"
           class="!w-240px"
@@ -58,8 +56,8 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="状态" prop="status">
-        <el-select v-model="queryParams.status" class="!w-240px" clearable placeholder="请选择状态">
+      <el-form-item label="状�? prop="status">
+        <el-select v-model="queryParams.status" class="!w-240px" clearable placeholder="请选择状�?>
           <el-option
             v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
             :key="dict.value"
@@ -94,7 +92,7 @@
   <ContentWrap>
     <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
       <el-table-column align="center" label="编号" prop="id" />
-      <el-table-column align="center" label="应用名" prop="name" />
+      <el-table-column align="center" label="应用�? prop="name" />
       <el-table-column align="center" label="社交平台" prop="socialType">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.SYSTEM_SOCIAL_TYPE" :value="scope.row.socialType" />
@@ -105,8 +103,8 @@
           <dict-tag :type="DICT_TYPE.USER_TYPE" :value="scope.row.userType" />
         </template>
       </el-table-column>
-      <el-table-column align="center" label="客户端编号" prop="clientId" width="180px" />
-      <el-table-column align="center" label="状态" prop="status">
+      <el-table-column align="center" label="客户端编�? prop="clientId" width="180px" />
+      <el-table-column align="center" label="状�? prop="status">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="scope.row.status" />
         </template>
@@ -148,7 +146,7 @@
     />
   </ContentWrap>
 
-  <!-- 表单弹窗：添加/修改 -->
+  <!-- 表单弹窗：添�?修改 -->
   <SocialClientForm ref="formRef" @success="getList" />
 </template>
 
@@ -161,11 +159,11 @@ import SocialClientForm from './SocialClientForm.vue'
 defineOptions({ name: 'SocialClient' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const total = ref(0) // 列表的总页�?
+const list = ref([]) // 列表的数�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -175,7 +173,7 @@ const queryParams = reactive({
   clientId: undefined,
   status: undefined
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 
 /** 查询列表 */
 const getList = async () => {
@@ -210,7 +208,7 @@ const openForm = (type: string, id?: number) => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await SocialClientApi.deleteSocialClient(id)
@@ -220,7 +218,7 @@ const handleDelete = async (id: number) => {
   } catch {}
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(() => {
   getList()
 })

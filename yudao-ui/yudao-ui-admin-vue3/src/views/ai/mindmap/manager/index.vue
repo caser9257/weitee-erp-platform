@@ -1,8 +1,6 @@
 <template>
-  <doc-alert title="AI 思维导图" url="https://doc.iocoder.cn/ai/mindmap/" />
-
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
+<ContentWrap>
+    <!-- 搜索工作�?-->
     <el-form
       class="-mb-15px"
       :model="queryParams"
@@ -14,7 +12,7 @@
         <el-select
           v-model="queryParams.userId"
           clearable
-          placeholder="请输入用户编号"
+          placeholder="请输入用户编�?
           class="!w-240px"
         >
           <el-option
@@ -25,7 +23,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="提示词" prop="prompt">
+      <el-form-item label="提示�? prop="prompt">
         <el-input
           v-model="queryParams.prompt"
           placeholder="请输入提示词"
@@ -39,7 +37,7 @@
           v-model="queryParams.createTime"
           value-format="YYYY-MM-DD HH:mm:ss"
           type="daterange"
-          start-placeholder="开始日期"
+          start-placeholder="开始日�?
           end-placeholder="结束日期"
           :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
           class="!w-240px"
@@ -61,7 +59,7 @@
           <span>{{ userList.find((item) => item.id === scope.row.userId)?.nickname }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="提示词" align="center" prop="prompt" width="180" />
+      <el-table-column label="提示�? align="center" prop="prompt" width="180" />
       <el-table-column label="思维导图" align="center" prop="generatedContent" min-width="300" />
       <el-table-column label="模型" align="center" prop="model" width="180" />
       <el-table-column
@@ -95,7 +93,7 @@
     />
   </ContentWrap>
 
-  <!-- 思维导图的预览 -->
+  <!-- 思维导图的预�?-->
   <el-drawer v-model="previewVisible" :with-header="false" size="800px">
     <Right
       v-if="previewVisible2"
@@ -117,11 +115,11 @@ import Right from '@/views/ai/mindmap/index/components/Right.vue'
 defineOptions({ name: 'AiMindMapManager' })
 
 const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const { t } = useI18n() // 国际�?
 
 const loading = ref(true) // 列表的加载中
-const list = ref<MindMapVO[]>([]) // 列表的数据
-const total = ref(0) // 列表的总页数
+const list = ref<MindMapVO[]>([]) // 列表的数�?
+const total = ref(0) // 列表的总页�?
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -129,7 +127,7 @@ const queryParams = reactive({
   prompt: undefined,
   createTime: []
 })
-const queryFormRef = ref() // 搜索的表单
+const queryFormRef = ref() // 搜索的表�?
 const userList = ref<UserApi.UserVO[]>([]) // 用户列表
 
 /** 查询列表 */
@@ -159,7 +157,7 @@ const resetQuery = () => {
 /** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
+    // 删除的二次确�?
     await message.delConfirm()
     // 发起删除
     await AiMindMapApi.deleteMindMap(id)
@@ -170,19 +168,19 @@ const handleDelete = async (id: number) => {
 }
 
 /** 预览操作按钮 */
-const previewVisible = ref(false) // drawer 的显示隐藏
-const previewVisible2 = ref(false) // right 的显示隐藏
+const previewVisible = ref(false) // drawer 的显示隐�?
+const previewVisible2 = ref(false) // right 的显示隐�?
 const previewContent = ref('')
 const openPreview = async (row: MindMapVO) => {
   previewVisible2.value = false
   previewVisible.value = true
-  // 在 drawer 渲染完后，再渲染 right 预览，不然会报错，需要保证 width 宽度先出来
+  // �?drawer 渲染完后，再渲染 right 预览，不然会报错，需要保�?width 宽度先出�?
   await nextTick()
   previewVisible2.value = true
   previewContent.value = row.generatedContent
 }
 
-/** 初始化 **/
+/** 初始�?**/
 onMounted(async () => {
   getList()
   // 获得用户列表
