@@ -1,6 +1,6 @@
 spring:
   application:
-    name: yudao-server
+    name: weitee-server
 
   profiles:
     active: local
@@ -260,7 +260,7 @@ yudao:
       enable: true
       api-key: sk-40500e52840f4d24b956d0b1d80d9abe
 
---- #################### 芋道相关配置 ####################
+--- #################### 系统相关配置 ####################
 
 yudao:
   info:
@@ -268,7 +268,7 @@ yudao:
     base-package: cn.iocoder.yudao
   web:
     admin-ui:
-      url: http://dashboard.yudao.iocoder.cn # Admin 管理后台 UI 的地址
+      url: http://localhost:8080 # Admin 管理后台 UI 的地址
   xss:
     enable: false
     exclude-urls: # 如下两个 url，仅仅是为了演示，去掉配置也没关系
@@ -298,13 +298,13 @@ yudao:
       topic: ${spring.application.name}-websocket # 消息发送的 Kafka Topic
       consumer-group: ${spring.application.name}-websocket-consumer # 消息发送的 Kafka Consumer Group
   swagger:
-    title: 芋道快速开发平台
+    title: 微泰ERP系统
     description: 提供管理后台、用户 App 的所有功能
     version: ${yudao.info.version}
     url: ${yudao.web.admin-ui.url}
     email: xingyu4j@vip.qq.com
     license: MIT
-    license-url: https://gitee.com/zhijiantianya/ruoyi-vue-pro/blob/master/LICENSE
+    license-url: https://github.com/weitee/erp/blob/main/LICENSE
   codegen:
     base-package: ${yudao.info.base-package}
     db-schemas: ${spring.datasource.dynamic.datasource.master.name}
