@@ -29,8 +29,12 @@ import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -43,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Comparator;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.convertList;
@@ -97,6 +102,8 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
 
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -160,6 +167,10 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     @Transactional(rollbackFor = Exception.class)
     public void updateFinancePaymentStatus(Long id, Integer status) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
+        boolean process = ErpAuditStatus.PROCESS.getStatus().equals(status);
+        if (!approve && !process) {
+            throw exception(FINANCE_PAYMENT_PROCESS_FAIL);
+        }
         ErpFinancePaymentDO payment = validateFinancePaymentExists(id);
         if (StrUtil.isNotBlank(payment.getProcessInstanceId())) {
             throw exception(FINANCE_PAYMENT_UPDATE_FAIL_PROCESSING, payment.getNo());
@@ -168,6 +179,8 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             throw exception(approve ? FINANCE_PAYMENT_APPROVE_FAIL : FINANCE_PAYMENT_PROCESS_FAIL);
         }
         List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
+        List<RLock> locks = approve ? lockApStatements(paymentItems) : Collections.emptyList();
+        try {
         Map<Long, ErpApStatementDO> statementMap = approve
                 ? validateApprovePaymentItems(payment.getSupplierId(), paymentItems)
                 : Collections.emptyMap();
@@ -194,6 +207,9 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
                 approve ? buildAllocateAmountMap(paymentItems, statementMap) : buildRollbackAmountMap(approvedAllocates),
                 approve ? ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus()
                         : ErpApStatementItemTypeEnum.PAYMENT_ALLOCATE_ROLLBACK.getStatus());
+        } finally {
+            unlockAfterTransaction(locks);
+        }
     }
 
     /**
@@ -216,7 +232,7 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
                 purchaseOrderService.updatePurchaseOrderPaymentPrice(orderId);
             }
         } catch (Exception e) {
-            log.error("[updateRelatedPurchaseOrderPayment] 更新采购订单付款状态失败", e);
+            log.error("[updateRelatedPurchaseOrderPayment] 更新采购订单付款状态失败，需人工介入", e);
         }
     }
 
@@ -232,8 +248,16 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         if (!StrUtil.equals(processInstanceId, payment.getProcessInstanceId())) {
             return;
         }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(payment.getStatus())) {
+            // 非处理中状态：已审批/已驳回/已作废，忽略迟到的 BPM 回调
+            log.warn("[updateFinancePaymentStatusByBpm] 忽略非处理中付款单回调，id={}, currentStatus={}, callbackStatus={}",
+                    id, payment.getStatus(), status);
+            return;
+        }
 
         List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
+        List<RLock> locks = approve ? lockApStatements(paymentItems) : Collections.emptyList();
+        try {
         Map<Long, ErpApStatementDO> statementMap = approve
                 ? validateApprovePaymentItems(payment.getSupplierId(), paymentItems)
                 : Collections.emptyMap();
@@ -251,10 +275,72 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             createApStatementItemLogs(payment.getId(), payment.getNo(),
                     buildAllocateAmountMap(paymentItems, statementMap),
                     ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus());
-            // 新增：审批通过后更新采购订单付款状态
+            // 审批通过后更新采购订单付款状态
             ErpTransactionUtils.afterCommit(() -> {
                 updateRelatedPurchaseOrderPayment(paymentItems);
             });
+        } else {
+            // 驳回后也需要更新采购订单付款状态
+            ErpTransactionUtils.afterCommit(() -> {
+                updateRelatedPurchaseOrderPayment(paymentItems);
+            });
+        }
+        } finally {
+            unlockAfterTransaction(locks);
+        }
+    }
+
+    private List<RLock> lockApStatements(List<ErpFinancePaymentItemDO> paymentItems) {
+        if (CollUtil.isEmpty(paymentItems)) {
+            return Collections.emptyList();
+        }
+        List<Long> statementIds = paymentItems.stream()
+                .map(ErpFinancePaymentItemDO::getApStatementId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
+        List<RLock> locks = new ArrayList<>(statementIds.size());
+        try {
+            for (Long statementId : statementIds) {
+                RLock lock = redissonClient.getLock("erp:finance-payment:ap-statement:" + statementId);
+                if (!lock.tryLock()) {
+                    throw exception(AP_STATEMENT_ALLOCATE_AMOUNT_EXCEED, String.valueOf(statementId), BigDecimal.ZERO, BigDecimal.ZERO);
+                }
+                locks.add(lock);
+            }
+            return locks;
+        } catch (Exception ex) {
+            unlockNow(locks);
+            if (ex instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalArgumentException("应付台账加锁失败", ex);
+        }
+    }
+
+    private void unlockAfterTransaction(List<RLock> locks) {
+        if (CollUtil.isEmpty(locks)) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            unlockNow(locks);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                unlockNow(locks);
+            }
+        });
+    }
+
+    private void unlockNow(List<RLock> locks) {
+        for (int index = locks.size() - 1; index >= 0; index--) {
+            RLock lock = locks.get(index);
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
     }
 
@@ -283,11 +369,16 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         // 释放关联的应付台账额度
         List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
         if (CollUtil.isNotEmpty(paymentItems)) {
-            cancelApprovedAllocateFacts(selectApprovedAllocateList(id));
+            List<ErpFinancePaymentAllocateDO> approvedAllocates = selectApprovedAllocateList(id);
+            cancelApprovedAllocateFacts(approvedAllocates);
             refreshApStatementAndBizSummary(paymentItems);
             createApStatementItemLogs(payment.getId(), payment.getNo(),
-                    buildRollbackAmountMap(selectApprovedAllocateList(id)),
+                    buildRollbackAmountMap(approvedAllocates),
                     ErpApStatementItemTypeEnum.PAYMENT_ALLOCATE_ROLLBACK.getStatus());
+            // 作废后更新采购订单付款状态
+            ErpTransactionUtils.afterCommit(() -> {
+                updateRelatedPurchaseOrderPayment(paymentItems);
+            });
         }
     }
 

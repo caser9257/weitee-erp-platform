@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.service.finance.approval;
 
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.module.bpm.service.approval.provider.ApprovalContext;
 import cn.iocoder.yudao.module.bpm.service.approval.provider.ApprovalContextProvider;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
@@ -58,11 +59,14 @@ public class FinancePaymentContextProvider implements ApprovalContextProvider {
                 .bizNo(payment.getNo())
                 .bizTitle("付款单 " + payment.getNo())
                 .amount(payment.getPaymentPrice())
-                .startUserId(payment.getCreator() != null ? Long.parseLong(payment.getCreator()) : null)
+                .startUserId(parseCreatorId(payment.getCreator()))
                 .detailUrl("/finance/payment/detail?id=" + payment.getId())
                 .variables(variables)
                 .notifyParams(notifyParams)
                 .build();
     }
 
+    private Long parseCreatorId(String creator) {
+        return creator != null && StrUtil.isNumeric(creator) ? Long.valueOf(creator) : null;
+    }
 }

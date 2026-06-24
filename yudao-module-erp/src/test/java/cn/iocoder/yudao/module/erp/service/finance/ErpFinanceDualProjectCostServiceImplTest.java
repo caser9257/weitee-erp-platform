@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDualProjectC
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerDiffConfigDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.project.ErpProjectDO;
+import cn.iocoder.yudao.module.erp.service.finance.diffcalc.AmountDiffCalculator;
 import cn.iocoder.yudao.module.erp.service.finance.diffcalc.AmountDiffCalculatorFactory;
 import cn.iocoder.yudao.module.erp.service.finance.diffcalc.ProRataAmountDiffCalculator;
 import cn.iocoder.yudao.module.erp.service.finance.diffcalc.FixedVarianceAmountDiffCalculator;
@@ -163,7 +164,7 @@ class ErpFinanceDualProjectCostServiceImplTest {
         AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
         Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
         calcMapField.setAccessible(true);
-        java.util.Map<Integer, ?> calcMap = (java.util.Map<Integer, ?>) calcMapField.get(factory);
+        java.util.Map<Integer, AmountDiffCalculator> calcMap = (java.util.Map<Integer, AmountDiffCalculator>) calcMapField.get(factory);
         ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
         calcMap.put(proRata.getCalculationType(), proRata);
         setField(service, "amountDiffCalculatorFactory", factory);
@@ -265,7 +266,7 @@ class ErpFinanceDualProjectCostServiceImplTest {
         AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
         Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
         calcMapField.setAccessible(true);
-        java.util.Map<Integer, ?> calcMap = (java.util.Map<Integer, ?>) calcMapField.get(factory);
+        java.util.Map<Integer, AmountDiffCalculator> calcMap = (java.util.Map<Integer, AmountDiffCalculator>) calcMapField.get(factory);
         ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
         calcMap.put(proRata.getCalculationType(), proRata);
         setField(service, "amountDiffCalculatorFactory", factory);

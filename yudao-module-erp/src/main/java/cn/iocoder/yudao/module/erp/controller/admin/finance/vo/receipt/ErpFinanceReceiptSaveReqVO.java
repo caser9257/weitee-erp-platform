@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -34,6 +35,7 @@ public class ErpFinanceReceiptSaveReqVO {
 
     @Schema(description = "优惠金额，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "11600")
     @NotNull(message = "优惠金额不能为空")
+    @DecimalMin(value = "0", message = "优惠金额不能小于 0")
     private BigDecimal discountPrice;
 
     @Schema(description = "备注", example = "你猜")
@@ -63,10 +65,12 @@ public class ErpFinanceReceiptSaveReqVO {
 
         @Schema(description = "已收金额，单位：分", requiredMode = Schema.RequiredMode.REQUIRED, example = "10000")
         @NotNull(message = "已收金额不能为空")
+        @DecimalMin(value = "0", message = "已收金额不能小于 0")
         private BigDecimal receiptedPrice;
 
         @Schema(description = "本次收款，单位：分", requiredMode = Schema.RequiredMode.REQUIRED, example = "10000")
         @NotNull(message = "本次收款不能为空")
+        @DecimalMin(value = "0", inclusive = false, message = "本次收款必须大于 0")
         private BigDecimal receiptPrice;
 
         @Schema(description = "备注", example = "随便")

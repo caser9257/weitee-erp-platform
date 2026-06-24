@@ -8,6 +8,7 @@ import cn.hutool.crypto.digest.DigestUtil;
 import cn.iocoder.yudao.framework.common.pojo.PageResult;
 import cn.iocoder.yudao.framework.common.util.http.HttpUtils;
 import cn.iocoder.yudao.framework.common.util.object.BeanUtils;
+import cn.iocoder.yudao.framework.security.core.util.SecurityFrameworkUtils;
 import cn.iocoder.yudao.module.infra.controller.admin.file.vo.file.FileCreateReqVO;
 import cn.iocoder.yudao.module.infra.controller.admin.file.vo.file.FilePageReqVO;
 import cn.iocoder.yudao.module.infra.controller.admin.file.vo.file.FilePresignedUrlRespVO;
@@ -17,9 +18,12 @@ import cn.iocoder.yudao.module.infra.framework.file.core.client.FileClient;
 import cn.iocoder.yudao.module.infra.framework.file.core.utils.FileTypeUtils;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -33,19 +37,16 @@ import static cn.iocoder.yudao.module.infra.enums.ErrorCodeConstants.FILE_NOT_EX
  * @author 芋道源码
  */
 @Service
+@Slf4j
 public class FileServiceImpl implements FileService {
 
     /**
      * 上传文件的前缀，是否包含日期（yyyyMMdd）
-     *
-     * 目的：按照日期，进行分目录
      */
     static boolean PATH_PREFIX_DATE_ENABLE = true;
+
     /**
      * 上传文件的后缀，是否包含时间戳
-     *
-     * 目的：保证文件的唯一性，避免覆盖
-     * 定制：可按需调整成 UUID、或者其他方式
      */
     static boolean PATH_SUFFIX_TIMESTAMP_ENABLE = true;
 
@@ -55,9 +56,18 @@ public class FileServiceImpl implements FileService {
     @Resource
     private FileMapper fileMapper;
 
+    @Resource
+    private FileOperationLogService fileOperationLogService;
+
     @Override
     public PageResult<FileDO> getFilePage(FilePageReqVO pageReqVO) {
         return fileMapper.selectPage(pageReqVO);
+    }
+
+    @Override
+    public PageResult<FileDO> getRecycleFilePage(FilePageReqVO pageReqVO) {
+        // 查询回收站文件（deleteTime不为空的文件）
+        return fileMapper.selectRecyclePage(pageReqVO);
     }
 
     @Override
@@ -72,7 +82,6 @@ public class FileServiceImpl implements FileService {
             name = DigestUtil.sha256Hex(content);
         }
         if (StrUtil.isEmpty(FileUtil.extName(name))) {
-            // 如果 name 没有后缀 type，则补充后缀
             String extension = FileTypeUtils.getExtension(type);
             if (StrUtil.isNotEmpty(extension)) {
                 name = name + extension;
@@ -87,15 +96,19 @@ public class FileServiceImpl implements FileService {
         String url = client.upload(content, path, type);
 
         // 3. 保存到数据库
-        fileMapper.insert(new FileDO().setConfigId(client.getId())
+        FileDO file = new FileDO().setConfigId(client.getId())
                 .setName(name).setPath(path).setUrl(url)
-                .setType(type).setSize((long) content.length));
+                .setType(type).setSize((long) content.length);
+        fileMapper.insert(file);
+
+        // 4. 记录操作日志
+        fileOperationLogService.logSuccess(file.getId(), name, "UPLOAD", "上传文件成功");
+
         return url;
     }
 
     @VisibleForTesting
     String generateUploadPath(String name, String directory) {
-        // 1. 生成前缀、后缀
         String prefix = null;
         if (PATH_PREFIX_DATE_ENABLE) {
             prefix = LocalDateTimeUtil.format(LocalDateTimeUtil.now(), PURE_DATE_PATTERN);
@@ -105,7 +118,6 @@ public class FileServiceImpl implements FileService {
             suffix = String.valueOf(System.currentTimeMillis());
         }
 
-        // 2.1 先拼接 suffix 后缀
         if (StrUtil.isNotEmpty(suffix)) {
             String ext = FileUtil.extName(name);
             if (StrUtil.isNotEmpty(ext)) {
@@ -114,11 +126,9 @@ public class FileServiceImpl implements FileService {
                 name = name + StrUtil.C_UNDERLINE + suffix;
             }
         }
-        // 2.2 再拼接 prefix 前缀
         if (StrUtil.isNotEmpty(prefix)) {
             name = prefix + StrUtil.SLASH + name;
         }
-        // 2.3 最后拼接 directory 目录
         if (StrUtil.isNotEmpty(directory)) {
             name = directory + StrUtil.SLASH + name;
         }
@@ -128,10 +138,7 @@ public class FileServiceImpl implements FileService {
     @Override
     @SneakyThrows
     public FilePresignedUrlRespVO presignPutUrl(String name, String directory) {
-        // 1. 生成上传的 path，需要保证唯一
         String path = generateUploadPath(name, directory);
-
-        // 2. 获取文件预签名地址
         FileClient fileClient = fileConfigService.getMasterFileClient();
         String uploadUrl = fileClient.presignPutUrl(path);
         String visitUrl = fileClient.presignGetUrl(path, null);
@@ -147,7 +154,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public Long createFile(FileCreateReqVO createReqVO) {
-        createReqVO.setUrl(HttpUtils.removeUrlQuery(createReqVO.getUrl())); // 目的：移除私有桶情况下，URL 的签名参数
+        createReqVO.setUrl(HttpUtils.removeUrlQuery(createReqVO.getUrl()));
         FileDO file = BeanUtils.toBean(createReqVO, FileDO.class);
         fileMapper.insert(file);
         return file.getId();
@@ -159,9 +166,78 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void deleteFile(Long id) throws Exception {
-        // 校验存在
+    @Transactional(rollbackFor = Exception.class)
+    public void softDeleteFile(Long id, String reason) {
         FileDO file = validateFileExists(id);
+
+        // 获取当前用户信息
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        String userName = SecurityFrameworkUtils.getLoginUsername();
+
+        // 软删除：设置删除信息
+        file.setDeleteUserId(userId);
+        file.setDeleteUserName(userName);
+        file.setDeleteTime(LocalDateTime.now());
+        file.setDeleteReason(reason);
+        fileMapper.updateById(file);
+
+        // 记录操作日志
+        fileOperationLogService.logSuccess(id, file.getName(), "DELETE", "移入回收站，原因：" + reason);
+
+        log.info("[softDeleteFile] 文件移入回收站，fileId={}, fileName={}", id, file.getName());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void softDeleteFileList(List<Long> ids, String reason) {
+        for (Long id : ids) {
+            softDeleteFile(id, reason);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreFile(Long id) {
+        FileDO file = fileMapper.selectById(id);
+        if (file == null) {
+            throw exception(FILE_NOT_EXISTS);
+        }
+
+        // 检查是否在回收站
+        if (file.getDeleteTime() == null) {
+            log.warn("[restoreFile] 文件不在回收站，fileId={}", id);
+            return;
+        }
+
+        // 恢复文件：清除删除信息
+        file.setDeleteUserId(null);
+        file.setDeleteUserName(null);
+        file.setDeleteTime(null);
+        file.setDeleteReason(null);
+        fileMapper.updateById(file);
+
+        // 记录操作日志
+        fileOperationLogService.logSuccess(id, file.getName(), "RESTORE", "从回收站恢复");
+
+        log.info("[restoreFile] 文件从回收站恢复，fileId={}, fileName={}", id, file.getName());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void restoreFileList(List<Long> ids) {
+        for (Long id : ids) {
+            restoreFile(id);
+        }
+    }
+
+    @Override
+    @SneakyThrows
+    @Transactional(rollbackFor = Exception.class)
+    public void permanentDeleteFile(Long id) {
+        FileDO file = fileMapper.selectById(id);
+        if (file == null) {
+            throw exception(FILE_NOT_EXISTS);
+        }
 
         // 从文件存储器中删除
         FileClient client = fileConfigService.getFileClient(file.getConfigId());
@@ -170,23 +246,49 @@ public class FileServiceImpl implements FileService {
 
         // 删除记录
         fileMapper.deleteById(id);
+
+        // 记录操作日志
+        fileOperationLogService.logSuccess(id, file.getName(), "PERMANENT_DELETE", "从回收站永久删除");
+
+        log.info("[permanentDeleteFile] 文件永久删除，fileId={}, fileName={}", id, file.getName());
     }
 
     @Override
     @SneakyThrows
-    public void deleteFileList(List<Long> ids) {
-        // 删除文件
-        List<FileDO> files = fileMapper.selectByIds(ids);
-        for (FileDO file : files) {
-            // 获取客户端
-            FileClient client = fileConfigService.getFileClient(file.getConfigId());
-            Assert.notNull(client, "客户端({}) 不能为空", file.getPath());
-            // 删除文件
-            client.delete(file.getPath());
+    @Transactional(rollbackFor = Exception.class)
+    public void permanentDeleteFileList(List<Long> ids) {
+        for (Long id : ids) {
+            permanentDeleteFile(id);
+        }
+    }
+
+    @Override
+    @SneakyThrows
+    @Transactional(rollbackFor = Exception.class)
+    public void emptyRecycleBin() {
+        // 获取所有回收站文件
+        List<FileDO> recycleFiles = fileMapper.selectRecycleFiles();
+        if (recycleFiles.isEmpty()) {
+            return;
+        }
+
+        // 批量删除
+        for (FileDO file : recycleFiles) {
+            try {
+                FileClient client = fileConfigService.getFileClient(file.getConfigId());
+                if (client != null) {
+                    client.delete(file.getPath());
+                }
+            } catch (Exception e) {
+                log.error("[emptyRecycleBin] 删除文件存储失败，fileId={}, path={}", file.getId(), file.getPath(), e);
+            }
         }
 
         // 删除记录
+        List<Long> ids = recycleFiles.stream().map(FileDO::getId).toList();
         fileMapper.deleteByIds(ids);
+
+        log.info("[emptyRecycleBin] 清空回收站，共删除 {} 个文件", recycleFiles.size());
     }
 
     @Override
@@ -197,19 +299,36 @@ public class FileServiceImpl implements FileService {
         return fileMapper.selectBatchIds(ids);
     }
 
+    @Override
+    public byte[] getFileContent(Long configId, String path) throws Exception {
+        FileClient client = fileConfigService.getFileClient(configId);
+        Assert.notNull(client, "客户端({}) 不能为空", configId);
+        return client.getContent(path);
+    }
+
+    /**
+     * 兼容旧接口：软删除
+     */
+    @Override
+    public void deleteFile(Long id) throws Exception {
+        softDeleteFile(id, "用户删除");
+    }
+
+    /**
+     * 兼容旧接口：批量软删除
+     */
+    @Override
+    @SneakyThrows
+    public void deleteFileList(List<Long> ids) {
+        softDeleteFileList(ids, "用户批量删除");
+    }
+
     private FileDO validateFileExists(Long id) {
         FileDO fileDO = fileMapper.selectById(id);
         if (fileDO == null) {
             throw exception(FILE_NOT_EXISTS);
         }
         return fileDO;
-    }
-
-    @Override
-    public byte[] getFileContent(Long configId, String path) throws Exception {
-        FileClient client = fileConfigService.getFileClient(configId);
-        Assert.notNull(client, "客户端({}) 不能为空", configId);
-        return client.getContent(path);
     }
 
 }

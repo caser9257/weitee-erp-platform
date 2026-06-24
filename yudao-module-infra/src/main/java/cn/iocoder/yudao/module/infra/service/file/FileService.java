@@ -18,80 +18,94 @@ public interface FileService {
 
     /**
      * 获得文件分页
-     *
-     * @param pageReqVO 分页查询
-     * @return 文件分页
      */
     PageResult<FileDO> getFilePage(FilePageReqVO pageReqVO);
 
     /**
+     * 获得回收站文件分页
+     */
+    PageResult<FileDO> getRecycleFilePage(FilePageReqVO pageReqVO);
+
+    /**
      * 保存文件，并返回文件的访问路径
-     *
-     * @param content   文件内容
-     * @param name      文件名称，允许空
-     * @param directory 目录，允许空
-     * @param type      文件的 MIME 类型，允许空
-     * @return 文件路径
      */
     String createFile(@NotEmpty(message = "文件内容不能为空") byte[] content,
                       String name, String directory, String type);
 
     /**
      * 生成文件预签名地址信息，用于上传
-     *
-     * @param name      文件名
-     * @param directory 目录
-     * @return 预签名地址信息
      */
     FilePresignedUrlRespVO presignPutUrl(@NotEmpty(message = "文件名不能为空") String name,
                                          String directory);
+
     /**
      * 生成文件预签名地址信息，用于读取
-     *
-     * @param url 完整的文件访问地址
-     * @param expirationSeconds 访问有效期，单位秒
-     * @return 文件预签名地址
      */
     String presignGetUrl(String url, Integer expirationSeconds);
 
     /**
      * 创建文件
-     *
-     * @param createReqVO 创建信息
-     * @return 编号
      */
     Long createFile(FileCreateReqVO createReqVO);
+
+    /**
+     * 获取文件
+     */
     FileDO getFile(Long id);
 
     /**
-     * 删除文件
-     *
-     * @param id 编号
+     * 软删除文件（移入回收站）
      */
-    void deleteFile(Long id) throws Exception;
+    void softDeleteFile(Long id, String reason);
 
     /**
-     * 批量删除文件
-     *
-     * @param ids 编号列表
+     * 批量软删除文件
      */
-    void deleteFileList(List<Long> ids) throws Exception;
+    void softDeleteFileList(List<Long> ids, String reason);
+
+    /**
+     * 恢复文件（从回收站恢复）
+     */
+    void restoreFile(Long id);
+
+    /**
+     * 批量恢复文件
+     */
+    void restoreFileList(List<Long> ids);
+
+    /**
+     * 彻底删除文件（从回收站永久删除）
+     */
+    void permanentDeleteFile(Long id) throws Exception;
+
+    /**
+     * 批量彻底删除文件
+     */
+    void permanentDeleteFileList(List<Long> ids) throws Exception;
+
+    /**
+     * 清空回收站
+     */
+    void emptyRecycleBin() throws Exception;
 
     /**
      * 批量获取文件列表
-     *
-     * @param ids 编号列表
-     * @return 文件列表
      */
     List<FileDO> getFileListByIds(List<Long> ids);
 
     /**
      * 获得文件内容
-     *
-     * @param configId 配置编号
-     * @param path     文件路径
-     * @return 文件内容
      */
     byte[] getFileContent(Long configId, String path) throws Exception;
+
+    /**
+     * 删除文件（兼容旧接口，内部调用softDeleteFile）
+     */
+    void deleteFile(Long id) throws Exception;
+
+    /**
+     * 批量删除文件（兼容旧接口，内部调用softDeleteFileList）
+     */
+    void deleteFileList(List<Long> ids) throws Exception;
 
 }

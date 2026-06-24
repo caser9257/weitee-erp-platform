@@ -171,6 +171,11 @@ export interface PurchaseInQualitySubmitRecheckReqVO {
   items: PurchaseInQualitySubmitRecheckItemReqVO[]
 }
 
+export interface PurchaseInQualityPrintDataVO {
+  purchaseInQuality: PurchaseInQualityVO
+  sourceAttachments: Array<{ name: string; url: string }>
+}
+
 export const PurchaseInQualityApi = {
   getPurchaseInQualityPage: async (params: any) => {
     return await request.get({ url: `/erp/purchase-in-quality/page`, params })
@@ -215,6 +220,14 @@ export const PurchaseInQualityApi = {
     return await request.post<number>({
       url: `/erp/purchase-in-quality/create-return`,
       params: { qualityId }
+    })
+  },
+
+  // 获取质检单套打数据
+  getPurchaseInQualityPrintData: async (id: number) => {
+    return await request.get<PurchaseInQualityPrintDataVO>({
+      url: `/erp/purchase-in-quality/get-print-data`,
+      params: { id }
     })
   }
 }

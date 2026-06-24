@@ -108,6 +108,12 @@ public class ErpMrpSuggestServiceImpl implements ErpMrpSuggestService {
     @Transactional(rollbackFor = Exception.class)
     public Long convertPurchaseSuggest(ErpPurchaseSuggestConvertReqVO reqVO) {
         List<ErpPurchaseSuggestDO> suggests = validatePurchaseSuggestsForConvert(reqVO.getIds());
+        int lockedCount = erpPurchaseSuggestMapper.updateStatusByIdsAndStatus(reqVO.getIds(),
+                ErpMrpSuggestStatusEnum.CONFIRMED.getStatus(),
+                new ErpPurchaseSuggestDO().setStatus(ErpMrpSuggestStatusEnum.CONVERTED.getStatus()));
+        if (lockedCount != suggests.size()) {
+            throw exception(MRP_SUGGEST_STATUS_INVALID);
+        }
         supplierService.validateSupplier(reqVO.getSupplierId());
         if (reqVO.getAccountId() != null) {
             accountService.validateAccount(reqVO.getAccountId());
@@ -140,7 +146,6 @@ public class ErpMrpSuggestServiceImpl implements ErpMrpSuggestService {
         createReqVO.setItems(items);
         Long purchaseOrderId = purchaseOrderService.createPurchaseOrder(createReqVO);
         suggests.forEach(suggest -> erpPurchaseSuggestMapper.updateById(new ErpPurchaseSuggestDO().setId(suggest.getId())
-                .setStatus(ErpMrpSuggestStatusEnum.CONVERTED.getStatus())
                 .setConvertPurchaseOrderId(purchaseOrderId)));
         refreshMcTaskAfterSuggestChange(extractProjectIds(suggests));
         return purchaseOrderId;
@@ -150,12 +155,17 @@ public class ErpMrpSuggestServiceImpl implements ErpMrpSuggestService {
     @Transactional(rollbackFor = Exception.class)
     public List<Long> convertProductionSuggest(ErpProductionSuggestConvertReqVO reqVO) {
         List<ErpProductionSuggestDO> suggests = validateProductionSuggestsForConvert(reqVO.getIds());
+        int lockedCount = erpProductionSuggestMapper.updateStatusByIdsAndStatus(reqVO.getIds(),
+                ErpMrpSuggestStatusEnum.CONFIRMED.getStatus(),
+                new ErpProductionSuggestDO().setStatus(ErpMrpSuggestStatusEnum.CONVERTED.getStatus()));
+        if (lockedCount != suggests.size()) {
+            throw exception(MRP_SUGGEST_STATUS_INVALID);
+        }
         List<Long> orderIds = new ArrayList<>(suggests.size());
         for (ErpProductionSuggestDO suggest : suggests) {
             Long orderId = productionOrderService.createProductionOrderBySuggest(suggest, reqVO.getRemark());
             orderIds.add(orderId);
             erpProductionSuggestMapper.updateById(new ErpProductionSuggestDO().setId(suggest.getId())
-                    .setStatus(ErpMrpSuggestStatusEnum.CONVERTED.getStatus())
                     .setConvertProductionOrderId(orderId));
         }
         refreshMcTaskAfterSuggestChange(extractProjectIdsFromProduction(suggests));

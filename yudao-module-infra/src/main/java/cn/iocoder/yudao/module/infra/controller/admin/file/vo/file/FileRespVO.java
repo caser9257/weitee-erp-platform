@@ -30,6 +30,33 @@ public class FileRespVO {
     @Schema(description = "文件大小", example = "2048", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long size;
 
+    @Schema(description = "文件夹ID")
+    private Long folderId;
+
+    @Schema(description = "标签ID（多个标签用逗号分隔）")
+    private String tagIds;
+
+    @Schema(description = "总查看次数")
+    private Integer viewCount;
+
+    @Schema(description = "总下载次数")
+    private Integer downloadCount;
+
+    @Schema(description = "最后访问时间")
+    private LocalDateTime lastAccessTime;
+
+    @Schema(description = "删除人ID")
+    private Long deleteUserId;
+
+    @Schema(description = "删除人名称")
+    private String deleteUserName;
+
+    @Schema(description = "删除时间")
+    private LocalDateTime deleteTime;
+
+    @Schema(description = "删除原因")
+    private String deleteReason;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDateTime createTime;
 

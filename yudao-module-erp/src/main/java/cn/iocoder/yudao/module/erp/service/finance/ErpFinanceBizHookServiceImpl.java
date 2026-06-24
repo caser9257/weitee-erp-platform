@@ -2,14 +2,20 @@ package cn.iocoder.yudao.module.erp.service.finance;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
+import cn.iocoder.yudao.module.erp.framework.event.VoucherGenerateFailedEvent;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDate;
 
 @Service
 @Validated
+@Slf4j
 public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
 
     @Resource
@@ -20,6 +26,8 @@ public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
     private ErpFinanceVoucherService financeVoucherService;
     @Resource
     private ErpFinanceDualWriteService dualWriteService;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     @Override
     public Long handleApprovedBiz(Integer bizType, Long bizId, LocalDate bizDate) {
@@ -28,9 +36,31 @@ public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
             financePeriodService.getCurrentOpenPeriod(defaultLedger.getId(),
                     ObjectUtil.defaultIfNull(bizDate, LocalDate.now()));
         }
-        Long voucherId = financeVoucherService.autoGenerateVoucher(bizType, bizId);
-        dualWriteService.syncDualWriteBySourceVoucherId(voucherId);
-        return voucherId;
+        try {
+            Long voucherId = financeVoucherService.autoGenerateVoucher(bizType, bizId);
+            dualWriteService.syncDualWriteBySourceVoucherId(voucherId);
+            return voucherId;
+        } catch (Exception e) {
+            // 凭证生成失败，发布告警事件，不阻断业务审核
+            log.error("[handleApprovedBiz] 凭证生成失败，bizType={}, bizId={}", bizType, bizId, e);
+            eventPublisher.publishEvent(new VoucherGenerateFailedEvent(
+                    bizType, bizId,
+                    e.getMessage(),
+                    getStackTrace(e)
+            ));
+            // 不抛出异常，避免阻断业务审核流程
+            return null;
+        }
+    }
+
+    /**
+     * 获取异常堆栈信息（限制长度）
+     */
+    private String getStackTrace(Exception e) {
+        StringWriter sw = new StringWriter();
+        e.printStackTrace(new PrintWriter(sw));
+        String stackTrace = sw.toString();
+        return stackTrace.length() > 500 ? stackTrace.substring(0, 500) : stackTrace;
     }
 
     @Override

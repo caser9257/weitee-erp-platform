@@ -15,6 +15,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.receipt.ErpFinanc
 import cn.iocoder.yudao.module.erp.controller.admin.finance.vo.receipt.ErpFinanceReceiptSaveReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpAccountDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptDO;
+import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceReceiptItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
@@ -79,6 +80,22 @@ public class ErpFinanceReceiptController {
     public CommonResult<Boolean> updateFinanceReceiptStatus(@RequestParam("id") Long id,
                                                            @RequestParam("status") Integer status) {
         financeReceiptService.updateFinanceReceiptStatus(id, status);
+        return success(true);
+    }
+
+    @PutMapping("/approve")
+    @Operation(summary = "审核收款单")
+    @PreAuthorize("@ss.hasPermission('erp:finance-receipt:update-status')")
+    public CommonResult<Boolean> approveFinanceReceipt(@RequestParam("id") Long id) {
+        financeReceiptService.updateFinanceReceiptStatus(id, ErpAuditStatus.APPROVE.getStatus());
+        return success(true);
+    }
+
+    @PutMapping("/unapprove")
+    @Operation(summary = "反审核收款单")
+    @PreAuthorize("@ss.hasPermission('erp:finance-receipt:update-status')")
+    public CommonResult<Boolean> unapproveFinanceReceipt(@RequestParam("id") Long id) {
+        financeReceiptService.updateFinanceReceiptStatus(id, ErpAuditStatus.PROCESS.getStatus());
         return success(true);
     }
 

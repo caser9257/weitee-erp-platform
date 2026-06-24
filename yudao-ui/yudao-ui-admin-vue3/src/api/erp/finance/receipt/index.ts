@@ -81,6 +81,16 @@ export const FinanceReceiptApi = {
     })
   },
 
+  // 审核收款单
+  approveFinanceReceipt: async (id: number) => {
+    return await request.put({ url: `/erp/finance-receipt/approve`, params: { id } })
+  },
+
+  // 反审核收款单
+  unapproveFinanceReceipt: async (id: number) => {
+    return await request.put({ url: `/erp/finance-receipt/unapprove`, params: { id } })
+  },
+
   // 删除收款单
   deleteFinanceReceipt: async (ids: number[]) => {
     return await request.delete({

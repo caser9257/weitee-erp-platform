@@ -84,4 +84,27 @@ public interface ErpArStatementMapper extends BaseMapperX<ErpArStatementDO> {
                 .set(ErpArStatementDO::getStatus, status));
     }
 
+    /**
+     * 按来源订单ID汇总应收台账金额（SQL 聚合，避免全量加载到内存）
+     *
+     * @param sourceOrderId 来源订单ID
+     * @return 汇总结果数组：[0]=count, [1]=totalAmount, [2]=totalReceivedAmount, [3]=totalRemainAmount
+     */
+    default java.util.Map<String, BigDecimal> selectSummaryBySourceOrderId(Long sourceOrderId) {
+        // 使用 selectList 只查必要字段，避免加载全部列
+        java.util.List<ErpArStatementDO> list = selectList(new LambdaQueryWrapperX<ErpArStatementDO>()
+                .eq(ErpArStatementDO::getSourceOrderId, sourceOrderId)
+                .ne(ErpArStatementDO::getStatus, 3) // 排除已关闭
+                .select(ErpArStatementDO::getAmount, ErpArStatementDO::getReceivedAmount, ErpArStatementDO::getRemainAmount));
+        java.util.Map<String, BigDecimal> result = new java.util.HashMap<>();
+        result.put("count", new BigDecimal(list.size()));
+        result.put("totalAmount", list.stream().map(s -> s.getAmount() != null ? s.getAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        result.put("totalReceivedAmount", list.stream().map(s -> s.getReceivedAmount() != null ? s.getReceivedAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        result.put("totalRemainAmount", list.stream().map(s -> s.getRemainAmount() != null ? s.getRemainAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        return result;
+    }
+
 }

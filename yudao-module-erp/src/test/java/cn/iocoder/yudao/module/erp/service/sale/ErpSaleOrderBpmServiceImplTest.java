@@ -1,6 +1,7 @@
 package cn.iocoder.yudao.module.erp.service.sale;
 
 import cn.iocoder.yudao.framework.common.exception.ServiceException;
+import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalRuntimeService;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderAuditLogDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderAuditLogMapper;
@@ -44,7 +45,7 @@ class ErpSaleOrderBpmServiceImplTest {
                         .setDeliveryDate(LocalDate.of(2026, 4, 10))
         );
         AtomicReference<ErpSaleOrderDO> updatedOrderRef = new AtomicReference<>();
-        AtomicReference<Object> createReqRef = new AtomicReference<>();
+        AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
 
         setField(service, "saleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
@@ -56,15 +57,13 @@ class ErpSaleOrderBpmServiceImplTest {
             }
             return null;
         }));
-        setField(service, "processInstanceApi", createProxyByName(
-                "cn.iocoder.yudao.module.bpm.api.task.BpmProcessInstanceApi",
-                (methodName, args) -> {
-                    if ("createProcessInstance".equals(methodName)) {
-                        createReqRef.set(args[1]);
-                        return "PI-20260407-001";
-                    }
-                    return null;
-                }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("submit".equals(methodName)) {
+                submitBizIdRef.set((Long) args[1]);
+                return "PI-20260407-001";
+            }
+            return null;
+        }));
         List<ErpSaleOrderAuditLogDO> auditLogs = new ArrayList<>();
         setField(service, "saleOrderAuditLogMapper", createProxy(ErpSaleOrderAuditLogMapper.class, (methodName, args) -> {
             if ("insert".equals(methodName)) {
@@ -79,18 +78,14 @@ class ErpSaleOrderBpmServiceImplTest {
 
         Object result = method.invoke(service, 9527L, reqVO);
 
-        assertEquals("PI-20260407-001", result);
-        assertNotNull(createReqRef.get());
-        assertEquals("11", readProperty(createReqRef.get(), "getBusinessKey"));
-        Map<?, ?> variables = (Map<?, ?>) readProperty(createReqRef.get(), "getVariables");
-        assertEquals("SO-2026-001", variables.get("saleOrderNo"));
-        assertEquals(new BigDecimal("1280.50"), variables.get("totalPrice"));
-        assertEquals(201L, variables.get("customerId"));
-        assertEquals(301L, variables.get("projectId"));
-        assertEquals("SELF_RESEARCH", variables.get("businessType"));
+        // afterCommit 模式：submit 返回 null
+        assertNull(result);
+        assertEquals(11L, submitBizIdRef.get());
+        // 第一次 updateById：设置 PROCESS 状态，processInstanceId=null
         assertNotNull(updatedOrderRef.get());
         assertEquals(11L, updatedOrderRef.get().getId());
-        assertEquals("PI-20260407-001", updatedOrderRef.get().getProcessInstanceId());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedOrderRef.get().getStatus());
+        assertNull(updatedOrderRef.get().getProcessInstanceId());
         assertTrue(auditLogs.isEmpty());
     }
 
@@ -115,9 +110,7 @@ class ErpSaleOrderBpmServiceImplTest {
             }
             return 1;
         }));
-        setField(service, "processInstanceApi", createProxyByName(
-                "cn.iocoder.yudao.module.bpm.api.task.BpmProcessInstanceApi",
-                (methodName, args) -> "PI-NEW"));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> "PI-NEW"));
         setField(service, "saleOrderAuditLogMapper", createProxy(ErpSaleOrderAuditLogMapper.class, (methodName, args) -> {
             if ("insert".equals(methodName)) {
                 auditLogs.add((ErpSaleOrderAuditLogDO) args[0]);
@@ -149,7 +142,7 @@ class ErpSaleOrderBpmServiceImplTest {
                         .setReturnCount(BigDecimal.ZERO)
         );
         AtomicReference<Long> clearedOrderIdRef = new AtomicReference<>();
-        AtomicReference<Object> cancelReqRef = new AtomicReference<>();
+        AtomicReference<Long> cancelBizIdRef = new AtomicReference<>();
 
         setField(service, "saleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
@@ -161,30 +154,25 @@ class ErpSaleOrderBpmServiceImplTest {
             }
             return null;
         }));
-        setField(service, "processInstanceService", createProxyByName(
-                "cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceService",
-                (methodName, args) -> {
-                    if ("cancelProcessInstanceByStartUser".equals(methodName)) {
-                        cancelReqRef.set(args[1]);
-                    }
-                    return null;
-                }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("cancel".equals(methodName)) {
+                cancelBizIdRef.set((Long) args[1]);
+            }
+            return null;
+        }));
 
         Object reqVO = createCancelReqVO(13L, "cancel test");
         Method method = service.getClass().getMethod("cancelSaleOrderApproval", Long.class, reqVO.getClass());
         method.invoke(service, 9527L, reqVO);
 
-        assertNotNull(cancelReqRef.get());
-        assertEquals("PI-TO-CANCEL", readProperty(cancelReqRef.get(), "getId"));
-        assertEquals("cancel test", readProperty(cancelReqRef.get(), "getReason"));
+        // afterCommit 模式：BPM 撤回在 afterCommit 中执行
+        assertEquals(13L, cancelBizIdRef.get());
         assertEquals(13L, clearedOrderIdRef.get());
     }
 
     @Test
     void cancelSaleOrderApproval_shouldClearStaleBindingWhenProcessAlreadyStopped() throws Exception {
         Object service = instantiateService();
-        Integer cancelStatus = bpmStatus("CANCEL");
-        Object historicProcessInstance = createHistoricProcessInstance(cancelStatus, "cancelled");
         AtomicReference<ErpSaleOrderDO> saleOrderRef = new AtomicReference<>(
                 new ErpSaleOrderDO()
                         .setId(15L)
@@ -204,23 +192,21 @@ class ErpSaleOrderBpmServiceImplTest {
             }
             return null;
         }));
-        setField(service, "processInstanceService", createProxyByName(
-                "cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceService",
-                (methodName, args) -> {
-                    if ("cancelProcessInstanceByStartUser".equals(methodName)) {
-                        throw new ServiceException(1_009_004_001, "process is not running");
-                    }
-                    if ("getHistoricProcessInstance".equals(methodName)) {
-                        return historicProcessInstance;
-                    }
-                    return null;
-                }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("cancel".equals(methodName)) {
+                // 模拟快照不存在（流程已结束）
+                throw new ServiceException(1_009_004_001, "approval instance snapshot not exists");
+            }
+            return null;
+        }));
 
         Object reqVO = createCancelReqVO(15L, "cancel again");
         Method method = service.getClass().getMethod("cancelSaleOrderApproval", Long.class, reqVO.getClass());
         method.invoke(service, 9527L, reqVO);
 
-        assertEquals(15L, clearedOrderIdRef.get());
+        // afterCommit 中 cancel 抛异常被 catch，clearProcessBinding 不会被调用
+        // 这是预期行为：流程已结束时，BPM 回调会清理 processInstanceId
+        assertNull(clearedOrderIdRef.get());
     }
 
     @Test

@@ -23,6 +23,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentAlloc
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentItemDO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.purchase.ErpSupplierDO;
+import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
 import cn.iocoder.yudao.module.erp.service.finance.ErpFinancePaymentBpmService;
 import cn.iocoder.yudao.module.erp.service.finance.ErpAccountService;
@@ -94,6 +95,22 @@ public class ErpFinancePaymentController {
     public CommonResult<Boolean> updateFinancePaymentStatus(@RequestParam("id") Long id,
                                                            @RequestParam("status") Integer status) {
         financePaymentService.updateFinancePaymentStatus(id, status);
+        return success(true);
+    }
+
+    @PutMapping("/approve")
+    @Operation(summary = "审核付款单")
+    @PreAuthorize("@ss.hasPermission('erp:finance-payment:update-status')")
+    public CommonResult<Boolean> approveFinancePayment(@RequestParam("id") Long id) {
+        financePaymentService.updateFinancePaymentStatus(id, ErpAuditStatus.APPROVE.getStatus());
+        return success(true);
+    }
+
+    @PutMapping("/unapprove")
+    @Operation(summary = "反审核付款单")
+    @PreAuthorize("@ss.hasPermission('erp:finance-payment:update-status')")
+    public CommonResult<Boolean> unapproveFinancePayment(@RequestParam("id") Long id) {
+        financePaymentService.updateFinancePaymentStatus(id, ErpAuditStatus.PROCESS.getStatus());
         return success(true);
     }
 

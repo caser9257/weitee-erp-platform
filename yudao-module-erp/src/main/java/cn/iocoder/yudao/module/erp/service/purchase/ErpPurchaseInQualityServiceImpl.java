@@ -41,9 +41,14 @@ import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import cn.iocoder.yudao.module.system.enums.permission.RoleCodeEnum;
 import cn.iocoder.yudao.module.system.service.permission.MenuService;
 import cn.iocoder.yudao.module.system.service.permission.PermissionService;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -132,6 +137,8 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     private ErpPurchaseReturnService erpPurchaseReturnService;
     @Resource
     private ErpPurchaseReturnMapper erpPurchaseReturnMapper;
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -221,7 +228,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
                 .setId(quality.getId())
                 .setAssignedCheckerUserId(reqVO.getAssignedCheckerUserId())
                 .setAssignedCheckerTime(LocalDateTime.now()));
-        sendAssignCheckerNotify(quality, reqVO.getAssignedCheckerUserId());
+        ErpTransactionUtils.afterCommit(() -> sendAssignCheckerNotify(quality, reqVO.getAssignedCheckerUserId()));
     }
 
     @Override
@@ -437,6 +444,37 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createReturnFromQuality(Long qualityId, Long userId) {
+        RLock lock = redissonClient.getLock("erp:purchase-in-quality:create-return:" + qualityId);
+        if (!lock.tryLock()) {
+            throw exception(PURCHASE_IN_QUALITY_NO_REJECT_ITEMS);
+        }
+        try {
+            return doCreateReturnFromQuality(qualityId);
+        } finally {
+            unlockAfterTransaction(lock);
+        }
+    }
+
+    private void unlockAfterTransaction(RLock lock) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            unlockIfHeld(lock);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                unlockIfHeld(lock);
+            }
+        });
+    }
+
+    private void unlockIfHeld(RLock lock) {
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+
+    private Long doCreateReturnFromQuality(Long qualityId) {
         // 1. 获取质检单
         ErpPurchaseInQualityDO quality = getRequiredPurchaseInQuality(qualityId);
 
@@ -782,7 +820,8 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
                 .setStockInTime(stockInCount.compareTo(BigDecimal.ZERO) > 0 ? purchaseIn.getStockInTime() : null)
                 .setStockInUserId(stockInCount.compareTo(BigDecimal.ZERO) > 0 ? purchaseIn.getStockInUserId() : null));
         if (ObjectUtil.equal(quality.getStatus(), ErpPurchaseInQualityStatusEnum.RECHECKING.getStatus())) {
-            sendQualityFinishedNotify(quality, purchaseIn, result, totalPassCount, totalRejectCount, stockInStatus);
+            ErpTransactionUtils.afterCommit(() -> sendQualityFinishedNotify(quality, purchaseIn, result,
+                    totalPassCount, totalRejectCount, stockInStatus));
         }
     }
 

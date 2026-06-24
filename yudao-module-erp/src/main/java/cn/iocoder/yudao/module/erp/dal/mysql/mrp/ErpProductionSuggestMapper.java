@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.suggest.ErpProductionSuggestPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpProductionSuggestDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.Collection;
@@ -32,6 +33,15 @@ public interface ErpProductionSuggestMapper extends BaseMapperX<ErpProductionSug
 
     default List<ErpProductionSuggestDO> selectListByIds(Collection<Long> ids) {
         return selectBatchIds(ids);
+    }
+
+    default int updateStatusByIdsAndStatus(Collection<Long> ids, Integer status, ErpProductionSuggestDO updateObj) {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        return update(updateObj, new LambdaUpdateWrapper<ErpProductionSuggestDO>()
+                .in(ErpProductionSuggestDO::getId, ids)
+                .eq(ErpProductionSuggestDO::getStatus, status));
     }
 
     default List<ErpProductionSuggestDO> selectListBySourceOrderIds(Collection<Long> sourceOrderIds) {

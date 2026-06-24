@@ -144,6 +144,11 @@ export const SaleOrderApi = {
     return await request.put({ url: `/erp/sale-order/update`, data })
   },
 
+  // 批量修改销售订单
+  batchUpdateSaleOrder: async (data: { ids: number[]; fieldKey: string; mode: string; value: string }) => {
+    return await request.put({ url: `/erp/sale-order/batch-update`, data })
+  },
+
   // 更新销售订单的状态
   updateSaleOrderStatus: async (data: { id: number; status: number; reason?: string }) => {
     return await request.put({

@@ -2,13 +2,7 @@ package cn.iocoder.yudao.module.erp.service.sale;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.iocoder.yudao.framework.common.exception.ServiceException;
-import cn.iocoder.yudao.module.bpm.api.task.BpmProcessInstanceApi;
-import cn.iocoder.yudao.module.bpm.api.task.dto.BpmProcessInstanceCreateReqDTO;
-import cn.iocoder.yudao.module.bpm.controller.admin.task.vo.instance.BpmProcessInstanceCancelReqVO;
-import cn.iocoder.yudao.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
-import cn.iocoder.yudao.module.bpm.framework.flowable.core.util.FlowableUtils;
-import cn.iocoder.yudao.module.bpm.service.task.BpmProcessInstanceService;
+import cn.iocoder.yudao.module.bpm.service.approval.BpmApprovalRuntimeService;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.order.ErpSaleOrderCancelApprovalReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.sale.vo.order.ErpSaleOrderSubmitReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderAuditLogDO;
@@ -17,18 +11,15 @@ import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderAuditLogMapper;
 import cn.iocoder.yudao.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpSaleOrderAuditActionTypeConstants;
-import cn.iocoder.yudao.module.erp.enums.ErpSaleOrderBpmConstants;
-import org.flowable.engine.history.HistoricProcessInstance;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.iocoder.yudao.module.bpm.enums.ErrorCodeConstants.PROCESS_INSTANCE_CANCEL_FAIL_NOT_EXISTS;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.SALE_ORDER_APPROVE_FAIL;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.SALE_ORDER_BPM_CANCEL_FAIL;
 import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.SALE_ORDER_BPM_SUBMIT_FAIL;
@@ -36,6 +27,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.SALE_ORDER_NO
 
 @Service
 @Validated
+@Slf4j
 public class ErpSaleOrderBpmServiceImpl implements ErpSaleOrderBpmService {
 
     @Resource
@@ -46,9 +38,7 @@ public class ErpSaleOrderBpmServiceImpl implements ErpSaleOrderBpmService {
     private ErpSaleOrderService saleOrderService;
 
     @Resource
-    private BpmProcessInstanceApi processInstanceApi;
-    @Resource
-    private BpmProcessInstanceService processInstanceService;
+    private BpmApprovalRuntimeService approvalRuntimeService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -61,24 +51,37 @@ public class ErpSaleOrderBpmServiceImpl implements ErpSaleOrderBpmService {
                 && StrUtil.isNotBlank(saleOrder.getProcessInstanceId())) {
             throw exception(SALE_ORDER_BPM_SUBMIT_FAIL);
         }
-        String processInstanceId = processInstanceApi.createProcessInstance(userId,
-                new BpmProcessInstanceCreateReqDTO()
-                        .setProcessDefinitionKey(ErpSaleOrderBpmConstants.PROCESS_DEFINITION_KEY)
-                        .setBusinessKey(String.valueOf(saleOrder.getId()))
-                        .setVariables(buildVariables(saleOrder))
-                        .setStartUserSelectAssignees(reqVO.getStartUserSelectAssignees()));
+        // 事务内：只写本地状态
+        Long orderId = saleOrder.getId();
         erpSaleOrderMapper.updateById(new ErpSaleOrderDO()
-                .setId(saleOrder.getId())
+                .setId(orderId)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId(processInstanceId));
+                .setProcessInstanceId(null));
         if (ObjectUtil.equal(saleOrder.getStatus(), ErpAuditStatus.REJECT.getStatus())) {
             erpSaleOrderAuditLogMapper.insert(new ErpSaleOrderAuditLogDO()
-                    .setOrderId(saleOrder.getId())
+                    .setOrderId(orderId)
                     .setActionType(ErpSaleOrderAuditActionTypeConstants.RESUBMIT)
                     .setBeforeStatus(ErpAuditStatus.REJECT.getStatus())
                     .setAfterStatus(ErpAuditStatus.PROCESS.getStatus()));
         }
-        return processInstanceId;
+
+        // 事务外：调 BPM 创建流程
+        ErpTransactionUtils.afterCommit(() -> {
+            try {
+                String processInstanceId = approvalRuntimeService.submit(
+                        "erp.sale.order.submit", orderId, userId);
+                erpSaleOrderMapper.updateById(new ErpSaleOrderDO()
+                        .setId(orderId)
+                        .setProcessInstanceId(processInstanceId));
+            } catch (Exception e) {
+                log.error("[submitSaleOrder] BPM 创建失败，orderId={}", orderId, e);
+                erpSaleOrderMapper.updateById(new ErpSaleOrderDO()
+                        .setId(orderId)
+                        .setStatus(ErpAuditStatus.FAILED.getStatus())
+                        .setProcessInstanceId(null));
+            }
+        });
+        return null;
     }
 
     @Override
@@ -89,76 +92,21 @@ public class ErpSaleOrderBpmServiceImpl implements ErpSaleOrderBpmService {
                 || StrUtil.isBlank(saleOrder.getProcessInstanceId())) {
             throw exception(SALE_ORDER_BPM_CANCEL_FAIL);
         }
-        try {
-            processInstanceService.cancelProcessInstanceByStartUser(userId,
-                    new BpmProcessInstanceCancelReqVO()
-                            .setId(saleOrder.getProcessInstanceId())
-                            .setReason(reqVO.getReason()));
-            clearProcessBinding(saleOrder.getId());
-        } catch (ServiceException ex) {
-            if (!ObjectUtil.equal(ex.getCode(), PROCESS_INSTANCE_CANCEL_FAIL_NOT_EXISTS.getCode())) {
-                throw ex;
+        // 事务内：只做本地校验
+        Long orderId = saleOrder.getId();
+        ErpTransactionUtils.afterCommit(() -> {
+            try {
+                approvalRuntimeService.cancel("erp.sale.order.submit", orderId, userId, reqVO.getReason());
+                // clearProcessBinding 由 SaleOrderResultHandler.onCancel 统一处理
+            } catch (Exception e) {
+                log.warn("[cancelSaleOrderApproval] BPM 撤回失败，orderId={}", orderId, e);
             }
-            reconcileStoppedProcessInstance(saleOrder);
-        }
+        });
     }
 
     @Override
     public void handleProcessInstanceResult(Long orderId, String processInstanceId, Integer status, String reason) {
-        ErpSaleOrderDO saleOrder = getRequiredSaleOrder(orderId);
-        if (!StrUtil.equals(processInstanceId, saleOrder.getProcessInstanceId())) {
-            return;
-        }
-        if (ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.APPROVE.getStatus())) {
-            saleOrderService.updateSaleOrderStatusByBpm(orderId, processInstanceId,
-                    ErpAuditStatus.APPROVE.getStatus(), reason);
-            return;
-        }
-        if (ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.REJECT.getStatus())) {
-            saleOrderService.updateSaleOrderStatusByBpm(orderId, processInstanceId,
-                    ErpAuditStatus.REJECT.getStatus(), reason);
-            return;
-        }
-        if (ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.CANCEL.getStatus())) {
-            clearProcessBinding(orderId);
-        }
-    }
-
-    private Map<String, Object> buildVariables(ErpSaleOrderDO saleOrder) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put(ErpSaleOrderBpmConstants.VARIABLE_ORDER_ID, saleOrder.getId());
-        variables.put(ErpSaleOrderBpmConstants.VARIABLE_ORDER_NO, saleOrder.getNo());
-        variables.put(ErpSaleOrderBpmConstants.VARIABLE_TOTAL_PRICE, saleOrder.getTotalPrice());
-        variables.put(ErpSaleOrderBpmConstants.VARIABLE_CUSTOMER_ID, saleOrder.getCustomerId());
-        variables.put(ErpSaleOrderBpmConstants.VARIABLE_PROJECT_ID, saleOrder.getProjectId());
-        variables.put(ErpSaleOrderBpmConstants.VARIABLE_BUSINESS_TYPE, saleOrder.getBusinessType());
-        return variables;
-    }
-
-    private void reconcileStoppedProcessInstance(ErpSaleOrderDO saleOrder) {
-        HistoricProcessInstance historicProcessInstance = processInstanceService
-                .getHistoricProcessInstance(saleOrder.getProcessInstanceId());
-        if (historicProcessInstance == null) {
-            clearProcessBinding(saleOrder.getId());
-            return;
-        }
-        Integer processStatus = FlowableUtils.getProcessInstanceStatus(historicProcessInstance);
-        String reason = FlowableUtils.getProcessInstanceReason(historicProcessInstance);
-        if (ObjectUtil.equal(processStatus, BpmProcessInstanceStatusEnum.APPROVE.getStatus())) {
-            saleOrderService.updateSaleOrderStatusByBpm(saleOrder.getId(), saleOrder.getProcessInstanceId(),
-                    ErpAuditStatus.APPROVE.getStatus(), reason);
-            return;
-        }
-        if (ObjectUtil.equal(processStatus, BpmProcessInstanceStatusEnum.REJECT.getStatus())) {
-            saleOrderService.updateSaleOrderStatusByBpm(saleOrder.getId(), saleOrder.getProcessInstanceId(),
-                    ErpAuditStatus.REJECT.getStatus(), reason);
-            return;
-        }
-        clearProcessBinding(saleOrder.getId());
-    }
-
-    private void clearProcessBinding(Long orderId) {
-        erpSaleOrderMapper.clearProcessInstanceId(orderId);
+        // 结果回写已收敛到 SaleOrderResultHandler，由 BpmApprovalEventDispatcher 统一分发
     }
 
     private ErpSaleOrderDO getRequiredSaleOrder(Long orderId) {

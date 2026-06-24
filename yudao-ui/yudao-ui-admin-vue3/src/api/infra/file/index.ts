@@ -17,14 +17,44 @@ export const getFilePage = (params: PageParam) => {
   return request.get({ url: '/infra/file/page', params })
 }
 
-// 删除文件
-export const deleteFile = (id: number) => {
-  return request.delete({ url: '/infra/file/delete?id=' + id })
+// 查询回收站文件列表
+export const getRecycleFilePage = (params: PageParam) => {
+  return request.get({ url: '/infra/file/recycle-page', params })
 }
 
-// 批量删除文件
-export const deleteFileList = (ids: number[]) => {
-  return request.delete({ url: '/infra/file/delete-list', params: { ids: ids.join(',') } })
+// 删除文件（移入回收站）
+export const deleteFile = (id: number, reason?: string) => {
+  return request.delete({ url: '/infra/file/delete', params: { id, reason } })
+}
+
+// 批量删除文件（移入回收站）
+export const deleteFileList = (ids: number[], reason?: string) => {
+  return request.delete({ url: '/infra/file/delete-list', params: { ids: ids.join(','), reason } })
+}
+
+// 恢复文件（从回收站）
+export const restoreFile = (id: number) => {
+  return request.put({ url: '/infra/file/restore', params: { id } })
+}
+
+// 批量恢复文件
+export const restoreFileList = (ids: number[]) => {
+  return request.put({ url: '/infra/file/restore-list', params: { ids: ids.join(',') } })
+}
+
+// 彻底删除文件（从回收站永久删除）
+export const permanentDeleteFile = (id: number) => {
+  return request.delete({ url: '/infra/file/permanent-delete', params: { id } })
+}
+
+// 批量彻底删除文件
+export const permanentDeleteFileList = (ids: number[]) => {
+  return request.delete({ url: '/infra/file/permanent-delete-list', params: { ids: ids.join(',') } })
+}
+
+// 清空回收站
+export const emptyRecycleBin = () => {
+  return request.delete({ url: '/infra/file/empty-recycle-bin' })
 }
 
 // 获取文件预签名地址

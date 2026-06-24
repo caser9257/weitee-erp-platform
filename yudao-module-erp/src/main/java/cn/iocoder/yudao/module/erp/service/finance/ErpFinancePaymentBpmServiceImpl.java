@@ -9,6 +9,8 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
 import cn.iocoder.yudao.module.erp.dal.mysql.finance.ErpFinancePaymentMapper;
 import cn.iocoder.yudao.module.erp.enums.ErpAuditStatus;
 import cn.iocoder.yudao.module.erp.enums.ErpFinancePaymentBpmConstants;
+import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -26,6 +28,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.FINANCE_PAYME
 
 @Service
 @Validated
+@Slf4j
 public class ErpFinancePaymentBpmServiceImpl implements ErpFinancePaymentBpmService {
 
     @Resource
@@ -47,12 +50,30 @@ public class ErpFinancePaymentBpmServiceImpl implements ErpFinancePaymentBpmServ
                 && StrUtil.isNotBlank(payment.getProcessInstanceId())) {
             throw exception(FINANCE_PAYMENT_BPM_SUBMIT_FAIL);
         }
-        String processInstanceId = approvalRuntimeService.submit("erp.finance.payment.submit", payment.getId(), userId);
+        // 事务内：只写本地状态
+        Long paymentId = payment.getId();
         erpFinancePaymentMapper.updateById(new ErpFinancePaymentDO()
-                .setId(payment.getId())
+                .setId(paymentId)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId(processInstanceId));
-        return processInstanceId;
+                .setProcessInstanceId(null)); // 先清空，afterCommit 由 BPM 回调写入
+
+        // 事务外：调 BPM 创建流程
+        ErpTransactionUtils.afterCommit(() -> {
+            try {
+                String processInstanceId = approvalRuntimeService.submit(
+                        "erp.finance.payment.submit", paymentId, userId);
+                erpFinancePaymentMapper.updateById(new ErpFinancePaymentDO()
+                        .setId(paymentId)
+                        .setProcessInstanceId(processInstanceId));
+            } catch (Exception e) {
+                log.error("[submitFinancePayment] BPM 创建失败，paymentId={}", paymentId, e);
+                erpFinancePaymentMapper.updateById(new ErpFinancePaymentDO()
+                        .setId(paymentId)
+                        .setStatus(ErpAuditStatus.FAILED.getStatus())
+                        .setProcessInstanceId(null));
+            }
+        });
+        return null; // processInstanceId 由 BPM 回调异步写入
     }
 
     @Override
@@ -63,7 +84,15 @@ public class ErpFinancePaymentBpmServiceImpl implements ErpFinancePaymentBpmServ
                 || StrUtil.isBlank(payment.getProcessInstanceId())) {
             throw exception(FINANCE_PAYMENT_BPM_CANCEL_FAIL);
         }
-        approvalRuntimeService.cancel("erp.finance.payment.submit", payment.getId(), userId, reqVO.getReason());
+        String processInstanceId = payment.getProcessInstanceId();
+        ErpTransactionUtils.afterCommit(() -> {
+            try {
+                approvalRuntimeService.cancel("erp.finance.payment.submit", reqVO.getId(), userId, reqVO.getReason());
+            } catch (Exception e) {
+                log.warn("[cancelFinancePaymentApproval] BPM 撤回失败，paymentId={}, processInstanceId={}",
+                        reqVO.getId(), processInstanceId, e);
+            }
+        });
     }
 
     @Override

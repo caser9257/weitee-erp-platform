@@ -76,16 +76,16 @@ export const ShipmentReleaseApi = {
     return await request.post<ShipmentReleaseResultVO>({ url: `/erp/shipment-release/check`, data })
   },
 
-  submitFinanceApproval: async (orderId: number, approverId: number) => {
-    return await request.post({ url: `/erp/shipment-release/submit-finance`, params: { orderId, approverId } })
+  submitFinanceApproval: async (orderId: number) => {
+    return await request.post({ url: `/erp/shipment-release/submit-finance`, params: { orderId } })
   },
 
-  approveFinance: async (orderId: number, approverId: number, remark?: string) => {
-    return await request.post({ url: `/erp/shipment-release/approve`, params: { orderId, approverId, remark } })
+  approveFinance: async (orderId: number, remark?: string) => {
+    return await request.post({ url: `/erp/shipment-release/approve`, params: { orderId, remark } })
   },
 
-  rejectFinance: async (orderId: number, approverId: number, reason: string) => {
-    return await request.post({ url: `/erp/shipment-release/reject`, params: { orderId, approverId, reason } })
+  rejectFinance: async (orderId: number, reason: string) => {
+    return await request.post({ url: `/erp/shipment-release/reject`, params: { orderId, reason } })
   },
 
   // 从放行创建出库单

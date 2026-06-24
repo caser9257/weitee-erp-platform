@@ -1,5 +1,6 @@
 package cn.iocoder.yudao.module.erp.service.sale.approval;
 
+import cn.hutool.core.util.StrUtil;
 import cn.iocoder.yudao.module.bpm.service.approval.provider.ApprovalContext;
 import cn.iocoder.yudao.module.bpm.service.approval.provider.ApprovalContextProvider;
 import cn.iocoder.yudao.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
@@ -54,6 +55,6 @@ public class SaleOrderContextProvider implements ApprovalContextProvider {
     }
 
     private Long parseCreatorId(String creator) {
-        return creator != null && creator.matches("\\d+") ? Long.valueOf(creator) : null;
+        return creator != null && StrUtil.isNumeric(creator) ? Long.valueOf(creator) : null;
     }
 }

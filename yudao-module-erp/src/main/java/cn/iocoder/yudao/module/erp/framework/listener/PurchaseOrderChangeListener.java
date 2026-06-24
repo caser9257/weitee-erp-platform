@@ -53,18 +53,27 @@ public class PurchaseOrderChangeListener {
     }
 
     /**
-     * 处理数量变更：标记关联建议待重新计算
+     * 处理数量变更：将关联建议回退至「待确认」状态，清除采购订单关联
      *
-     * TODO: 当前仅添加标记，后续接入 MRP 重算逻辑时完善。
-     *       需根据变更后的数量差值调整建议数量或触发 MRP 重算。
+     * 数量变更后，原有建议数量已不准确，需回退至待确认状态让用户重新审核。
+     * 与 handleOrderCancelled 的区别：数量变更时保留建议，仅重置状态。
      */
     private void handleQuantityChanged(Long purchaseOrderId) {
         List<ErpPurchaseSuggestDO> suggests = getConvertedSuggestsByOrderId(purchaseOrderId);
         if (CollUtil.isEmpty(suggests)) {
             return;
         }
-        // TODO: 实现数量同步逻辑（根据采购订单变更后数量与建议数量的差值进行修正）
-        log.info("[handleQuantityChanged] 待实现：数量同步，purchaseOrderId={}, suggestCount={}", purchaseOrderId, suggests.size());
+
+        List<Long> ids = CollectionUtils.convertList(suggests, ErpPurchaseSuggestDO::getId);
+
+        // 批量更新：回退状态至待确认，清除采购订单关联
+        erpPurchaseSuggestMapper.update(null,
+                new LambdaUpdateWrapper<ErpPurchaseSuggestDO>()
+                        .in(ErpPurchaseSuggestDO::getId, ids)
+                        .set(ErpPurchaseSuggestDO::getStatus, ErpMrpSuggestStatusEnum.TO_CONFIRM.getStatus())
+                        .set(ErpPurchaseSuggestDO::getConvertPurchaseOrderId, null));
+
+        log.info("[handleQuantityChanged] 已回退 {} 条建议至待确认，purchaseOrderId={}", ids.size(), purchaseOrderId);
     }
 
     /**

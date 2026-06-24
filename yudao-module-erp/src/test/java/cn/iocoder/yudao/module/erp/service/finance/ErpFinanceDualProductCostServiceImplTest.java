@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.dal.dataobject.finance.ErpFinanceVoucherEntry
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceDiffCalculationTypeEnum;
 import cn.iocoder.yudao.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.iocoder.yudao.module.erp.enums.common.ErpBizTypeEnum;
+import cn.iocoder.yudao.module.erp.service.finance.diffcalc.AmountDiffCalculator;
 import cn.iocoder.yudao.module.erp.service.finance.diffcalc.AmountDiffCalculatorFactory;
 import cn.iocoder.yudao.module.erp.service.finance.diffcalc.ProRataAmountDiffCalculator;
 import org.junit.jupiter.api.Test;
@@ -128,7 +129,7 @@ class ErpFinanceDualProductCostServiceImplTest {
         AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
         Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
         calcMapField.setAccessible(true);
-        java.util.Map<Integer, ?> calcMap = (java.util.Map<Integer, ?>) calcMapField.get(factory);
+        java.util.Map<Integer, AmountDiffCalculator> calcMap = (java.util.Map<Integer, AmountDiffCalculator>) calcMapField.get(factory);
         ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
         calcMap.put(proRata.getCalculationType(), proRata);
         setField(service, "amountDiffCalculatorFactory", factory);
@@ -252,7 +253,7 @@ class ErpFinanceDualProductCostServiceImplTest {
         AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
         Field calcMapField = AmountDiffCalculatorFactory.class.getDeclaredField("calculatorMap");
         calcMapField.setAccessible(true);
-        java.util.Map<Integer, ?> calcMap = (java.util.Map<Integer, ?>) calcMapField.get(factory);
+        java.util.Map<Integer, AmountDiffCalculator> calcMap = (java.util.Map<Integer, AmountDiffCalculator>) calcMapField.get(factory);
         ProRataAmountDiffCalculator proRata = new ProRataAmountDiffCalculator();
         calcMap.put(proRata.getCalculationType(), proRata);
         setField(service, "amountDiffCalculatorFactory", factory);

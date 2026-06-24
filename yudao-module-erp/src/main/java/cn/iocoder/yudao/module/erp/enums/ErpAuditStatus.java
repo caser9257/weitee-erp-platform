@@ -21,7 +21,8 @@ public enum ErpAuditStatus implements ArrayValuable<Integer> {
     APPROVE(20, "已审核"), // 审核通过
     REJECT(30, "已驳回"), // 审核驳回
     CARRY_FORWARD(40, "已结转"), // 月末结转
-    VOID(50, "已作废"); // 作废
+    VOID(50, "已作废"), // 作废
+    FAILED(60, "处理失败"); // BPM 创建失败，可重试
 
     public static final Integer[] ARRAYS = Arrays.stream(values()).map(ErpAuditStatus::getStatus).toArray(Integer[]::new);
 

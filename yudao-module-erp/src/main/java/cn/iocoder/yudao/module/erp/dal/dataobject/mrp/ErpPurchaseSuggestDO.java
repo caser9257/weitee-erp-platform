@@ -30,6 +30,8 @@ public class ErpPurchaseSuggestDO extends BaseDO {
 
     private Long materialId;
 
+    private Long warehouseId;
+
     private String tracePathKey;
 
     private Integer traceLevel;

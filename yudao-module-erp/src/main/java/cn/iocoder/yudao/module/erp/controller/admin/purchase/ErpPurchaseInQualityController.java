@@ -10,6 +10,7 @@ import cn.iocoder.yudao.module.erp.controller.admin.product.vo.product.ErpProduc
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualityAssignCheckerReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualityCreateReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualityPageReqVO;
+import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualityPrintDataRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualityRespVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualityStartRecheckReqVO;
 import cn.iocoder.yudao.module.erp.controller.admin.purchase.vo.inquality.ErpPurchaseInQualitySubmitFirstCheckReqVO;
@@ -282,6 +283,29 @@ public class ErpPurchaseInQualityController {
     public CommonResult<Long> createReturnFromQuality(@RequestParam("qualityId") Long qualityId) {
         Long returnId = purchaseInQualityService.createReturnFromQuality(qualityId, getLoginUserId());
         return success(returnId);
+    }
+
+    @GetMapping("/get-print-data")
+    @Operation(summary = "获取质检单套打数据")
+    @PreAuthorize("@ss.hasPermission('erp:purchase-in-quality:query')")
+    public CommonResult<ErpPurchaseInQualityPrintDataRespVO> getPurchaseInQualityPrintData(@RequestParam("id") Long id) {
+        ErpPurchaseInQualityDO quality = purchaseInQualityService.getPurchaseInQuality(id);
+        ErpPurchaseInQualityPrintDataRespVO printData = new ErpPurchaseInQualityPrintDataRespVO();
+        // 复用完整组装逻辑，包含 items、rounds、defects、供应商、检验员等信息
+        ErpPurchaseInQualityRespVO qualityRespVO = buildQualityRespVO(quality);
+        printData.setPurchaseInQuality(qualityRespVO);
+        // 来源附件
+        ErpPurchaseInDO purchaseIn = purchaseInService.getPurchaseIn(quality.getPurchaseInId());
+        if (purchaseIn != null && purchaseIn.getFileUrl() != null) {
+            ErpPurchaseInQualityPrintDataRespVO.SourceAttachment attachment =
+                    new ErpPurchaseInQualityPrintDataRespVO.SourceAttachment();
+            attachment.setName("采购入库单附件");
+            attachment.setUrl(purchaseIn.getFileUrl());
+            printData.setSourceAttachments(java.util.List.of(attachment));
+        } else {
+            printData.setSourceAttachments(java.util.List.of());
+        }
+        return success(printData);
     }
 
 }

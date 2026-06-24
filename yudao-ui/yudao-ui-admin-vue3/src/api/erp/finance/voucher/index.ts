@@ -56,6 +56,43 @@ export interface ErpFinanceVoucherPageReqVO {
   voucherTime?: string[]
 }
 
+export interface ErpFinanceVoucherRecomputeReqVO {
+  bizType: number
+  bizId: number
+  remark?: string
+}
+
+export interface ErpFinanceVoucherIntegrityCheckReqVO {
+  bizType: number
+  ledgerId?: number
+  startDate: string
+  endDate: string
+}
+
+export interface ErpFinanceVoucherIntegrityCheckRespVO {
+  missingVouchers: MissingVoucherItem[]
+  unbalancedVouchers: UnbalancedVoucherItem[]
+  missingCount: number
+  unbalancedCount: number
+}
+
+export interface MissingVoucherItem {
+  bizType: number
+  bizTypeName: string
+  bizId: number
+  bizNo: string
+  statusName: string
+  ledgerName: string
+}
+
+export interface UnbalancedVoucherItem {
+  voucherId: number
+  voucherNo: string
+  totalDebit: number
+  totalCredit: number
+  difference: number
+}
+
 export const FinanceVoucherApi = {
   getVoucherPage: async (params: ErpFinanceVoucherPageReqVO) => {
     return await request.get({ url: '/erp/finance-voucher/page', params })
@@ -98,5 +135,17 @@ export const FinanceVoucherApi = {
 
   reverseVoucher: async (data: { id: number; voucherTime?: string; remark?: string }) => {
     return await request.post({ url: '/erp/finance-voucher/reverse', data })
+  },
+
+  recomputeVoucher: async (data: ErpFinanceVoucherRecomputeReqVO) => {
+    return await request.post({ url: '/erp/finance-voucher/recompute', data })
+  },
+
+  checkIntegrity: async (data: ErpFinanceVoucherIntegrityCheckReqVO) => {
+    return await request.post({ url: '/erp/finance-voucher/check-integrity', data })
+  },
+
+  batchRecompute: async (data: ErpFinanceVoucherIntegrityCheckReqVO) => {
+    return await request.post({ url: '/erp/finance-voucher/batch-recompute', data })
   }
 }

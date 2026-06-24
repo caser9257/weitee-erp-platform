@@ -80,20 +80,22 @@ public class FileController {
     }
 
     @DeleteMapping("/delete")
-    @Operation(summary = "删除文件")
+    @Operation(summary = "删除文件（移入回收站）")
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('infra:file:delete')")
-    public CommonResult<Boolean> deleteFile(@RequestParam("id") Long id) throws Exception {
-        fileService.deleteFile(id);
+    public CommonResult<Boolean> deleteFile(@RequestParam("id") Long id,
+                                            @RequestParam(value = "reason", required = false) String reason) {
+        fileService.softDeleteFile(id, reason != null ? reason : "用户删除");
         return success(true);
     }
 
     @DeleteMapping("/delete-list")
-    @Operation(summary = "批量删除文件")
+    @Operation(summary = "批量删除文件（移入回收站）")
     @Parameter(name = "ids", description = "编号列表", required = true)
     @PreAuthorize("@ss.hasPermission('infra:file:delete')")
-    public CommonResult<Boolean> deleteFileList(@RequestParam("ids") List<Long> ids) throws Exception {
-        fileService.deleteFileList(ids);
+    public CommonResult<Boolean> deleteFileList(@RequestParam("ids") List<Long> ids,
+                                                @RequestParam(value = "reason", required = false) String reason) {
+        fileService.softDeleteFileList(ids, reason != null ? reason : "用户批量删除");
         return success(true);
     }
 
@@ -104,17 +106,12 @@ public class FileController {
     public void getFileContent(HttpServletRequest request,
                                HttpServletResponse response,
                                @PathVariable("configId") Long configId) throws Exception {
-        // 获取请求的路径
         String path = StrUtil.subAfter(request.getRequestURI(), "/get/", false);
         if (StrUtil.isEmpty(path)) {
             throw new IllegalArgumentException("结尾的 path 路径必须传递");
         }
-        // 解码，解决中文路径的问题
-        // https://gitee.com/zhijiantianya/ruoyi-vue-pro/pulls/807/
-        // https://gitee.com/zhijiantianya/ruoyi-vue-pro/pulls/1432/
         path = URLUtil.decode(path, StandardCharsets.UTF_8, false);
 
-        // 读取内容
         byte[] content = fileService.getFileContent(configId, path);
         if (content == null) {
             log.warn("[getFileContent][configId({}) path({}) 文件不存在]", configId, path);
@@ -130,6 +127,58 @@ public class FileController {
     public CommonResult<PageResult<FileRespVO>> getFilePage(@Valid FilePageReqVO pageVO) {
         PageResult<FileDO> pageResult = fileService.getFilePage(pageVO);
         return success(BeanUtils.toBean(pageResult, FileRespVO.class));
+    }
+
+    @GetMapping("/recycle-page")
+    @Operation(summary = "获得回收站文件分页")
+    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    public CommonResult<PageResult<FileRespVO>> getRecycleFilePage(@Valid FilePageReqVO pageVO) {
+        PageResult<FileDO> pageResult = fileService.getRecycleFilePage(pageVO);
+        return success(BeanUtils.toBean(pageResult, FileRespVO.class));
+    }
+
+    @PutMapping("/restore")
+    @Operation(summary = "恢复文件（从回收站）")
+    @Parameter(name = "id", description = "编号", required = true)
+    @PreAuthorize("@ss.hasPermission('infra:file:update')")
+    public CommonResult<Boolean> restoreFile(@RequestParam("id") Long id) {
+        fileService.restoreFile(id);
+        return success(true);
+    }
+
+    @PutMapping("/restore-list")
+    @Operation(summary = "批量恢复文件")
+    @Parameter(name = "ids", description = "编号列表", required = true)
+    @PreAuthorize("@ss.hasPermission('infra:file:update')")
+    public CommonResult<Boolean> restoreFileList(@RequestParam("ids") List<Long> ids) {
+        fileService.restoreFileList(ids);
+        return success(true);
+    }
+
+    @DeleteMapping("/permanent-delete")
+    @Operation(summary = "彻底删除文件（从回收站永久删除）")
+    @Parameter(name = "id", description = "编号", required = true)
+    @PreAuthorize("@ss.hasPermission('infra:file:delete')")
+    public CommonResult<Boolean> permanentDeleteFile(@RequestParam("id") Long id) throws Exception {
+        fileService.permanentDeleteFile(id);
+        return success(true);
+    }
+
+    @DeleteMapping("/permanent-delete-list")
+    @Operation(summary = "批量彻底删除文件")
+    @Parameter(name = "ids", description = "编号列表", required = true)
+    @PreAuthorize("@ss.hasPermission('infra:file:delete')")
+    public CommonResult<Boolean> permanentDeleteFileList(@RequestParam("ids") List<Long> ids) throws Exception {
+        fileService.permanentDeleteFileList(ids);
+        return success(true);
+    }
+
+    @DeleteMapping("/empty-recycle-bin")
+    @Operation(summary = "清空回收站")
+    @PreAuthorize("@ss.hasPermission('infra:file:delete')")
+    public CommonResult<Boolean> emptyRecycleBin() throws Exception {
+        fileService.emptyRecycleBin();
+        return success(true);
     }
 
     @GetMapping("/list-by-ids")

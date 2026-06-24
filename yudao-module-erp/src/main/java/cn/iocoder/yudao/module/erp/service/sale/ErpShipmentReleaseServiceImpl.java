@@ -20,8 +20,12 @@ import cn.iocoder.yudao.module.crm.service.contract.CrmContractService;
 import cn.iocoder.yudao.module.crm.dal.dataobject.contract.CrmContractDO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -57,6 +61,8 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
     @Resource
     private CrmContractService crmContractService;
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     public ShipmentReleaseResultVO checkRelease(Long orderId) {
@@ -477,6 +483,37 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createSaleOutFromRelease(Long orderId, Long warehouseId, Long userId) {
+        RLock lock = redissonClient.getLock("erp:shipment-release:create-sale-out:" + orderId);
+        if (!lock.tryLock()) {
+            throw exception(SALE_OUT_ALREADY_EXISTS);
+        }
+        try {
+            return doCreateSaleOutFromRelease(orderId, warehouseId);
+        } finally {
+            unlockAfterTransaction(lock);
+        }
+    }
+
+    private void unlockAfterTransaction(RLock lock) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            unlockIfHeld(lock);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                unlockIfHeld(lock);
+            }
+        });
+    }
+
+    private void unlockIfHeld(RLock lock) {
+        if (lock.isHeldByCurrentThread()) {
+            lock.unlock();
+        }
+    }
+
+    private Long doCreateSaleOutFromRelease(Long orderId, Long warehouseId) {
         // 1. 校验放行状态
         ErpSaleOrderDO order = erpSaleOrderMapper.selectById(orderId);
         if (order == null) {
@@ -486,8 +523,7 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
             throw exception(SHIPMENT_RELEASE_NOT_RELEASED);
         }
 
-        // 2. 检查是否已有出库单（使用 SELECT FOR UPDATE 防止并发）
-        // 注意：这里使用 forUpdate 来获取行锁，防止并发创建
+        // 2. 检查是否已有出库单
         Long existCount = erpSaleOutMapper.selectCount(
                 new LambdaQueryWrapper<ErpSaleOutDO>()
                         .eq(ErpSaleOutDO::getOrderId, orderId)

@@ -73,17 +73,5 @@ yudao-ui/yudao-ui-admin-vue3/.tsconfig.tscheck.changed.json
 yudao-ui/yudao-ui-admin-vue3/tmp-node-*-check.ts
 
 # tmp workspace garbage
-tmp/m2repo/
-tmp/.m2/
-tmp/chrome-cdp-profile/
-tmp/chrome-headless-profile*/
-tmp/*.class
-tmp/*.log
-tmp/*.out
-tmp/*.err
-tmp/*.sqlite
-tmp/*.json
-tmp/*.xml
-tmp/*.exe
-tmp/git-objects/
-tmp/awesome-design-md-skill/
+tmp/
+.tester/tasks/

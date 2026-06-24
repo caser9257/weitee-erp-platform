@@ -35,6 +35,7 @@ public class ErpFinancePaymentSaveReqVO {
 
     @Schema(description = "优惠金额，单位：元", requiredMode = Schema.RequiredMode.REQUIRED, example = "11600")
     @NotNull(message = "优惠金额不能为空")
+    @DecimalMin(value = "0", message = "优惠金额不能小于 0")
     private BigDecimal discountPrice;
 
     @Schema(description = "备注", example = "你猜")
@@ -65,6 +66,7 @@ public class ErpFinancePaymentSaveReqVO {
 
         @Schema(description = "已付金额，单位：分", requiredMode = Schema.RequiredMode.REQUIRED, example = "10000")
         @NotNull(message = "已付金额不能为空")
+        @DecimalMin(value = "0", message = "已付金额不能小于 0")
         private BigDecimal paidPrice;
 
         @Schema(description = "本次付款，单位：分", requiredMode = Schema.RequiredMode.REQUIRED, example = "10000")

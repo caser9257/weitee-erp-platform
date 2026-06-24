@@ -8,7 +8,11 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
 
-@Component
+/**
+ * @deprecated 已迁移到 BpmApprovalEventDispatcher + SaleOrderResultHandler 模式
+ * 保留此类仅为兼容旧 BPM 实例，新流程不再使用
+ */
+@Deprecated
 public class ErpSaleOrderBpmStatusListener extends BpmProcessInstanceStatusEventListener {
 
     @Resource

@@ -3,8 +3,11 @@ package cn.iocoder.yudao.module.infra.dal.dataobject.file;
 import cn.iocoder.yudao.framework.mybatis.core.dataobject.BaseDO;
 
 import com.baomidou.mybatisplus.annotation.KeySequence;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 /**
  * 文件表
@@ -52,5 +55,41 @@ public class FileDO extends BaseDO {
      * 文件大小
      */
     private Long size;
+    /**
+     * 文件夹ID
+     */
+    private Long folderId;
+    /**
+     * 标签ID（多个标签用逗号分隔）
+     */
+    private String tagIds;
+    /**
+     * 总查看次数
+     */
+    private Integer viewCount;
+    /**
+     * 总下载次数
+     */
+    private Integer downloadCount;
+    /**
+     * 最后访问时间
+     */
+    private LocalDateTime lastAccessTime;
+    /**
+     * 删除人ID
+     */
+    private Long deleteUserId;
+    /**
+     * 删除人名称
+     */
+    private String deleteUserName;
+    /**
+     * 删除时间
+     */
+    private LocalDateTime deleteTime;
+    /**
+     * 删除原因
+     */
+    private String deleteReason;
 
 }

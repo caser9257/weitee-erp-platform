@@ -140,6 +140,16 @@ export const FinancePaymentApi = {
     })
   },
 
+  // 审核付款单
+  approveFinancePayment: async (id: number) => {
+    return await request.put({ url: '/erp/finance-payment/approve', params: { id } })
+  },
+
+  // 反审核付款单
+  unapproveFinancePayment: async (id: number) => {
+    return await request.put({ url: '/erp/finance-payment/unapprove', params: { id } })
+  },
+
   submitFinancePayment: async (data: FinancePaymentSubmitReqVO) => {
     return await request.post({
       url: '/erp/finance-payment/submit',

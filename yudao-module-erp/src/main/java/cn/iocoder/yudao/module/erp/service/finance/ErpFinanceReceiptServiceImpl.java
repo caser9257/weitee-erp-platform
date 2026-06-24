@@ -28,17 +28,24 @@ import cn.iocoder.yudao.module.erp.service.project.event.ProjectLifecycleRefresh
 import cn.iocoder.yudao.module.erp.util.ErpTransactionUtils;
 import cn.iocoder.yudao.module.system.api.user.AdminUserApi;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static cn.iocoder.yudao.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.*;
@@ -83,6 +90,8 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
 
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -115,8 +124,6 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         receiptItems.forEach(o -> o.setReceiptId(receipt.getId()));
         erpFinanceReceiptItemMapper.insertBatch(receiptItems);
 
-        // 3. 更新销售出库、退货的收款金额情况
-        updateSalePrice(receiptItems);
         return receipt.getId();
     }
 
@@ -159,6 +166,10 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     @Transactional(rollbackFor = Exception.class)
     public void updateFinanceReceiptStatus(Long id, Integer status) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
+        boolean process = ErpAuditStatus.PROCESS.getStatus().equals(status);
+        if (!approve && !process) {
+            throw exception(FINANCE_RECEIPT_PROCESS_FAIL);
+        }
         // 1.1 校验存在
         ErpFinanceReceiptDO receipt = validateFinanceReceiptExists(id);
         // 1.2 校验状态
@@ -166,20 +177,111 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
         }
 
-        // 2. 更新状态
-        int updateCount = erpFinanceReceiptMapper.updateByIdAndStatus(id, receipt.getStatus(),
-                new ErpFinanceReceiptDO().setStatus(status));
-        if (updateCount == 0) {
-            throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
-        }
+        // 2. 审批通过时，按 bizType+bizId 加锁防止并发超收
+        List<ErpFinanceReceiptItemDO> receiptItems = erpFinanceReceiptItemMapper.selectListByReceiptId(id);
+        List<RLock> locks = approve ? lockBizEntities(receiptItems) : Collections.emptyList();
+        try {
+            // 3. 审批通过时重新校验剩余可收金额
+            if (approve) {
+                reValidateReceiptAmounts(receipt, receiptItems);
+            }
 
-        // 3. 审批通过时，事务提交后触发项目生命周期刷新和销售订单收款状态更新
-        if (approve) {
+            // 4. 更新状态
+            int updateCount = erpFinanceReceiptMapper.updateByIdAndStatus(id, receipt.getStatus(),
+                    new ErpFinanceReceiptDO().setStatus(status));
+            if (updateCount == 0) {
+                throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
+            }
+
+            // 5. 按审批后口径刷新销售出库、退货的收款金额情况
+            updateSalePrice(receiptItems);
+
+            // 6. 审批通过或驳回/作废时，事务提交后更新关联销售订单收款状态
             Long finalReceiptId = id;
             ErpTransactionUtils.afterCommit(() -> {
-                triggerProjectLifecycleRefresh(finalReceiptId);
+                if (approve) {
+                    triggerProjectLifecycleRefresh(finalReceiptId);
+                }
                 updateRelatedSaleOrderReceipt(finalReceiptId);
             });
+        } finally {
+            unlockAfterTransaction(locks);
+        }
+    }
+
+    private void reValidateReceiptAmounts(ErpFinanceReceiptDO receipt, List<ErpFinanceReceiptItemDO> receiptItems) {
+        for (ErpFinanceReceiptItemDO item : receiptItems) {
+            BigDecimal bizTotalPrice;
+            if (ObjectUtil.equal(item.getBizType(), ErpBizTypeEnum.SALE_OUT.getType())) {
+                ErpSaleOutDO saleOut = saleOutService.validateSaleOut(item.getBizId());
+                bizTotalPrice = saleOut.getTotalPrice();
+            } else if (ObjectUtil.equal(item.getBizType(), ErpBizTypeEnum.SALE_RETURN.getType())) {
+                ErpSaleReturnDO saleReturn = saleReturnService.validateSaleReturn(item.getBizId());
+                bizTotalPrice = saleReturn.getTotalPrice();
+            } else {
+                throw new IllegalArgumentException("业务类型不正确：" + item.getBizType());
+            }
+            BigDecimal approvedReceiptPrice = erpFinanceReceiptItemMapper.selectReceiptPriceSumByBizIdAndBizType(
+                    item.getBizId(), item.getBizType());
+            BigDecimal availablePrice = ObjectUtil.defaultIfNull(bizTotalPrice, BigDecimal.ZERO)
+                    .abs().subtract(ObjectUtil.defaultIfNull(approvedReceiptPrice, BigDecimal.ZERO));
+            BigDecimal receiptPrice = ObjectUtil.defaultIfNull(item.getReceiptPrice(), BigDecimal.ZERO);
+            if (receiptPrice.compareTo(availablePrice) > 0) {
+                throw new IllegalArgumentException("本次收款不能超过业务单剩余可收金额");
+            }
+        }
+    }
+
+    private List<RLock> lockBizEntities(List<ErpFinanceReceiptItemDO> receiptItems) {
+        if (CollUtil.isEmpty(receiptItems)) {
+            return Collections.emptyList();
+        }
+        List<String> lockKeys = receiptItems.stream()
+                .map(item -> "erp:finance-receipt:biz:" + item.getBizType() + ":" + item.getBizId())
+                .distinct()
+                .sorted()
+                .toList();
+        List<RLock> locks = new ArrayList<>(lockKeys.size());
+        try {
+            for (String lockKey : lockKeys) {
+                RLock lock = redissonClient.getLock(lockKey);
+                if (!lock.tryLock()) {
+                    throw new IllegalArgumentException("业务单正在被其他收款单审批，请稍后重试");
+                }
+                locks.add(lock);
+            }
+            return locks;
+        } catch (Exception ex) {
+            unlockNow(locks);
+            if (ex instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalArgumentException("业务单加锁失败", ex);
+        }
+    }
+
+    private void unlockAfterTransaction(List<RLock> locks) {
+        if (CollUtil.isEmpty(locks)) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            unlockNow(locks);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                unlockNow(locks);
+            }
+        });
+    }
+
+    private void unlockNow(List<RLock> locks) {
+        for (int index = locks.size() - 1; index >= 0; index--) {
+            RLock lock = locks.get(index);
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
     }
 
@@ -204,7 +306,7 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
                 saleOrderService.updateSaleOrderReceiptPrice(orderId);
             }
         } catch (Exception e) {
-            log.warn("[updateRelatedSaleOrderReceipt] 更新销售订单收款状态失败，receiptId={}", receiptId, e);
+            log.error("[updateRelatedSaleOrderReceipt] 更新销售订单收款状态失败，receiptId={}，需人工介入", receiptId, e);
         }
     }
 
@@ -240,14 +342,27 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
                 ErpSaleOutDO saleOut = saleOutService.validateSaleOut(item.getBizId());
                 Assert.equals(saleOut.getCustomerId(), customerId, "客户必须相同");
                 item.setTotalPrice(saleOut.getTotalPrice()).setBizNo(saleOut.getNo());
+                validateReceiptPriceNotExceed(item, saleOut.getTotalPrice());
             } else if (ObjectUtil.equal(item.getBizType(), ErpBizTypeEnum.SALE_RETURN.getType())) {
                 ErpSaleReturnDO saleReturn = saleReturnService.validateSaleReturn(item.getBizId());
                 Assert.equals(saleReturn.getCustomerId(), customerId, "客户必须相同");
                 item.setTotalPrice(saleReturn.getTotalPrice().negate()).setBizNo(saleReturn.getNo());
+                validateReceiptPriceNotExceed(item, saleReturn.getTotalPrice());
             } else {
                 throw new IllegalArgumentException("业务类型不正确：" + item.getBizType());
             }
         }));
+    }
+
+    private void validateReceiptPriceNotExceed(ErpFinanceReceiptItemDO item, BigDecimal bizTotalPrice) {
+        BigDecimal approvedReceiptPrice = erpFinanceReceiptItemMapper.selectReceiptPriceSumByBizIdAndBizType(
+                item.getBizId(), item.getBizType());
+        BigDecimal availablePrice = ObjectUtil.defaultIfNull(bizTotalPrice, BigDecimal.ZERO)
+                .abs().subtract(ObjectUtil.defaultIfNull(approvedReceiptPrice, BigDecimal.ZERO));
+        BigDecimal receiptPrice = ObjectUtil.defaultIfNull(item.getReceiptPrice(), BigDecimal.ZERO);
+        if (receiptPrice.compareTo(availablePrice) > 0) {
+            throw new IllegalArgumentException("本次收款不能超过业务单剩余可收金额");
+        }
     }
 
     private void updateFinanceReceiptItemList(Long id, List<ErpFinanceReceiptItemDO> newList) {

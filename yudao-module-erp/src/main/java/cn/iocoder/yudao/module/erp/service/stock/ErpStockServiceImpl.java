@@ -9,12 +9,14 @@ import cn.iocoder.yudao.module.erp.service.mrp.ErpMaterialPlanRuleService;
 import cn.iocoder.yudao.module.erp.service.product.ErpProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 
@@ -47,6 +49,8 @@ public class ErpStockServiceImpl implements ErpStockService {
     private ErpMaterialPlanRuleService materialPlanRuleService;
     @Resource
     private ApplicationEventPublisher eventPublisher;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     @Resource
     private ErpStockMapper erpStockMapper;
@@ -133,6 +137,13 @@ public class ErpStockServiceImpl implements ErpStockService {
     }
 
     /**
+     * 库存预警冷却期 Redis key 前缀
+     * 同一产品+仓库在冷却期内不重复发布预警事件
+     */
+    private static final String STOCK_ALERT_COOLDOWN_KEY_PREFIX = "erp:stock-alert:cooldown:";
+    private static final Duration STOCK_ALERT_COOLDOWN_DURATION = Duration.ofMinutes(30);
+
+    /**
      * 检查并发布库存预警事件
      */
     private void checkAndPublishStockAlert(Long productId, Long warehouseId, BigDecimal newCount) {
@@ -148,10 +159,22 @@ public class ErpStockServiceImpl implements ErpStockService {
 
             // 检查是否低于安全库存
             if (newCount.compareTo(safetyStock) < 0) {
+                // 冷却期检查：避免高频出入库操作产生大量重复事件
+                String cooldownKey = STOCK_ALERT_COOLDOWN_KEY_PREFIX + productId + ":" + warehouseId;
+                Boolean exists = stringRedisTemplate.hasKey(cooldownKey);
+                if (Boolean.TRUE.equals(exists)) {
+                    log.debug("[checkAndPublishStockAlert] 冷却期内跳过，productId={}, warehouseId={}", productId, warehouseId);
+                    return;
+                }
+
                 BigDecimal shortage = safetyStock.subtract(newCount);
-                // 发布预警事件（异步处理）
+                // 发布预警事件（同步处理，由监听器在事务提交后执行）
                 eventPublisher.publishEvent(new StockBelowSafetyEvent(
                         productId, warehouseId, newCount, safetyStock, shortage));
+
+                // 设置冷却期
+                stringRedisTemplate.opsForValue().set(cooldownKey, "1", STOCK_ALERT_COOLDOWN_DURATION);
+
                 log.info("[checkAndPublishStockAlert] 库存低于安全库存，已发布预警事件，productId={}, currentCount={}, safetyStock={}, shortage={}",
                         productId, newCount, safetyStock, shortage);
             }

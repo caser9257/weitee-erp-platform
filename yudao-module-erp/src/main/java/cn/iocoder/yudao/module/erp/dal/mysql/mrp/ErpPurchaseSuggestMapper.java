@@ -5,6 +5,7 @@ import cn.iocoder.yudao.framework.mybatis.core.mapper.BaseMapperX;
 import cn.iocoder.yudao.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.iocoder.yudao.module.erp.controller.admin.mrp.vo.suggest.ErpPurchaseSuggestPageReqVO;
 import cn.iocoder.yudao.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.Collection;
@@ -36,6 +37,15 @@ public interface ErpPurchaseSuggestMapper extends BaseMapperX<ErpPurchaseSuggest
 
     default List<ErpPurchaseSuggestDO> selectListByConvertPurchaseOrderIds(Collection<Long> convertPurchaseOrderIds) {
         return selectList(ErpPurchaseSuggestDO::getConvertPurchaseOrderId, convertPurchaseOrderIds);
+    }
+
+    default int updateStatusByIdsAndStatus(Collection<Long> ids, Integer status, ErpPurchaseSuggestDO updateObj) {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        return update(updateObj, new LambdaUpdateWrapper<ErpPurchaseSuggestDO>()
+                .in(ErpPurchaseSuggestDO::getId, ids)
+                .eq(ErpPurchaseSuggestDO::getStatus, status));
     }
 
     default List<ErpPurchaseSuggestDO> selectListBySourceOrderIds(Collection<Long> sourceOrderIds) {
