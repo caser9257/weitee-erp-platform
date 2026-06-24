@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP 正式菜单体系兼容重建
  Schema: ruoyi-vue-pro
  Date: 2026-04-15
@@ -13,7 +13,6 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id = 1;
 
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
 SELECT 930100,'项目中心','',1,310,0,'/project','ep:files','','FormalProjectRoot',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
@@ -239,8 +238,8 @@ INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`p
 SELECT 930193,'员工台账','',2,30,@hr_root_id,'employee','ep:user-filled','hr/employee/index','FormalHrEmployee',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='hr/employee/index' AND `deleted`=b'0');
 
-INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`,`tenant_id`)
-SELECT 1, sm.`id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 1, sm.`id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT 930100 AS `menu_id` UNION ALL SELECT 930101 UNION ALL SELECT 930102 UNION ALL SELECT 930103 UNION ALL
   SELECT 930104 UNION ALL SELECT 930107 UNION ALL SELECT 930110 UNION ALL SELECT 930111 UNION ALL SELECT 930112 UNION ALL
@@ -258,11 +257,11 @@ FROM (
 JOIN `system_menu` sm ON sm.`id` = target.`menu_id` AND sm.`deleted` = b'0'
 WHERE NOT EXISTS (
   SELECT 1 FROM `system_role_menu` rm
-  WHERE rm.`role_id` = 1 AND rm.`menu_id` = sm.`id` AND rm.`tenant_id` = @tenant_id AND rm.`deleted` = b'0'
+  WHERE rm.`role_id` = 1 AND rm.`menu_id` = sm.`id` AND rm.`deleted` = b'0'
 );
 
-INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`,`tenant_id`)
-SELECT DISTINCT rm.`role_id`, root_map.`root_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT DISTINCT rm.`role_id`, root_map.`root_id`, '1', NOW(), '1', NOW(), b'0'
 FROM `system_role_menu` rm
 JOIN `system_menu` sm ON sm.`id` = rm.`menu_id` AND sm.`deleted` = b'0'
 JOIN (
@@ -273,12 +272,11 @@ JOIN (
   ON sm.`parent_id` = root_map.`root_id`
   OR sm.`parent_id` IN (SELECT child.`id` FROM `system_menu` child WHERE child.`parent_id` = root_map.`root_id` AND child.`deleted` = b'0')
 WHERE rm.`deleted` = b'0'
-  AND rm.`tenant_id` = @tenant_id
+
   AND NOT EXISTS (
     SELECT 1 FROM `system_role_menu` exists_rm
     WHERE exists_rm.`role_id` = rm.`role_id`
       AND exists_rm.`menu_id` = root_map.`root_id`
-      AND exists_rm.`tenant_id` = @tenant_id
       AND exists_rm.`deleted` = b'0'
   );
 

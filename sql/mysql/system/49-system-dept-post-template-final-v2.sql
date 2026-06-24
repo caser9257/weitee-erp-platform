@@ -1,4 +1,4 @@
--- 最终部门岗位模板导入 SQL（按最新图片修订）
+﻿-- 最终部门岗位模板导入 SQL（按最新图片修订）
 -- 适用：ruoyi-vue-pro / MySQL
 -- 模型：同部门 + 同岗位 = 一条岗位模板；重复岗位合并到 staff_quota（编制人数）
 -- 修订点：
@@ -6,7 +6,6 @@
 -- 2. 软件部改为：FPGA工程师 2 人，不再保留 RPGA工程师
 -- 3. 其它重复岗位按图片数量汇总到 staff_quota
 
-SET @TENANT_ID = 1;
 SET @ROOT_DEPT_ID = 100;
 
 START TRANSACTION;
@@ -27,9 +26,9 @@ CREATE TEMPORARY TABLE tmp_post_template (
 -- ========== 1. 一级部门 ==========
 INSERT INTO system_dept
 (`name`, `parent_id`, `sort`, `leader_user_id`, `phone`, `email`, `status`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT t.name, @ROOT_DEPT_ID, t.sort, NULL, NULL, NULL, 0,
-       'admin', NOW(), 'admin', NOW(), b'0', @TENANT_ID
+       'admin', NOW(), 'admin', NOW(), b'0'
 FROM (
     SELECT '统计部' AS name, 10 AS sort
     UNION ALL SELECT '财务部', 20
@@ -46,27 +45,27 @@ WHERE NOT EXISTS (
     SELECT 1 FROM system_dept d
     WHERE d.name = t.name
       AND d.parent_id = @ROOT_DEPT_ID
-      AND d.tenant_id = @TENANT_ID
+
       AND d.deleted = b'0'
 );
 
-SET @STAT_DEPT_ID = (SELECT id FROM system_dept WHERE name = '统计部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @FINANCE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '财务部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @HR_DEPT_ID = (SELECT id FROM system_dept WHERE name = '人力资源部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @SUPPLY_DEPT_ID = (SELECT id FROM system_dept WHERE name = '供应链部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @PROCESS_DEPT_ID = (SELECT id FROM system_dept WHERE name = '工艺部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @MARKETING_DEPT_ID = (SELECT id FROM system_dept WHERE name = '市场营销部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @QUALITY_DEPT_ID = (SELECT id FROM system_dept WHERE name = '质量部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @EXPERT_DEPT_ID = (SELECT id FROM system_dept WHERE name = '专家办' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @RND_DEPT_ID = (SELECT id FROM system_dept WHERE name = '研发部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @MANUFACTURE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '制造部' AND parent_id = @ROOT_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
+SET @STAT_DEPT_ID = (SELECT id FROM system_dept WHERE name = '统计部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @FINANCE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '财务部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @HR_DEPT_ID = (SELECT id FROM system_dept WHERE name = '人力资源部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @SUPPLY_DEPT_ID = (SELECT id FROM system_dept WHERE name = '供应链部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @PROCESS_DEPT_ID = (SELECT id FROM system_dept WHERE name = '工艺部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @MARKETING_DEPT_ID = (SELECT id FROM system_dept WHERE name = '市场营销部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @QUALITY_DEPT_ID = (SELECT id FROM system_dept WHERE name = '质量部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @EXPERT_DEPT_ID = (SELECT id FROM system_dept WHERE name = '专家办' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_DEPT_ID = (SELECT id FROM system_dept WHERE name = '研发部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @MANUFACTURE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '制造部' AND parent_id = @ROOT_DEPT_ID AND deleted = b'0' LIMIT 1);
 
 -- ========== 2. 研发部二级部门 ==========
 INSERT INTO system_dept
 (`name`, `parent_id`, `sort`, `leader_user_id`, `phone`, `email`, `status`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT t.name, @RND_DEPT_ID, t.sort, NULL, NULL, NULL, 0,
-       'admin', NOW(), 'admin', NOW(), b'0', @TENANT_ID
+       'admin', NOW(), 'admin', NOW(), b'0'
 FROM (
     SELECT '系统部' AS name, 10 AS sort
     UNION ALL SELECT '软件部', 20
@@ -77,20 +76,20 @@ WHERE @RND_DEPT_ID IS NOT NULL
       SELECT 1 FROM system_dept d
       WHERE d.name = t.name
         AND d.parent_id = @RND_DEPT_ID
-        AND d.tenant_id = @TENANT_ID
+
         AND d.deleted = b'0'
   );
 
-SET @RND_SYSTEM_DEPT_ID = (SELECT id FROM system_dept WHERE name = '系统部' AND parent_id = @RND_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @RND_SOFTWARE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '软件部' AND parent_id = @RND_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @RND_HARDWARE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '硬件部' AND parent_id = @RND_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_SYSTEM_DEPT_ID = (SELECT id FROM system_dept WHERE name = '系统部' AND parent_id = @RND_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_SOFTWARE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '软件部' AND parent_id = @RND_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_HARDWARE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '硬件部' AND parent_id = @RND_DEPT_ID AND deleted = b'0' LIMIT 1);
 
 -- ========== 3. 系统部三级部门 ==========
 INSERT INTO system_dept
 (`name`, `parent_id`, `sort`, `leader_user_id`, `phone`, `email`, `status`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT t.name, @RND_SYSTEM_DEPT_ID, t.sort, NULL, NULL, NULL, 0,
-       'admin', NOW(), 'admin', NOW(), b'0', @TENANT_ID
+       'admin', NOW(), 'admin', NOW(), b'0'
 FROM (
     SELECT '调测组' AS name, 10 AS sort
     UNION ALL SELECT '测试组', 20
@@ -102,21 +101,21 @@ WHERE @RND_SYSTEM_DEPT_ID IS NOT NULL
       SELECT 1 FROM system_dept d
       WHERE d.name = t.name
         AND d.parent_id = @RND_SYSTEM_DEPT_ID
-        AND d.tenant_id = @TENANT_ID
+
         AND d.deleted = b'0'
   );
 
-SET @RND_TIAOCE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '调测组' AND parent_id = @RND_SYSTEM_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @RND_TEST_DEPT_ID = (SELECT id FROM system_dept WHERE name = '测试组' AND parent_id = @RND_SYSTEM_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @RND_RF_DEPT_ID = (SELECT id FROM system_dept WHERE name = '射频组' AND parent_id = @RND_SYSTEM_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @RND_STRUCTURE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '结构组' AND parent_id = @RND_SYSTEM_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_TIAOCE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '调测组' AND parent_id = @RND_SYSTEM_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_TEST_DEPT_ID = (SELECT id FROM system_dept WHERE name = '测试组' AND parent_id = @RND_SYSTEM_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_RF_DEPT_ID = (SELECT id FROM system_dept WHERE name = '射频组' AND parent_id = @RND_SYSTEM_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @RND_STRUCTURE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '结构组' AND parent_id = @RND_SYSTEM_DEPT_ID AND deleted = b'0' LIMIT 1);
 
 -- ========== 4. 制造部二级部门 ==========
 INSERT INTO system_dept
 (`name`, `parent_id`, `sort`, `leader_user_id`, `phone`, `email`, `status`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT t.name, @MANUFACTURE_DEPT_ID, t.sort, NULL, NULL, NULL, 0,
-       'admin', NOW(), 'admin', NOW(), b'0', @TENANT_ID
+       'admin', NOW(), 'admin', NOW(), b'0'
 FROM (
     SELECT 'SMT组' AS name, 10 AS sort
     UNION ALL SELECT '电装组', 20
@@ -131,17 +130,17 @@ WHERE @MANUFACTURE_DEPT_ID IS NOT NULL
       SELECT 1 FROM system_dept d
       WHERE d.name = t.name
         AND d.parent_id = @MANUFACTURE_DEPT_ID
-        AND d.tenant_id = @TENANT_ID
+
         AND d.deleted = b'0'
   );
 
-SET @SMT_DEPT_ID = (SELECT id FROM system_dept WHERE name = 'SMT组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @ASSEMBLY_DEPT_ID = (SELECT id FROM system_dept WHERE name = '电装组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @BOND1_DEPT_ID = (SELECT id FROM system_dept WHERE name = '粘接1组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @BOND2_DEPT_ID = (SELECT id FROM system_dept WHERE name = '粘接2组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @SOLDER_DEPT_ID = (SELECT id FROM system_dept WHERE name = '纤焊组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @WIRE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '键合组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
-SET @LASER_DEPT_ID = (SELECT id FROM system_dept WHERE name = '激光封焊组' AND parent_id = @MANUFACTURE_DEPT_ID AND tenant_id = @TENANT_ID AND deleted = b'0' LIMIT 1);
+SET @SMT_DEPT_ID = (SELECT id FROM system_dept WHERE name = 'SMT组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @ASSEMBLY_DEPT_ID = (SELECT id FROM system_dept WHERE name = '电装组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @BOND1_DEPT_ID = (SELECT id FROM system_dept WHERE name = '粘接1组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @BOND2_DEPT_ID = (SELECT id FROM system_dept WHERE name = '粘接2组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @SOLDER_DEPT_ID = (SELECT id FROM system_dept WHERE name = '纤焊组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @WIRE_DEPT_ID = (SELECT id FROM system_dept WHERE name = '键合组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
+SET @LASER_DEPT_ID = (SELECT id FROM system_dept WHERE name = '激光封焊组' AND parent_id = @MANUFACTURE_DEPT_ID AND deleted = b'0' LIMIT 1);
 
 -- ========== 5. 岗位模板 ==========
 INSERT INTO tmp_post_template (code, dept_id, post_name, staff_quota, sort, level, key_position, allow_part_time, remark) VALUES
@@ -217,7 +216,7 @@ UPDATE system_post p
 JOIN tmp_post_template t
   ON p.dept_id = t.dept_id
  AND p.name = t.post_name
- AND p.tenant_id = @TENANT_ID
+
  AND p.deleted = b'0'
 SET p.code = t.code,
     p.level = t.level,
@@ -233,11 +232,11 @@ SET p.code = t.code,
 INSERT INTO system_post
 (`code`, `name`, `level`, `dept_id`, `staff_quota`, `key_position`, `allow_part_time`,
  `sort`, `status`, `job_description`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT
     t.code, t.post_name, t.level, t.dept_id, t.staff_quota, t.key_position, t.allow_part_time,
     t.sort, 0, NULL, t.remark,
-    'admin', NOW(), 'admin', NOW(), b'0', @TENANT_ID
+    'admin', NOW(), 'admin', NOW(), b'0'
 FROM tmp_post_template t
 WHERE t.dept_id IS NOT NULL
   AND NOT EXISTS (
@@ -245,7 +244,7 @@ WHERE t.dept_id IS NOT NULL
       FROM system_post p
       WHERE p.dept_id = t.dept_id
         AND p.name = t.post_name
-        AND p.tenant_id = @TENANT_ID
+
         AND p.deleted = b'0'
   );
 
@@ -313,7 +312,6 @@ SET level = CASE
 END,
 updater = 'admin',
 update_time = NOW()
-WHERE tenant_id = @TENANT_ID
   AND deleted = b'0'
   AND code IN (
     'stat_project_management',

@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP outsource phase1
 -- =====================================================
 
@@ -22,11 +22,10 @@ CREATE TABLE `erp_outsource_order` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_outsource_order_no` (`tenant_id`, `no`, `deleted`),
-    KEY `idx_outsource_order_supplier_status` (`tenant_id`, `supplier_id`, `status`, `deleted`),
-    KEY `idx_outsource_order_product_status` (`tenant_id`, `product_id`, `status`, `deleted`)
+    UNIQUE KEY `uk_outsource_order_no` (`no`, `deleted`),
+    KEY `idx_outsource_order_supplier_status` (`supplier_id`, `status`, `deleted`),
+    KEY `idx_outsource_order_product_status` (`product_id`, `status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource order';
 
 CREATE TABLE `erp_outsource_issue` (
@@ -43,10 +42,9 @@ CREATE TABLE `erp_outsource_issue` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_outsource_issue_no` (`tenant_id`, `issue_no`, `deleted`),
-    KEY `idx_outsource_issue_order` (`tenant_id`, `order_id`, `deleted`)
+    UNIQUE KEY `uk_outsource_issue_no` (`issue_no`, `deleted`),
+    KEY `idx_outsource_issue_order` (`order_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource issue';
 
 CREATE TABLE `erp_outsource_issue_item` (
@@ -62,9 +60,8 @@ CREATE TABLE `erp_outsource_issue_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_outsource_issue_item_issue` (`tenant_id`, `issue_id`, `deleted`)
+    KEY `idx_outsource_issue_item_issue` (`issue_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource issue item';
 
 CREATE TABLE `erp_outsource_issue_batch` (
@@ -82,10 +79,9 @@ CREATE TABLE `erp_outsource_issue_batch` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_outsource_issue_batch_issue_item` (`tenant_id`, `issue_item_id`, `deleted`),
-    KEY `idx_outsource_issue_batch_stock_batch` (`tenant_id`, `stock_batch_id`, `deleted`)
+    KEY `idx_outsource_issue_batch_issue_item` (`issue_item_id`, `deleted`),
+    KEY `idx_outsource_issue_batch_stock_batch` (`stock_batch_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource issue batch';
 
 CREATE TABLE `erp_outsource_return` (
@@ -102,10 +98,9 @@ CREATE TABLE `erp_outsource_return` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_outsource_return_no` (`tenant_id`, `return_no`, `deleted`),
-    KEY `idx_outsource_return_order` (`tenant_id`, `order_id`, `deleted`)
+    UNIQUE KEY `uk_outsource_return_no` (`return_no`, `deleted`),
+    KEY `idx_outsource_return_order` (`order_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource return';
 
 CREATE TABLE `erp_outsource_return_item` (
@@ -121,9 +116,8 @@ CREATE TABLE `erp_outsource_return_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_outsource_return_item_return` (`tenant_id`, `return_id`, `deleted`)
+    KEY `idx_outsource_return_item_return` (`return_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource return item';
 
 CREATE TABLE `erp_outsource_return_batch` (
@@ -139,10 +133,9 @@ CREATE TABLE `erp_outsource_return_batch` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_outsource_return_batch_return_item` (`tenant_id`, `return_item_id`, `deleted`),
-    KEY `idx_outsource_return_batch_issue_batch` (`tenant_id`, `issue_batch_id`, `deleted`)
+    KEY `idx_outsource_return_batch_return_item` (`return_item_id`, `deleted`),
+    KEY `idx_outsource_return_batch_issue_batch` (`issue_batch_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource return batch';
 
 CREATE TABLE `erp_outsource_inbound` (
@@ -166,10 +159,9 @@ CREATE TABLE `erp_outsource_inbound` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_outsource_inbound_no` (`tenant_id`, `inbound_no`, `deleted`),
-    KEY `idx_outsource_inbound_order` (`tenant_id`, `order_id`, `deleted`)
+    UNIQUE KEY `uk_outsource_inbound_no` (`inbound_no`, `deleted`),
+    KEY `idx_outsource_inbound_order` (`order_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource inbound';
 
 CREATE TABLE `erp_outsource_fee` (
@@ -185,8 +177,7 @@ CREATE TABLE `erp_outsource_fee` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_outsource_fee_no` (`tenant_id`, `fee_no`, `deleted`),
-    KEY `idx_outsource_fee_order` (`tenant_id`, `order_id`, `deleted`)
+    UNIQUE KEY `uk_outsource_fee_no` (`fee_no`, `deleted`),
+    KEY `idx_outsource_fee_order` (`order_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource fee';

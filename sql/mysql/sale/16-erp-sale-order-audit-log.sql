@@ -21,10 +21,8 @@ CREATE TABLE IF NOT EXISTS `erp_sale_order_audit_log` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `idx_erp_sale_order_audit_log_order_id` (`order_id`),
-  KEY `idx_erp_sale_order_audit_log_tenant_id` (`tenant_id`)
+  KEY `idx_erp_sale_order_audit_log_order_id` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='销售订单审批流转日志';
 
 SET FOREIGN_KEY_CHECKS = 1;

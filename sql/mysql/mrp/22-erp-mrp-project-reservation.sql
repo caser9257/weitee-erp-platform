@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP MRP project-scoped supply and stock reservation
  Schema: ruoyi-vue-pro
  Date: 2026-04-08
@@ -135,12 +135,10 @@ CREATE TABLE IF NOT EXISTS `erp_mrp_stock_reservation` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `idx_erp_mrp_stock_reservation_product_id` (`product_id`),
   KEY `idx_erp_mrp_stock_reservation_source_order_id` (`source_order_id`),
-  KEY `idx_erp_mrp_stock_reservation_status` (`status`),
-  KEY `idx_erp_mrp_stock_reservation_tenant_id` (`tenant_id`)
+  KEY `idx_erp_mrp_stock_reservation_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 UPDATE `erp_production_order` po

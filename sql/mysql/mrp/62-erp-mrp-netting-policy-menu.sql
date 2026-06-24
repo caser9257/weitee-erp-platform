@@ -187,14 +187,9 @@ WHERE @netting_policy_menu_id IS NOT NULL
     WHERE `permission` = 'erp:mrp-netting-policy:delete' AND `deleted` = b'0'
   );
 
-SET @admin_tenant_id := COALESCE(
-  (SELECT `tenant_id` FROM `system_role` WHERE `id` = 1 LIMIT 1),
-  1
-);
-
 INSERT INTO `system_role_menu`
-(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`,`tenant_id`)
-SELECT 1, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @admin_tenant_id
+(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 1, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @scm_root_id AS `menu_id`
   UNION
@@ -214,13 +209,12 @@ WHERE target.`menu_id` IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = 1
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @admin_tenant_id
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`,`tenant_id`)
-SELECT role.`id`, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', role.`tenant_id`
+(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT role.`id`, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM `system_role` role
 JOIN (
   SELECT @scm_root_id AS `menu_id`
@@ -242,7 +236,6 @@ WHERE role.`code` = 'supply_chain_manager'
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = role.`id`
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = role.`tenant_id`
       AND rm.`deleted` = b'0'
   );
 

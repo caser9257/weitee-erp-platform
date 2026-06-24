@@ -1,4 +1,4 @@
-/*
+﻿/*
  自制入库菜单补齐
  目标：为自制入库提供正式 SCM 菜单入口、查询/更新权限点，并同步授权到已有 SCM 角色
 */
@@ -8,7 +8,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id := 1;
 SET @scm_root_id := (
   SELECT `id`
   FROM `system_menu`
@@ -100,7 +99,7 @@ SELECT DISTINCT rm.`role_id`
 FROM `system_role_menu` rm
 JOIN `system_menu` sm ON sm.`id` = rm.`menu_id`
 WHERE rm.`deleted` = b'0'
-  AND rm.`tenant_id` = @tenant_id
+
   AND sm.`deleted` = b'0'
   AND (
     sm.`id` = @scm_root_id
@@ -110,8 +109,8 @@ WHERE rm.`deleted` = b'0'
 INSERT IGNORE INTO `tmp_production_inbound_role_ids` (`role_id`) VALUES (1);
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT role_ids.`role_id`, @production_inbound_menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT role_ids.`role_id`, @production_inbound_menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM `tmp_production_inbound_role_ids` role_ids
 WHERE @production_inbound_menu_id IS NOT NULL
   AND NOT EXISTS (
@@ -119,7 +118,7 @@ WHERE @production_inbound_menu_id IS NOT NULL
     FROM `system_role_menu` rm
     WHERE rm.`role_id` = role_ids.`role_id`
       AND rm.`menu_id` = @production_inbound_menu_id
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 

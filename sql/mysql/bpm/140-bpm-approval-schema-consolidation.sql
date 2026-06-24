@@ -1,4 +1,4 @@
--- ==============================================================================
+﻿-- ==============================================================================
 -- BPM 审批平台 Schema 整合脚本
 -- 创建日期：2026-06-12
 -- 说明：本脚本整合并替代以下冲突脚本，形成最终统一 schema：
@@ -178,7 +178,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_scene` (
     `updater`           VARCHAR(64)  DEFAULT '' COMMENT '更新者',
     `update_time`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`           BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`         BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_bpm_approval_scene_code` (`scene_code`),
     KEY `idx_bpm_approval_scene_active_scheme_id` (`active_scheme_id`),
@@ -262,7 +261,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_instance_snapshot` (
     `updater`                VARCHAR(64)  DEFAULT '' COMMENT '更新者',
     `update_time`            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`                BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`              BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_bpm_approval_instance_snapshot_scene_biz` (`scene_code`, `biz_id`, `deleted`),
     UNIQUE KEY `uk_bpm_approval_snapshot_approval_id` (`approval_id`),
@@ -443,7 +441,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_task` (
     `updater`           VARCHAR(64)  DEFAULT '' COMMENT '更新者',
     `update_time`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`           BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`         BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_bpm_approval_task_task_id` (`task_id`),
     KEY `idx_bpm_approval_task_approval` (`approval_id`),
@@ -466,7 +463,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_record` (
     `target_user_id`    BIGINT       DEFAULT NULL COMMENT '目标用户ID（转办时）',
     `target_node_id`    VARCHAR(100) DEFAULT NULL COMMENT '目标节点ID（驳回时）',
     `create_time`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `tenant_id`         BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     KEY `idx_bpm_approval_record_approval` (`approval_id`),
     KEY `idx_bpm_approval_record_task` (`task_id`)
@@ -549,7 +545,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_template` (
     `updater`         VARCHAR(64)  DEFAULT '' COMMENT '更新者',
     `update_time`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`         BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`       BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_bpm_approval_template_code` (`code`),
     KEY `idx_bpm_approval_template_category` (`category`)
@@ -568,7 +563,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_urge_record` (
     `urge_message`  VARCHAR(500) DEFAULT NULL COMMENT '催办消息',
     `urge_time`     DATETIME     NOT NULL COMMENT '催办时间',
     `create_time`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `tenant_id`     BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     KEY `idx_bpm_approval_urge_approval` (`approval_id`),
     KEY `idx_bpm_approval_urge_task` (`task_id`)
@@ -623,15 +617,6 @@ BEGIN
             ADD COLUMN `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除' AFTER `updater`;
     END IF;
 
-    IF NOT EXISTS (
-        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'bpm_approval_urge_record'
-          AND COLUMN_NAME = 'tenant_id'
-    ) THEN
-        ALTER TABLE `bpm_approval_urge_record`
-            ADD COLUMN `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号' AFTER `deleted`;
-    END IF;
 END //
 DELIMITER ;
 
@@ -657,7 +642,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_delegation` (
     `updater`           VARCHAR(64)  DEFAULT '' COMMENT '更新者',
     `update_time`       DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`           BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`         BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     KEY `idx_bpm_approval_delegation_user` (`user_id`),
     KEY `idx_bpm_approval_delegation_delegate` (`delegate_user_id`),

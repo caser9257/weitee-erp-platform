@@ -36,12 +36,11 @@ CREATE TABLE IF NOT EXISTS `erp_production_finish_quality` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_production_finish_quality_no` (`tenant_id`, `no`),
-  UNIQUE KEY `uk_erp_production_finish_quality_order` (`tenant_id`, `production_order_id`),
-  KEY `idx_erp_production_finish_quality_source_order` (`tenant_id`, `source_order_id`),
-  KEY `idx_erp_production_finish_quality_status` (`tenant_id`, `status`)
+  UNIQUE KEY `uk_erp_production_finish_quality_no` (`no`),
+  UNIQUE KEY `uk_erp_production_finish_quality_order` (`production_order_id`),
+  KEY `idx_erp_production_finish_quality_source_order` (`source_order_id`),
+  KEY `idx_erp_production_finish_quality_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='lightweight production finish quality';
 
 SET FOREIGN_KEY_CHECKS = 1;

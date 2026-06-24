@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP MRP supply-chain role compatibility
  Schema: ruoyi-vue-pro
  Date: 2026-04-13
@@ -13,7 +13,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id = 1;
 
 SET @mrp_parent_id := COALESCE(
   (SELECT `parent_id` FROM `system_menu`
@@ -390,23 +389,23 @@ WHERE @suggest_menu_id IS NOT NULL
 SET @supply_chain_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'supply_chain_manager'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
 
 INSERT INTO `system_role`
 (`id`, `name`, `code`, `sort`, `data_scope`, `data_scope_dept_ids`, `status`, `type`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT COALESCE(@supply_chain_role_id, (SELECT IFNULL(MAX(t.id), 0) + 1 FROM `system_role` t)),
        '供应链经理', 'supply_chain_manager', 60, 1, '', 0, 2,
-       '负责 BOM 维护、计划参数维护、MRP 计划执行、建议审核与转单', '1', NOW(), '1', NOW(), b'0', @tenant_id
+       '负责 BOM 维护、计划参数维护、MRP 计划执行、建议审核与转单', '1', NOW(), '1', NOW(), b'0'
 WHERE @supply_chain_role_id IS NULL;
 
 SET @supply_chain_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'supply_chain_manager'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -425,8 +424,8 @@ SET `name` = '供应链经理',
 WHERE `id` = @supply_chain_role_id;
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @supply_chain_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @supply_chain_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT 2563 AS `menu_id`
   UNION
@@ -473,7 +472,7 @@ WHERE @supply_chain_role_id IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @supply_chain_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 

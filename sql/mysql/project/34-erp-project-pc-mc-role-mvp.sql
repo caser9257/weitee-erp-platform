@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP Project PC/MC + Role Task MVP
  Schema: ruoyi-vue-pro
  Date: 2026-04-13
@@ -136,7 +136,6 @@ CREATE TABLE IF NOT EXISTS `erp_project_role_task` (
   `updater` varchar(64) NOT NULL DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_project_role_status` (`project_id`, `role_code`, `task_status`),
   KEY `idx_assignee_status` (`assignee_user_id`, `task_status`)

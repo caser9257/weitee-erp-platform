@@ -16,10 +16,9 @@ CREATE TABLE IF NOT EXISTS `erp_finance_ledger_mapping` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_finance_ledger_mapping_external` (`tenant_id`, `external_ledger_id`, `deleted`),
-    UNIQUE KEY `uk_finance_ledger_mapping_internal` (`tenant_id`, `internal_ledger_id`, `deleted`)
+    UNIQUE KEY `uk_finance_ledger_mapping_external` (`external_ledger_id`, `deleted`),
+    UNIQUE KEY `uk_finance_ledger_mapping_internal` (`internal_ledger_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 财务账簿映射';
 
 ALTER TABLE `erp_finance_voucher_template` 
@@ -38,9 +37,8 @@ CREATE TABLE IF NOT EXISTS `erp_finance_voucher_log` (
     `creator` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '创建者',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
-    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新 time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_finance_voucher_log_voucher` (`tenant_id`, `voucher_id`, `deleted`, `create_time`)
+    KEY `idx_finance_voucher_log_voucher` (`voucher_id`, `deleted`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 财务凭证日志';

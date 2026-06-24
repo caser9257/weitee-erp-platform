@@ -1,1 +1,0 @@
-select ${text} as "text", ${code} as "value" from ${table}

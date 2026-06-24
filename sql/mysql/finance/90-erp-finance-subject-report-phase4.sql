@@ -22,11 +22,10 @@ CREATE TABLE IF NOT EXISTS `erp_finance_subject` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_finance_subject_code` (`tenant_id`, `ledger_id`, `subject_code`, `deleted`),
-    KEY `idx_finance_subject_page` (`tenant_id`, `ledger_id`, `subject_type`, `status`, `deleted`, `sort`),
-    KEY `idx_finance_subject_parent` (`tenant_id`, `ledger_id`, `parent_id`, `deleted`, `sort`)
+    UNIQUE KEY `uk_finance_subject_code` (`ledger_id`, `subject_code`, `deleted`),
+    KEY `idx_finance_subject_page` (`ledger_id`, `subject_type`, `status`, `deleted`, `sort`),
+    KEY `idx_finance_subject_parent` (`ledger_id`, `parent_id`, `deleted`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 财务科目';
 
 CREATE TABLE IF NOT EXISTS `erp_finance_report_item` (
@@ -44,10 +43,9 @@ CREATE TABLE IF NOT EXISTS `erp_finance_report_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_finance_report_item_code` (`tenant_id`, `ledger_id`, `report_type`, `item_code`, `deleted`),
-    KEY `idx_finance_report_item_page` (`tenant_id`, `ledger_id`, `report_type`, `item_category`, `status`, `deleted`, `sort`)
+    UNIQUE KEY `uk_finance_report_item_code` (`ledger_id`, `report_type`, `item_code`, `deleted`),
+    KEY `idx_finance_report_item_page` (`ledger_id`, `report_type`, `item_category`, `status`, `deleted`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 财务报表项目';
 
 CREATE TABLE IF NOT EXISTS `erp_finance_report_item_subject` (
@@ -61,8 +59,7 @@ CREATE TABLE IF NOT EXISTS `erp_finance_report_item_subject` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_finance_report_item_subject_item` (`tenant_id`, `item_id`, `deleted`),
-    KEY `idx_finance_report_item_subject_subject` (`tenant_id`, `subject_code`, `deleted`)
+    KEY `idx_finance_report_item_subject_item` (`item_id`, `deleted`),
+    KEY `idx_finance_report_item_subject_subject` (`subject_code`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 财务报表项目取数科目';

@@ -414,8 +414,8 @@ SET `name` = '制造BOM生效停用',
 WHERE `permission` = 'erp:bom:update-status' AND `deleted` = b'0';
 
 INSERT INTO `system_role_menu`
-(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`,`tenant_id`)
-SELECT DISTINCT rm.`role_id`, @scm_root_id, '1', NOW(), '1', NOW(), b'0', rm.`tenant_id`
+(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT DISTINCT rm.`role_id`, @scm_root_id, '1', NOW(), '1', NOW(), b'0'
 FROM `system_role_menu` rm
 WHERE rm.`deleted` = b'0'
   AND rm.`menu_id` IN (@plan_rule_menu_id, @plan_menu_id, @suggest_menu_id)
@@ -424,13 +424,12 @@ WHERE rm.`deleted` = b'0'
     FROM `system_role_menu` exists_rm
     WHERE exists_rm.`role_id` = rm.`role_id`
       AND exists_rm.`menu_id` = @scm_root_id
-      AND exists_rm.`tenant_id` = rm.`tenant_id`
       AND exists_rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`,`tenant_id`)
-SELECT DISTINCT rm.`role_id`, @process_root_id, '1', NOW(), '1', NOW(), b'0', rm.`tenant_id`
+(`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT DISTINCT rm.`role_id`, @process_root_id, '1', NOW(), '1', NOW(), b'0'
 FROM `system_role_menu` rm
 WHERE rm.`deleted` = b'0'
   AND rm.`menu_id` IN (@manufacture_bom_menu_id, @process_route_menu_id, @work_center_menu_id)
@@ -439,7 +438,6 @@ WHERE rm.`deleted` = b'0'
     FROM `system_role_menu` exists_rm
     WHERE exists_rm.`role_id` = rm.`role_id`
       AND exists_rm.`menu_id` = @process_root_id
-      AND exists_rm.`tenant_id` = rm.`tenant_id`
       AND exists_rm.`deleted` = b'0'
   );
 

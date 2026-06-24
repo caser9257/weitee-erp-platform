@@ -13,7 +13,6 @@ USE `ruoyi-vue-pro`;
 
 START TRANSACTION;
 
-SET @tenant_id := COALESCE((SELECT id FROM system_tenant WHERE deleted = b'0' ORDER BY id LIMIT 1), 1);
 SET @creator := 'tester';
 
 SET @unit_id := 993021;
@@ -82,22 +81,21 @@ DELETE FROM `erp_product_category` WHERE `id` IN (@category_root_id, @category_l
 DELETE FROM `erp_product_unit` WHERE `id` = @unit_id;
 
 INSERT INTO `erp_product_unit`
-(`id`, `name`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+(`id`, `name`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(@unit_id, '个', 0, @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+(@unit_id, '个', 0, @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `name` = VALUES(`name`),
   `status` = VALUES(`status`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_product_category`
-(`id`, `parent_id`, `name`, `code`, `sort`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+(`id`, `parent_id`, `name`, `code`, `sort`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(@category_root_id, 0, 'MRP 全链路测试', 'MRP-FULL-CHAIN', 1, 0, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@category_leaf_id, @category_root_id, 'MRP 追溯物料', 'MRP-FULL-CHAIN-LEAF', 2, 0, @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+(@category_root_id, 0, 'MRP 全链路测试', 'MRP-FULL-CHAIN', 1, 0, @creator, NOW(), @creator, NOW(), b'0'),
+(@category_leaf_id, @category_root_id, 'MRP 追溯物料', 'MRP-FULL-CHAIN-LEAF', 2, 0, @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `parent_id` = VALUES(`parent_id`),
   `name` = VALUES(`name`),
@@ -106,27 +104,26 @@ ON DUPLICATE KEY UPDATE
   `status` = VALUES(`status`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_product`
 (`id`, `name`, `material_code`, `bar_code`, `category_id`, `unit_id`, `status`, `standard`, `remark`, `expiry_day`, `batch_control_flag`,
- `inspection_required_flag`, `weight`, `purchase_price`, `sale_price`, `min_price`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `inspection_required_flag`, `weight`, `purchase_price`, `sale_price`, `min_price`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@root_product_id, 'MRP 全链路根产品', 'MRP-FULL-ROOT', 'MRP-FULL-ROOT-001', @category_root_id, @unit_id, 0, '根产品', '销售订单触发的 MRP 根产品',
- 3650, b'0', b'0', 1.200000, 120.000000, 188.000000, 168.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ 3650, b'0', b'0', 1.200000, 120.000000, 188.000000, 168.000000, @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_a_id, '制造分支 A', 'MRP-FULL-A', 'MRP-FULL-A-001', @category_leaf_id, @unit_id, 0, '半成品 A', 'A 分支制造件',
- 3650, b'0', b'0', 0.800000, 28.000000, 42.000000, 36.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ 3650, b'0', b'0', 0.800000, 28.000000, 42.000000, 36.000000, @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_b_id, '制造分支 B', 'MRP-FULL-B', 'MRP-FULL-B-001', @category_leaf_id, @unit_id, 0, '半成品 B', 'B 分支制造件',
- 3650, b'0', b'0', 0.900000, 32.000000, 48.000000, 40.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ 3650, b'0', b'0', 0.900000, 32.000000, 48.000000, 40.000000, @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_c_id, '缺料分支 C', 'MRP-FULL-C', 'MRP-FULL-C-001', @category_leaf_id, @unit_id, 0, '半成品 C', '无 BOM 的制造件，用于短缺分支',
- 3650, b'0', b'0', 0.700000, 24.000000, 38.000000, 30.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ 3650, b'0', b'0', 0.700000, 24.000000, 38.000000, 30.000000, @creator, NOW(), @creator, NOW(), b'0'),
 (@shared_material_id, '共享采购件', 'MRP-FULL-SHARED', 'MRP-FULL-SHARED-001', @category_leaf_id, @unit_id, 0, '通用组件', '同一物料在两个父件下重复出现',
- 3650, b'0', b'0', 0.200000, 4.500000, 7.800000, 6.200000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ 3650, b'0', b'0', 0.200000, 4.500000, 7.800000, 6.200000, @creator, NOW(), @creator, NOW(), b'0'),
 (@substitute_a_id, 'A 分支替代料', 'MRP-FULL-SUB-A', 'MRP-FULL-SUB-A-001', @category_leaf_id, @unit_id, 0, '替代料 A', '仅用于 A 分支 BOM 项',
- 3650, b'0', b'0', 0.180000, 3.200000, 5.600000, 4.800000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ 3650, b'0', b'0', 0.180000, 3.200000, 5.600000, 4.800000, @creator, NOW(), @creator, NOW(), b'0'),
 (@substitute_b_id, 'B 分支替代料', 'MRP-FULL-SUB-B', 'MRP-FULL-SUB-B-001', @category_leaf_id, @unit_id, 0, '替代料 B', '仅用于 B 分支 BOM 项',
- 3650, b'0', b'0', 0.190000, 3.500000, 5.900000, 5.100000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ 3650, b'0', b'0', 0.190000, 3.500000, 5.900000, 5.100000, @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `name` = VALUES(`name`),
   `material_code` = VALUES(`material_code`),
@@ -145,15 +142,14 @@ ON DUPLICATE KEY UPDATE
   `min_price` = VALUES(`min_price`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_customer`
 (`id`, `name`, `contact`, `mobile`, `telephone`, `email`, `fax`, `remark`, `status`, `sort`,
- `tax_no`, `tax_percent`, `bank_name`, `bank_account`, `bank_address`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `tax_no`, `tax_percent`, `bank_name`, `bank_account`, `bank_address`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@customer_id, 'MRP 全链路测试客户', NULL, NULL, NULL, NULL, NULL, '全链路 MRP 测试客户', 0, 1,
- NULL, NULL, NULL, NULL, NULL, @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ NULL, NULL, NULL, NULL, NULL, @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `name` = VALUES(`name`),
   `contact` = VALUES(`contact`),
@@ -171,19 +167,18 @@ ON DUPLICATE KEY UPDATE
   `bank_address` = VALUES(`bank_address`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_project`
 (`id`, `no`, `name`, `project_type`, `business_type`, `source_type`, `source_project_id`, `sale_order_id`, `project_manager_id`,
  `plan_coordinator_id`, `material_controller_id`, `owner_dept_id`, `current_stage_code`, `risk_level`, `customer_id`, `status`,
  `pc_status`, `mc_status`, `pc_confirm_time`, `mc_confirm_time`, `pc_remark`, `mc_remark`, `delivery_date`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@project_id, 'MRP-FULL-PROJ-001', 'MRP 全链路测试项目', NULL, NULL, NULL, NULL, NULL, NULL,
  1, 1, NULL, NULL, NULL, @customer_id, 1,
  'PENDING', 'PENDING', NULL, NULL, NULL, NULL, '2026-05-28', 'MRP 全链路验证项目',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `no` = VALUES(`no`),
   `name` = VALUES(`name`),
@@ -197,15 +192,14 @@ ON DUPLICATE KEY UPDATE
   `remark` = VALUES(`remark`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_bom`
-(`id`, `bom_code`, `product_id`, `version`, `status`, `source_rd_bom_id`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+(`id`, `bom_code`, `product_id`, `version`, `status`, `source_rd_bom_id`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(@root_bom_id, 'MRP-FULL-BOM-ROOT', @root_product_id, 'V1.0', 1, NULL, '根产品 BOM', @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_a_bom_id, 'MRP-FULL-BOM-A', @branch_a_id, 'V1.0', 1, NULL, 'A 分支 BOM', @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_b_bom_id, 'MRP-FULL-BOM-B', @branch_b_id, 'V1.0', 1, NULL, 'B 分支 BOM', @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+(@root_bom_id, 'MRP-FULL-BOM-ROOT', @root_product_id, 'V1.0', 1, NULL, '根产品 BOM', @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_a_bom_id, 'MRP-FULL-BOM-A', @branch_a_id, 'V1.0', 1, NULL, 'A 分支 BOM', @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_b_bom_id, 'MRP-FULL-BOM-B', @branch_b_id, 'V1.0', 1, NULL, 'B 分支 BOM', @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `bom_code` = VALUES(`bom_code`),
   `product_id` = VALUES(`product_id`),
@@ -215,23 +209,22 @@ ON DUPLICATE KEY UPDATE
   `remark` = VALUES(`remark`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_bom_item`
 (`id`, `bom_id`, `material_id`, `material_type`, `unit_id`, `usage_qty`, `loss_rate`, `lead_time_day`,
- `mrp_enable_flag`, `supply_owner`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `mrp_enable_flag`, `supply_owner`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@root_bom_item_a_id, @root_bom_id, @branch_a_id, 1, @unit_id, 1.000000, 0.0000, 0, b'1', 'COMPANY', 1, '根产品下的 A 制造分支',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@root_bom_item_b_id, @root_bom_id, @branch_b_id, 1, @unit_id, 1.000000, 0.0000, 0, b'1', 'COMPANY', 2, '根产品下的 B 制造分支',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@root_bom_item_c_id, @root_bom_id, @branch_c_id, 1, @unit_id, 1.000000, 0.0000, 0, b'1', 'COMPANY', 3, '根产品下的 C 缺料分支',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_a_shared_bom_item_id, @branch_a_bom_id, @shared_material_id, 2, @unit_id, 2.000000, 0.0000, 0, b'1', 'COMPANY', 1, 'A 分支共享采购件',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_b_shared_bom_item_id, @branch_b_bom_id, @shared_material_id, 2, @unit_id, 3.000000, 0.0000, 0, b'1', 'COMPANY', 1, 'B 分支共享采购件',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `bom_id` = VALUES(`bom_id`),
   `material_id` = VALUES(`material_id`),
@@ -246,17 +239,16 @@ ON DUPLICATE KEY UPDATE
   `remark` = VALUES(`remark`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 INSERT INTO `erp_bom_item_substitute`
 (`id`, `bom_item_id`, `substitute_material_id`, `priority`, `replace_ratio`, `enable_auto_recommend`, `sort`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@branch_a_substitute_id, @branch_a_shared_bom_item_id, @substitute_a_id, 1, 1.000000, b'1', 1, 'A 分支替代料',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_b_substitute_id, @branch_b_shared_bom_item_id, @substitute_b_id, 1, 1.000000, b'1', 1, 'B 分支替代料',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `bom_item_id` = VALUES(`bom_item_id`),
   `substitute_material_id` = VALUES(`substitute_material_id`),
@@ -267,8 +259,7 @@ ON DUPLICATE KEY UPDATE
   `remark` = VALUES(`remark`),
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
-  `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
+  `deleted` = VALUES(`deleted`);
 
 COMMIT;
 

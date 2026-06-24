@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_quality` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT '租户编号',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_purchase_in_quality_no` (`no`),
   KEY `idx_purchase_in_quality_purchase_in_id` (`purchase_in_id`),
@@ -39,7 +38,6 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_quality_item` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_purchase_in_quality_item_quality_id` (`quality_id`),
   KEY `idx_purchase_in_quality_item_purchase_in_item_id` (`purchase_in_item_id`)

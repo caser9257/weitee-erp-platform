@@ -24,11 +24,10 @@ CREATE TABLE IF NOT EXISTS `erp_stock_batch_adjustment`
     `updater`              VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`          DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`              BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`            BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_stock_batch_adjustment_no` (`tenant_id`, `adjust_no`, `deleted`),
-    KEY `idx_stock_batch_adjustment_batch` (`tenant_id`, `stock_batch_id`, `deleted`, `create_time`),
-    KEY `idx_stock_batch_adjustment_product` (`tenant_id`, `product_id`, `warehouse_id`, `deleted`, `create_time`)
+    UNIQUE KEY `uk_stock_batch_adjustment_no` (`adjust_no`, `deleted`),
+    KEY `idx_stock_batch_adjustment_batch` (`stock_batch_id`, `deleted`, `create_time`),
+    KEY `idx_stock_batch_adjustment_product` (`product_id`, `warehouse_id`, `deleted`, `create_time`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='ERP 批次库存调整单';
 
 SET @stock_batch_adjustment_no_index_exists := (
@@ -41,7 +40,7 @@ SET @stock_batch_adjustment_no_index_exists := (
 SET @stock_batch_adjustment_no_index_sql := IF(
     @stock_batch_adjustment_no_index_exists > 0,
     'SELECT ''uk_stock_batch_adjustment_no already exists''',
-    'ALTER TABLE `erp_stock_batch_adjustment` ADD UNIQUE KEY `uk_stock_batch_adjustment_no` (`tenant_id`, `adjust_no`, `deleted`)'
+    'ALTER TABLE `erp_stock_batch_adjustment` ADD UNIQUE KEY `uk_stock_batch_adjustment_no` (`adjust_no`, `deleted`)'
 );
 PREPARE stock_batch_adjustment_no_index_stmt FROM @stock_batch_adjustment_no_index_sql;
 EXECUTE stock_batch_adjustment_no_index_stmt;
@@ -57,7 +56,7 @@ SET @stock_batch_adjustment_batch_index_exists := (
 SET @stock_batch_adjustment_batch_index_sql := IF(
     @stock_batch_adjustment_batch_index_exists > 0,
     'SELECT ''idx_stock_batch_adjustment_batch already exists''',
-    'ALTER TABLE `erp_stock_batch_adjustment` ADD KEY `idx_stock_batch_adjustment_batch` (`tenant_id`, `stock_batch_id`, `deleted`, `create_time`)'
+    'ALTER TABLE `erp_stock_batch_adjustment` ADD KEY `idx_stock_batch_adjustment_batch` (`stock_batch_id`, `deleted`, `create_time`)'
 );
 PREPARE stock_batch_adjustment_batch_index_stmt FROM @stock_batch_adjustment_batch_index_sql;
 EXECUTE stock_batch_adjustment_batch_index_stmt;
@@ -73,7 +72,7 @@ SET @stock_batch_adjustment_product_index_exists := (
 SET @stock_batch_adjustment_product_index_sql := IF(
     @stock_batch_adjustment_product_index_exists > 0,
     'SELECT ''idx_stock_batch_adjustment_product already exists''',
-    'ALTER TABLE `erp_stock_batch_adjustment` ADD KEY `idx_stock_batch_adjustment_product` (`tenant_id`, `product_id`, `warehouse_id`, `deleted`, `create_time`)'
+    'ALTER TABLE `erp_stock_batch_adjustment` ADD KEY `idx_stock_batch_adjustment_product` (`product_id`, `warehouse_id`, `deleted`, `create_time`)'
 );
 PREPARE stock_batch_adjustment_product_index_stmt FROM @stock_batch_adjustment_product_index_sql;
 EXECUTE stock_batch_adjustment_product_index_stmt;

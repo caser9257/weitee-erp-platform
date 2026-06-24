@@ -42,12 +42,11 @@ CREATE TABLE IF NOT EXISTS `erp_stock_batch_reservation`
     `updater`        VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`    DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`        BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`      BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_stock_batch_reservation_biz_batch` (`tenant_id`, `biz_type`, `biz_id`, `biz_item_id`, `stock_batch_id`, `deleted`),
-    KEY `idx_stock_batch_reservation_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`),
-    KEY `idx_stock_batch_reservation_batch` (`tenant_id`, `stock_batch_id`, `deleted`),
-    KEY `idx_stock_batch_reservation_product` (`tenant_id`, `product_id`, `warehouse_id`, `deleted`)
+    UNIQUE KEY `uk_stock_batch_reservation_biz_batch` (`biz_type`, `biz_id`, `biz_item_id`, `stock_batch_id`, `deleted`),
+    KEY `idx_stock_batch_reservation_biz` (`biz_type`, `biz_id`, `deleted`),
+    KEY `idx_stock_batch_reservation_batch` (`stock_batch_id`, `deleted`),
+    KEY `idx_stock_batch_reservation_product` (`product_id`, `warehouse_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='ERP 批次出库预占明细';
 
 SET @stock_batch_reservation_biz_batch_index_exists := (
@@ -60,7 +59,7 @@ SET @stock_batch_reservation_biz_batch_index_exists := (
 SET @stock_batch_reservation_biz_batch_index_sql := IF(
     @stock_batch_reservation_biz_batch_index_exists > 0,
     'SELECT ''uk_stock_batch_reservation_biz_batch already exists''',
-    'ALTER TABLE `erp_stock_batch_reservation` ADD UNIQUE KEY `uk_stock_batch_reservation_biz_batch` (`tenant_id`, `biz_type`, `biz_id`, `biz_item_id`, `stock_batch_id`, `deleted`)'
+    'ALTER TABLE `erp_stock_batch_reservation` ADD UNIQUE KEY `uk_stock_batch_reservation_biz_batch` (`biz_type`, `biz_id`, `biz_item_id`, `stock_batch_id`, `deleted`)'
 );
 PREPARE stock_batch_reservation_biz_batch_index_stmt FROM @stock_batch_reservation_biz_batch_index_sql;
 EXECUTE stock_batch_reservation_biz_batch_index_stmt;
@@ -76,7 +75,7 @@ SET @stock_batch_reservation_biz_index_exists := (
 SET @stock_batch_reservation_biz_index_sql := IF(
     @stock_batch_reservation_biz_index_exists > 0,
     'SELECT ''idx_stock_batch_reservation_biz already exists''',
-    'ALTER TABLE `erp_stock_batch_reservation` ADD KEY `idx_stock_batch_reservation_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`)'
+    'ALTER TABLE `erp_stock_batch_reservation` ADD KEY `idx_stock_batch_reservation_biz` (`biz_type`, `biz_id`, `deleted`)'
 );
 PREPARE stock_batch_reservation_biz_index_stmt FROM @stock_batch_reservation_biz_index_sql;
 EXECUTE stock_batch_reservation_biz_index_stmt;
@@ -92,7 +91,7 @@ SET @stock_batch_reservation_batch_index_exists := (
 SET @stock_batch_reservation_batch_index_sql := IF(
     @stock_batch_reservation_batch_index_exists > 0,
     'SELECT ''idx_stock_batch_reservation_batch already exists''',
-    'ALTER TABLE `erp_stock_batch_reservation` ADD KEY `idx_stock_batch_reservation_batch` (`tenant_id`, `stock_batch_id`, `deleted`)'
+    'ALTER TABLE `erp_stock_batch_reservation` ADD KEY `idx_stock_batch_reservation_batch` (`stock_batch_id`, `deleted`)'
 );
 PREPARE stock_batch_reservation_batch_index_stmt FROM @stock_batch_reservation_batch_index_sql;
 EXECUTE stock_batch_reservation_batch_index_stmt;
@@ -108,7 +107,7 @@ SET @stock_batch_reservation_product_index_exists := (
 SET @stock_batch_reservation_product_index_sql := IF(
     @stock_batch_reservation_product_index_exists > 0,
     'SELECT ''idx_stock_batch_reservation_product already exists''',
-    'ALTER TABLE `erp_stock_batch_reservation` ADD KEY `idx_stock_batch_reservation_product` (`tenant_id`, `product_id`, `warehouse_id`, `deleted`)'
+    'ALTER TABLE `erp_stock_batch_reservation` ADD KEY `idx_stock_batch_reservation_product` (`product_id`, `warehouse_id`, `deleted`)'
 );
 PREPARE stock_batch_reservation_product_index_stmt FROM @stock_batch_reservation_product_index_sql;
 EXECUTE stock_batch_reservation_product_index_stmt;

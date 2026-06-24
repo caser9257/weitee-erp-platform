@@ -1,4 +1,4 @@
-ALTER TABLE `erp_purchase_in`
+﻿ALTER TABLE `erp_purchase_in`
     ADD COLUMN `stock_in_count` DECIMAL(24, 6) NOT NULL DEFAULT 0 COMMENT '累计已入库数量' AFTER `qa_reject_count`;
 
 ALTER TABLE `erp_purchase_in_items`
@@ -34,7 +34,6 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_stock_execute`
     `updater`        VARCHAR(64)  NULL DEFAULT '' COMMENT '更新者',
     `update_time`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`        BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`      BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     KEY `idx_purchase_in_id` (`purchase_in_id`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='采购入库执行单';
@@ -54,7 +53,6 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_stock_execute_item`
     `updater`             VARCHAR(64)    NULL DEFAULT '' COMMENT '更新者',
     `update_time`         DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`             BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`           BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     KEY `idx_execute_id` (`execute_id`),
     KEY `idx_purchase_in_id` (`purchase_in_id`)

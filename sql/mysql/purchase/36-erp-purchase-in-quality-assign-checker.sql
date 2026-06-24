@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP 采购入库 IQC 指派质检人
  Schema: ruoyi-vue-pro
  Date: 2026-04-13
@@ -15,7 +15,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id = 1;
 SET @admin_role_id = 1;
 SET @purchase_root_menu_id = 2563;
 SET @purchase_menu_id = 2602;
@@ -127,7 +126,7 @@ SET @iqc_assign_checker_menu_id := (
 SET @iqc_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'erp_iqc_inspector'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -135,14 +134,14 @@ SET @iqc_role_id := (
 SET @supply_chain_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'supply_chain_manager'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @admin_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @admin_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @purchase_root_menu_id AS `menu_id`
   UNION ALL SELECT @purchase_menu_id
@@ -154,13 +153,13 @@ WHERE target.`menu_id` IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @admin_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @supply_chain_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @supply_chain_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @purchase_root_menu_id AS `menu_id`
   UNION ALL SELECT @purchase_menu_id
@@ -176,13 +175,13 @@ WHERE @supply_chain_role_id IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @supply_chain_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @iqc_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @iqc_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @purchase_root_menu_id AS `menu_id`
   UNION ALL SELECT @purchase_menu_id
@@ -197,13 +196,13 @@ WHERE @iqc_role_id IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @iqc_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 DELETE FROM `system_role_menu`
 WHERE `role_id` = @iqc_role_id
-  AND `tenant_id` = @tenant_id
+
   AND `deleted` = b'0'
   AND `menu_id` IN (
     COALESCE(@iqc_create_menu_id, -1),

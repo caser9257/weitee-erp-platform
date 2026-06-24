@@ -23,9 +23,8 @@ CREATE TABLE IF NOT EXISTS `erp_stock_batch_allocation`
     `updater`        VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`    DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`        BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`      BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_stock_batch_allocation_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`),
-    KEY `idx_stock_batch_allocation_batch` (`tenant_id`, `stock_batch_id`, `deleted`),
-    KEY `idx_stock_batch_allocation_product` (`tenant_id`, `product_id`, `warehouse_id`, `deleted`)
+    KEY `idx_stock_batch_allocation_biz` (`biz_type`, `biz_id`, `deleted`),
+    KEY `idx_stock_batch_allocation_batch` (`stock_batch_id`, `deleted`),
+    KEY `idx_stock_batch_allocation_product` (`product_id`, `warehouse_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='ERP 批次出库分配明细';

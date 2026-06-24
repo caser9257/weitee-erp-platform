@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP 采购入库 IQC 权限拆分、角色与测试账号
  Schema: ruoyi-vue-pro
  Date: 2026-04-13
@@ -15,7 +15,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id = 1;
 SET @admin_role_id = 1;
 SET @purchase_root_menu_id = 2563;
 SET @purchase_menu_id = 2602;
@@ -202,16 +201,15 @@ ON DUPLICATE KEY UPDATE
 SET @iqc_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'erp_iqc_inspector'
-    AND `tenant_id` = @tenant_id
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
 
 INSERT INTO `system_role`
 (`id`, `name`, `code`, `sort`, `data_scope`, `data_scope_dept_ids`, `status`, `type`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT COALESCE(@iqc_role_id, 920701), 'IQC质检员', 'erp_iqc_inspector', 65, 1, '', 0, 2,
-       '采购入库 IQC 质检专用角色', '1', NOW(), '1', NOW(), b'0', @tenant_id
+       '采购入库 IQC 质检专用角色', '1', NOW(), '1', NOW(), b'0'
 ON DUPLICATE KEY UPDATE
 `name` = VALUES(`name`),
 `code` = VALUES(`code`),
@@ -223,13 +221,11 @@ ON DUPLICATE KEY UPDATE
 `remark` = VALUES(`remark`),
 `updater` = VALUES(`updater`),
 `update_time` = VALUES(`update_time`),
-`deleted` = VALUES(`deleted`),
-`tenant_id` = VALUES(`tenant_id`);
+`deleted` = VALUES(`deleted`);
 
 SET @iqc_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'erp_iqc_inspector'
-    AND `tenant_id` = @tenant_id
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -237,16 +233,16 @@ SET @iqc_role_id := (
 SET @iqc_dept_id := (
   SELECT `id` FROM `system_dept`
   WHERE `name` = 'IQC质检组'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
 
 INSERT INTO `system_dept`
 (`id`, `name`, `parent_id`, `sort`, `leader_user_id`, `phone`, `email`, `status`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT COALESCE(@iqc_dept_id, 920710), 'IQC质检组', 100, 65, 1, '13800003001', 'iqc@test.local', 0,
-       '1', NOW(), '1', NOW(), b'0', @tenant_id
+       '1', NOW(), '1', NOW(), b'0'
 ON DUPLICATE KEY UPDATE
 `name` = VALUES(`name`),
 `parent_id` = VALUES(`parent_id`),
@@ -257,13 +253,12 @@ ON DUPLICATE KEY UPDATE
 `status` = VALUES(`status`),
 `updater` = VALUES(`updater`),
 `update_time` = VALUES(`update_time`),
-`deleted` = VALUES(`deleted`),
-`tenant_id` = VALUES(`tenant_id`);
+`deleted` = VALUES(`deleted`);
 
 SET @iqc_dept_id := (
   SELECT `id` FROM `system_dept`
   WHERE `name` = 'IQC质检组'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -271,7 +266,7 @@ SET @iqc_dept_id := (
 SET @iqc_user_id := (
   SELECT `id` FROM `system_users`
   WHERE `username` = 'iqc_user'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -279,10 +274,10 @@ SET @iqc_user_id := (
 INSERT INTO `system_users`
 (`id`, `username`, `password`, `nickname`, `remark`, `dept_id`, `post_ids`, `email`, `mobile`, `sex`,
  `avatar`, `status`, `login_ip`, `login_date`, `creator`, `create_time`, `updater`, `update_time`,
- `deleted`, `tenant_id`)
+ `deleted`)
 SELECT COALESCE(@iqc_user_id, 920720), 'iqc_user', @password_hash, 'IQC质检员', '采购入库 IQC 测试账号',
        @iqc_dept_id, '[]', 'iqc_user@test.local', '13800003002', 1,
-       '', 0, '', NULL, '1', NOW(), '1', NOW(), b'0', @tenant_id
+       '', 0, '', NULL, '1', NOW(), '1', NOW(), b'0'
 ON DUPLICATE KEY UPDATE
 `username` = VALUES(`username`),
 `password` = VALUES(`password`),
@@ -298,32 +293,31 @@ ON DUPLICATE KEY UPDATE
 `updater` = VALUES(`updater`),
 `update_time` = VALUES(`update_time`),
 `deleted` = VALUES(`deleted`),
-`tenant_id` = VALUES(`tenant_id`);
 
 SET @iqc_user_id := (
   SELECT `id` FROM `system_users`
   WHERE `username` = 'iqc_user'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
 
 INSERT INTO `system_user_role`
-(`user_id`, `role_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @iqc_user_id, @iqc_role_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`user_id`, `role_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @iqc_user_id, @iqc_role_id, '1', NOW(), '1', NOW(), b'0'
 WHERE @iqc_user_id IS NOT NULL
   AND @iqc_role_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM `system_user_role`
     WHERE `user_id` = @iqc_user_id
       AND `role_id` = @iqc_role_id
-      AND `tenant_id` = @tenant_id
+
       AND `deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @admin_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @admin_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @purchase_root_menu_id AS `menu_id`
   UNION ALL SELECT @purchase_menu_id
@@ -339,13 +333,13 @@ WHERE target.`menu_id` IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @admin_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @iqc_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @iqc_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @purchase_root_menu_id AS `menu_id`
   UNION ALL SELECT @purchase_menu_id
@@ -362,21 +356,21 @@ WHERE @iqc_role_id IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @iqc_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 SET @supply_chain_role_id := (
   SELECT `id` FROM `system_role`
   WHERE `code` = 'supply_chain_manager'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT @supply_chain_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT @supply_chain_role_id, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT @purchase_root_menu_id AS `menu_id`
   UNION ALL SELECT @purchase_menu_id
@@ -389,7 +383,7 @@ WHERE @supply_chain_role_id IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = @supply_chain_role_id
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 

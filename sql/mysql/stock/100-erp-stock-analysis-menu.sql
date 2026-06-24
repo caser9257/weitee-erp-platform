@@ -11,8 +11,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id := 1;
-
 SET @scm_root_id := (
   SELECT `id`
   FROM `system_menu`
@@ -114,7 +112,6 @@ SELECT DISTINCT rm.`role_id`
 FROM `system_role_menu` rm
 JOIN `system_menu` sm ON sm.`id` = rm.`menu_id`
 WHERE rm.`deleted` = b'0'
-  AND rm.`tenant_id` = @tenant_id
   AND sm.`deleted` = b'0'
   AND (
     sm.`id` = @scm_root_id
@@ -127,7 +124,6 @@ SET @supply_chain_role_id := (
   SELECT `id`
   FROM `system_role`
   WHERE `code` = 'supply_chain_manager'
-    AND `tenant_id` = @tenant_id
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -137,8 +133,8 @@ SELECT @supply_chain_role_id
 WHERE @supply_chain_role_id IS NOT NULL;
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT role_ids.`role_id`, @stock_analysis_menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT role_ids.`role_id`, @stock_analysis_menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM `tmp_stock_analysis_role_ids` role_ids
 WHERE @stock_analysis_menu_id IS NOT NULL
   AND NOT EXISTS (
@@ -146,13 +142,12 @@ WHERE @stock_analysis_menu_id IS NOT NULL
     FROM `system_role_menu` rm
     WHERE rm.`role_id` = role_ids.`role_id`
       AND rm.`menu_id` = @stock_analysis_menu_id
-      AND rm.`tenant_id` = @tenant_id
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT role_ids.`role_id`, @stock_analysis_query_menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT role_ids.`role_id`, @stock_analysis_query_menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM `tmp_stock_analysis_role_ids` role_ids
 WHERE @stock_analysis_query_menu_id IS NOT NULL
   AND NOT EXISTS (
@@ -160,7 +155,6 @@ WHERE @stock_analysis_query_menu_id IS NOT NULL
     FROM `system_role_menu` rm
     WHERE rm.`role_id` = role_ids.`role_id`
       AND rm.`menu_id` = @stock_analysis_query_menu_id
-      AND rm.`tenant_id` = @tenant_id
       AND rm.`deleted` = b'0'
   );
 

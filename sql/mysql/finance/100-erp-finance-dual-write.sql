@@ -17,11 +17,10 @@ CREATE TABLE IF NOT EXISTS `erp_finance_dual_write_log` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_dual_write_log_source` (`tenant_id`, `source_voucher_id`, `deleted`),
-    KEY `idx_dual_write_log_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`),
-    KEY `idx_dual_write_log_status` (`tenant_id`, `status`, `deleted`)
+    KEY `idx_dual_write_log_source` (`source_voucher_id`, `deleted`),
+    KEY `idx_dual_write_log_biz` (`biz_type`, `biz_id`, `deleted`),
+    KEY `idx_dual_write_log_status` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 双写日志';
 
 CREATE TABLE IF NOT EXISTS `erp_finance_dual_write_config` (
@@ -36,7 +35,6 @@ CREATE TABLE IF NOT EXISTS `erp_finance_dual_write_config` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_dual_write_config_biz` (`tenant_id`, `biz_type`, `deleted`)
+    UNIQUE KEY `uk_dual_write_config_biz` (`biz_type`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 双写配置';

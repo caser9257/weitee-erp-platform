@@ -384,7 +384,6 @@ CREATE TABLE IF NOT EXISTS `erp_stock_lot` (
   `updater` varchar(64) DEFAULT NULL COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_stock_lot_product_warehouse` (`product_id`, `warehouse_id`),
   KEY `idx_erp_stock_lot_batch_no` (`batch_no`),
@@ -411,7 +410,6 @@ CREATE TABLE IF NOT EXISTS `erp_stock_reservation` (
   `updater` varchar(64) DEFAULT NULL COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_stock_reservation_product_warehouse` (`product_id`, `warehouse_id`),
   KEY `idx_erp_stock_reservation_project_id` (`project_id`),
@@ -438,9 +436,8 @@ CREATE TABLE IF NOT EXISTS `erp_quality_inspection` (
   `updater` varchar(64) DEFAULT NULL COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_quality_inspection_no` (`tenant_id`, `no`),
+  UNIQUE KEY `uk_erp_quality_inspection_no` (`no`),
   KEY `idx_erp_quality_inspection_source` (`source_type`, `source_id`),
   KEY `idx_erp_quality_inspection_project_id` (`project_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 质检单';
@@ -463,7 +460,6 @@ CREATE TABLE IF NOT EXISTS `erp_quality_inspection_item` (
   `updater` varchar(64) DEFAULT NULL COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_quality_inspection_item_inspection_id` (`inspection_id`),
   KEY `idx_erp_quality_inspection_item_product_id` (`product_id`)

@@ -1,4 +1,4 @@
-/*
+﻿/*
   仓库分类管理基础表与菜单
   1. 新增仓库分类表
   2. 为 erp_warehouse 增加 category_id
@@ -39,13 +39,10 @@ CREATE TABLE IF NOT EXISTS `erp_warehouse_category`  (
   `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uk_parent_name` (`parent_id`, `name`) USING BTREE,
   UNIQUE KEY `uk_parent_code` (`parent_id`, `code`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = 'ERP 仓库分类表';
-
-SET @tenant_id := 1;
 
 SET @scm_root_id := (
   SELECT `id`
@@ -148,7 +145,6 @@ SELECT DISTINCT rm.`role_id`
 FROM `system_role_menu` rm
 JOIN `system_menu` sm ON sm.`id` = rm.`menu_id`
 WHERE rm.`deleted` = b'0'
-  AND rm.`tenant_id` = @tenant_id
   AND sm.`deleted` = b'0'
   AND (
     sm.`id` = @scm_root_id
@@ -161,7 +157,7 @@ SET @supply_chain_role_id := (
   SELECT `id`
   FROM `system_role`
   WHERE `code` = 'supply_chain_manager'
-    AND `tenant_id` = @tenant_id
+
   ORDER BY `deleted` ASC, `id` ASC
   LIMIT 1
 );
@@ -171,8 +167,8 @@ SELECT @supply_chain_role_id
 WHERE @supply_chain_role_id IS NOT NULL;
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT role_ids.`role_id`, @warehouse_category_menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT role_ids.`role_id`, @warehouse_category_menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM `tmp_warehouse_category_role_ids` role_ids
 WHERE @warehouse_category_menu_id IS NOT NULL
   AND NOT EXISTS (
@@ -180,13 +176,13 @@ WHERE @warehouse_category_menu_id IS NOT NULL
     FROM `system_role_menu` rm
     WHERE rm.`role_id` = role_ids.`role_id`
       AND rm.`menu_id` = @warehouse_category_menu_id
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT role_ids.`role_id`, @warehouse_category_query_menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT role_ids.`role_id`, @warehouse_category_query_menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM `tmp_warehouse_category_role_ids` role_ids
 WHERE @warehouse_category_query_menu_id IS NOT NULL
   AND NOT EXISTS (
@@ -194,19 +190,19 @@ WHERE @warehouse_category_query_menu_id IS NOT NULL
     FROM `system_role_menu` rm
     WHERE rm.`role_id` = role_ids.`role_id`
       AND rm.`menu_id` = @warehouse_category_query_menu_id
-      AND rm.`tenant_id` = @tenant_id
+
       AND rm.`deleted` = b'0'
   );
 
 DROP TEMPORARY TABLE IF EXISTS `tmp_warehouse_category_role_ids`;
 
 INSERT INTO `erp_warehouse_category`
-(`id`, `parent_id`, `name`, `code`, `sort`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+(`id`, `parent_id`, `name`, `code`, `sort`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(99211, 0, '原料仓', 'RAW', 1, 0, 'tester', NOW(), 'tester', NOW(), b'0', @tenant_id),
-(99212, 0, '成品仓', 'FINISHED', 2, 0, 'tester', NOW(), 'tester', NOW(), b'0', @tenant_id),
-(99213, 0, '在途仓', 'IN_TRANSIT', 3, 0, 'tester', NOW(), 'tester', NOW(), b'0', @tenant_id),
-(99214, 0, '测试仓库', 'TEST', 4, 0, 'tester', NOW(), 'tester', NOW(), b'0', @tenant_id)
+(99211, 0, '原料仓', 'RAW', 1, 0, 'tester', NOW(), 'tester', NOW(), b'0'),
+(99212, 0, '成品仓', 'FINISHED', 2, 0, 'tester', NOW(), 'tester', NOW(), b'0'),
+(99213, 0, '在途仓', 'IN_TRANSIT', 3, 0, 'tester', NOW(), 'tester', NOW(), b'0'),
+(99214, 0, '测试仓库', 'TEST', 4, 0, 'tester', NOW(), 'tester', NOW(), b'0')
 ON DUPLICATE KEY UPDATE
 `parent_id` = VALUES(`parent_id`),
 `name` = VALUES(`name`),
@@ -216,7 +212,6 @@ ON DUPLICATE KEY UPDATE
 `updater` = VALUES(`updater`),
 `update_time` = VALUES(`update_time`),
 `deleted` = VALUES(`deleted`),
-`tenant_id` = VALUES(`tenant_id`);
 
 UPDATE `erp_warehouse`
 SET `category_id` = CASE `id`

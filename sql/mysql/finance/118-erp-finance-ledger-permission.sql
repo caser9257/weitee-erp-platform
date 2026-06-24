@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP finance ledger role permission
 -- 1. add ledger-role association table
 -- 2. add audit operation log table
@@ -16,11 +16,10 @@ CREATE TABLE IF NOT EXISTS `erp_finance_ledger_role` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ledger_role` (`tenant_id`, `ledger_id`, `role_id`, `deleted`),
-    KEY `idx_ledger_role_ledger` (`tenant_id`, `ledger_id`, `deleted`),
-    KEY `idx_ledger_role_role` (`tenant_id`, `role_id`, `deleted`)
+    UNIQUE KEY `uk_ledger_role` (`ledger_id`, `role_id`, `deleted`),
+    KEY `idx_ledger_role_ledger` (`ledger_id`, `deleted`),
+    KEY `idx_ledger_role_role` (`role_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 账簿角色关联';
 
 -- 审计操作日志表
@@ -41,11 +40,10 @@ CREATE TABLE IF NOT EXISTS `erp_finance_audit_operation_log` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_audit_log_user` (`tenant_id`, `user_id`, `deleted`),
-    KEY `idx_audit_log_type` (`tenant_id`, `operation_type`, `deleted`),
-    KEY `idx_audit_log_time` (`tenant_id`, `create_time`, `deleted`)
+    KEY `idx_audit_log_user` (`user_id`, `deleted`),
+    KEY `idx_audit_log_type` (`operation_type`, `deleted`),
+    KEY `idx_audit_log_time` (`create_time`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 审计操作日志';
 
 -- 双账套金额差异计算日志表
@@ -68,8 +66,7 @@ CREATE TABLE IF NOT EXISTS `erp_finance_dual_ledger_amount_diff_log` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_amount_diff_log_source` (`tenant_id`, `source_voucher_id`, `deleted`),
-    KEY `idx_amount_diff_log_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`)
+    KEY `idx_amount_diff_log_source` (`source_voucher_id`, `deleted`),
+    KEY `idx_amount_diff_log_biz` (`biz_type`, `biz_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 双账套金额差异计算日志';

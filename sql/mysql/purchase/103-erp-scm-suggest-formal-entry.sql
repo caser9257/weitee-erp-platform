@@ -1,4 +1,4 @@
-/*
+﻿/*
  * ERP / SCM 正式入口修复
  * 作用：
  * - 补齐 `/scm/suggest` 菜单入口
@@ -13,7 +13,6 @@ USE `ruoyi-vue-pro`;
 
 START TRANSACTION;
 
-SET @tenant_id := COALESCE((SELECT id FROM system_tenant WHERE deleted = b'0' ORDER BY id LIMIT 1), 1);
 SET @scm_root_id := COALESCE(
   (SELECT id FROM system_menu WHERE deleted = b'0' AND parent_id = 0 AND path = '/scm' ORDER BY id LIMIT 1),
   0
@@ -57,8 +56,8 @@ WHERE `id` = COALESCE(@suggest_menu_id, 931603);
 SET @suggest_menu_id := COALESCE(@suggest_menu_id, 931603);
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT DISTINCT rm.`role_id`, @suggest_menu_id, '1', NOW(), '1', NOW(), b'0', rm.`tenant_id`
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT DISTINCT rm.`role_id`, @suggest_menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM `system_role_menu` rm
 JOIN `system_menu` sm ON sm.`id` = rm.`menu_id`
 WHERE rm.`deleted` = b'0'
@@ -69,7 +68,6 @@ WHERE rm.`deleted` = b'0'
     WHERE existing.`deleted` = b'0'
       AND existing.`role_id` = rm.`role_id`
       AND existing.`menu_id` = @suggest_menu_id
-      AND existing.`tenant_id` = rm.`tenant_id`
   );
 
 COMMIT;

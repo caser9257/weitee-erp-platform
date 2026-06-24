@@ -14,7 +14,7 @@ SET @stock_batch_record_product_time_index_exists := (
 SET @stock_batch_record_product_time_index_sql := IF(
     @stock_batch_record_product_time_index_exists > 0,
     'SELECT ''idx_stock_batch_record_product_time already exists''',
-    'ALTER TABLE `erp_stock_batch_record` ADD KEY `idx_stock_batch_record_product_time` (`tenant_id`, `product_id`, `warehouse_id`, `deleted`, `create_time`)'
+    'ALTER TABLE `erp_stock_batch_record` ADD KEY `idx_stock_batch_record_product_time` (`product_id`, `warehouse_id`, `deleted`, `create_time`)'
 );
 PREPARE stock_batch_record_product_time_index_stmt FROM @stock_batch_record_product_time_index_sql;
 EXECUTE stock_batch_record_product_time_index_stmt;
@@ -30,7 +30,7 @@ SET @stock_batch_record_biz_no_time_index_exists := (
 SET @stock_batch_record_biz_no_time_index_sql := IF(
     @stock_batch_record_biz_no_time_index_exists > 0,
     'SELECT ''idx_stock_batch_record_biz_no_time already exists''',
-    'ALTER TABLE `erp_stock_batch_record` ADD KEY `idx_stock_batch_record_biz_no_time` (`tenant_id`, `biz_type`, `biz_no`, `deleted`, `create_time`)'
+    'ALTER TABLE `erp_stock_batch_record` ADD KEY `idx_stock_batch_record_biz_no_time` (`biz_type`, `biz_no`, `deleted`, `create_time`)'
 );
 PREPARE stock_batch_record_biz_no_time_index_stmt FROM @stock_batch_record_biz_no_time_index_sql;
 EXECUTE stock_batch_record_biz_no_time_index_stmt;

@@ -30,11 +30,10 @@ CREATE TABLE IF NOT EXISTS `erp_stock_batch`
     `updater`            VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`        DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`            BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`          BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_stock_batch_product_warehouse_batch` (`tenant_id`, `product_id`, `warehouse_id`, `batch_no`, `deleted`),
-    KEY `idx_stock_batch_available` (`tenant_id`, `product_id`, `warehouse_id`, `available_qty`, `deleted`),
-    KEY `idx_stock_batch_inbound_time` (`tenant_id`, `product_id`, `warehouse_id`, `inbound_time`, `deleted`)
+    UNIQUE KEY `uk_stock_batch_product_warehouse_batch` (`product_id`, `warehouse_id`, `batch_no`, `deleted`),
+    KEY `idx_stock_batch_available` (`product_id`, `warehouse_id`, `available_qty`, `deleted`),
+    KEY `idx_stock_batch_inbound_time` (`product_id`, `warehouse_id`, `inbound_time`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='ERP 批次库存';
 
 CREATE TABLE IF NOT EXISTS `erp_stock_batch_record`
@@ -56,10 +55,9 @@ CREATE TABLE IF NOT EXISTS `erp_stock_batch_record`
     `updater`             VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`         DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`             BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`           BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_stock_batch_record_batch` (`tenant_id`, `stock_batch_id`, `deleted`),
-    KEY `idx_stock_batch_record_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`)
+    KEY `idx_stock_batch_record_batch` (`stock_batch_id`, `deleted`),
+    KEY `idx_stock_batch_record_biz` (`biz_type`, `biz_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='ERP 批次库存流水';
 
 CREATE TABLE IF NOT EXISTS `erp_purchase_in_stock_execute_item_batch`
@@ -81,10 +79,9 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_stock_execute_item_batch`
     `updater`             VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`         DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`             BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`           BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_purchase_in_execute_item_batch_item` (`tenant_id`, `execute_item_id`, `deleted`),
-    KEY `idx_purchase_in_execute_item_batch_purchase_item` (`tenant_id`, `purchase_in_item_id`, `deleted`)
+    KEY `idx_purchase_in_execute_item_batch_item` (`execute_item_id`, `deleted`),
+    KEY `idx_purchase_in_execute_item_batch_purchase_item` (`purchase_in_item_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='采购入库执行批次明细';
 
 CREATE TABLE IF NOT EXISTS `erp_production_issue`
@@ -101,10 +98,9 @@ CREATE TABLE IF NOT EXISTS `erp_production_issue`
     `updater`             VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`             BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`           BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_production_issue_no` (`tenant_id`, `issue_no`, `deleted`),
-    KEY `idx_production_issue_order` (`tenant_id`, `production_order_id`, `deleted`)
+    UNIQUE KEY `uk_production_issue_no` (`issue_no`, `deleted`),
+    KEY `idx_production_issue_order` (`production_order_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='生产领料单';
 
 CREATE TABLE IF NOT EXISTS `erp_production_issue_item`
@@ -122,10 +118,9 @@ CREATE TABLE IF NOT EXISTS `erp_production_issue_item`
     `updater`                VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`            DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`                BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`              BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_production_issue_item_issue` (`tenant_id`, `issue_id`, `deleted`),
-    KEY `idx_production_issue_item_material` (`tenant_id`, `production_material_id`, `deleted`)
+    KEY `idx_production_issue_item_issue` (`issue_id`, `deleted`),
+    KEY `idx_production_issue_item_material` (`production_material_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='生产领料明细';
 
 CREATE TABLE IF NOT EXISTS `erp_production_issue_batch`
@@ -143,9 +138,8 @@ CREATE TABLE IF NOT EXISTS `erp_production_issue_batch`
     `updater`        VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`    DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`        BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`      BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_production_issue_batch_item` (`tenant_id`, `issue_item_id`, `deleted`)
+    KEY `idx_production_issue_batch_item` (`issue_item_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='生产领料批次明细';
 
 CREATE TABLE IF NOT EXISTS `erp_production_return`
@@ -161,10 +155,9 @@ CREATE TABLE IF NOT EXISTS `erp_production_return`
     `updater`             VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`             BIT(1)       NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`           BIGINT       NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_production_return_no` (`tenant_id`, `return_no`, `deleted`),
-    KEY `idx_production_return_order` (`tenant_id`, `production_order_id`, `deleted`)
+    UNIQUE KEY `uk_production_return_no` (`return_no`, `deleted`),
+    KEY `idx_production_return_order` (`production_order_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='生产退料单';
 
 CREATE TABLE IF NOT EXISTS `erp_production_return_item`
@@ -181,10 +174,9 @@ CREATE TABLE IF NOT EXISTS `erp_production_return_item`
     `updater`                VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`            DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`                BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`              BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_production_return_item_return` (`tenant_id`, `return_id`, `deleted`),
-    KEY `idx_production_return_item_material` (`tenant_id`, `production_material_id`, `deleted`)
+    KEY `idx_production_return_item_return` (`return_id`, `deleted`),
+    KEY `idx_production_return_item_material` (`production_material_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='生产退料明细';
 
 CREATE TABLE IF NOT EXISTS `erp_production_return_batch`
@@ -200,7 +192,6 @@ CREATE TABLE IF NOT EXISTS `erp_production_return_batch`
     `updater`         VARCHAR(64)    NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time`     DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`         BIT(1)         NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id`       BIGINT         NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    KEY `idx_production_return_batch_item` (`tenant_id`, `return_item_id`, `deleted`)
+    KEY `idx_production_return_batch_item` (`return_item_id`, `deleted`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT ='生产退料批次明细';

@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP outsource phase4
 -- =====================================================
 
@@ -18,9 +18,8 @@ CREATE TABLE `erp_outsource_loss_detail` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_outsource_loss_order_issue_batch` (`tenant_id`, `order_id`, `issue_batch_id`, `deleted`),
-    KEY `idx_outsource_loss_order` (`tenant_id`, `order_id`, `deleted`),
-    KEY `idx_outsource_loss_issue_batch` (`tenant_id`, `issue_batch_id`, `deleted`)
+    UNIQUE KEY `uk_outsource_loss_order_issue_batch` (`order_id`, `issue_batch_id`, `deleted`),
+    KEY `idx_outsource_loss_order` (`order_id`, `deleted`),
+    KEY `idx_outsource_loss_issue_batch` (`issue_batch_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP outsource loss detail';

@@ -11,7 +11,7 @@ SET @stmt_index_exists := (
 );
 SET @stmt_sql := IF(
     @stmt_index_exists = 0,
-    'ALTER TABLE `erp_ap_statement` ADD INDEX `idx_ap_statement_supplier_biz_status_deleted` (`tenant_id`, `supplier_id`, `biz_type`, `status`, `deleted`, `biz_id`)',
+    'ALTER TABLE `erp_ap_statement` ADD INDEX `idx_ap_statement_supplier_biz_status_deleted` (`supplier_id`, `biz_type`, `status`, `deleted`, `biz_id`)',
     'SELECT 1'
 );
 PREPARE stmt_index FROM @stmt_sql;
@@ -27,7 +27,7 @@ SET @pii_index_exists := (
 );
 SET @pii_sql := IF(
     @pii_index_exists = 0,
-    'ALTER TABLE `erp_purchase_in_items` ADD INDEX `idx_purchase_in_items_in_deleted` (`tenant_id`, `in_id`, `deleted`, `id`)',
+    'ALTER TABLE `erp_purchase_in_items` ADD INDEX `idx_purchase_in_items_in_deleted` (`in_id`, `deleted`, `id`)',
     'SELECT 1'
 );
 PREPARE pii_index FROM @pii_sql;

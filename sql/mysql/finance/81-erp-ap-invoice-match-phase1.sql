@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP ap invoice match phase1
 -- =====================================================
 
@@ -28,13 +28,12 @@ CREATE TABLE IF NOT EXISTS `erp_ap_invoice` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ap_invoice_supplier_no` (`tenant_id`, `supplier_id`, `invoice_no`, `deleted`),
-    KEY `idx_ap_invoice_no` (`tenant_id`, `invoice_no`, `deleted`),
-    KEY `idx_ap_invoice_supplier_status` (`tenant_id`, `supplier_id`, `match_status`, `deleted`),
-    KEY `idx_ap_invoice_supplier_type` (`tenant_id`, `supplier_id`, `invoice_type`, `deleted`),
-    KEY `idx_ap_invoice_invoice_date` (`tenant_id`, `invoice_date`, `deleted`)
+    UNIQUE KEY `uk_ap_invoice_supplier_no` (`supplier_id`, `invoice_no`, `deleted`),
+    KEY `idx_ap_invoice_no` (`invoice_no`, `deleted`),
+    KEY `idx_ap_invoice_supplier_status` (`supplier_id`, `match_status`, `deleted`),
+    KEY `idx_ap_invoice_supplier_type` (`supplier_id`, `invoice_type`, `deleted`),
+    KEY `idx_ap_invoice_invoice_date` (`invoice_date`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AP invoice';
 
 CREATE TABLE IF NOT EXISTS `erp_ap_invoice_match_item` (
@@ -57,13 +56,12 @@ CREATE TABLE IF NOT EXISTS `erp_ap_invoice_match_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_ap_invoice_match_item_invoice_status` (`tenant_id`, `invoice_id`, `status`, `deleted`),
-    KEY `idx_ap_invoice_match_item_statement_status` (`tenant_id`, `ap_statement_id`, `status`, `deleted`),
-    KEY `idx_ap_invoice_match_item_purchase_in_status` (`tenant_id`, `source_purchase_in_id`, `status`, `deleted`),
-    KEY `idx_ap_invoice_match_item_purchase_in_item_status` (`tenant_id`, `source_purchase_in_item_id`, `status`, `deleted`),
-    KEY `idx_ap_invoice_match_item_supplier_status` (`tenant_id`, `supplier_id`, `status`, `deleted`)
+    KEY `idx_ap_invoice_match_item_invoice_status` (`invoice_id`, `status`, `deleted`),
+    KEY `idx_ap_invoice_match_item_statement_status` (`ap_statement_id`, `status`, `deleted`),
+    KEY `idx_ap_invoice_match_item_purchase_in_status` (`source_purchase_in_id`, `status`, `deleted`),
+    KEY `idx_ap_invoice_match_item_purchase_in_item_status` (`source_purchase_in_item_id`, `status`, `deleted`),
+    KEY `idx_ap_invoice_match_item_supplier_status` (`supplier_id`, `status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AP invoice match item';
 
 SET @finance_root_id := COALESCE(
@@ -196,16 +194,13 @@ WHERE @ap_invoice_menu_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 FROM `system_menu`
     WHERE `permission` = 'erp:ap-invoice:update' AND `deleted` = b'0'
-  );
-
-SET @admin_tenant_id := COALESCE(
-    (SELECT `tenant_id` FROM `system_role` WHERE `id` = 1 LIMIT 1),
+  );,
     1
 );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT 1, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', @admin_tenant_id
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT 1, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM (
     SELECT @finance_root_id AS `menu_id`
     UNION
@@ -220,13 +215,12 @@ WHERE target.`menu_id` IS NOT NULL
     SELECT 1 FROM `system_role_menu` rm
     WHERE rm.`role_id` = 1
       AND rm.`menu_id` = target.`menu_id`
-      AND rm.`tenant_id` = @admin_tenant_id
       AND rm.`deleted` = b'0'
   );
 
 INSERT INTO `system_role_menu`
-(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
-SELECT DISTINCT role_menu.`role_id`, target.`menu_id`, '1', NOW(), '1', NOW(), b'0', role_menu.`tenant_id`
+(`role_id`, `menu_id`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+SELECT DISTINCT role_menu.`role_id`, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
 FROM `system_role_menu` role_menu
 JOIN (
     SELECT @finance_root_id AS `menu_id`
@@ -254,7 +248,6 @@ WHERE role_menu.`deleted` = b'0'
       SELECT 1 FROM `system_role_menu` rm
       WHERE rm.`role_id` = role_menu.`role_id`
         AND rm.`menu_id` = target.`menu_id`
-        AND rm.`tenant_id` = role_menu.`tenant_id`
         AND rm.`deleted` = b'0'
   );
 

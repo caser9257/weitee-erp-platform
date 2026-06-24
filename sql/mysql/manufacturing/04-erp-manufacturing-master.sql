@@ -1,4 +1,4 @@
-/*
+﻿/*
  Navicat / MySQL Init Script
  Target: Manufacturing Master Data
  Schema: ruoyi-vue-pro
@@ -28,9 +28,8 @@ CREATE TABLE `erp_process_route` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_process_route_code` (`tenant_id`, `route_code`),
+  UNIQUE KEY `uk_erp_process_route_code` (`route_code`),
   KEY `idx_erp_process_route_product_id` (`product_id`),
   KEY `idx_erp_process_route_product_version` (`product_id`, `version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 工艺路线主表';
@@ -63,9 +62,8 @@ CREATE TABLE `erp_process_route_step` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_process_route_step_no` (`tenant_id`, `route_id`, `step_no`),
+  UNIQUE KEY `uk_erp_process_route_step_no` (`route_id`, `step_no`),
   KEY `idx_erp_process_route_step_route_id` (`route_id`),
   KEY `idx_erp_process_route_step_center_id` (`work_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 工艺路线工序表';
@@ -88,9 +86,8 @@ CREATE TABLE `erp_work_center` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_work_center_code` (`tenant_id`, `center_code`)
+  UNIQUE KEY `uk_erp_work_center_code` (`center_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 工作中心表';
 
 -- ----------------------------
@@ -115,9 +112,8 @@ CREATE TABLE `erp_device` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_device_code` (`tenant_id`, `device_code`),
+  UNIQUE KEY `uk_erp_device_code` (`device_code`),
   KEY `idx_erp_device_center_id` (`work_center_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 设备台账表';
 
@@ -140,7 +136,6 @@ CREATE TABLE `erp_device_change_log` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_device_change_log_device_id` (`device_id`),
   KEY `idx_erp_device_change_log_biz` (`biz_type`, `biz_id`)

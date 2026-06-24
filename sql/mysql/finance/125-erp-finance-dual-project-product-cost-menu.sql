@@ -1,4 +1,4 @@
--- 项目双账成本 & 产品双账成本菜单与权限
+﻿-- 项目双账成本 & 产品双账成本菜单与权限
 -- 参照 123-erp-finance-dual-ledger-result-menu.sql 的模式
 
 SET NAMES utf8mb4;
@@ -6,7 +6,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id := 1;
 
 -- ============================================================
 -- 1. 定位父级菜单
@@ -277,8 +276,8 @@ SET @product_dual_cost_export_id := (
 );
 
 -- 授权页面和查询按钮给财务主管和财务经办
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM system_role r
 JOIN (
     SELECT @project_dual_cost_page_id AS menu_id
@@ -294,12 +293,12 @@ WHERE r.deleted = b'0'
   AND NOT EXISTS (
       SELECT 1 FROM system_role_menu rm
       WHERE rm.role_id = r.id AND rm.menu_id = t.menu_id
-        AND rm.deleted = b'0' AND rm.tenant_id = @tenant_id
+        AND rm.deleted = b'0'
   );
 
 -- 重跑按钮只授权给财务主管
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM system_role r
 JOIN (
     SELECT @project_dual_cost_rebuild_id AS menu_id
@@ -311,7 +310,7 @@ WHERE r.deleted = b'0'
   AND NOT EXISTS (
       SELECT 1 FROM system_role_menu rm
       WHERE rm.role_id = r.id AND rm.menu_id = t.menu_id
-        AND rm.deleted = b'0' AND rm.tenant_id = @tenant_id
+        AND rm.deleted = b'0'
   );
 
 -- ============================================================

@@ -1,4 +1,4 @@
--- 年末财务决算一体化补强方案 DDL 变更
+﻿-- 年末财务决算一体化补强方案 DDL 变更
 -- 包含：成本中心、库存成本追踪、无形资产类型隔离、租赁费用、盘点高级功能
 
 -- ============================================================
@@ -113,7 +113,7 @@ WHERE s.`count` > 0;
 UPDATE `erp_finance_asset` SET `asset_type` = 0 WHERE `asset_type` IS NULL;
 
 -- 7.4 费用类型字典数据：新增"仪器租赁费"类型
-INSERT INTO `system_dict_data` (`id`, `sort`, `label`, `value`, `dict_type`, `status`, `color_type`, `css_class`, `remark`, `biz_attributes`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+INSERT INTO `system_dict_data` (`id`, `sort`, `label`, `value`, `dict_type`, `status`, `color_type`, `css_class`, `remark`, `biz_attributes`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES (1500, 100, '仪器租赁费', '100', 'erp_expense_type', 0, '', '', '仪器设备租赁费用',
         '{"core":false,"costCenterRequired":true,"leaseContractRequired":true,"category":"LEASE"}',
         '1', NOW(), '1', NOW(), b'0', 0)
@@ -125,23 +125,23 @@ ON DUPLICATE KEY UPDATE `biz_attributes` = VALUES(`biz_attributes`);
 
 -- 8.1 无形资产摊销凭证模板
 -- 借：管理费用/研发支出-无形资产摊销，贷：累计摊销
-INSERT INTO `erp_finance_voucher_template` (`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+INSERT INTO `erp_finance_voucher_template` (`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES (200, 1, 90, '无形资产摊销凭证模板', 0, b'1', '无形资产摊销', '无形资产摊销自动生成凭证', '1', NOW(), '1', NOW(), b'0', 0)
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
 -- 8.2 盘亏结转凭证模板
 -- 借：管理费用/营业外支出/其他应收款，贷：待处理财产损溢
-INSERT INTO `erp_finance_voucher_template` (`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+INSERT INTO `erp_finance_voucher_template` (`id`, `ledger_id`, `biz_type`, `name`, `status`, `auto_generate`, `default_summary`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES (201, 1, 91, '盘亏结转凭证模板', 0, b'1', '盘亏结转', '盘点盘亏自动生成凭证', '1', NOW(), '1', NOW(), b'0', 0)
 ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 
 -- 8.3 确认会计科目表中"1702 累计摊销"科目已创建
-INSERT INTO `erp_finance_subject` (`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+INSERT INTO `erp_finance_subject` (`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES (1702, 1, NULL, '1702', '累计摊销', 1, 2, b'1', 0, 0, '无形资产摊销备抵科目', '1', NOW(), '1', NOW(), b'0', 0)
 ON DUPLICATE KEY UPDATE `subject_name` = VALUES(`subject_name`);
 
 -- 8.4 确认"1901 待处理财产损溢"科目已创建
-INSERT INTO `erp_finance_subject` (`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+INSERT INTO `erp_finance_subject` (`id`, `ledger_id`, `parent_id`, `subject_code`, `subject_name`, `subject_type`, `balance_direction`, `leaf`, `status`, `sort`, `remark`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES (1901, 1, NULL, '1901', '待处理财产损溢', 1, 1, b'1', 0, 0, '盘盈盘亏待处理科目', '1', NOW(), '1', NOW(), b'0', 0)
 ON DUPLICATE KEY UPDATE `subject_name` = VALUES(`subject_name`);
 

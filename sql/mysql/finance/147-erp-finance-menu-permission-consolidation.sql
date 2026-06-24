@@ -1,4 +1,4 @@
--- 财务菜单与权限整合脚本
+﻿-- 财务菜单与权限整合脚本
 -- 统一承接并替代以下分片：
 -- 96-erp-finance-secondary-menu-restore.sql
 -- 102-erp-finance-role-readonly-permission-fix.sql
@@ -14,7 +14,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 USE `ruoyi-vue-pro`;
 
-SET @tenant_id := 1;
 
 SET @erp_root_id := (
   SELECT id
@@ -771,8 +770,8 @@ SET @role_clerk_id := (
   LIMIT 1
 );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT @role_mgr_id, m.id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT @role_mgr_id, m.id, '1', NOW(), '1', NOW(), b'0'
 FROM system_menu m
 WHERE @role_mgr_id IS NOT NULL
   AND m.deleted = b'0'
@@ -869,11 +868,10 @@ WHERE @role_mgr_id IS NOT NULL
     WHERE rm.role_id = @role_mgr_id
       AND rm.menu_id = m.id
       AND rm.deleted = b'0'
-      AND rm.tenant_id = @tenant_id
   );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT @role_clerk_id, m.id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT @role_clerk_id, m.id, '1', NOW(), '1', NOW(), b'0'
 FROM system_menu m
 WHERE @role_clerk_id IS NOT NULL
   AND m.deleted = b'0'
@@ -915,11 +913,10 @@ WHERE @role_clerk_id IS NOT NULL
     WHERE rm.role_id = @role_clerk_id
       AND rm.menu_id = m.id
       AND rm.deleted = b'0'
-      AND rm.tenant_id = @tenant_id
   );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT DISTINCT role_pool.role_id, m.id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT DISTINCT role_pool.role_id, m.id, '1', NOW(), '1', NOW(), b'0'
 FROM (
   SELECT 1 AS role_id
   UNION ALL
@@ -949,7 +946,6 @@ WHERE NOT EXISTS (
   WHERE rm.role_id = role_pool.role_id
     AND rm.menu_id = m.id
     AND rm.deleted = b'0'
-    AND rm.tenant_id = @tenant_id
 );
 
 DELETE rm
@@ -957,7 +953,6 @@ FROM system_role_menu rm
 JOIN system_menu m ON m.id = rm.menu_id
 WHERE rm.role_id = @role_mgr_id
   AND rm.deleted = b'0'
-  AND rm.tenant_id = @tenant_id
   AND m.deleted = b'0'
   AND m.component = 'mp/account/index'
   AND m.path = 'account';
@@ -967,7 +962,6 @@ FROM system_role_menu rm
 JOIN system_role r ON r.id = rm.role_id AND r.deleted = b'0'
 JOIN system_menu m ON m.id = rm.menu_id AND m.deleted = b'0'
 WHERE rm.deleted = b'0'
-  AND rm.tenant_id = @tenant_id
   AND r.code IN ('erp_finance_manager', 'erp_finance_clerk', 'erp_finance_purchase_collab')
   AND (
     m.id IN (

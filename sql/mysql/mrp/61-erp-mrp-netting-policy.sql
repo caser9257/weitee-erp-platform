@@ -1,4 +1,4 @@
-SET NAMES utf8mb4;
+﻿SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 CREATE TABLE IF NOT EXISTS `erp_mrp_netting_policy` (
@@ -14,10 +14,9 @@ CREATE TABLE IF NOT EXISTS `erp_mrp_netting_policy` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_mrp_netting_policy_tenant_code` (`tenant_id`, `code`),
-  KEY `idx_erp_mrp_netting_policy_default` (`tenant_id`, `default_flag`, `enable_flag`)
+  UNIQUE KEY `uk_erp_mrp_netting_policy_tenant_code` (`code`),
+  KEY `idx_erp_mrp_netting_policy_default` (`default_flag`, `enable_flag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `erp_mrp_netting_policy_line` (
@@ -32,10 +31,9 @@ CREATE TABLE IF NOT EXISTS `erp_mrp_netting_policy_line` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_mrp_netting_policy_line` (`tenant_id`, `policy_id`, `component_code`),
-  KEY `idx_erp_mrp_netting_policy_line_policy` (`tenant_id`, `policy_id`, `sequence_no`)
+  UNIQUE KEY `uk_erp_mrp_netting_policy_line` (`policy_id`, `component_code`),
+  KEY `idx_erp_mrp_netting_policy_line_policy` (`policy_id`, `sequence_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `erp_mrp_policy_binding` (
@@ -48,10 +46,9 @@ CREATE TABLE IF NOT EXISTS `erp_mrp_policy_binding` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_mrp_policy_binding_tenant_business_type` (`tenant_id`, `business_type`),
-  KEY `idx_erp_mrp_policy_binding_policy` (`tenant_id`, `policy_id`)
+  UNIQUE KEY `uk_erp_mrp_policy_binding_tenant_business_type` (`business_type`),
+  KEY `idx_erp_mrp_policy_binding_policy` (`policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `erp_mrp_result_component` (
@@ -72,10 +69,9 @@ CREATE TABLE IF NOT EXISTS `erp_mrp_result_component` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  KEY `idx_erp_mrp_result_component_plan_result` (`tenant_id`, `plan_id`, `result_id`),
-  KEY `idx_erp_mrp_result_component_result` (`tenant_id`, `result_id`, `id`)
+  KEY `idx_erp_mrp_result_component_plan_result` (`plan_id`, `result_id`),
+  KEY `idx_erp_mrp_result_component_result` (`result_id`, `id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET @add_mrp_result_policy_code = (
@@ -120,8 +116,7 @@ INSERT INTO `erp_mrp_netting_policy` (
   `default_flag`,
   `remark`,
   `creator`,
-  `updater`,
-  `tenant_id`
+  `updater`
 )
 SELECT
   'STANDARD_V1',
@@ -131,22 +126,19 @@ SELECT
   b'1',
   '兼容现有轻量 MRP 默认口径',
   '',
-  '',
-  0
+  ''
 FROM DUAL
 WHERE NOT EXISTS (
   SELECT 1
   FROM `erp_mrp_netting_policy`
-  WHERE `tenant_id` = 0
-    AND `code` = 'STANDARD_V1'
+  WHERE `code` = 'STANDARD_V1'
     AND `deleted` = b'0'
 );
 
 SET @standard_policy_id = (
   SELECT `id`
   FROM `erp_mrp_netting_policy`
-  WHERE `tenant_id` = 0
-    AND `code` = 'STANDARD_V1'
+  WHERE `code` = 'STANDARD_V1'
     AND `deleted` = b'0'
   ORDER BY `id` DESC
   LIMIT 1
@@ -159,17 +151,15 @@ INSERT INTO `erp_mrp_netting_policy_line` (
   `enable_flag`,
   `sequence_no`,
   `creator`,
-  `updater`,
-  `tenant_id`
+  `updater`
 )
-SELECT @standard_policy_id, 'SAFETY_STOCK', 'DEMAND_ADJUST', b'1', 0, '', '', 0
+SELECT @standard_policy_id, 'SAFETY_STOCK', 'DEMAND_ADJUST', b'1', 0, '', ''
 FROM DUAL
 WHERE @standard_policy_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1
     FROM `erp_mrp_netting_policy_line`
-    WHERE `tenant_id` = 0
-      AND `policy_id` = @standard_policy_id
+    WHERE `policy_id` = @standard_policy_id
       AND `component_code` = 'SAFETY_STOCK'
       AND `deleted` = b'0'
   );
@@ -181,17 +171,15 @@ INSERT INTO `erp_mrp_netting_policy_line` (
   `enable_flag`,
   `sequence_no`,
   `creator`,
-  `updater`,
-  `tenant_id`
+  `updater`
 )
-SELECT @standard_policy_id, 'INCOMING_PURCHASE', 'SUPPLY_CONSUME', b'1', 10, '', '', 0
+SELECT @standard_policy_id, 'INCOMING_PURCHASE', 'SUPPLY_CONSUME', b'1', 10, '', ''
 FROM DUAL
 WHERE @standard_policy_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1
     FROM `erp_mrp_netting_policy_line`
-    WHERE `tenant_id` = 0
-      AND `policy_id` = @standard_policy_id
+    WHERE `policy_id` = @standard_policy_id
       AND `component_code` = 'INCOMING_PURCHASE'
       AND `deleted` = b'0'
   );
@@ -203,17 +191,15 @@ INSERT INTO `erp_mrp_netting_policy_line` (
   `enable_flag`,
   `sequence_no`,
   `creator`,
-  `updater`,
-  `tenant_id`
+  `updater`
 )
-SELECT @standard_policy_id, 'WIP_PRODUCTION', 'SUPPLY_CONSUME', b'1', 20, '', '', 0
+SELECT @standard_policy_id, 'WIP_PRODUCTION', 'SUPPLY_CONSUME', b'1', 20, '', ''
 FROM DUAL
 WHERE @standard_policy_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1
     FROM `erp_mrp_netting_policy_line`
-    WHERE `tenant_id` = 0
-      AND `policy_id` = @standard_policy_id
+    WHERE `policy_id` = @standard_policy_id
       AND `component_code` = 'WIP_PRODUCTION'
       AND `deleted` = b'0'
   );
@@ -225,17 +211,15 @@ INSERT INTO `erp_mrp_netting_policy_line` (
   `enable_flag`,
   `sequence_no`,
   `creator`,
-  `updater`,
-  `tenant_id`
+  `updater`
 )
-SELECT @standard_policy_id, 'ON_HAND_AVAILABLE', 'SUPPLY_CONSUME', b'1', 30, '', '', 0
+SELECT @standard_policy_id, 'ON_HAND_AVAILABLE', 'SUPPLY_CONSUME', b'1', 30, '', ''
 FROM DUAL
 WHERE @standard_policy_id IS NOT NULL
   AND NOT EXISTS (
     SELECT 1
     FROM `erp_mrp_netting_policy_line`
-    WHERE `tenant_id` = 0
-      AND `policy_id` = @standard_policy_id
+    WHERE `policy_id` = @standard_policy_id
       AND `component_code` = 'ON_HAND_AVAILABLE'
       AND `deleted` = b'0'
   );

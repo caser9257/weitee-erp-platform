@@ -17,12 +17,11 @@ CREATE TABLE `erp_production_issue_voucher` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_production_issue_voucher_no` (`tenant_id`, `voucher_no`, `deleted`),
-    UNIQUE KEY `uk_production_issue_voucher_issue` (`tenant_id`, `issue_id`, `deleted`),
-    KEY `idx_production_issue_voucher_order` (`tenant_id`, `production_order_id`, `deleted`),
-    KEY `idx_production_issue_voucher_time` (`tenant_id`, `voucher_time`, `deleted`)
+    UNIQUE KEY `uk_production_issue_voucher_no` (`voucher_no`, `deleted`),
+    UNIQUE KEY `uk_production_issue_voucher_issue` (`issue_id`, `deleted`),
+    KEY `idx_production_issue_voucher_order` (`production_order_id`, `deleted`),
+    KEY `idx_production_issue_voucher_time` (`voucher_time`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP production issue voucher';
 
 CREATE TABLE `erp_production_issue_voucher_item` (
@@ -39,10 +38,9 @@ CREATE TABLE `erp_production_issue_voucher_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_production_issue_voucher_item_voucher` (`tenant_id`, `voucher_id`, `deleted`),
-    KEY `idx_production_issue_voucher_item_issue_item` (`tenant_id`, `issue_item_id`, `deleted`)
+    KEY `idx_production_issue_voucher_item_voucher` (`voucher_id`, `deleted`),
+    KEY `idx_production_issue_voucher_item_issue_item` (`issue_item_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP production issue voucher item';
 
 CREATE TABLE `erp_production_cost_entry` (
@@ -58,8 +56,7 @@ CREATE TABLE `erp_production_cost_entry` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_production_cost_entry_order` (`tenant_id`, `production_order_id`, `deleted`),
-    KEY `idx_production_cost_entry_month_type` (`tenant_id`, `accounting_month`, `cost_type`, `deleted`)
+    KEY `idx_production_cost_entry_order` (`production_order_id`, `deleted`),
+    KEY `idx_production_cost_entry_month_type` (`accounting_month`, `cost_type`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP production cost entry';

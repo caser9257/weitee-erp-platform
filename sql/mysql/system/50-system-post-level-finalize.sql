@@ -1,10 +1,9 @@
--- post level finalization for existing data
+﻿-- post level finalization for existing data
 -- purpose:
 -- 1. backfill known post levels in system_post
 -- 2. remove current unclassified dirty values for imported post codes
 -- 3. keep a final check query at the end
 
-SET @TENANT_ID = 1;
 SET @LEVEL_HIGH = CONVERT(0xE9AB98E7BAA7 USING utf8mb4);
 SET @LEVEL_MIDDLE = CONVERT(0xE4B8ADE7BAA7 USING utf8mb4);
 SET @LEVEL_PRIMARY = CONVERT(0xE5889DE7BAA7 USING utf8mb4);
@@ -72,7 +71,6 @@ SET level = CASE
 END,
 updater = 'admin',
 update_time = NOW()
-WHERE tenant_id = @TENANT_ID
   AND deleted = b'0'
   AND code IN (
     'stat_project_management',
@@ -130,7 +128,6 @@ COMMIT;
 -- if this result set is empty, current imported known posts no longer remain unclassified
 SELECT id, dept_id, code, name, level
 FROM system_post
-WHERE tenant_id = @TENANT_ID
   AND deleted = b'0'
   AND (level IS NULL OR TRIM(level) = '' OR level = @LEVEL_UNCLASSIFIED)
 ORDER BY dept_id, sort, id;

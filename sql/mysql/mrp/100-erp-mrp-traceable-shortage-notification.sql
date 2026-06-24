@@ -1,4 +1,4 @@
-/*
+﻿/*
  Target: ERP MRP traceable shortage notification
  Schema: ruoyi-vue-pro
  Date: 2026-05-20
@@ -57,12 +57,11 @@ SET @create_mrp_trace_node = (
       `updater` varchar(64) DEFAULT '''',
       `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       `deleted` bit(1) NOT NULL DEFAULT b''0'',
-      `tenant_id` bigint NOT NULL DEFAULT 0,
       PRIMARY KEY (`id`),
-      UNIQUE KEY `uk_erp_mrp_trace_node_tenant_plan_path` (`tenant_id`, `plan_id`, `trace_path_key`),
-      KEY `idx_erp_mrp_trace_node_tenant_plan` (`tenant_id`, `plan_id`, `id`),
-      KEY `idx_erp_mrp_trace_node_tenant_parent` (`tenant_id`, `parent_trace_node_id`, `id`),
-      KEY `idx_erp_mrp_trace_node_tenant_material` (`tenant_id`, `material_id`, `id`)
+      UNIQUE KEY `uk_erp_mrp_trace_node_tenant_plan_path` (`plan_id`, `trace_path_key`),
+      KEY `idx_erp_mrp_trace_node_tenant_plan` (`plan_id`, `id`),
+      KEY `idx_erp_mrp_trace_node_tenant_parent` (`parent_trace_node_id`, `id`),
+      KEY `idx_erp_mrp_trace_node_tenant_material` (`material_id`, `id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
   )
 );

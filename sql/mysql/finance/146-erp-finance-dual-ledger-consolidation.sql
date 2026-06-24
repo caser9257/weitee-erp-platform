@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP 双账套最终整合脚本
 -- 覆盖范围：
 -- 1. 双账套账簿映射表
@@ -31,12 +31,11 @@ CREATE TABLE IF NOT EXISTS `erp_finance_dual_ledger_config` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_dual_ledger_config_biz_type` (`tenant_id`, `biz_type`, `deleted`),
-    KEY `idx_dual_ledger_config_status` (`tenant_id`, `status`, `deleted`),
-    KEY `idx_dual_ledger_config_external` (`tenant_id`, `external_ledger_id`, `deleted`),
-    KEY `idx_dual_ledger_config_internal` (`tenant_id`, `internal_ledger_id`, `deleted`)
+    UNIQUE KEY `uk_dual_ledger_config_biz_type` (`biz_type`, `deleted`),
+    KEY `idx_dual_ledger_config_status` (`status`, `deleted`),
+    KEY `idx_dual_ledger_config_external` (`external_ledger_id`, `deleted`),
+    KEY `idx_dual_ledger_config_internal` (`internal_ledger_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 双账套账簿映射配置';
 
 CREATE TABLE IF NOT EXISTS `erp_finance_dual_ledger_diff_config` (
@@ -57,12 +56,11 @@ CREATE TABLE IF NOT EXISTS `erp_finance_dual_ledger_diff_config` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_dual_ledger_diff_biz_item` (`tenant_id`, `biz_type`, `diff_item_type`, `deleted`),
-    KEY `idx_dual_ledger_diff_status` (`tenant_id`, `status`, `deleted`),
-    KEY `idx_dual_ledger_diff_external` (`tenant_id`, `external_source_type`, `deleted`),
-    KEY `idx_dual_ledger_diff_internal` (`tenant_id`, `internal_source_type`, `deleted`)
+    UNIQUE KEY `uk_dual_ledger_diff_biz_item` (`biz_type`, `diff_item_type`, `deleted`),
+    KEY `idx_dual_ledger_diff_status` (`status`, `deleted`),
+    KEY `idx_dual_ledger_diff_external` (`external_source_type`, `deleted`),
+    KEY `idx_dual_ledger_diff_internal` (`internal_source_type`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 双账套差异项口径配置';
 
 SET @schema_name := DATABASE();
@@ -452,8 +450,8 @@ SET @dual_ledger_result_recompute_id := (
     ORDER BY id LIMIT 1
 );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0', r.tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM system_role r
 JOIN (
     SELECT @erp_root_id AS menu_id
@@ -478,11 +476,10 @@ WHERE r.deleted = b'0'
       WHERE rm.role_id = r.id
         AND rm.menu_id = t.menu_id
         AND rm.deleted = b'0'
-        AND rm.tenant_id = r.tenant_id
   );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0', r.tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM system_role r
 JOIN (
     SELECT @erp_root_id AS menu_id
@@ -503,11 +500,10 @@ WHERE r.deleted = b'0'
       WHERE rm.role_id = r.id
         AND rm.menu_id = t.menu_id
         AND rm.deleted = b'0'
-        AND rm.tenant_id = r.tenant_id
   );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0', r.tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT r.id, t.menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM system_role r
 JOIN (
     SELECT @erp_root_id AS menu_id
@@ -524,11 +520,10 @@ WHERE r.deleted = b'0'
       WHERE rm.role_id = r.id
         AND rm.menu_id = t.menu_id
         AND rm.deleted = b'0'
-        AND rm.tenant_id = r.tenant_id
   );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT r.id, @dual_ledger_result_recompute_id, '1', NOW(), '1', NOW(), b'0', r.tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT r.id, @dual_ledger_result_recompute_id, '1', NOW(), '1', NOW(), b'0'
 FROM system_role r
 WHERE r.deleted = b'0'
   AND r.code = 'erp_finance_manager'
@@ -539,7 +534,6 @@ WHERE r.deleted = b'0'
       WHERE rm.role_id = r.id
         AND rm.menu_id = @dual_ledger_result_recompute_id
         AND rm.deleted = b'0'
-        AND rm.tenant_id = r.tenant_id
   );
 
 SET FOREIGN_KEY_CHECKS = 1;

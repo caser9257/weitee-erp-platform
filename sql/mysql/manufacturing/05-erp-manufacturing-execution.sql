@@ -1,4 +1,4 @@
-/*
+﻿/*
  Navicat / MySQL Init Script
  Target: Manufacturing Execution
  Schema: ruoyi-vue-pro
@@ -32,9 +32,8 @@ CREATE TABLE `erp_production_order_step` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_production_order_step_no` (`tenant_id`, `production_order_id`, `step_no`),
+  UNIQUE KEY `uk_erp_production_order_step_no` (`production_order_id`, `step_no`),
   KEY `idx_erp_production_order_step_order_id` (`production_order_id`),
   KEY `idx_erp_production_order_step_route_step_id` (`route_step_id`),
   KEY `idx_erp_production_order_step_center_id` (`work_center_id`),
@@ -60,9 +59,8 @@ CREATE TABLE `erp_production_report` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_production_report_no` (`tenant_id`, `report_no`),
+  UNIQUE KEY `uk_erp_production_report_no` (`report_no`),
   KEY `idx_erp_production_report_order_id` (`production_order_id`),
   KEY `idx_erp_production_report_batch_no` (`batch_no`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 生产报工主表';
@@ -88,7 +86,6 @@ CREATE TABLE `erp_production_report_item` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_production_report_item_report_id` (`report_id`),
   KEY `idx_erp_production_report_item_step_id` (`production_order_step_id`),
@@ -116,9 +113,8 @@ CREATE TABLE `erp_production_completion` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_production_completion_no` (`tenant_id`, `completion_no`),
+  UNIQUE KEY `uk_erp_production_completion_no` (`completion_no`),
   KEY `idx_erp_production_completion_order_id` (`production_order_id`),
   KEY `idx_erp_production_completion_stock_in_id` (`stock_in_id`),
   KEY `idx_erp_production_completion_batch_no` (`batch_no`)
@@ -147,7 +143,6 @@ CREATE TABLE `erp_production_material` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_production_material_order_id` (`production_order_id`),
   KEY `idx_erp_production_material_step_id` (`production_order_step_id`),
@@ -172,9 +167,8 @@ CREATE TABLE `erp_material_issue` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_material_issue_no` (`tenant_id`, `issue_no`),
+  UNIQUE KEY `uk_erp_material_issue_no` (`issue_no`),
   KEY `idx_erp_material_issue_order_id` (`production_order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 生产领料主表';
 
@@ -199,7 +193,6 @@ CREATE TABLE `erp_material_issue_item` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_material_issue_item_issue_id` (`issue_id`),
   KEY `idx_erp_material_issue_item_material_id` (`material_id`),
@@ -224,9 +217,8 @@ CREATE TABLE `erp_material_return` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_material_return_no` (`tenant_id`, `return_no`),
+  UNIQUE KEY `uk_erp_material_return_no` (`return_no`),
   KEY `idx_erp_material_return_order_id` (`production_order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 生产退料主表';
 
@@ -249,7 +241,6 @@ CREATE TABLE `erp_material_return_item` (
   `updater` varchar(64) DEFAULT '' COMMENT '更新者',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` bigint NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
   KEY `idx_erp_material_return_item_return_id` (`return_id`),
   KEY `idx_erp_material_return_item_material_id` (`material_id`),

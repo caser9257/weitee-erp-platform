@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP AP estimate phase1
 -- =====================================================
 
@@ -30,12 +30,11 @@ CREATE TABLE `erp_ap_estimate` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ap_estimate_no` (`tenant_id`, `estimate_no`, `deleted`),
-    UNIQUE KEY `uk_ap_estimate_source` (`tenant_id`, `source_biz_type`, `source_biz_id`, `deleted`),
-    KEY `idx_ap_estimate_month_status` (`tenant_id`, `estimate_month`, `status`, `deleted`),
-    KEY `idx_ap_estimate_supplier` (`tenant_id`, `supplier_id`, `deleted`)
+    UNIQUE KEY `uk_ap_estimate_no` (`estimate_no`, `deleted`),
+    UNIQUE KEY `uk_ap_estimate_source` (`source_biz_type`, `source_biz_id`, `deleted`),
+    KEY `idx_ap_estimate_month_status` (`estimate_month`, `status`, `deleted`),
+    KEY `idx_ap_estimate_supplier` (`supplier_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AP estimate';
 
 CREATE TABLE `erp_ap_estimate_item` (
@@ -60,9 +59,8 @@ CREATE TABLE `erp_ap_estimate_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_ap_estimate_item_estimate_id` (`tenant_id`, `estimate_id`, `deleted`),
-    KEY `idx_ap_estimate_item_source_in_item` (`tenant_id`, `source_purchase_in_item_id`, `deleted`),
-    KEY `idx_ap_estimate_item_project` (`tenant_id`, `project_id`, `deleted`)
+    KEY `idx_ap_estimate_item_estimate_id` (`estimate_id`, `deleted`),
+    KEY `idx_ap_estimate_item_source_in_item` (`source_purchase_in_item_id`, `deleted`),
+    KEY `idx_ap_estimate_item_project` (`project_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AP estimate item';

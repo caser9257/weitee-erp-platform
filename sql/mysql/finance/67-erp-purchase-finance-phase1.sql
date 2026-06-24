@@ -28,12 +28,11 @@ CREATE TABLE `erp_ap_statement` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_ap_statement_biz` (`tenant_id`, `biz_type`, `biz_id`, `deleted`),
-    UNIQUE KEY `uk_ap_statement_no` (`tenant_id`, `statement_no`, `deleted`),
-    KEY `idx_ap_statement_supplier_status` (`tenant_id`, `supplier_id`, `status`, `deleted`),
-    KEY `idx_ap_statement_due_date` (`tenant_id`, `due_date`, `deleted`)
+    UNIQUE KEY `uk_ap_statement_biz` (`biz_type`, `biz_id`, `deleted`),
+    UNIQUE KEY `uk_ap_statement_no` (`statement_no`, `deleted`),
+    KEY `idx_ap_statement_supplier_status` (`supplier_id`, `status`, `deleted`),
+    KEY `idx_ap_statement_due_date` (`due_date`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AP statement';
 
 CREATE TABLE `erp_ap_statement_item` (
@@ -52,10 +51,9 @@ CREATE TABLE `erp_ap_statement_item` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_ap_statement_item_statement_id` (`tenant_id`, `statement_id`, `deleted`),
-    KEY `idx_ap_statement_item_ref` (`tenant_id`, `ref_type`, `ref_id`, `deleted`)
+    KEY `idx_ap_statement_item_statement_id` (`statement_id`, `deleted`),
+    KEY `idx_ap_statement_item_ref` (`ref_type`, `ref_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AP statement item';
 
 CREATE TABLE `erp_finance_payment_allocate` (
@@ -75,12 +73,11 @@ CREATE TABLE `erp_finance_payment_allocate` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_payment_allocate_item_statement` (`tenant_id`, `payment_item_id`, `ap_statement_id`, `deleted`),
-    KEY `idx_payment_allocate_statement_status` (`tenant_id`, `ap_statement_id`, `status`, `deleted`),
-    KEY `idx_payment_allocate_payment_status` (`tenant_id`, `payment_id`, `status`, `deleted`),
-    KEY `idx_payment_allocate_biz` (`tenant_id`, `biz_type`, `biz_id`, `status`, `deleted`)
+    UNIQUE KEY `uk_payment_allocate_item_statement` (`payment_item_id`, `ap_statement_id`, `deleted`),
+    KEY `idx_payment_allocate_statement_status` (`ap_statement_id`, `status`, `deleted`),
+    KEY `idx_payment_allocate_payment_status` (`payment_id`, `status`, `deleted`),
+    KEY `idx_payment_allocate_biz` (`biz_type`, `biz_id`, `status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP payment allocate';
 
 ALTER TABLE `erp_finance_payment_item`

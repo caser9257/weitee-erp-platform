@@ -1,4 +1,4 @@
--- Light IQC incremental upgrade
+﻿-- Light IQC incremental upgrade
 -- Switch to your target database before running:
 -- USE `ruoyi-vue-pro`;
 
@@ -156,7 +156,6 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_quality_round` (
   `updater` varchar(64) DEFAULT '' COMMENT 'updater',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT 'tenant id',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_purchase_in_quality_round_item_no` (`quality_item_id`, `round_no`),
   KEY `idx_purchase_in_quality_round_quality_id` (`quality_id`)
@@ -178,7 +177,6 @@ CREATE TABLE IF NOT EXISTS `erp_purchase_in_quality_defect` (
   `updater` varchar(64) DEFAULT '' COMMENT 'updater',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT 'tenant id',
   PRIMARY KEY (`id`),
   KEY `idx_purchase_in_quality_defect_quality_id` (`quality_id`),
   KEY `idx_purchase_in_quality_defect_round_id` (`round_id`)
@@ -204,7 +202,6 @@ CREATE TABLE IF NOT EXISTS `erp_qc_sampling_scheme` (
   `updater` varchar(64) DEFAULT '' COMMENT 'updater',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT 'tenant id',
   PRIMARY KEY (`id`),
   KEY `idx_qc_sampling_scheme_supplier_product` (`supplier_id`, `product_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='qc sampling scheme';
@@ -222,7 +219,6 @@ CREATE TABLE IF NOT EXISTS `erp_qc_defect_reason` (
   `updater` varchar(64) DEFAULT '' COMMENT 'updater',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-  `tenant_id` bigint NOT NULL DEFAULT '0' COMMENT 'tenant id',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_qc_defect_reason_code` (`code`),
   UNIQUE KEY `uk_qc_defect_reason_name` (`name`)
@@ -230,32 +226,32 @@ CREATE TABLE IF NOT EXISTS `erp_qc_defect_reason` (
 
 -- 7. Seed data
 INSERT INTO `erp_qc_sampling_scheme`
-(`name`, `scheme_type`, `priority`, `is_default`, `status`, `remark`, `creator`, `updater`, `tenant_id`)
-SELECT 'DEFAULT_FULL_CHECK', 10, 0, b'1', 0, 'seed', 'system', 'system', 0
+(`name`, `scheme_type`, `priority`, `is_default`, `status`, `remark`, `creator`, `updater`)
+SELECT 'DEFAULT_FULL_CHECK', 10, 0, b'1', 0, 'seed', 'system', 'system'
 WHERE NOT EXISTS (
     SELECT 1 FROM `erp_qc_sampling_scheme`
     WHERE `name` = 'DEFAULT_FULL_CHECK' AND `deleted` = b'0'
 );
 
 INSERT INTO `erp_qc_defect_reason`
-(`code`, `name`, `sort`, `status`, `remark`, `creator`, `updater`, `tenant_id`)
-SELECT 'SIZE', 'SizeIssue', 10, 0, 'seed', 'system', 'system', 0
+(`code`, `name`, `sort`, `status`, `remark`, `creator`, `updater`)
+SELECT 'SIZE', 'SizeIssue', 10, 0, 'seed', 'system', 'system'
 WHERE NOT EXISTS (
     SELECT 1 FROM `erp_qc_defect_reason`
     WHERE `code` = 'SIZE' AND `deleted` = b'0'
 );
 
 INSERT INTO `erp_qc_defect_reason`
-(`code`, `name`, `sort`, `status`, `remark`, `creator`, `updater`, `tenant_id`)
-SELECT 'LOOK', 'AppearanceIssue', 20, 0, 'seed', 'system', 'system', 0
+(`code`, `name`, `sort`, `status`, `remark`, `creator`, `updater`)
+SELECT 'LOOK', 'AppearanceIssue', 20, 0, 'seed', 'system', 'system'
 WHERE NOT EXISTS (
     SELECT 1 FROM `erp_qc_defect_reason`
     WHERE `code` = 'LOOK' AND `deleted` = b'0'
 );
 
 INSERT INTO `erp_qc_defect_reason`
-(`code`, `name`, `sort`, `status`, `remark`, `creator`, `updater`, `tenant_id`)
-SELECT 'FUNC', 'FunctionIssue', 30, 0, 'seed', 'system', 'system', 0
+(`code`, `name`, `sort`, `status`, `remark`, `creator`, `updater`)
+SELECT 'FUNC', 'FunctionIssue', 30, 0, 'seed', 'system', 'system'
 WHERE NOT EXISTS (
     SELECT 1 FROM `erp_qc_defect_reason`
     WHERE `code` = 'FUNC' AND `deleted` = b'0'

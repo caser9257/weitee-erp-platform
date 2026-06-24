@@ -1,4 +1,4 @@
-/*
+﻿/*
  ERP MRP 全链路测试数据 - 场景数据
  作用：
  - 以“已审核销售订单”触发自动 MRP 的语义落地
@@ -13,7 +13,6 @@ USE `ruoyi-vue-pro`;
 
 START TRANSACTION;
 
-SET @tenant_id := COALESCE((SELECT id FROM system_tenant WHERE deleted = b'0' ORDER BY id LIMIT 1), 1);
 SET @creator := 'tester';
 
 SET @project_id := 993701;
@@ -86,11 +85,11 @@ DELETE FROM `erp_sale_order` WHERE `id` = @sale_order_id;
 INSERT INTO `erp_sale_order`
 (`id`, `no`, `status`, `process_instance_id`, `customer_id`, `project_id`, `business_type`, `settlement_type`, `source_project_id`, `source_product_id`, `account_id`, `sale_user_id`, `order_time`, `delivery_date`,
  `total_count`, `total_price`, `total_product_price`, `total_tax_price`, `discount_percent`, `discount_price`, `deposit_price`, `file_url`, `remark`, `out_count`, `return_count`, `delivery_ready_status`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@sale_order_id, 'SO-FULL-CHAIN-20260520-001', 20, NULL, 993801, @project_id, 'SELF_RESEARCH', 'PRODUCT_SALE', NULL, NULL, NULL, NULL, '2026-05-20 09:00:00', '2026-05-28',
  10.000000, 1880.000000, 1880.000000, 0.000000, 0.000000, 0.000000, 0.000000, NULL, 'MRP 全链路测试销售订单', 0.000000, 0.000000, 'NOT_READY',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `no` = VALUES(`no`),
   `status` = VALUES(`status`),
@@ -114,7 +113,6 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 UPDATE `erp_project`
 SET `sale_order_id` = @sale_order_id,
@@ -126,10 +124,10 @@ WHERE `id` = @project_id;
 
 INSERT INTO `erp_sale_order_items`
 (`id`, `order_id`, `product_id`, `product_unit_id`, `product_price`, `count`, `total_price`, `tax_percent`, `tax_price`,
- `remark`, `out_count`, `return_count`, `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `remark`, `out_count`, `return_count`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@sale_order_item_id, @sale_order_id, @root_product_id, 993021, 188.000000, 10.000000, 1880.000000, 0.000000, 0.000000,
- '触发 MRP 的根产品订单项', 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ '触发 MRP 的根产品订单项', 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `order_id` = VALUES(`order_id`),
   `product_id` = VALUES(`product_id`),
@@ -143,13 +141,12 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_sale_order_audit_log`
 (`id`, `order_id`, `action_type`, `before_status`, `after_status`, `reason`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(@audit_log_id, @sale_order_id, 'APPROVE', 10, 20, '销售单审核通过，触发 MRP 自动计划', @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+(@audit_log_id, @sale_order_id, 'APPROVE', 10, 20, '销售单审核通过，触发 MRP 自动计划', @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `action_type` = VALUES(`action_type`),
   `before_status` = VALUES(`before_status`),
@@ -158,14 +155,13 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_mrp_plan`
 (`id`, `plan_no`, `plan_name`, `plan_start_date`, `plan_end_date`, `status`, `run_time`, `operator_id`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@plan_id, 'MRP-FULL-CHAIN-PLAN-20260520-001', 'MRP 全链路验证计划', '2026-05-28', '2026-05-28', 20, NOW(), 1,
- '销售审核自动生成的 MRP 计划', @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ '销售审核自动生成的 MRP 计划', @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `plan_no` = VALUES(`plan_no`),
   `plan_name` = VALUES(`plan_name`),
@@ -178,16 +174,15 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_project_role_task`
 (`id`, `project_id`, `role_code`, `task_type`, `task_status`, `assignee_user_id`, `source_type`, `source_id`, `summary`, `due_time`, `finish_time`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@pc_task_id, @project_id, 'PC', 'SALE_APPROVED_PLAN_CONFIRM', 'TODO', 1, 'SALE_ORDER', @sale_order_id,
- '销售订单审批已通过，请 PC 确认计划交付节点', '2026-05-28 00:00:00', NULL, '测试脚本预置 PC 待办', @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ '销售订单审批已通过，请 PC 确认计划交付节点', '2026-05-28 00:00:00', NULL, '测试脚本预置 PC 待办', @creator, NOW(), @creator, NOW(), b'0'),
 (@mc_task_id, @project_id, 'MC', 'MRP_SUPPLY_CONFIRM', 'TODO', 1, 'MRP_PLAN', @plan_id,
- 'MRP 已生成 2 条采购建议、3 条生产建议，请 MC 确认物料准备策略', '2026-05-28 00:00:00', NULL, '测试脚本预置 MC 待办', @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ 'MRP 已生成 2 条采购建议、3 条生产建议，请 MC 确认物料准备策略', '2026-05-28 00:00:00', NULL, '测试脚本预置 MC 待办', @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `task_status` = VALUES(`task_status`),
   `assignee_user_id` = VALUES(`assignee_user_id`),
@@ -200,14 +195,13 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_mrp_demand`
 (`id`, `plan_id`, `project_id`, `source_type`, `source_id`, `source_item_id`, `product_id`, `demand_qty`, `demand_date`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@demand_id, @plan_id, @project_id, 'SALE_ORDER', @sale_order_id, @sale_order_item_id, @root_product_id, 10.000000, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `project_id` = VALUES(`project_id`),
   `source_type` = VALUES(`source_type`),
@@ -219,45 +213,44 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_mrp_trace_node`
 (`id`, `plan_id`, `root_product_id`, `parent_trace_node_id`, `parent_material_id`, `trace_level`, `material_id`, `bom_id`, `bom_item_id`,
  `trace_path_key`, `project_id`, `source_order_id`, `source_item_id`, `gross_demand_qty`, `available_stock_qty`, `incoming_qty`, `wip_qty`,
  `reserved_stock_qty`, `safety_stock_qty`, `theoretical_net_demand_qty`, `execution_net_demand_qty`, `policy_code`, `policy_version`,
  `business_type`, `mrp_enable_flag`, `supply_owner`, `suggest_type`, `skip_reason`, `suggest_date`, `demand_date`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@root_trace_node_id, @plan_id, @root_product_id, NULL, NULL, 0, @root_product_id, @root_bom_id, NULL,
  '993601|993901|993911|993001|ROOT:993001', @project_id, @sale_order_id, @sale_order_item_id, 10.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 0.000000, 10.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', 'MAKE', NULL, '2026-05-28', '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_a_trace_node_id, @plan_id, @root_product_id, @root_trace_node_id, @root_product_id, 1, @branch_a_id, @root_bom_id, @root_bom_item_a_id,
  '993601|993901|993911|993001|ROOT:993001>993102:993002', @project_id, @sale_order_id, @sale_order_item_id, 10.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 0.000000, 10.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', 'MAKE', NULL, '2026-05-28', '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@shared_a_trace_node_id, @plan_id, @root_product_id, @branch_a_trace_node_id, @branch_a_id, 2, @shared_material_id, @branch_a_bom_id, @branch_a_shared_bom_item_id,
  '993601|993901|993911|993001|ROOT:993001>993102:993002>993112:993004', @project_id, @sale_order_id, @sale_order_item_id, 20.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 0.000000, 20.000000, 20.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', 'PURCHASE', NULL, '2026-05-28', '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_b_trace_node_id, @plan_id, @root_product_id, @root_trace_node_id, @root_product_id, 1, @branch_b_id, @root_bom_id, @root_bom_item_b_id,
  '993601|993901|993911|993001|ROOT:993001>993103:993003', @project_id, @sale_order_id, @sale_order_item_id, 10.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 0.000000, 10.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', 'MAKE', NULL, '2026-05-28', '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@shared_b_trace_node_id, @plan_id, @root_product_id, @branch_b_trace_node_id, @branch_b_id, 2, @shared_material_id, @branch_b_bom_id, @branch_b_shared_bom_item_id,
  '993601|993901|993911|993001|ROOT:993001>993103:993003>993122:993004', @project_id, @sale_order_id, @sale_order_item_id, 30.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 0.000000, 30.000000, 30.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', 'PURCHASE', NULL, '2026-05-28', '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_c_trace_node_id, @plan_id, @root_product_id, @root_trace_node_id, @root_product_id, 1, @branch_c_id, @root_bom_id, @root_bom_item_c_id,
  '993601|993901|993911|993001|ROOT:993001>993104:993007', @project_id, @sale_order_id, @sale_order_item_id, 10.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 0.000000, 10.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', 'MAKE', NULL, '2026-05-28', '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `parent_trace_node_id` = VALUES(`parent_trace_node_id`),
   `parent_material_id` = VALUES(`parent_material_id`),
@@ -286,38 +279,37 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_mrp_result`
 (`id`, `plan_id`, `trace_node_id`, `root_product_id`, `material_id`, `trace_path_key`, `trace_level`, `parent_material_id`, `bom_item_id`,
  `gross_demand_qty`, `available_stock_qty`, `incoming_qty`, `wip_qty`, `reserved_stock_qty`, `net_demand_qty`, `policy_code`, `policy_version`,
  `business_type`, `mrp_enable_flag`, `supply_owner`, `skip_reason`, `suggest_type`, `suggest_date`, `source_order_id`, `source_item_id`, `demand_date`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@root_result_id, @plan_id, @root_trace_node_id, @root_product_id, @root_product_id, '993601|993901|993911|993001|ROOT:993001', 0, NULL, NULL,
  10.000000, 0.000000, 0.000000, 0.000000, 0.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', NULL, 'MAKE', '2026-05-28', @sale_order_id, @sale_order_item_id, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_a_result_id, @plan_id, @branch_a_trace_node_id, @root_product_id, @branch_a_id, '993601|993901|993911|993001|ROOT:993001>993102:993002', 1, @root_product_id, @root_bom_item_a_id,
  10.000000, 0.000000, 0.000000, 0.000000, 0.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', NULL, 'MAKE', '2026-05-28', @sale_order_id, @sale_order_item_id, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@shared_a_result_id, @plan_id, @shared_a_trace_node_id, @root_product_id, @shared_material_id, '993601|993901|993911|993001|ROOT:993001>993102:993002>993112:993004', 2, @branch_a_id, @branch_a_shared_bom_item_id,
  20.000000, 0.000000, 0.000000, 0.000000, 0.000000, 20.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', NULL, 'PURCHASE', '2026-05-28', @sale_order_id, @sale_order_item_id, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_b_result_id, @plan_id, @branch_b_trace_node_id, @root_product_id, @branch_b_id, '993601|993901|993911|993001|ROOT:993001>993103:993003', 1, @root_product_id, @root_bom_item_b_id,
  10.000000, 0.000000, 0.000000, 0.000000, 0.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', NULL, 'MAKE', '2026-05-28', @sale_order_id, @sale_order_item_id, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@shared_b_result_id, @plan_id, @shared_b_trace_node_id, @root_product_id, @shared_material_id, '993601|993901|993911|993001|ROOT:993001>993103:993003>993122:993004', 2, @branch_b_id, @branch_b_shared_bom_item_id,
  30.000000, 0.000000, 0.000000, 0.000000, 0.000000, 30.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', NULL, 'PURCHASE', '2026-05-28', @sale_order_id, @sale_order_item_id, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@branch_c_result_id, @plan_id, @branch_c_trace_node_id, @root_product_id, @branch_c_id, '993601|993901|993911|993001|ROOT:993001>993104:993007', 1, @root_product_id, @root_bom_item_c_id,
  10.000000, 0.000000, 0.000000, 0.000000, 0.000000, 10.000000, 'DEFAULT', 1,
  'SELF_RESEARCH', b'1', 'COMPANY', NULL, 'MAKE', '2026-05-28', @sale_order_id, @sale_order_item_id, '2026-05-28',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `trace_node_id` = VALUES(`trace_node_id`),
   `root_product_id` = VALUES(`root_product_id`),
@@ -346,35 +338,34 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_mrp_result_component`
 (`id`, `plan_id`, `result_id`, `material_id`, `component_code`, `component_name`, `component_role`, `sequence_no`, `enable_flag`, `base_qty`, `consumed_qty`, `remaining_qty`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(@root_result_id + 210, @plan_id, @root_result_id, @root_product_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@root_result_id + 211, @plan_id, @root_result_id, @root_product_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@root_result_id + 212, @plan_id, @root_result_id, @root_product_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+(@root_result_id + 210, @plan_id, @root_result_id, @root_product_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@root_result_id + 211, @plan_id, @root_result_id, @root_product_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@root_result_id + 212, @plan_id, @root_result_id, @root_product_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0'),
 
-(@branch_a_result_id + 210, @plan_id, @branch_a_result_id, @branch_a_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_a_result_id + 211, @plan_id, @branch_a_result_id, @branch_a_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_a_result_id + 212, @plan_id, @branch_a_result_id, @branch_a_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+(@branch_a_result_id + 210, @plan_id, @branch_a_result_id, @branch_a_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_a_result_id + 211, @plan_id, @branch_a_result_id, @branch_a_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_a_result_id + 212, @plan_id, @branch_a_result_id, @branch_a_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0'),
 
-(@shared_a_result_id + 210, @plan_id, @shared_a_result_id, @shared_material_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 20.000000, 0.000000, 20.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@shared_a_result_id + 211, @plan_id, @shared_a_result_id, @shared_material_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 20.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@shared_a_result_id + 212, @plan_id, @shared_a_result_id, @shared_material_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+(@shared_a_result_id + 210, @plan_id, @shared_a_result_id, @shared_material_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 20.000000, 0.000000, 20.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@shared_a_result_id + 211, @plan_id, @shared_a_result_id, @shared_material_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 20.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@shared_a_result_id + 212, @plan_id, @shared_a_result_id, @shared_material_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0'),
 
-(@branch_b_result_id + 210, @plan_id, @branch_b_result_id, @branch_b_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_b_result_id + 211, @plan_id, @branch_b_result_id, @branch_b_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_b_result_id + 212, @plan_id, @branch_b_result_id, @branch_b_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+(@branch_b_result_id + 210, @plan_id, @branch_b_result_id, @branch_b_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_b_result_id + 211, @plan_id, @branch_b_result_id, @branch_b_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_b_result_id + 212, @plan_id, @branch_b_result_id, @branch_b_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0'),
 
-(@shared_b_result_id + 210, @plan_id, @shared_b_result_id, @shared_material_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 30.000000, 0.000000, 30.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@shared_b_result_id + 211, @plan_id, @shared_b_result_id, @shared_material_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 30.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@shared_b_result_id + 212, @plan_id, @shared_b_result_id, @shared_material_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+(@shared_b_result_id + 210, @plan_id, @shared_b_result_id, @shared_material_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 30.000000, 0.000000, 30.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@shared_b_result_id + 211, @plan_id, @shared_b_result_id, @shared_material_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 30.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@shared_b_result_id + 212, @plan_id, @shared_b_result_id, @shared_material_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0'),
 
-(@branch_c_result_id + 210, @plan_id, @branch_c_result_id, @branch_c_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_c_result_id + 211, @plan_id, @branch_c_result_id, @branch_c_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
-(@branch_c_result_id + 212, @plan_id, @branch_c_result_id, @branch_c_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+(@branch_c_result_id + 210, @plan_id, @branch_c_result_id, @branch_c_id, 'GROSS_DEMAND', '毛需求', 'DEMAND_BASE', 0, b'1', 10.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_c_result_id + 211, @plan_id, @branch_c_result_id, @branch_c_id, 'SAFETY_STOCK', '安全库存', 'DEMAND_ADJUST', 0, b'1', 0.000000, 0.000000, 10.000000, @creator, NOW(), @creator, NOW(), b'0'),
+(@branch_c_result_id + 212, @plan_id, @branch_c_result_id, @branch_c_id, 'ON_HAND_AVAILABLE', '可用库存', 'SUPPLY_CONSUME', 30, b'1', 0.000000, 0.000000, 0.000000, @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `material_id` = VALUES(`material_id`),
   `component_code` = VALUES(`component_code`),
@@ -388,20 +379,19 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_purchase_suggest`
 (`id`, `plan_id`, `trace_node_id`, `project_id`, `material_id`, `trace_path_key`, `trace_level`, `parent_material_id`, `bom_item_id`,
  `suggest_qty`, `suggest_arrival_date`, `gross_demand_qty`, `available_stock_qty`, `incoming_qty`, `wip_qty`, `reserved_stock_qty`, `safety_stock_qty`,
  `net_demand_qty`, `source_order_id`, `source_item_id`, `status`, `convert_purchase_order_id`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@purchase_suggest_a_id, @plan_id, @shared_a_trace_node_id, @project_id, @shared_material_id, '993601|993901|993911|993001|ROOT:993001>993102:993002>993112:993004', 2, @branch_a_id, @branch_a_shared_bom_item_id,
  20.000000, '2026-05-28', 20.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 20.000000, @sale_order_id, @sale_order_item_id, 0, NULL, 'A 分支共享采购件',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@purchase_suggest_b_id, @plan_id, @shared_b_trace_node_id, @project_id, @shared_material_id, '993601|993901|993911|993001|ROOT:993001>993103:993003>993122:993004', 2, @branch_b_id, @branch_b_shared_bom_item_id,
  30.000000, '2026-05-28', 30.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 30.000000, @sale_order_id, @sale_order_item_id, 0, NULL, 'B 分支共享采购件',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `trace_node_id` = VALUES(`trace_node_id`),
   `project_id` = VALUES(`project_id`),
@@ -427,26 +417,25 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_production_suggest`
 (`id`, `plan_id`, `trace_node_id`, `project_id`, `product_id`, `trace_path_key`, `trace_level`, `parent_material_id`, `bom_item_id`,
  `suggest_qty`, `suggest_start_date`, `suggest_end_date`, `gross_demand_qty`, `available_stock_qty`, `incoming_qty`, `wip_qty`, `reserved_stock_qty`,
  `safety_stock_qty`, `net_demand_qty`, `source_order_id`, `source_item_id`, `status`, `convert_production_order_id`, `remark`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@production_root_id, @plan_id, @root_trace_node_id, @project_id, @root_product_id, '993601|993901|993911|993001|ROOT:993001', 0, NULL, NULL,
  10.000000, '2026-05-28', '2026-05-28', 10.000000, 0.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 10.000000, @sale_order_id, @sale_order_item_id, 0, NULL, '根产品生产建议',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@production_a_id, @plan_id, @branch_a_trace_node_id, @project_id, @branch_a_id, '993601|993901|993911|993001|ROOT:993001>993102:993002', 1, @root_product_id, @root_bom_item_a_id,
  10.000000, '2026-05-28', '2026-05-28', 10.000000, 0.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 10.000000, @sale_order_id, @sale_order_item_id, 0, NULL, 'A 分支生产建议',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id),
+ @creator, NOW(), @creator, NOW(), b'0'),
 (@production_b_id, @plan_id, @branch_b_trace_node_id, @project_id, @branch_b_id, '993601|993901|993911|993001|ROOT:993001>993103:993003', 1, @root_product_id, @root_bom_item_b_id,
  10.000000, '2026-05-28', '2026-05-28', 10.000000, 0.000000, 0.000000, 0.000000, 0.000000,
  0.000000, 10.000000, @sale_order_id, @sale_order_item_id, 0, NULL, 'B 分支生产建议',
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `trace_node_id` = VALUES(`trace_node_id`),
   `project_id` = VALUES(`project_id`),
@@ -473,16 +462,15 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 INSERT INTO `erp_mrp_shortage`
 (`id`, `plan_id`, `trace_node_id`, `root_product_id`, `material_id`, `trace_path_key`, `trace_level`, `parent_material_id`, `bom_item_id`,
  `shortage_qty`, `required_date`, `source_order_id`, `source_item_id`,
- `creator`, `create_time`, `updater`, `update_time`, `deleted`, `tenant_id`)
+ `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
 (@shortage_id, @plan_id, @branch_c_trace_node_id, @root_product_id, @branch_c_id, '993601|993901|993911|993001|ROOT:993001>993104:993007', 1, @root_product_id, @root_bom_item_c_id,
  10.000000, '2026-05-28', @sale_order_id, @sale_order_item_id,
- @creator, NOW(), @creator, NOW(), b'0', @tenant_id)
+ @creator, NOW(), @creator, NOW(), b'0')
 ON DUPLICATE KEY UPDATE
   `trace_node_id` = VALUES(`trace_node_id`),
   `root_product_id` = VALUES(`root_product_id`),
@@ -498,7 +486,6 @@ ON DUPLICATE KEY UPDATE
   `updater` = VALUES(`updater`),
   `update_time` = NOW(),
   `deleted` = VALUES(`deleted`),
-  `tenant_id` = VALUES(`tenant_id`);
 
 COMMIT;
 

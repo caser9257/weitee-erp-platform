@@ -18,10 +18,9 @@ CREATE TABLE IF NOT EXISTS `erp_finance_ledger` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_finance_ledger_no` (`tenant_id`, `no`, `deleted`),
-    KEY `idx_finance_ledger_status_sort` (`tenant_id`, `status`, `default_status`, `deleted`, `sort`)
+    UNIQUE KEY `uk_finance_ledger_no` (`no`, `deleted`),
+    KEY `idx_finance_ledger_status_sort` (`status`, `default_status`, `deleted`, `sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 财务账簿';
 
 CREATE TABLE IF NOT EXISTS `erp_finance_period` (
@@ -42,9 +41,8 @@ CREATE TABLE IF NOT EXISTS `erp_finance_period` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_finance_period_ledger_sort` (`tenant_id`, `ledger_id`, `period_sort`, `deleted`),
-    KEY `idx_finance_period_ledger_status` (`tenant_id`, `ledger_id`, `status`, `deleted`, `period_sort`),
-    KEY `idx_finance_period_date_range` (`tenant_id`, `ledger_id`, `status`, `deleted`, `start_date`, `end_date`)
+    UNIQUE KEY `uk_finance_period_ledger_sort` (`ledger_id`, `period_sort`, `deleted`),
+    KEY `idx_finance_period_ledger_status` (`ledger_id`, `status`, `deleted`, `period_sort`),
+    KEY `idx_finance_period_date_range` (`ledger_id`, `status`, `deleted`, `start_date`, `end_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 会计期间';

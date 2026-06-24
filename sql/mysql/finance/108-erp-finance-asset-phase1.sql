@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP finance asset phase1
 -- 1. fixed asset master
 -- 2. fixed asset candidate
@@ -68,12 +68,11 @@ CREATE TABLE IF NOT EXISTS `erp_finance_asset` (
   `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_finance_asset_no` (`tenant_id`, `no`, `deleted`),
-  KEY `idx_finance_asset_status` (`tenant_id`, `status`, `deleted`),
-  KEY `idx_finance_asset_candidate_id` (`tenant_id`, `candidate_id`, `deleted`),
-  KEY `idx_finance_asset_source_item` (`tenant_id`, `source_type`, `source_biz_id`, `source_item_id`, `deleted`)
+  UNIQUE KEY `uk_finance_asset_no` (`no`, `deleted`),
+  KEY `idx_finance_asset_status` (`status`, `deleted`),
+  KEY `idx_finance_asset_candidate_id` (`candidate_id`, `deleted`),
+  KEY `idx_finance_asset_source_item` (`source_type`, `source_biz_id`, `source_item_id`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 固定资产台账';
 
 SET @finance_asset_candidate_id_exists := (
@@ -118,7 +117,7 @@ SET @finance_asset_candidate_idx_exists := (
 SET @finance_asset_candidate_idx_sql := IF(
   @finance_asset_candidate_idx_exists > 0,
   'SELECT ''idx_finance_asset_candidate_id already exists''',
-  'ALTER TABLE `erp_finance_asset` ADD INDEX `idx_finance_asset_candidate_id` (`tenant_id`, `candidate_id`, `deleted`)'
+  'ALTER TABLE `erp_finance_asset` ADD INDEX `idx_finance_asset_candidate_id` (`candidate_id`, `deleted`)'
 );
 PREPARE finance_asset_candidate_idx_stmt FROM @finance_asset_candidate_idx_sql;
 EXECUTE finance_asset_candidate_idx_stmt;
@@ -134,7 +133,7 @@ SET @finance_asset_source_item_idx_exists := (
 SET @finance_asset_source_item_idx_sql := IF(
   @finance_asset_source_item_idx_exists > 0,
   'SELECT ''idx_finance_asset_source_item already exists''',
-  'ALTER TABLE `erp_finance_asset` ADD INDEX `idx_finance_asset_source_item` (`tenant_id`, `source_type`, `source_biz_id`, `source_item_id`, `deleted`)'
+  'ALTER TABLE `erp_finance_asset` ADD INDEX `idx_finance_asset_source_item` (`source_type`, `source_biz_id`, `source_item_id`, `deleted`)'
 );
 PREPARE finance_asset_source_item_idx_stmt FROM @finance_asset_source_item_idx_sql;
 EXECUTE finance_asset_source_item_idx_stmt;
@@ -160,10 +159,9 @@ CREATE TABLE IF NOT EXISTS `erp_finance_asset_candidate` (
   `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_finance_asset_candidate_source` (`tenant_id`, `source_type`, `source_biz_id`, `source_item_id`, `deleted`),
-  KEY `idx_finance_asset_candidate_status` (`tenant_id`, `status`, `deleted`)
+  UNIQUE KEY `uk_finance_asset_candidate_source` (`source_type`, `source_biz_id`, `source_item_id`, `deleted`),
+  KEY `idx_finance_asset_candidate_status` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 固定资产候选';
 
 CREATE TABLE IF NOT EXISTS `erp_finance_asset_depreciation` (
@@ -183,10 +181,9 @@ CREATE TABLE IF NOT EXISTS `erp_finance_asset_depreciation` (
   `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '更新者',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
-  `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_finance_asset_depreciation_period` (`tenant_id`, `asset_id`, `period`, `deleted`),
-  KEY `idx_finance_asset_depreciation_period` (`tenant_id`, `period`, `deleted`)
+  UNIQUE KEY `uk_finance_asset_depreciation_period` (`asset_id`, `period`, `deleted`),
+  KEY `idx_finance_asset_depreciation_period` (`period`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP 固定资产折旧';
 
 SET @finance_asset_cost_center_id_exists := (
@@ -282,7 +279,6 @@ VALUES (5301, 1, NULL, '5301', '研发支出', 1, 1, b'1', 0, 0, '研发无形�
 ON DUPLICATE KEY UPDATE `subject_name` = VALUES(`subject_name`);
 
 -- 固定资产菜单和按钮权限收口
-SET @tenant_id := 1;
 SET @asset_role_id := (
   SELECT id
   FROM system_role
@@ -509,8 +505,8 @@ WHERE deleted = b'0'
     'erp:finance-asset-depreciation:generate'
   );
 
-INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted, tenant_id)
-SELECT @asset_role_id, m.id, '1', NOW(), '1', NOW(), b'0', @tenant_id
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT @asset_role_id, m.id, '1', NOW(), '1', NOW(), b'0'
 FROM system_menu m
 WHERE @asset_role_id IS NOT NULL
   AND m.deleted = b'0'
@@ -534,5 +530,4 @@ WHERE @asset_role_id IS NOT NULL
     WHERE rm.role_id = @asset_role_id
       AND rm.menu_id = m.id
       AND rm.deleted = b'0'
-      AND rm.tenant_id = @tenant_id
   );

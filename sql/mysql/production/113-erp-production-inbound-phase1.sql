@@ -1,4 +1,4 @@
-/*
+﻿/*
  自制入库单一期
  目标：补齐生产完工质检后的正式入库单据层，为“质检通过后入库”提供独立对象。
 */
@@ -31,12 +31,11 @@ CREATE TABLE IF NOT EXISTS `erp_production_inbound` (
   `updater` varchar(64) DEFAULT '',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` bit(1) NOT NULL DEFAULT b'0',
-  `tenant_id` bigint NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_erp_production_inbound_no` (`tenant_id`, `no`),
-  UNIQUE KEY `uk_erp_production_inbound_quality` (`tenant_id`, `finish_quality_id`),
-  KEY `idx_erp_production_inbound_order` (`tenant_id`, `production_order_id`),
-  KEY `idx_erp_production_inbound_status` (`tenant_id`, `status`)
+  UNIQUE KEY `uk_erp_production_inbound_no` (`no`),
+  UNIQUE KEY `uk_erp_production_inbound_quality` (`finish_quality_id`),
+  KEY `idx_erp_production_inbound_order` (`production_order_id`),
+  KEY `idx_erp_production_inbound_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='自制入库单';
 
 SET FOREIGN_KEY_CHECKS = 1;

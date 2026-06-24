@@ -1,4 +1,4 @@
--- =====================================================
+﻿-- =====================================================
 -- ERP outsource phase3
 -- =====================================================
 
@@ -8,4 +8,4 @@ ALTER TABLE `erp_outsource_order`
     ADD COLUMN `close_time` DATETIME NULL COMMENT 'close time' AFTER `close_remark`;
 
 ALTER TABLE `erp_outsource_order`
-    ADD KEY `idx_outsource_order_status_close_time` (`tenant_id`, `status`, `close_time`, `deleted`);
+    ADD KEY `idx_outsource_order_status_close_time` (`status`, `close_time`, `deleted`);

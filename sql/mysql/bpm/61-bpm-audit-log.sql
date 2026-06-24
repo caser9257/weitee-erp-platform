@@ -1,4 +1,4 @@
--- 审计日志表
+﻿-- 审计日志表
 -- 创建日期：2026-06-11
 
 -- 创建审批审计日志表
@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS `bpm_approval_audit_log` (
     `ip_address` VARCHAR(50) COMMENT 'IP地址',
     `user_agent` VARCHAR(500) COMMENT '用户代理',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT '租户编号',
     PRIMARY KEY (`id`),
     INDEX `idx_approval_id` (`approval_id`),
     INDEX `idx_task_id` (`task_id`),

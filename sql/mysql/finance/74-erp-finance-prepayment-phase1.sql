@@ -19,11 +19,10 @@ CREATE TABLE `erp_finance_prepayment` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_finance_prepayment_no` (`tenant_id`, `no`, `deleted`),
-    KEY `idx_finance_prepayment_supplier_status` (`tenant_id`, `supplier_id`, `status`, `deleted`),
-    KEY `idx_finance_prepayment_time` (`tenant_id`, `prepayment_time`, `deleted`)
+    UNIQUE KEY `uk_finance_prepayment_no` (`no`, `deleted`),
+    KEY `idx_finance_prepayment_supplier_status` (`supplier_id`, `status`, `deleted`),
+    KEY `idx_finance_prepayment_time` (`prepayment_time`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP finance prepayment';
 
 CREATE TABLE `erp_finance_prepayment_allocate` (
@@ -42,10 +41,9 @@ CREATE TABLE `erp_finance_prepayment_allocate` (
     `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
     `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
-    `tenant_id` BIGINT NOT NULL DEFAULT 0 COMMENT 'tenant id',
     PRIMARY KEY (`id`),
-    KEY `idx_finance_prepayment_allocate_prepayment_status` (`tenant_id`, `prepayment_id`, `status`, `deleted`),
-    KEY `idx_finance_prepayment_allocate_statement_status` (`tenant_id`, `ap_statement_id`, `status`, `deleted`),
-    KEY `idx_finance_prepayment_allocate_biz` (`tenant_id`, `biz_type`, `biz_id`, `status`, `deleted`)
+    KEY `idx_finance_prepayment_allocate_prepayment_status` (`prepayment_id`, `status`, `deleted`),
+    KEY `idx_finance_prepayment_allocate_statement_status` (`ap_statement_id`, `status`, `deleted`),
+    KEY `idx_finance_prepayment_allocate_biz` (`biz_type`, `biz_id`, `status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP finance prepayment allocate';
 
