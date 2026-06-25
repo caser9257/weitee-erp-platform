@@ -1,5 +1,8 @@
 {
   "$schema": "https://tester.ai/config.json",
+  "plugin": [
+    "oh-my-openagent@4.5.1"
+  ],
   "mcp": {
     "mimo-image-recognition": {
       "command": [
