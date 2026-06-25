@@ -1,5 +1,5 @@
 WeTai ERP
-Application Version: ${yudao.info.version}
+Application Version: ${weitee.info.version}
 Spring Boot Version: ${spring-boot.version}
 
 .__   __.   ______      .______    __    __    _______

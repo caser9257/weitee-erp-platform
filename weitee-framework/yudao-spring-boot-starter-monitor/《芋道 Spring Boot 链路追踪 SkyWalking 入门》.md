@@ -1,1 +1,1 @@
-<http://www.iocoder.cn/Spring-Boot/SkyWalking/?yudao>
+<http://www.iocoder.cn/Spring-Boot/SkyWalking/?weitee>

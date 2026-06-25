@@ -1,36 +1,36 @@
 [ {
   "contentPath" : "java/InfraCategoryListReqVO",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/demo/vo/InfraCategoryListReqVO.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/controller/admin/demo/vo/InfraCategoryListReqVO.java"
 }, {
   "contentPath" : "java/InfraCategoryRespVO",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/demo/vo/InfraCategoryRespVO.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/controller/admin/demo/vo/InfraCategoryRespVO.java"
 }, {
   "contentPath" : "java/InfraCategorySaveReqVO",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/demo/vo/InfraCategorySaveReqVO.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/controller/admin/demo/vo/InfraCategorySaveReqVO.java"
 }, {
   "contentPath" : "java/InfraCategoryController",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/controller/admin/demo/InfraCategoryController.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/controller/admin/demo/InfraCategoryController.java"
 }, {
   "contentPath" : "java/InfraCategoryDO",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/dal/dataobject/demo/InfraCategoryDO.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/dal/dataobject/demo/InfraCategoryDO.java"
 }, {
   "contentPath" : "java/InfraCategoryMapper",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/dal/mysql/demo/InfraCategoryMapper.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/dal/mysql/demo/InfraCategoryMapper.java"
 }, {
   "contentPath" : "xml/InfraCategoryMapper",
-  "filePath" : "yudao-module-infra/src/main/resources/mapper/demo/InfraCategoryMapper.xml"
+  "filePath" : "weitee-module-infra/src/main/resources/mapper/demo/InfraCategoryMapper.xml"
 }, {
   "contentPath" : "java/InfraCategoryServiceImpl",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/service/demo/InfraCategoryServiceImpl.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/service/demo/InfraCategoryServiceImpl.java"
 }, {
   "contentPath" : "java/InfraCategoryService",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/service/demo/InfraCategoryService.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/service/demo/InfraCategoryService.java"
 }, {
   "contentPath" : "java/InfraCategoryServiceImplTest",
-  "filePath" : "yudao-module-infra/src/test/java/cn/iocoder/yudao/module/infra/service/demo/InfraCategoryServiceImplTest.java"
+  "filePath" : "weitee-module-infra/src/test/java/cn/iocoder/weitee/module/infra/service/demo/InfraCategoryServiceImplTest.java"
 }, {
   "contentPath" : "java/ErrorCodeConstants_手动操作",
-  "filePath" : "yudao-module-infra/src/main/java/cn/iocoder/yudao/module/infra/enums/ErrorCodeConstants_手动操作.java"
+  "filePath" : "weitee-module-infra/src/main/java/cn/iocoder/weitee/module/infra/enums/ErrorCodeConstants_手动操作.java"
 }, {
   "contentPath" : "sql/sql",
   "filePath" : "sql/sql.sql"
@@ -39,11 +39,11 @@
   "filePath" : "sql/h2.sql"
 }, {
   "contentPath" : "vue/index",
-  "filePath" : "yudao-ui-admin-vue3/src/views/infra/demo/index.vue"
+  "filePath" : "weitee-ui-admin-vue3/src/views/infra/demo/index.vue"
 }, {
   "contentPath" : "vue/CategoryForm",
-  "filePath" : "yudao-ui-admin-vue3/src/views/infra/demo/CategoryForm.vue"
+  "filePath" : "weitee-ui-admin-vue3/src/views/infra/demo/CategoryForm.vue"
 }, {
   "contentPath" : "ts/index",
-  "filePath" : "yudao-ui-admin-vue3/src/api/infra/demo/index.ts"
+  "filePath" : "weitee-ui-admin-vue3/src/api/infra/demo/index.ts"
 } ]

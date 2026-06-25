@@ -23,7 +23,7 @@ rocketmq:
 
 --- #################### IoT 网关相关配置 ####################
 
-yudao:
+weitee:
   iot:
     # 消息总线配置
     message-bus:
@@ -38,7 +38,7 @@ yudao:
         read-timeout: 30s
       # 设备 Token 配置
       token:
-        secret: yudaoIotGatewayTokenSecret123456789 # Token 密钥，至少32位
+        secret: weiteeIotGatewayTokenSecret123456789 # Token 密钥，至少32位
         expiration: 7d
 
       # 协议实例列表
@@ -192,19 +192,19 @@ logging:
     name: ${user.home}/logs/${spring.application.name}.log # 日志文件名，全路径
   level:
     # 应用基础日志级别
-    cn.iocoder.yudao.module.iot.gateway: INFO
+    cn.weitee.erp.module.iot.gateway: INFO
     org.springframework.boot: INFO
     # RocketMQ 日志
     org.apache.rocketmq: WARN
     # MQTT 客户端日志
     # io.vertx.mqtt: DEBUG
     # 开发环境详细日志
-    cn.iocoder.yudao.module.iot.gateway.protocol.emqx: DEBUG
-    cn.iocoder.yudao.module.iot.gateway.protocol.http: DEBUG
-    cn.iocoder.yudao.module.iot.gateway.protocol.mqtt: DEBUG
-    cn.iocoder.yudao.module.iot.gateway.protocol.coap: DEBUG
-    cn.iocoder.yudao.module.iot.gateway.protocol.websocket: DEBUG
-    cn.iocoder.yudao.module.iot.gateway.protocol.modbus: DEBUG
+    cn.weitee.erp.module.iot.gateway.protocol.emqx: DEBUG
+    cn.weitee.erp.module.iot.gateway.protocol.http: DEBUG
+    cn.weitee.erp.module.iot.gateway.protocol.mqtt: DEBUG
+    cn.weitee.erp.module.iot.gateway.protocol.coap: DEBUG
+    cn.weitee.erp.module.iot.gateway.protocol.websocket: DEBUG
+    cn.weitee.erp.module.iot.gateway.protocol.modbus: DEBUG
     # 根日志级别
     root: INFO
 

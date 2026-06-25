@@ -1,1 +1,1 @@
-<http://www.iocoder.cn/Spring-Boot/Redis/?yudao>
+<http://www.iocoder.cn/Spring-Boot/Redis/?weitee>

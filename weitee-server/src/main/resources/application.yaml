@@ -265,7 +265,7 @@ weitee:
 weitee:
   info:
     version: 1.0.0
-    base-package: cn.iocoder.yudao
+    base-package: cn.weitee.erp
   web:
     admin-ui:
       url: http://localhost:8080 # Admin 管理后台 UI 的地址

@@ -1,1 +1,1 @@
-<https://www.iocoder.cn/Spring-Boot/Actuator/?yudao>
+<https://www.iocoder.cn/Spring-Boot/Actuator/?weitee>
