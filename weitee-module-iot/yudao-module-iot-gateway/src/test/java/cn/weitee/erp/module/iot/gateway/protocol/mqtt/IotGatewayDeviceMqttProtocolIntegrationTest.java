@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>使用步骤：
  * <ol>
- *     <li>启动 yudao-module-iot-gateway 服务（MQTT 端口 1883）</li>
+ *     <li>启动 weitee-module-iot-gateway 服务（MQTT 端口 1883）</li>
  *     <li>运行以下测试方法：
  *         <ul>
  *             <li>{@link #testAuth()} - 网关设备连接认证</li>

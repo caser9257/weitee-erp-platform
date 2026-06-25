@@ -4,11 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>cn.iocoder.boot</groupId>
-        <artifactId>yudao-framework</artifactId>
+        <artifactId>weitee-framework</artifactId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>yudao-spring-boot-starter-security</artifactId>
+    <artifactId>weitee-spring-boot-starter-security</artifactId>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -21,7 +21,7 @@
     <dependencies>
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-common</artifactId>
+            <artifactId>weitee-common</artifactId>
         </dependency>
 
         <!-- Spring 核心 -->
@@ -33,7 +33,7 @@
         <!-- Web 相关 -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-spring-boot-starter-web</artifactId>
+            <artifactId>weitee-spring-boot-starter-web</artifactId>
         </dependency>
         <!-- spring boot 配置所需依赖 -->
         <dependency>

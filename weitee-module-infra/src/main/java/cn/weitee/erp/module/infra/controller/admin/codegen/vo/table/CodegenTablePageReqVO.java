@@ -13,7 +13,7 @@ import static cn.weitee.erp.framework.common.util.date.DateUtils.FORMAT_YEAR_MON
 @Data
 public class CodegenTablePageReqVO extends PageParam {
 
-    @Schema(description = "表名称，模糊匹配", example = "yudao")
+    @Schema(description = "表名称，模糊匹配", example = "weitee")
     private String tableName;
 
     @Schema(description = "表描述，模糊匹配", example = "芋道")

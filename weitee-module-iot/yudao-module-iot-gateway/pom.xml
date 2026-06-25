@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>yudao-module-iot</artifactId>
+        <artifactId>weitee-module-iot</artifactId>
         <groupId>cn.iocoder.boot</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
-    <artifactId>yudao-module-iot-gateway</artifactId>
+    <artifactId>weitee-module-iot-gateway</artifactId>
 
     <name>${project.artifactId}</name>
     <description>
@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-module-iot-core</artifactId>
+            <artifactId>weitee-module-iot-core</artifactId>
             <version>${revision}</version>
         </dependency>
 
@@ -63,7 +63,7 @@
         <!-- 测试相关 -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-spring-boot-starter-test</artifactId>
+            <artifactId>weitee-spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

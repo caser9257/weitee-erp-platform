@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  *
  * <p>使用步骤：
  * <ol>
- *     <li>启动 yudao-module-iot-gateway 服务（需开启 modbus-tcp-server 协议，默认端口 503）</li>
+ *     <li>启动 weitee-module-iot-gateway 服务（需开启 modbus-tcp-server 协议，默认端口 503）</li>
  *     <li>确保数据库有对应的 Modbus 设备配置（mode=1, frameFormat=modbus_rtu）</li>
  *     <li>运行以下测试方法：
  *         <ul>

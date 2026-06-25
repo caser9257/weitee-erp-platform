@@ -69,7 +69,7 @@ class SqlTenantIdGuardTest {
             Path pomPath = current.resolve("pom.xml");
             Path sqlDir = current.resolve("sql").resolve("mysql");
             if (Files.isRegularFile(pomPath)
-                    && Files.readString(pomPath, StandardCharsets.UTF_8).contains("<artifactId>yudao</artifactId>")
+                    && Files.readString(pomPath, StandardCharsets.UTF_8).contains("<artifactId>weitee</artifactId>")
                     && Files.isDirectory(sqlDir)) {
                 return current;
             }

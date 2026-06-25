@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>使用步骤：
  * <ol>
- *     <li>启动 yudao-module-iot-gateway 服务（HTTP 端口 8092）</li>
+ *     <li>启动 weitee-module-iot-gateway 服务（HTTP 端口 8092）</li>
  *     <li>运行 {@link #testDeviceRegister()} 测试直连设备动态注册（一型一密）</li>
  *     <li>运行 {@link #testAuth()} 获取设备 token，将返回的 token 粘贴到 {@link #TOKEN} 常量</li>
  *     <li>运行以下测试方法：

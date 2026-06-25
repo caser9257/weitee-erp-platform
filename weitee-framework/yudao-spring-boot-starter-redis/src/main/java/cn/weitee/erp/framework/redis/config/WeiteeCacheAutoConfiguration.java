@@ -40,7 +40,7 @@ public class WeiteeCacheAutoConfiguration {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig();
         // 设置使用 : 单冒号，而不是双 :: 冒号，避免 Redis Desktop Manager 多余空格
         // 详细可见 https://blog.csdn.net/chuixue24/article/details/103928965 博客
-        // 再次修复单冒号，而不是双 :: 冒号问题，Issues 详情：https://gitee.com/zhijiantianya/yudao-cloud/issues/I86VY2
+        // 再次修复单冒号，而不是双 :: 冒号问题，Issues 详情：https://gitee.com/zhijiantianya/weitee-cloud/issues/I86VY2
         config = config.computePrefixWith(cacheName -> {
             String keyPrefix = cacheProperties.getRedis().getKeyPrefix();
             if (StringUtils.hasText(keyPrefix)) {
@@ -70,11 +70,11 @@ public class WeiteeCacheAutoConfiguration {
     @Bean
     public RedisCacheManager redisCacheManager(RedisTemplate<String, Object> redisTemplate,
                                                RedisCacheConfiguration redisCacheConfiguration,
-                                               WeiteeCacheProperties yudaoCacheProperties) {
+                                               WeiteeCacheProperties weiteeCacheProperties) {
         // 创建 RedisCacheWriter 对象
         RedisConnectionFactory connectionFactory = Objects.requireNonNull(redisTemplate.getConnectionFactory());
         RedisCacheWriter cacheWriter = RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory,
-                BatchStrategies.scan(yudaoCacheProperties.getRedisScanBatchSize()));
+                BatchStrategies.scan(weiteeCacheProperties.getRedisScanBatchSize()));
         // 创建 RedisCacheManager 对象
         return new TimeoutRedisCacheManager(cacheWriter, redisCacheConfiguration);
     }

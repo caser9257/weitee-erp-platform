@@ -85,7 +85,7 @@ public class SocialClientServiceImpl implements SocialClientService {
      * 2. trial：体验版
      * 3. developer：开发版
      */
-    @Value("${yudao.wxa-code.env-version:release}")
+    @Value("${weitee.wxa-code.env-version:release}")
     public String envVersion;
     /**
      * 订阅消息跳转小程序类型
@@ -94,7 +94,7 @@ public class SocialClientServiceImpl implements SocialClientService {
      * 2. trial：体验版
      * 3. formal：正式版
      */
-    @Value("${yudao.wxa-subscribe-message.miniprogram-state:formal}")
+    @Value("${weitee.wxa-subscribe-message.miniprogram-state:formal}")
     public String miniprogramState;
 
     /**
@@ -298,7 +298,7 @@ public class SocialClientServiceImpl implements SocialClientService {
                 .uploadTime(ZonedDateTime.now().format(UTC_MS_WITH_XXX_OFFSET_FORMATTER))
                 .build();
         // 重试机制：解决支付回调与订单信息上传之间的时间差导致的 10060001 错误
-        // 对应 ISSUE：https://gitee.com/zhijiantianya/yudao-cloud/pulls/230
+        // 对应 ISSUE：https://gitee.com/zhijiantianya/weitee-cloud/pulls/230
         for (int attempt = 1; attempt <= UPLOAD_SHIPPING_INFO_MAX_RETRIES; attempt++) {
             try {
                 WxMaOrderShippingInfoBaseResponse response = service.getWxMaOrderShippingService().upload(request);

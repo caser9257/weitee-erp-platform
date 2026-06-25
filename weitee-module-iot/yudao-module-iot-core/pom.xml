@@ -3,13 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>yudao-module-iot</artifactId>
+        <artifactId>weitee-module-iot</artifactId>
         <groupId>cn.iocoder.boot</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>yudao-module-iot-core</artifactId>
+    <artifactId>weitee-module-iot-core</artifactId>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -22,7 +22,7 @@
     <dependencies>
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-common</artifactId>
+            <artifactId>weitee-common</artifactId>
         </dependency>
 
         <!-- Spring 核心 -->
@@ -34,7 +34,7 @@
         <!-- 消息中间件相关（可选依赖） -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-spring-boot-starter-mq</artifactId>
+            <artifactId>weitee-spring-boot-starter-mq</artifactId>
         </dependency>
 
         <dependency>

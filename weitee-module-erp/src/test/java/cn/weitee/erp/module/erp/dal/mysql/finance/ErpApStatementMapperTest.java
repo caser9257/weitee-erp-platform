@@ -13,7 +13,7 @@ class ErpApStatementMapperTest {
     @Test
     void selectPage_shouldExcludeStatementsFullyAllocatedByPrepayment() throws Exception {
         String source = Files.readString(Path.of(
-                "src/main/java/cn/iocoder/yudao/module/erp/dal/mysql/finance/ErpApStatementMapper.java"));
+                "src/main/java/cn/iocoder/weitee/module/erp/dal/mysql/finance/ErpApStatementMapper.java"));
 
         assertTrue(source.contains("buildExcludeFullyPrepaidSql()"));
         assertTrue(source.contains("IFNULL((SELECT SUM(allocate_amount)"));
@@ -23,7 +23,7 @@ class ErpApStatementMapperTest {
     @Test
     void selectPaymentEnablePage_shouldRequirePositiveRemainAmount() throws Exception {
         String source = Files.readString(Path.of(
-                "src/main/java/cn/iocoder/yudao/module/erp/dal/mysql/finance/ErpApStatementMapper.java"));
+                "src/main/java/cn/iocoder/weitee/module/erp/dal/mysql/finance/ErpApStatementMapper.java"));
 
         assertTrue(source.contains(".gt(ErpApStatementDO::getRemainAmount, BigDecimal.ZERO)"));
         assertFalse(source.contains(".ne(ErpApStatementDO::getRemainAmount, BigDecimal.ZERO)"));

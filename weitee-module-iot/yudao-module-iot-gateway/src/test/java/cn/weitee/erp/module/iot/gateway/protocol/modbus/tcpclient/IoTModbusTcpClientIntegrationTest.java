@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
  * <p>使用步骤：
  * <ol>
  *     <li>运行 {@link #testStartSlaveSimulator()} 启动模拟从站（默认端口 5020，从站地址 1）</li>
- *     <li>启动 yudao-module-iot-gateway 服务（需开启 modbus-tcp-client 协议）</li>
+ *     <li>启动 weitee-module-iot-gateway 服务（需开启 modbus-tcp-client 协议）</li>
  *     <li>确保数据库有对应的 Modbus Client 设备配置（ip=127.0.0.1, port=5020, slaveId=1）</li>
  *     <li>网关会自动连接模拟从站并开始轮询读取寄存器数据</li>
  *     <li>模拟器每 5 秒自动更新输入寄存器和保持寄存器的值，模拟传感器数据变化</li>

@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>使用步骤：
  * <ol>
- *     <li>启动 yudao-module-iot-gateway 服务（TCP 端口 8091）</li>
+ *     <li>启动 weitee-module-iot-gateway 服务（TCP 端口 8091）</li>
  *     <li>运行以下测试方法：
  *         <ul>
  *             <li>{@link #testAuth()} - 设备认证</li>

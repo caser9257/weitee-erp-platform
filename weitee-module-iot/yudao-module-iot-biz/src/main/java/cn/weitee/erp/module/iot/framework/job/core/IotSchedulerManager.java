@@ -14,7 +14,7 @@ import java.util.Properties;
  * IoT 模块的 Scheduler 管理类，基于 Quartz 实现
  *
  * 疑问：为什么 IoT 模块不复用全局的 SchedulerManager 呢？
- * 回复：yudao-cloud 项目，使用的是 XXL-Job 作为调度中心，无法动态添加任务。
+ * 回复：weitee-cloud 项目，使用的是 XXL-Job 作为调度中心，无法动态添加任务。
  *
  * @author WeTai
  */

@@ -258,7 +258,7 @@ public class SocialUserServiceImplTest extends BaseDbUnitTest {
         SocialUserDO dbSocialUser = randomPojo(SocialUserDO.class, o -> { // 等会查询到
             o.setType(SocialTypeEnum.GITEE.getType());
             o.setNickname("芋艿");
-            o.setOpenid("yudaoyuanma");
+            o.setOpenid("weiteeyuanma");
             o.setCreateTime(buildTime(2020, 1, 15));
         });
         socialUserMapper.insert(dbSocialUser);
@@ -274,7 +274,7 @@ public class SocialUserServiceImplTest extends BaseDbUnitTest {
         SocialUserPageReqVO reqVO = new SocialUserPageReqVO();
         reqVO.setType(SocialTypeEnum.GITEE.getType());
         reqVO.setNickname("芋");
-        reqVO.setOpenid("yudao");
+        reqVO.setOpenid("weitee");
         reqVO.setCreateTime(buildBetweenTime(2020, 1, 10, 2020, 1, 20));
 
         // 调用

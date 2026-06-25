@@ -153,7 +153,7 @@ public class SocialUserServiceImpl implements SocialUserService {
         if (socialUser.getId() == null) {
             socialUserMapper.insert(socialUser);
         } else {
-            socialUser.clean(); // 避免 updateTime 不更新：https://gitee.com/yudaocode/yudao-boot-mini/issues/ID7FUL
+            socialUser.clean(); // 避免 updateTime 不更新：https://gitee.com/weiteecode/weitee-boot-mini/issues/ID7FUL
             socialUserMapper.updateById(socialUser);
         }
         return socialUser;

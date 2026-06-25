@@ -51,7 +51,7 @@ class ErpMapperTenantReferenceGuardTest {
         while (current != null) {
             Path pomPath = current.resolve("pom.xml");
             if (Files.isRegularFile(pomPath)
-                    && Files.readString(pomPath, StandardCharsets.UTF_8).contains("<artifactId>yudao</artifactId>")) {
+                    && Files.readString(pomPath, StandardCharsets.UTF_8).contains("<artifactId>weitee</artifactId>")) {
                 return current;
             }
             current = current.getParent();

@@ -42,7 +42,7 @@ public class ApiErrorLogServiceImplTest extends BaseDbUnitTest {
         ApiErrorLogDO apiErrorLogDO = randomPojo(ApiErrorLogDO.class, o -> {
             o.setUserId(2233L);
             o.setUserType(UserTypeEnum.ADMIN.getValue());
-            o.setApplicationName("yudao-test");
+            o.setApplicationName("weitee-test");
             o.setRequestUrl("foo");
             o.setExceptionTime(buildTime(2021, 3, 13));
             o.setProcessStatus(ApiErrorLogProcessStatusEnum.INIT.getStatus());
@@ -64,7 +64,7 @@ public class ApiErrorLogServiceImplTest extends BaseDbUnitTest {
         ApiErrorLogPageReqVO reqVO = new ApiErrorLogPageReqVO();
         reqVO.setUserId(2233L);
         reqVO.setUserType(UserTypeEnum.ADMIN.getValue());
-        reqVO.setApplicationName("yudao-test");
+        reqVO.setApplicationName("weitee-test");
         reqVO.setRequestUrl("foo");
         reqVO.setExceptionTime(buildBetweenTime(2021, 3, 1, 2021, 3, 31));
         reqVO.setProcessStatus(ApiErrorLogProcessStatusEnum.INIT.getStatus());

@@ -41,7 +41,7 @@ public class ApiErrorLogServiceImpl implements ApiErrorLogService {
         try {
 
         } catch (Exception ex) {
-            // 兜底处理，目前只有 yudao-cloud 会发生：https://gitee.com/yudaocode/yudao-cloud-mini/issues/IC1O0A
+            // 兜底处理，目前只有 weitee-cloud 会发生：https://gitee.com/weiteecode/weitee-cloud-mini/issues/IC1O0A
             log.error("[createApiErrorLog][记录时({}) 发生异常]", createDTO, ex);
         }
     }

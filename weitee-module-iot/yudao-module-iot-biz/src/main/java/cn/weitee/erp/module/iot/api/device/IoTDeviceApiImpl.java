@@ -43,7 +43,7 @@ import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.con
  */
 @RestController
 @Validated
-@Primary // 保证优先匹配，因为 yudao-iot-gateway 也有 IotDeviceCommonApi 的实现，并且也可能会被 biz 引入
+@Primary // 保证优先匹配，因为 weitee-iot-gateway 也有 IotDeviceCommonApi 的实现，并且也可能会被 biz 引入
 public class IoTDeviceApiImpl implements IotDeviceCommonApi {
 
     @Resource

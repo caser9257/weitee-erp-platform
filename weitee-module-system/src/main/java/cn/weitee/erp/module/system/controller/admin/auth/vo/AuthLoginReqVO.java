@@ -23,7 +23,7 @@ import jakarta.validation.constraints.Size;
 @Builder
 public class AuthLoginReqVO extends CaptchaVerificationReqVO {
 
-    @Schema(description = "\u8D26\u53F7", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudaoyuanma")
+    @Schema(description = "\u8D26\u53F7", requiredMode = Schema.RequiredMode.REQUIRED, example = "weiteeyuanma")
     @NotEmpty(message = "\u767B\u5F55\u8D26\u53F7\u4E0D\u80FD\u4E3A\u7A7A")
     @Size(min = 1, max = 10, message = "\u8D26\u53F7\u957F\u5EA6\u4E3A 1-10 \u4F4D")
     @Pattern(regexp = SystemValidationConstants.USERNAME_PATTERN,

@@ -14,7 +14,7 @@ import jakarta.validation.constraints.Size;
 @Data
 public class AuthRegisterReqVO extends CaptchaVerificationReqVO {
 
-    @Schema(description = "\u7528\u6237\u8D26\u53F7", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
+    @Schema(description = "\u7528\u6237\u8D26\u53F7", requiredMode = Schema.RequiredMode.REQUIRED, example = "weitee")
     @NotBlank(message = "\u7528\u6237\u8D26\u53F7\u4E0D\u80FD\u4E3A\u7A7A")
     @Pattern(regexp = SystemValidationConstants.USERNAME_PATTERN, message = "\u7528\u6237\u8D26\u53F7\u652F\u6301\u6C49\u5B57\u3001\u5B57\u6BCD\u3001\u6570\u5B57")
     @Size(min = 1, max = 10, message = "\u7528\u6237\u8D26\u53F7\u957F\u5EA6\u4E3A 1-10 \u4E2A\u5B57\u7B26")

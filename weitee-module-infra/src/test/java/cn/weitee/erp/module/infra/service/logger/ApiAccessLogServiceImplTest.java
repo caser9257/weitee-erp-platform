@@ -35,7 +35,7 @@ public class ApiAccessLogServiceImplTest extends BaseDbUnitTest {
         ApiAccessLogDO apiAccessLogDO = randomPojo(ApiAccessLogDO.class, o -> {
             o.setUserId(2233L);
             o.setUserType(UserTypeEnum.ADMIN.getValue());
-            o.setApplicationName("yudao-test");
+            o.setApplicationName("weitee-test");
             o.setRequestUrl("foo");
             o.setBeginTime(buildTime(2021, 3, 13));
             o.setDuration(1000);
@@ -60,7 +60,7 @@ public class ApiAccessLogServiceImplTest extends BaseDbUnitTest {
         ApiAccessLogPageReqVO reqVO = new ApiAccessLogPageReqVO();
         reqVO.setUserId(2233L);
         reqVO.setUserType(UserTypeEnum.ADMIN.getValue());
-        reqVO.setApplicationName("yudao-test");
+        reqVO.setApplicationName("weitee-test");
         reqVO.setRequestUrl("foo");
         reqVO.setBeginTime(buildBetweenTime(2021, 3, 13, 2021, 3, 13));
         reqVO.setDuration(1000);

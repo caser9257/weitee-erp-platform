@@ -38,7 +38,7 @@ import static cn.weitee.erp.module.iot.gateway.protocol.coap.handler.upstream.Io
  *
  * <p>使用步骤：
  * <ol>
- *     <li>启动 yudao-module-iot-gateway 服务（CoAP 端口 5683）</li>
+ *     <li>启动 weitee-module-iot-gateway 服务（CoAP 端口 5683）</li>
  *     <li>运行 {@link #testAuth()} 获取网关设备 token，将返回的 token 粘贴到 {@link #GATEWAY_TOKEN} 常量</li>
  *     <li>运行以下测试方法：
  *         <ul>

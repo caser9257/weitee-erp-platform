@@ -16,7 +16,7 @@ public class FilePageReqVO extends PageParam {
     @Schema(description = "文件名，模糊匹配", example = "test")
     private String name;
 
-    @Schema(description = "文件路径，模糊匹配", example = "yudao")
+    @Schema(description = "文件路径，模糊匹配", example = "weitee")
     private String path;
 
     @Schema(description = "文件类型，模糊匹配", example = "jpg")

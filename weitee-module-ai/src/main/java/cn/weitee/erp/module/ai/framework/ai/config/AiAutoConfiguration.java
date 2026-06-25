@@ -76,8 +76,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.gemini.enable", havingValue = "true")
-    public GeminiChatModel geminiChatModel(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.Gemini properties = yudaoAiProperties.getGemini();
+    public GeminiChatModel geminiChatModel(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.Gemini properties = weiteeAiProperties.getGemini();
         return buildGeminiChatClient(properties);
     }
 
@@ -104,8 +104,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.doubao.enable", havingValue = "true")
-    public DouBaoChatModel douBaoChatClient(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.DouBao properties = yudaoAiProperties.getDoubao();
+    public DouBaoChatModel douBaoChatClient(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.DouBao properties = weiteeAiProperties.getDoubao();
         return buildDouBaoChatClient(properties);
     }
 
@@ -132,8 +132,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.siliconflow.enable", havingValue = "true")
-    public SiliconFlowChatModel siliconFlowChatClient(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.SiliconFlow properties = yudaoAiProperties.getSiliconflow();
+    public SiliconFlowChatModel siliconFlowChatClient(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.SiliconFlow properties = weiteeAiProperties.getSiliconflow();
         return buildSiliconFlowChatClient(properties);
     }
 
@@ -159,8 +159,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.hunyuan.enable", havingValue = "true")
-    public HunYuanChatModel hunYuanChatClient(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.HunYuan properties = yudaoAiProperties.getHunyuan();
+    public HunYuanChatModel hunYuanChatClient(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.HunYuan properties = weiteeAiProperties.getHunyuan();
         return buildHunYuanChatClient(properties);
     }
 
@@ -194,8 +194,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.xinghuo.enable", havingValue = "true")
-    public XingHuoChatModel xingHuoChatClient(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.XingHuo properties = yudaoAiProperties.getXinghuo();
+    public XingHuoChatModel xingHuoChatClient(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.XingHuo properties = weiteeAiProperties.getXinghuo();
         return buildXingHuoChatClient(properties);
     }
 
@@ -226,8 +226,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.baichuan.enable", havingValue = "true")
-    public BaiChuanChatModel baiChuanChatClient(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.BaiChuan properties = yudaoAiProperties.getBaichuan();
+    public BaiChuanChatModel baiChuanChatClient(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.BaiChuan properties = weiteeAiProperties.getBaichuan();
         return buildBaiChuanChatClient(properties);
     }
 
@@ -253,15 +253,15 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.midjourney.enable", havingValue = "true")
-    public MidjourneyApi midjourneyApi(WeiteeAiProperties yudaoAiProperties) {
-        WeiteeAiProperties.Midjourney config = yudaoAiProperties.getMidjourney();
+    public MidjourneyApi midjourneyApi(WeiteeAiProperties weiteeAiProperties) {
+        WeiteeAiProperties.Midjourney config = weiteeAiProperties.getMidjourney();
         return new MidjourneyApi(config.getBaseUrl(), config.getApiKey(), config.getNotifyUrl());
     }
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.suno.enable", havingValue = "true")
-    public SunoApi sunoApi(WeiteeAiProperties yudaoAiProperties) {
-        return new SunoApi(yudaoAiProperties.getSuno().getBaseUrl());
+    public SunoApi sunoApi(WeiteeAiProperties weiteeAiProperties) {
+        return new SunoApi(weiteeAiProperties.getSuno().getBaseUrl());
     }
 
     public ChatModel buildGrokChatClient(WeiteeAiProperties.Grok properties) {
@@ -306,8 +306,8 @@ public class AiAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "weitee.ai.web-search.enable", havingValue = "true")
-    public AiWebSearchClient webSearchClient(WeiteeAiProperties yudaoAiProperties) {
-        return new AiBoChaWebSearchClient(yudaoAiProperties.getWebSearch().getApiKey());
+    public AiWebSearchClient webSearchClient(WeiteeAiProperties weiteeAiProperties) {
+        return new AiBoChaWebSearchClient(weiteeAiProperties.getWebSearch().getApiKey());
     }
 
     // ========== MCP 相关 ==========

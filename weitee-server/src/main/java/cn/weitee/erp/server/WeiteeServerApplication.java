@@ -8,8 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * @author WeTai
  */
-@SuppressWarnings("SpringComponentScan") // 忽略 IDEA 无法识别 ${yudao.info.base-package}
-@SpringBootApplication(scanBasePackages = {"${yudao.info.base-package}.server", "${yudao.info.base-package}.module"})
+@SuppressWarnings("SpringComponentScan") // 忽略 IDEA 无法识别 ${weitee.info.base-package}
+@SpringBootApplication(scanBasePackages = {"${weitee.info.base-package}.server", "${weitee.info.base-package}.module"})
 public class WeiteeServerApplication {
 
     public static void main(String[] args) {

@@ -42,7 +42,7 @@ import java.util.List;
  */
 @AutoConfiguration(before = WeiteeRedisMQConsumerAutoConfiguration.class) // before WeiteeRedisMQConsumerAutoConfiguration 的原因是，需要保证 RedisWebSocketMessageConsumer 先创建，才能创建 RedisMessageListenerContainer
 @EnableWebSocket // 开启 websocket
-@ConditionalOnProperty(prefix = "weitee.websocket", value = "enable", matchIfMissing = true) // 允许使用 yudao.websocket.enable=false 禁用 websocket
+@ConditionalOnProperty(prefix = "weitee.websocket", value = "enable", matchIfMissing = true) // 允许使用 weitee.websocket.enable=false 禁用 websocket
 @EnableConfigurationProperties(WebSocketProperties.class)
 public class WeiteeWebSocketAutoConfiguration {
 
@@ -120,7 +120,7 @@ public class WeiteeWebSocketAutoConfiguration {
         @Bean
         public RocketMQWebSocketMessageSender rocketMQWebSocketMessageSender(
                 WebSocketSessionManager sessionManager, RocketMQTemplate rocketMQTemplate,
-                @Value("${yudao.websocket.sender-rocketmq.topic}") String topic) {
+                @Value("${weitee.websocket.sender-rocketmq.topic}") String topic) {
             return new RocketMQWebSocketMessageSender(sessionManager, rocketMQTemplate, topic);
         }
 
@@ -153,7 +153,7 @@ public class WeiteeWebSocketAutoConfiguration {
          * 创建 Topic Exchange
          */
         @Bean
-        public TopicExchange websocketTopicExchange(@Value("${yudao.websocket.sender-rabbitmq.exchange}") String exchange) {
+        public TopicExchange websocketTopicExchange(@Value("${weitee.websocket.sender-rabbitmq.exchange}") String exchange) {
             return new TopicExchange(exchange,
                     true,  // durable: 是否持久化
                     false);  // exclusive: 是否排它
@@ -168,7 +168,7 @@ public class WeiteeWebSocketAutoConfiguration {
         @Bean
         public KafkaWebSocketMessageSender kafkaWebSocketMessageSender(
                 WebSocketSessionManager sessionManager, KafkaTemplate<Object, Object> kafkaTemplate,
-                @Value("${yudao.websocket.sender-kafka.topic}") String topic) {
+                @Value("${weitee.websocket.sender-kafka.topic}") String topic) {
             return new KafkaWebSocketMessageSender(sessionManager, kafkaTemplate, topic);
         }
 

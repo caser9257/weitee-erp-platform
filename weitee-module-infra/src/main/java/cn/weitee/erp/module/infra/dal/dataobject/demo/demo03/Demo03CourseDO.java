@@ -11,8 +11,8 @@ import lombok.*;
  *
  * @author WeTai
  */
-@TableName("yudao_demo03_course")
-@KeySequence("yudao_demo03_course_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@TableName("weitee_demo03_course")
+@KeySequence("weitee_demo03_course_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
