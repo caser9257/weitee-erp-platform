@@ -1,8 +1,5 @@
 {
   "$schema": "https://tester.ai/config.json",
-  "plugin": [
-    "oh-my-tester"
-  ],
   "mcp": {
     "mimo-image-recognition": {
       "command": [
