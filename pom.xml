@@ -4,29 +4,29 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>cn.iocoder.boot</groupId>
-    <artifactId>yudao</artifactId>
+    <artifactId>weitee</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
     <modules>
-        <module>yudao-dependencies</module>
-        <module>yudao-framework</module>
+        <module>weitee-dependencies</module>
+        <module>weitee-framework</module>
         <!-- Server 主项目 -->
-        <module>yudao-server</module>
+        <module>weitee-server</module>
         <!-- 各种 module 拓展 -->
-        <module>yudao-module-system</module>
-        <module>yudao-module-infra</module>
-        <module>yudao-module-bpm</module>
-        <module>yudao-module-report</module>
-        <module>yudao-module-crm</module>
-        <module>yudao-module-erp</module>
-        <module>yudao-module-iot</module>
+        <module>weitee-module-system</module>
+        <module>weitee-module-infra</module>
+        <module>weitee-module-bpm</module>
+        <module>weitee-module-report</module>
+        <module>weitee-module-crm</module>
+        <module>weitee-module-erp</module>
+        <module>weitee-module-iot</module>
         <!-- AI 大模型的开启，请参考 https://doc.iocoder.cn/ai/build/ 文档，对 JDK 版本要要求！ -->
-<!--        <module>yudao-module-ai</module>-->
+<!--        <module>weitee-module-ai</module>-->
     </modules>
 
     <name>${project.artifactId}</name>
     <description>WeTai ERP 基础脚手架</description>
-    <url>https://github.com/YunaiV/ruoyi-vue-pro</url>
+    <url>https://github.com/weitee/erp</url>
 
     <properties>
         <revision>2026.05-SNAPSHOT</revision>
@@ -48,7 +48,7 @@
         <dependencies>
             <dependency>
                 <groupId>cn.iocoder.boot</groupId>
-                <artifactId>yudao-dependencies</artifactId>
+                <artifactId>weitee-dependencies</artifactId>
                 <version>${revision}</version>
                 <type>pom</type>
                 <scope>import</scope>

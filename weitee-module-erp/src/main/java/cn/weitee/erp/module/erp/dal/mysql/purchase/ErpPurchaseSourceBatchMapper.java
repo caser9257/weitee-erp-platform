@@ -1,0 +1,29 @@
+package cn.weitee.erp.module.erp.dal.mysql.purchase;
+
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
+import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.weitee.erp.module.erp.controller.admin.purchase.vo.sourcebatch.ErpPurchaseSourceBatchPageReqVO;
+import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseSourceBatchDO;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface ErpPurchaseSourceBatchMapper extends BaseMapperX<ErpPurchaseSourceBatchDO> {
+
+    default PageResult<ErpPurchaseSourceBatchDO> selectPage(ErpPurchaseSourceBatchPageReqVO reqVO) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpPurchaseSourceBatchDO>()
+                .likeIfPresent(ErpPurchaseSourceBatchDO::getBatchNo, reqVO.getBatchNo())
+                .eqIfPresent(ErpPurchaseSourceBatchDO::getProductId, reqVO.getProductId())
+                .eqIfPresent(ErpPurchaseSourceBatchDO::getPurchaseOrderId, reqVO.getPurchaseOrderId())
+                .eqIfPresent(ErpPurchaseSourceBatchDO::getPurchaseOrderItemId, reqVO.getPurchaseOrderItemId())
+                .eqIfPresent(ErpPurchaseSourceBatchDO::getSupplierId, reqVO.getSupplierId())
+                .eqIfPresent(ErpPurchaseSourceBatchDO::getStatus, reqVO.getStatus())
+                .betweenIfPresent(ErpPurchaseSourceBatchDO::getBizDate, reqVO.getBizDate())
+                .orderByDesc(ErpPurchaseSourceBatchDO::getBizDate)
+                .orderByDesc(ErpPurchaseSourceBatchDO::getId));
+    }
+
+    default ErpPurchaseSourceBatchDO selectByBatchNo(String batchNo) {
+        return selectOne(ErpPurchaseSourceBatchDO::getBatchNo, batchNo);
+    }
+}

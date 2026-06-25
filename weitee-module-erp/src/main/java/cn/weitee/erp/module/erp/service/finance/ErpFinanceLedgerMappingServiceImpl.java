@@ -1,0 +1,51 @@
+package cn.weitee.erp.module.erp.service.finance;
+
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerMappingDO;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceLedgerMappingMapper;
+import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import org.springframework.stereotype.Service;
+
+import jakarta.annotation.Resource;
+import java.util.List;
+
+@Service
+public class ErpFinanceLedgerMappingServiceImpl implements ErpFinanceLedgerMappingService {
+    
+    @Resource
+    private ErpFinanceLedgerMappingMapper ledgerMappingMapper;
+    
+    @Override
+    public Long createLedgerMapping(ErpFinanceLedgerMappingDO mapping) {
+        ledgerMappingMapper.insert(mapping);
+        return mapping.getId();
+    }
+    
+    @Override
+    public void updateLedgerMapping(ErpFinanceLedgerMappingDO mapping) {
+        ledgerMappingMapper.updateById(mapping);
+    }
+    
+    @Override
+    public void deleteLedgerMapping(Long id) {
+        ledgerMappingMapper.deleteById(id);
+    }
+    
+    @Override
+    public ErpFinanceLedgerMappingDO getLedgerMapping(Long id) {
+        return ledgerMappingMapper.selectById(id);
+    }
+    
+    @Override
+    public List<ErpFinanceLedgerMappingDO> getLedgerMappingsByExternalLedger(Long externalLedgerId) {
+        return ledgerMappingMapper.selectList(
+                new LambdaQueryWrapperX<ErpFinanceLedgerMappingDO>()
+                        .eq(ErpFinanceLedgerMappingDO::getExternalLedgerId, externalLedgerId));
+    }
+    
+    @Override
+    public ErpFinanceLedgerMappingDO getLedgerMappingByInternalLedger(Long internalLedgerId) {
+        return ledgerMappingMapper.selectOne(
+                new LambdaQueryWrapperX<ErpFinanceLedgerMappingDO>()
+                        .eq(ErpFinanceLedgerMappingDO::getInternalLedgerId, internalLedgerId));
+    }
+}

@@ -1,0 +1,33 @@
+package cn.weitee.erp.module.erp.controller.admin.mrp.vo.issue;
+
+import cn.weitee.erp.framework.common.pojo.PageParam;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDateTime;
+
+import static cn.weitee.erp.framework.common.util.date.DateUtils.FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND;
+
+@Schema(description = "管理后台 - ERP 生产领料单分页 Request VO")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class ErpProductionIssuePageReqVO extends PageParam {
+
+    @Schema(description = "领料单号", example = "LY202604270001")
+    private String issueNo;
+
+    @Schema(description = "生产工单编号", example = "1")
+    private Long productionOrderId;
+
+    @Schema(description = "状态", example = "20")
+    private Integer status;
+
+    @Schema(description = "领料时间")
+    @DateTimeFormat(pattern = FORMAT_YEAR_MONTH_DAY_HOUR_MINUTE_SECOND)
+    private LocalDateTime[] issueTime;
+
+}

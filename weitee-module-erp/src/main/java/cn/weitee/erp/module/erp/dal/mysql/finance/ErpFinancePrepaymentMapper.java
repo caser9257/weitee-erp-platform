@@ -1,0 +1,36 @@
+package cn.weitee.erp.module.erp.dal.mysql.finance;
+
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
+import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.prepayment.ErpFinancePrepaymentPageReqVO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePrepaymentDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface ErpFinancePrepaymentMapper extends BaseMapperX<ErpFinancePrepaymentDO> {
+
+    default PageResult<ErpFinancePrepaymentDO> selectPage(ErpFinancePrepaymentPageReqVO reqVO) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinancePrepaymentDO>()
+                .likeIfPresent(ErpFinancePrepaymentDO::getNo, reqVO.getNo())
+                .betweenIfPresent(ErpFinancePrepaymentDO::getPrepaymentTime, reqVO.getPrepaymentTime())
+                .eqIfPresent(ErpFinancePrepaymentDO::getSupplierId, reqVO.getSupplierId())
+                .eqIfPresent(ErpFinancePrepaymentDO::getFinanceUserId, reqVO.getFinanceUserId())
+                .eqIfPresent(ErpFinancePrepaymentDO::getAccountId, reqVO.getAccountId())
+                .eqIfPresent(ErpFinancePrepaymentDO::getStatus, reqVO.getStatus())
+                .likeIfPresent(ErpFinancePrepaymentDO::getRemark, reqVO.getRemark())
+                .orderByDesc(ErpFinancePrepaymentDO::getId));
+    }
+
+    default int updateByIdAndStatus(Long id, Integer status, ErpFinancePrepaymentDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpFinancePrepaymentDO>()
+                .eq(ErpFinancePrepaymentDO::getId, id)
+                .eq(ErpFinancePrepaymentDO::getStatus, status));
+    }
+
+    default ErpFinancePrepaymentDO selectByNo(String no) {
+        return selectOne(ErpFinancePrepaymentDO::getNo, no);
+    }
+
+}

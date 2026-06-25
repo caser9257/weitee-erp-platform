@@ -1,0 +1,40 @@
+package cn.weitee.erp.module.erp.dal.mysql.stock;
+
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.ErpWarehousePageReqVO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpWarehouseDO;
+import org.apache.ibatis.annotations.Mapper;
+
+import java.util.List;
+
+/**
+ * ERP 仓库 Mapper
+ *
+ * @author WeTai
+ */
+@Mapper
+public interface ErpWarehouseMapper extends BaseMapperX<ErpWarehouseDO> {
+
+    default PageResult<ErpWarehouseDO> selectPage(ErpWarehousePageReqVO reqVO) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpWarehouseDO>()
+                .likeIfPresent(ErpWarehouseDO::getName, reqVO.getName())
+                .eqIfPresent(ErpWarehouseDO::getCategoryId, reqVO.getCategoryId())
+                .eqIfPresent(ErpWarehouseDO::getStatus, reqVO.getStatus())
+                .orderByDesc(ErpWarehouseDO::getId));
+    }
+
+    default ErpWarehouseDO selectByDefaultStatus() {
+        return selectOne(ErpWarehouseDO::getDefaultStatus, true);
+    }
+
+    default List<ErpWarehouseDO> selectListByStatus(Integer status) {
+        return selectList(ErpWarehouseDO::getStatus, status);
+    }
+
+    default List<ErpWarehouseDO> selectListByCategoryId(Long categoryId) {
+        return selectList(ErpWarehouseDO::getCategoryId, categoryId);
+    }
+
+}

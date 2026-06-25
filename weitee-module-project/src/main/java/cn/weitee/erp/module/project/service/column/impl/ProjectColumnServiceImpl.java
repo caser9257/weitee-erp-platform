@@ -1,0 +1,80 @@
+package cn.weitee.erp.module.project.service.column.impl;
+
+import cn.weitee.erp.module.project.controller.admin.vo.column.ProjectColumnSaveReqVO;
+import cn.weitee.erp.module.project.convert.column.ProjectColumnConvert;
+import cn.weitee.erp.module.project.dal.dataobject.column.ProjectColumnDO;
+import cn.weitee.erp.module.project.dal.mysql.column.ProjectColumnMapper;
+import cn.weitee.erp.module.project.service.column.ProjectColumnService;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
+import java.util.List;
+
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.module.project.enums.ErrorCodeConstants.*;
+
+@Service
+@Validated
+public class ProjectColumnServiceImpl implements ProjectColumnService {
+
+    @Resource
+    private ProjectColumnMapper projectColumnMapper;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createColumn(@Valid ProjectColumnSaveReqVO createReqVO) {
+        // 校验数量限制
+        Long count = projectColumnMapper.selectCount(ProjectColumnDO::getProjectId, createReqVO.getProjectId());
+        if (count >= 30) {
+            throw exception(COLUMN_MAX_COUNT_ERROR);
+        }
+
+        ProjectColumnDO column = ProjectColumnConvert.INSTANCE.convert(createReqVO);
+        if (column.getSort() == null) {
+            column.setSort(count.intValue());
+        }
+        projectColumnMapper.insert(column);
+        return column.getId();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateColumn(@Valid ProjectColumnSaveReqVO updateReqVO) {
+        ProjectColumnDO column = projectColumnMapper.selectById(updateReqVO.getId());
+        if (column == null) {
+            throw exception(COLUMN_NOT_FOUND);
+        }
+        ProjectColumnDO updateObj = ProjectColumnConvert.INSTANCE.convert(updateReqVO);
+        projectColumnMapper.updateById(updateObj);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteColumn(Long id) {
+        ProjectColumnDO column = projectColumnMapper.selectById(id);
+        if (column == null) {
+            throw exception(COLUMN_NOT_FOUND);
+        }
+        projectColumnMapper.deleteById(id);
+    }
+
+    @Override
+    public List<ProjectColumnDO> getColumnList(Long projectId) {
+        return projectColumnMapper.selectList(ProjectColumnDO::getProjectId, projectId,
+                ProjectColumnDO::getSort, true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void sortColumns(Long projectId, List<Long> columnIds) {
+        for (int i = 0; i < columnIds.size(); i++) {
+            ProjectColumnDO column = new ProjectColumnDO();
+            column.setId(columnIds.get(i));
+            column.setSort(i);
+            projectColumnMapper.updateById(column);
+        }
+    }
+}

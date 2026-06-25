@@ -1,0 +1,30 @@
+package cn.weitee.erp.module.ai.framework.ai.core.websearch;
+
+import cn.weitee.erp.framework.common.util.json.JsonUtils;
+import cn.weitee.erp.module.ai.framework.ai.core.webserch.AiWebSearchRequest;
+import cn.weitee.erp.module.ai.framework.ai.core.webserch.AiWebSearchResponse;
+import cn.weitee.erp.module.ai.framework.ai.core.webserch.bocha.AiBoChaWebSearchClient;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+
+/**
+ * {@link AiBoChaWebSearchClient} 集成测试�?
+ *
+ * @author WeTai
+ */
+public class AiBoChaWebSearchClientTest {
+
+    private final AiBoChaWebSearchClient webSearchClient = new AiBoChaWebSearchClient(
+            "sk-40500e52840f4d24b956d0b1d80d9abe");
+
+    @Test
+    @Disabled
+    public void testSearch() {
+        AiWebSearchRequest request = new AiWebSearchRequest()
+                .setQuery("阿里巴巴")
+                .setCount(3);
+        AiWebSearchResponse response = webSearchClient.search(request);
+        System.out.println(JsonUtils.toJsonPrettyString(response));
+    }
+
+}

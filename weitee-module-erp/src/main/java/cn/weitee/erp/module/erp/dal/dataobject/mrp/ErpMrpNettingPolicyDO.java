@@ -1,0 +1,41 @@
+package cn.weitee.erp.module.erp.dal.dataobject.mrp;
+
+import cn.weitee.erp.framework.mybatis.core.dataobject.BaseDO;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.KeySequence;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+@TableName("erp_mrp_netting_policy")
+@KeySequence("erp_mrp_netting_policy_seq")
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ErpMrpNettingPolicyDO extends BaseDO {
+
+    @TableId
+    private Long id;
+
+    private String code;
+
+    private String name;
+
+    private Integer version;
+
+    private Boolean enableFlag;
+
+    private Boolean defaultFlag;
+
+    @TableField("description")
+    private String remark;
+
+}

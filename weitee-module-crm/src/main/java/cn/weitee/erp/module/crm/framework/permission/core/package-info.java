@@ -1,0 +1,1 @@
+package cn.weitee.erp.module.crm.framework.permission.core;

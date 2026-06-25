@@ -29,7 +29,7 @@ services:
   server:
     container_name: weitee-server
     build:
-      context: ./yudao-server/
+      context: ./weitee-server/
     image: weitee-server
     restart: unless-stopped
     ports:
@@ -58,7 +58,7 @@ services:
   admin:
     container_name: weitee-admin
     build:
-      context: ./yudao-ui-admin
+      context: ./weitee-ui-admin
       args:
         NODE_ENV:
           ENV=${NODE_ENV:-production}

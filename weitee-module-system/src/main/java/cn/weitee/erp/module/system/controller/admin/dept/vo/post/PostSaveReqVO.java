@@ -1,0 +1,60 @@
+package cn.weitee.erp.module.system.controller.admin.dept.vo.post;
+
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
+import cn.weitee.erp.framework.common.validation.InEnum;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+@Schema(description = "管理后台 - 岗位创建/修改 Request VO")
+@Data
+public class PostSaveReqVO {
+
+    @Schema(description = "岗位编号", example = "1024")
+    private Long id;
+
+    @Schema(description = "岗位名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "小土豆")
+    @NotBlank(message = "岗位名称不能为空")
+    @Size(max = 50, message = "岗位名称长度不能超过 50 个字符")
+    private String name;
+
+    @Schema(description = "岗位编码", requiredMode = Schema.RequiredMode.REQUIRED, example = "yudao")
+    @NotBlank(message = "岗位编码不能为空")
+    @Size(max = 64, message = "岗位编码长度不能超过64个字符")
+    private String code;
+
+    @Schema(description = "岗位层级", example = "高级")
+    @Size(max = 16, message = "岗位层级长度不能超过 16 个字符")
+    private String level;
+
+    @Schema(description = "所属部门编号", example = "103")
+    private Long deptId;
+
+    @Schema(description = "编制人数", example = "2")
+    private Integer staffQuota;
+
+    @Schema(description = "是否关键岗位", example = "true")
+    private Boolean keyPosition;
+
+    @Schema(description = "是否允许兼岗", example = "false")
+    private Boolean allowPartTime;
+
+    @Schema(description = "岗位说明", example = "负责计划统筹")
+    @Size(max = 500, message = "岗位说明长度不能超过 500 个字符")
+    private String jobDescription;
+
+    @Schema(description = "显示顺序", requiredMode = Schema.RequiredMode.REQUIRED, example = "1024")
+    @NotNull(message = "显示顺序不能为空")
+    private Integer sort;
+
+    @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @InEnum(CommonStatusEnum.class)
+    private Integer status;
+
+    @Schema(description = "备注", example = "快乐的备注")
+    private String remark;
+
+}

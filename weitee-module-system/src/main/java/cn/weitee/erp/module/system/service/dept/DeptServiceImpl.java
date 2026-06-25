@@ -1,0 +1,318 @@
+package cn.weitee.erp.module.system.service.dept;
+
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
+import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.framework.common.util.object.BeanUtils;
+import cn.weitee.erp.framework.common.util.validation.ValidationUtils;
+import cn.weitee.erp.framework.datapermission.core.annotation.DataPermission;
+import cn.weitee.erp.module.system.controller.admin.dept.vo.dept.DeptImportExcelVO;
+import cn.weitee.erp.module.system.controller.admin.dept.vo.dept.DeptImportRespVO;
+import cn.weitee.erp.module.system.controller.admin.dept.vo.dept.DeptListReqVO;
+import cn.weitee.erp.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO;
+import cn.weitee.erp.module.system.dal.dataobject.dept.DeptDO;
+import cn.weitee.erp.module.system.dal.dataobject.user.AdminUserDO;
+import cn.weitee.erp.module.system.dal.mysql.dept.DeptMapper;
+import cn.weitee.erp.module.system.dal.mysql.user.AdminUserMapper;
+import cn.weitee.erp.module.system.dal.redis.RedisKeyConstants;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
+
+import jakarta.annotation.Resource;
+import jakarta.validation.ConstraintViolationException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.module.system.enums.ErrorCodeConstants.*;
+
+/**
+ * 部门 Service 实现类
+ *
+ * @author WeTai
+ */
+@Service
+@Validated
+@Slf4j
+public class DeptServiceImpl implements DeptService {
+
+    @Resource
+    private DeptMapper deptMapper;
+    @Resource
+    private AdminUserMapper adminUserMapper;
+
+    @Override
+    @CacheEvict(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST,
+            allEntries = true) // allEntries 清空所有缓存，因为操作一个部门，涉及到多个缓存
+    public Long createDept(DeptSaveReqVO createReqVO) {
+        if (createReqVO.getParentId() == null) {
+            createReqVO.setParentId(DeptDO.PARENT_ID_ROOT);
+        }
+        // 校验父部门的有效性
+        validateParentDept(null, createReqVO.getParentId());
+        // 校验部门名的唯一性
+        validateDeptNameUnique(null, createReqVO.getParentId(), createReqVO.getName());
+
+        // 插入部门
+        DeptDO dept = BeanUtils.toBean(createReqVO, DeptDO.class);
+        deptMapper.insert(dept);
+        return dept.getId();
+    }
+
+    @Override
+    @CacheEvict(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST,
+            allEntries = true) // allEntries 清空所有缓存，因为操作一个部门，涉及到多个缓存
+    public void updateDept(DeptSaveReqVO updateReqVO) {
+        if (updateReqVO.getParentId() == null) {
+            updateReqVO.setParentId(DeptDO.PARENT_ID_ROOT);
+        }
+        // 校验自己存在
+        validateDeptExists(updateReqVO.getId());
+        // 校验父部门的有效性
+        validateParentDept(updateReqVO.getId(), updateReqVO.getParentId());
+        // 校验部门名的唯一性
+        validateDeptNameUnique(updateReqVO.getId(), updateReqVO.getParentId(), updateReqVO.getName());
+
+        // 更新部门
+        DeptDO updateObj = BeanUtils.toBean(updateReqVO, DeptDO.class);
+        deptMapper.updateById(updateObj);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST,
+            allEntries = true) // allEntries 清空所有缓存，因为操作一个部门，涉及到多个缓存
+    public void deleteDept(Long id) {
+        // 校验是否存在
+        validateDeptExists(id);
+        // 校验是否有子部门
+        if (deptMapper.selectCountByParentId(id) > 0) {
+            throw exception(DEPT_EXITS_CHILDREN);
+        }
+        // 删除部门
+        deptMapper.deleteById(id);
+    }
+
+    @Override
+    @CacheEvict(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST,
+            allEntries = true) // allEntries 清空所有缓存，因为操作一个部门，涉及到多个缓存
+    public void deleteDeptList(List<Long> ids) {
+        // 校验是否有子部门
+        for (Long id : ids) {
+            if (deptMapper.selectCountByParentId(id) > 0) {
+                throw exception(DEPT_EXITS_CHILDREN);
+            }
+        }
+
+        // 批量删除部门
+        deptMapper.deleteByIds(ids);
+    }
+
+    @VisibleForTesting
+    void validateDeptExists(Long id) {
+        if (id == null) {
+            return;
+        }
+        DeptDO dept = deptMapper.selectById(id);
+        if (dept == null) {
+            throw exception(DEPT_NOT_FOUND);
+        }
+    }
+
+    @VisibleForTesting
+    void validateParentDept(Long id, Long parentId) {
+        if (parentId == null || DeptDO.PARENT_ID_ROOT.equals(parentId)) {
+            return;
+        }
+        // 1. 不能设置自己为父部门
+        if (Objects.equals(id, parentId)) {
+            throw exception(DEPT_PARENT_ERROR);
+        }
+        // 2. 父部门不存在
+        DeptDO parentDept = deptMapper.selectById(parentId);
+        if (parentDept == null) {
+            throw exception(DEPT_PARENT_NOT_EXITS);
+        }
+        // 3. 递归校验父部门，如果父部门是自己的子部门，则报错，避免形成环路
+        if (id == null) { // id 为空，说明新增，不需要考虑环路
+            return;
+        }
+        for (int i = 0; i < Short.MAX_VALUE; i++) {
+            // 3.1 校验环路
+            parentId = parentDept.getParentId();
+            if (Objects.equals(id, parentId)) {
+                throw exception(DEPT_PARENT_IS_CHILD);
+            }
+            // 3.2 继续递归下一级父部门
+            if (parentId == null || DeptDO.PARENT_ID_ROOT.equals(parentId)) {
+                break;
+            }
+            parentDept = deptMapper.selectById(parentId);
+            if (parentDept == null) {
+                break;
+            }
+        }
+    }
+
+    @VisibleForTesting
+    void validateDeptNameUnique(Long id, Long parentId, String name) {
+        DeptDO dept = deptMapper.selectByParentIdAndName(parentId, name);
+        if (dept == null) {
+            return;
+        }
+        // 如果 id 为空，说明不用比较是否为相同 id 的部门
+        if (id == null) {
+            throw exception(DEPT_NAME_DUPLICATE);
+        }
+        if (ObjectUtil.notEqual(dept.getId(), id)) {
+            throw exception(DEPT_NAME_DUPLICATE);
+        }
+    }
+
+    @Override
+    public DeptDO getDept(Long id) {
+        return deptMapper.selectById(id);
+    }
+
+    @Override
+    public List<DeptDO> getDeptList(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        return deptMapper.selectByIds(ids);
+    }
+
+    @Override
+    public List<DeptDO> getDeptList(DeptListReqVO reqVO) {
+        List<DeptDO> list = deptMapper.selectList(reqVO);
+        list.sort(Comparator.comparing(DeptDO::getSort));
+        return list;
+    }
+
+    @Override
+    public DeptImportRespVO importDeptList(List<DeptImportExcelVO> importDepts, boolean isUpdateSupport) {
+        if (CollUtil.isEmpty(importDepts)) {
+            throw exception(DEPT_IMPORT_LIST_IS_EMPTY);
+        }
+        DeptImportRespVO respVO = DeptImportRespVO.builder()
+                .createDeptNames(new ArrayList<>())
+                .updateDeptNames(new ArrayList<>())
+                .failureDeptNames(new LinkedHashMap<>())
+                .build();
+        AtomicInteger index = new AtomicInteger(1);
+        importDepts.forEach(importDept -> {
+            int currentIndex = index.getAndIncrement();
+            String key = StrUtil.blankToDefault(importDept.getName(), "第 " + currentIndex + " 行");
+            try {
+                Long parentId = resolveParentId(importDept.getParentName());
+                Long leaderUserId = resolveLeaderUserId(importDept.getLeaderUsername());
+                DeptSaveReqVO reqVO = BeanUtils.toBean(importDept, DeptSaveReqVO.class);
+                reqVO.setParentId(parentId);
+                reqVO.setLeaderUserId(leaderUserId);
+                ValidationUtils.validate(reqVO);
+                DeptDO existDept = deptMapper.selectByParentIdAndName(parentId, reqVO.getName());
+                if (existDept == null) {
+                    createDept(reqVO);
+                    respVO.getCreateDeptNames().add(reqVO.getName());
+                    return;
+                }
+                if (!isUpdateSupport) {
+                    respVO.getFailureDeptNames().put(key, DEPT_NAME_DUPLICATE.getMsg());
+                    return;
+                }
+                reqVO.setId(existDept.getId());
+                updateDept(reqVO);
+                respVO.getUpdateDeptNames().add(reqVO.getName());
+            } catch (ConstraintViolationException | ServiceException ex) {
+                respVO.getFailureDeptNames().put(key, ex.getMessage());
+            }
+        });
+        return respVO;
+    }
+
+    @Override
+    public List<DeptDO> getChildDeptList(Collection<Long> ids) {
+        List<DeptDO> children = new LinkedList<>();
+        // 遍历每一层
+        Collection<Long> parentIds = ids;
+        for (int i = 0; i < Short.MAX_VALUE; i++) { // 使用 Short.MAX_VALUE 避免 bug 场景下，存在死循环
+            // 查询当前层，所有的子部门
+            List<DeptDO> depts = deptMapper.selectListByParentId(parentIds);
+            // 1. 如果没有子部门，则结束遍历
+            if (CollUtil.isEmpty(depts)) {
+                break;
+            }
+            // 2. 如果有子部门，继续遍历
+            children.addAll(depts);
+            parentIds = convertSet(depts, DeptDO::getId);
+        }
+        return children;
+    }
+
+    @Override
+    public List<DeptDO> getDeptListByLeaderUserId(Long id) {
+        return deptMapper.selectListByLeaderUserId(id);
+    }
+
+    @Override
+    @DataPermission(enable = false) // 禁用数据权限，避免建立不正确的缓存
+    @Cacheable(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST, key = "#id")
+    public Set<Long> getChildDeptIdListFromCache(Long id) {
+        List<DeptDO> children = getChildDeptList(id);
+        return convertSet(children, DeptDO::getId);
+    }
+
+    @Override
+    public void validateDeptList(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return;
+        }
+        // 获得科室信息
+        Map<Long, DeptDO> deptMap = getDeptMap(ids);
+        // 校验
+        ids.forEach(id -> {
+            DeptDO dept = deptMap.get(id);
+            if (dept == null) {
+                throw exception(DEPT_NOT_FOUND);
+            }
+            if (!CommonStatusEnum.ENABLE.getStatus().equals(dept.getStatus())) {
+                throw exception(DEPT_NOT_ENABLE, dept.getName());
+            }
+        });
+    }
+
+    private Long resolveParentId(String parentName) {
+        if (StrUtil.isBlank(parentName)) {
+            return DeptDO.PARENT_ID_ROOT;
+        }
+        List<DeptDO> parentDepts = deptMapper.selectListByName(parentName);
+        if (CollUtil.isEmpty(parentDepts)) {
+            throw exception(DEPT_PARENT_NOT_EXITS);
+        }
+        if (parentDepts.size() > 1) {
+            throw exception(DEPT_PARENT_NAME_AMBIGUOUS, parentName);
+        }
+        return parentDepts.get(0).getId();
+    }
+
+    private Long resolveLeaderUserId(String leaderUsername) {
+        if (StrUtil.isBlank(leaderUsername)) {
+            return null;
+        }
+        AdminUserDO leaderUser = adminUserMapper.selectByUsername(leaderUsername);
+        if (leaderUser == null) {
+            throw exception(DEPT_LEADER_USER_NOT_EXISTS, leaderUsername);
+        }
+        if (!CommonStatusEnum.ENABLE.getStatus().equals(leaderUser.getStatus())) {
+            throw exception(DEPT_LEADER_USER_NOT_ENABLE, leaderUsername);
+        }
+        return leaderUser.getId();
+    }
+
+}

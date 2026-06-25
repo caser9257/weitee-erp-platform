@@ -1,0 +1,84 @@
+package cn.weitee.erp.module.bpm.service.approval;
+
+import cn.weitee.erp.module.bpm.controller.admin.approval.vo.statistics.ApprovalStatisticsRespVO;
+import cn.weitee.erp.module.bpm.controller.admin.approval.vo.statistics.UserApprovalStatisticsRespVO;
+import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalInstanceSnapshotMapper;
+import org.springframework.stereotype.Service;
+
+import jakarta.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 审批统计报表 Service 实现类
+ */
+@Service
+public class BpmApprovalStatisticsServiceImpl implements BpmApprovalStatisticsService {
+
+    @Resource
+    private BpmApprovalInstanceSnapshotMapper approvalInstanceSnapshotMapper;
+
+    @Override
+    public ApprovalStatisticsRespVO getApprovalStatistics() {
+        // 使用单次 SQL 聚合查询各状态数量
+        Map<String, Object> stats = approvalInstanceSnapshotMapper.selectStatusStatistics();
+        long processingCount = ((Number) stats.get("processingCount")).longValue();
+        long approvedCount = ((Number) stats.get("approvedCount")).longValue();
+        long rejectedCount = ((Number) stats.get("rejectedCount")).longValue();
+        long cancelledCount = ((Number) stats.get("cancelledCount")).longValue();
+
+        // 构建返回对象
+        ApprovalStatisticsRespVO respVO = new ApprovalStatisticsRespVO();
+        respVO.setTotalCount(processingCount + approvedCount + rejectedCount + cancelledCount);
+        respVO.setProcessingCount(processingCount);
+        respVO.setApprovedCount(approvedCount);
+        respVO.setRejectedCount(rejectedCount);
+        respVO.setCancelledCount(cancelledCount);
+
+        return respVO;
+    }
+
+    @Override
+    public UserApprovalStatisticsRespVO getUserApprovalStatistics(Long userId) {
+        // 使用单次 SQL 聚合查询用户各状态数量
+        Map<String, Object> stats = approvalInstanceSnapshotMapper.selectStatusStatisticsByStartUserId(userId);
+        long processingCount = ((Number) stats.get("processingCount")).longValue();
+        long approvedCount = ((Number) stats.get("approvedCount")).longValue();
+        long rejectedCount = ((Number) stats.get("rejectedCount")).longValue();
+        long cancelledCount = ((Number) stats.get("cancelledCount")).longValue();
+
+        // 构建返回对象
+        UserApprovalStatisticsRespVO respVO = new UserApprovalStatisticsRespVO();
+        respVO.setUserId(userId);
+        respVO.setTotalCount(processingCount + approvedCount + rejectedCount + cancelledCount);
+        respVO.setProcessingCount(processingCount);
+        respVO.setApprovedCount(approvedCount);
+        respVO.setRejectedCount(rejectedCount);
+        respVO.setCancelledCount(cancelledCount);
+
+        return respVO;
+    }
+
+    @Override
+    public List<UserApprovalStatisticsRespVO> getAllUserApprovalStatistics() {
+        // 使用 SQL 聚合查询按用户分组统计
+        List<Map<String, Object>> groupResult = approvalInstanceSnapshotMapper.selectGroupByStartUserId();
+
+        // 构建返回列表
+        List<UserApprovalStatisticsRespVO> result = new ArrayList<>();
+        for (Map<String, Object> row : groupResult) {
+            UserApprovalStatisticsRespVO respVO = new UserApprovalStatisticsRespVO();
+            respVO.setUserId(((Number) row.get("startUserId")).longValue());
+            respVO.setTotalCount(((Number) row.get("totalCount")).longValue());
+            respVO.setProcessingCount(((Number) row.get("processingCount")).longValue());
+            respVO.setApprovedCount(((Number) row.get("approvedCount")).longValue());
+            respVO.setRejectedCount(((Number) row.get("rejectedCount")).longValue());
+            respVO.setCancelledCount(((Number) row.get("cancelledCount")).longValue());
+            result.add(respVO);
+        }
+
+        return result;
+    }
+
+}
