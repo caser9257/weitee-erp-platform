@@ -1,6 +1,7 @@
 ---
 description: 代码分析专家 — 分析代码、评估影响、技术研究
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.1
 permission:
   edit: deny

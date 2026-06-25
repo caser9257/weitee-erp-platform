@@ -54,6 +54,39 @@
         "claude-opus-4-7": { "name": "claude-opus-4-7" },
         "sora2": { "name": "sora2" }
       }
+    },
+    "openai": {
+      "npm": "@ai-sdk/openai",
+      "name": "OpenAI Alias",
+      "options": {
+        "baseURL": "https://fast.sbbbbbbbbb.xyz/v1",
+        "apiKey": "sk-rF9GHRIOzoCsexw5uJ6nUVoeUsqwELPefP4D1jzmAHx0RqTo"
+      },
+      "models": {
+        "gpt-5.5": { "name": "gpt-5.5" },
+        "gpt-5.5-pro": { "name": "gpt-5.5" },
+        "gpt-5.5-fast": { "name": "gpt-5.5" },
+        "gpt-5.4": { "name": "gpt-5.4" },
+        "gpt-5.4-mini": { "name": "gpt-5.4" },
+        "gpt-5.4-mini-fast": { "name": "gpt-5.4" },
+        "gpt-5.4-nano": { "name": "gpt-5.4" },
+        "gpt-5-nano": { "name": "gpt-5.4" },
+        "gpt-5.3-tester": { "name": "gpt-5.4" }
+      }
+    },
+    "tester-go": {
+      "npm": "@ai-sdk/openai",
+      "name": "Tester-Go Alias",
+      "options": {
+        "baseURL": "https://fast.sbbbbbbbbb.xyz/v1",
+        "apiKey": "sk-rF9GHRIOzoCsexw5uJ6nUVoeUsqwELPefP4D1jzmAHx0RqTo"
+      },
+      "models": {
+        "kimi-k2.6": { "name": "gpt-5.4" },
+        "glm-5.1": { "name": "gpt-5.4" },
+        "qwen3.5-plus": { "name": "gpt-5.4" },
+        "minimax-m2.7": { "name": "gpt-5.4" }
+      }
     }
   }
 }

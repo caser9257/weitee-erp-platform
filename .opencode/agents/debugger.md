@@ -1,6 +1,7 @@
 ---
 description: 问题诊断专家 — 诊断 Bug、定位根因、提供修复方案
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.1
 permission:
   edit: allow

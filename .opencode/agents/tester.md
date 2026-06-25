@@ -1,6 +1,7 @@
 ---
 description: 测试专家 — 生成测试、分析覆盖、提高质量
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.2
 permission:
   edit: allow

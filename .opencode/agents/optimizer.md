@@ -1,6 +1,7 @@
 ---
 description: 性能优化专家 — 分析性能瓶颈、提出优化方案
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.2
 permission:
   edit: deny

@@ -1,6 +1,7 @@
 ---
 description: 架构设计专家 — 系统设计、技术选型、架构评审
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.2
 permission:
   edit: deny

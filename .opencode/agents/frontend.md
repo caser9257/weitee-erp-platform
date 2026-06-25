@@ -1,6 +1,7 @@
 ---
 description: 前端开发专家 — UI/UX 开发、组件设计、视觉实现
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.3
 permission:
   edit: allow

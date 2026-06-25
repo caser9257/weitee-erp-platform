@@ -1,6 +1,7 @@
 ---
 description: 代码审查专家 — 审查代码质量、安全、性能、可维护性
 mode: subagent
+model: netester/gpt-5.4
 temperature: 0.1
 permission:
   edit: deny
