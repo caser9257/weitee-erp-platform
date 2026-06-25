@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 文件操作 Mapper
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Mapper
 public interface FileMapper extends BaseMapperX<FileDO> {

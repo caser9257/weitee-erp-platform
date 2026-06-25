@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 /**
  * {@link IotAlertTriggerSceneRuleAction} 的单元测试
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class IotAlertTriggerSceneRuleActionTest extends BaseMockitoUnitTest {
 

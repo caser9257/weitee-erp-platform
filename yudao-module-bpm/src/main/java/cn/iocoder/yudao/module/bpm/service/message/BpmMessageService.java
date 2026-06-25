@@ -14,7 +14,7 @@ import jakarta.validation.Valid;
 /**
  * BPM 消息 Service 接口
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface BpmMessageService {
 

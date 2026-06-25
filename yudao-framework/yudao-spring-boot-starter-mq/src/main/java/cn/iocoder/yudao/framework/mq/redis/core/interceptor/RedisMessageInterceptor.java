@@ -6,7 +6,7 @@ import cn.iocoder.yudao.framework.mq.redis.core.message.AbstractRedisMessage;
  * {@link AbstractRedisMessage} 消息拦截器
  * 通过拦截器，作为插件机制，实现拓展。
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface RedisMessageInterceptor {
 

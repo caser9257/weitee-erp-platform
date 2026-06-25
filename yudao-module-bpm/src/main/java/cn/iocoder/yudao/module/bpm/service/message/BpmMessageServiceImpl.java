@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * BPM 消息 Service 实现类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Service
 @Validated

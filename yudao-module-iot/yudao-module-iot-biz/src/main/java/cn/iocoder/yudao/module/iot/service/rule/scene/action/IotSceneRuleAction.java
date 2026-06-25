@@ -9,7 +9,7 @@ import jakarta.annotation.Nullable;
 /**
  * IoT 场景联动的执行器接口
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface IotSceneRuleAction {
 

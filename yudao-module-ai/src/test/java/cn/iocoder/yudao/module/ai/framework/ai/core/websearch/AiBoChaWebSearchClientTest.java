@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@link AiBoChaWebSearchClient} 集成测试�?
+ * {@link AiBoChaWebSearchClient} 集成测试�?
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class AiBoChaWebSearchClientTest {
 

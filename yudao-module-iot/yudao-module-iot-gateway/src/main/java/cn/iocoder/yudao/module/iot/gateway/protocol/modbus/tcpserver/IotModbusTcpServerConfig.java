@@ -9,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * IoT Modbus TCP Server 协议配置
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Data
 public class IotModbusTcpServerConfig {

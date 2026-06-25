@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * {@link IotThingModelServiceImpl} 的单元测试
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Import(IotThingModelServiceImpl.class)
 public class IotThingModelServiceImplTest extends BaseDbUnitTest {

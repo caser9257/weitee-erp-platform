@@ -10,9 +10,9 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import reactor.core.publisher.Flux;
 
 /**
- * 谷歌 Gemini {@link ChatModel} 实现类，基于 Google AI Studio 提供�?<a href="https://ai.google.dev/gemini-api/docs/openai">OpenAI 兼容方案</a>
+ * 谷歌 Gemini {@link ChatModel} 实现类，基于 Google AI Studio 提供�?<a href="https://ai.google.dev/gemini-api/docs/openai">OpenAI 兼容方案</a>
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class GeminiChatModel implements ChatModel {
     public static final String MODEL_DEFAULT = "gemini-2.5-flash";
 
     /**
-     * 兼容 OpenAI 接口，进行复�?
+     * 兼容 OpenAI 接口，进行复�?
      */
     private final OpenAiChatModel openAiChatModel;
 

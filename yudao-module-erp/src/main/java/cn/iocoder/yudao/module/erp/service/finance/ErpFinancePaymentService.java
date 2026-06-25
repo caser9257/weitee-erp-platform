@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * ERP 付款单 Service 接口
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface ErpFinancePaymentService {
 

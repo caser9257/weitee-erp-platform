@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * ERP 其它出库单 Mapper
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Mapper
 public interface ErpStockOutMapper extends BaseMapperX<ErpStockOutDO> {

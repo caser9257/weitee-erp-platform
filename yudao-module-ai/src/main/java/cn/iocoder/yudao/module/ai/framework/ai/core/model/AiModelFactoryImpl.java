@@ -136,7 +136,7 @@ import static org.springframework.ai.retry.RetryUtils.DEFAULT_RETRY_TEMPLATE;
 /**
  * AI Model 模型工厂的实现类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class AiModelFactoryImpl implements AiModelFactory {
 
@@ -344,7 +344,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     // ========== 各种创建 spring-ai 客户端的方法 ==========
 
     /**
-     * 可参�?{@link DashScopeChatAutoConfiguration} �?dashscopeChatModel 方法
+     * 可参�?{@link DashScopeChatAutoConfiguration} �?dashscopeChatModel 方法
      */
     private static DashScopeChatModel buildTongYiChatModel(String key) {
         DashScopeApi dashScopeApi = DashScopeApi.builder().apiKey(key).build();
@@ -358,7 +358,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link DashScopeImageAutoConfiguration} �?dashScopeImageModel 方法
+     * 可参�?{@link DashScopeImageAutoConfiguration} �?dashScopeImageModel 方法
      */
     private static DashScopeImageModel buildTongYiImagesModel(String key) {
         DashScopeImageApi dashScopeImageApi = DashScopeImageApi.builder().apiKey(key).build();
@@ -368,12 +368,12 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link QianFanChatAutoConfiguration} �?qianFanChatModel 方法
+     * 可参�?{@link QianFanChatAutoConfiguration} �?qianFanChatModel 方法
      */
     private static QianFanChatModel buildYiYanChatModel(String key) {
-        // TODO spring ai qianfan �?bug，无法使�?https://github.com/spring-ai-community/qianfan/issues/6
+        // TODO spring ai qianfan �?bug，无法使�?https://github.com/spring-ai-community/qianfan/issues/6
         List<String> keys = StrUtil.split(key, '|');
-        Assert.equals(keys.size(), 2, "YiYanChatClient 的密钥需�?(appKey|secretKey) 格式");
+        Assert.equals(keys.size(), 2, "YiYanChatClient 的密钥需�?(appKey|secretKey) 格式");
         String appKey = keys.get(0);
         String secretKey = keys.get(1);
         QianFanApi qianFanApi = new QianFanApi(appKey, secretKey);
@@ -381,12 +381,12 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link QianFanEmbeddingAutoConfiguration} �?qianFanImageModel 方法
+     * 可参�?{@link QianFanEmbeddingAutoConfiguration} �?qianFanImageModel 方法
      */
     private QianFanImageModel buildQianFanImageModel(String key) {
-        // TODO spring ai qianfan �?bug，无法使�?https://github.com/spring-ai-community/qianfan/issues/6
+        // TODO spring ai qianfan �?bug，无法使�?https://github.com/spring-ai-community/qianfan/issues/6
         List<String> keys = StrUtil.split(key, '|');
-        Assert.equals(keys.size(), 2, "YiYanChatClient 的密钥需�?(appKey|secretKey) 格式");
+        Assert.equals(keys.size(), 2, "YiYanChatClient 的密钥需�?(appKey|secretKey) 格式");
         String appKey = keys.get(0);
         String secretKey = keys.get(1);
         QianFanImageApi qianFanApi = new QianFanImageApi(appKey, secretKey);
@@ -394,7 +394,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link DeepSeekChatAutoConfiguration} �?deepSeekChatModel 方法
+     * 可参�?{@link DeepSeekChatAutoConfiguration} �?deepSeekChatModel 方法
      */
     private static DeepSeekChatModel buildDeepSeekChatModel(String apiKey) {
         DeepSeekApi deepSeekApi = DeepSeekApi.builder().apiKey(apiKey).build();
@@ -408,7 +408,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AiAutoConfiguration#douBaoChatClient(YudaoAiProperties)}
+     * 可参�?{@link AiAutoConfiguration#douBaoChatClient(YudaoAiProperties)}
      */
     private ChatModel buildDouBaoChatModel(String apiKey) {
         YudaoAiProperties.DouBao properties = new YudaoAiProperties.DouBao()
@@ -417,7 +417,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AiAutoConfiguration#hunYuanChatClient(YudaoAiProperties)}
+     * 可参�?{@link AiAutoConfiguration#hunYuanChatClient(YudaoAiProperties)}
      */
     private ChatModel buildHunYuanChatModel(String apiKey, String url) {
         YudaoAiProperties.HunYuan properties = new YudaoAiProperties.HunYuan()
@@ -426,7 +426,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AiAutoConfiguration#siliconFlowChatClient(YudaoAiProperties)}
+     * 可参�?{@link AiAutoConfiguration#siliconFlowChatClient(YudaoAiProperties)}
      */
     private ChatModel buildSiliconFlowChatModel(String apiKey) {
         YudaoAiProperties.SiliconFlow properties = new YudaoAiProperties.SiliconFlow()
@@ -435,7 +435,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link ZhiPuAiChatAutoConfiguration} �?zhiPuAiChatModel 方法
+     * 可参�?{@link ZhiPuAiChatAutoConfiguration} �?zhiPuAiChatModel 方法
      */
     private ZhiPuAiChatModel buildZhiPuChatModel(String apiKey, String url) {
         ZhiPuAiApi.Builder zhiPuAiApiBuilder = ZhiPuAiApi.builder().apiKey(apiKey);
@@ -448,7 +448,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link ZhiPuAiImageAutoConfiguration} �?zhiPuAiImageModel 方法
+     * 可参�?{@link ZhiPuAiImageAutoConfiguration} �?zhiPuAiImageModel 方法
      */
     private ZhiPuAiImageModel buildZhiPuAiImageModel(String apiKey, String url) {
         ZhiPuAiImageApi zhiPuAiApi = StrUtil.isEmpty(url) ? new ZhiPuAiImageApi(apiKey)
@@ -457,7 +457,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link MiniMaxChatAutoConfiguration} �?miniMaxChatModel 方法
+     * 可参�?{@link MiniMaxChatAutoConfiguration} �?miniMaxChatModel 方法
      */
     private MiniMaxChatModel buildMiniMaxChatModel(String apiKey, String url) {
         MiniMaxApi miniMaxApi = StrUtil.isEmpty(url) ? new MiniMaxApi(apiKey)
@@ -467,7 +467,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link MoonshotChatAutoConfiguration} �?moonshotChatModel 方法
+     * 可参�?{@link MoonshotChatAutoConfiguration} �?moonshotChatModel 方法
      */
     private MoonshotChatModel buildMoonshotChatModel(String apiKey, String url) {
         MoonshotApi.Builder moonshotApiBuilder = MoonshotApi.builder()
@@ -484,18 +484,18 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AiAutoConfiguration#xingHuoChatClient(YudaoAiProperties)}
+     * 可参�?{@link AiAutoConfiguration#xingHuoChatClient(YudaoAiProperties)}
      */
     private static XingHuoChatModel buildXingHuoChatModel(String key) {
         List<String> keys = StrUtil.split(key, '|');
-        Assert.equals(keys.size(), 2, "XingHuoChatClient 的密钥需�?(appKey|secretKey) 格式");
+        Assert.equals(keys.size(), 2, "XingHuoChatClient 的密钥需�?(appKey|secretKey) 格式");
         YudaoAiProperties.XingHuo properties = new YudaoAiProperties.XingHuo()
                 .setAppKey(keys.get(0)).setSecretKey(keys.get(1));
         return new AiAutoConfiguration().buildXingHuoChatClient(properties);
     }
 
     /**
-     * 可参�?{@link AiAutoConfiguration#baiChuanChatClient(YudaoAiProperties)}
+     * 可参�?{@link AiAutoConfiguration#baiChuanChatClient(YudaoAiProperties)}
      */
     private BaiChuanChatModel buildBaiChuanChatModel(String apiKey) {
         YudaoAiProperties.BaiChuan properties = new YudaoAiProperties.BaiChuan()
@@ -504,7 +504,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link OpenAiChatAutoConfiguration} �?openAiChatModel 方法
+     * 可参�?{@link OpenAiChatAutoConfiguration} �?openAiChatModel 方法
      */
     private static OpenAiChatModel buildOpenAiChatModel(String openAiToken, String url) {
         url = StrUtil.blankToDefault(url, OpenAiApiConstants.DEFAULT_BASE_URL);
@@ -516,10 +516,10 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AzureOpenAiChatAutoConfiguration}
+     * 可参�?{@link AzureOpenAiChatAutoConfiguration}
      */
     private static AzureOpenAiChatModel buildAzureOpenAiChatModel(String apiKey, String url) {
-        // TODO @芋艿：使用前，请测试，暂时没密钥！！�?
+        // TODO @芋艿：使用前，请测试，暂时没密钥！！�?
         OpenAIClientBuilder openAIClientBuilder = new OpenAIClientBuilder()
                 .endpoint(url).credential(new KeyCredential(apiKey));
         return AzureOpenAiChatModel.builder()
@@ -529,7 +529,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AnthropicChatAutoConfiguration} �?anthropicApi 方法
+     * 可参�?{@link AnthropicChatAutoConfiguration} �?anthropicApi 方法
      */
     private static AnthropicChatModel buildAnthropicChatModel(String apiKey, String url) {
         AnthropicApi.Builder builder = AnthropicApi.builder().apiKey(apiKey);
@@ -544,7 +544,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AiAutoConfiguration#buildGeminiChatClient(YudaoAiProperties.Gemini)}
+     * 可参�?{@link AiAutoConfiguration#buildGeminiChatClient(YudaoAiProperties.Gemini)}
      */
     private static GeminiChatModel buildGeminiChatModel(String apiKey) {
         YudaoAiProperties.Gemini properties = SpringUtil.getBean(YudaoAiProperties.class)
@@ -553,7 +553,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link OpenAiImageAutoConfiguration} �?openAiImageModel 方法
+     * 可参�?{@link OpenAiImageAutoConfiguration} �?openAiImageModel 方法
      */
     private OpenAiImageModel buildOpenAiImageModel(String openAiToken, String url) {
         url = StrUtil.blankToDefault(url, OpenAiApiConstants.DEFAULT_BASE_URL);
@@ -571,7 +571,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link OllamaChatAutoConfiguration} �?ollamaChatModel 方法
+     * 可参�?{@link OllamaChatAutoConfiguration} �?ollamaChatModel 方法
      */
     private static OllamaChatModel buildOllamaChatModel(String url) {
         OllamaApi ollamaApi = OllamaApi.builder().baseUrl(url).build();
@@ -582,7 +582,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link StabilityAiImageAutoConfiguration} �?stabilityAiImageModel 方法
+     * 可参�?{@link StabilityAiImageAutoConfiguration} �?stabilityAiImageModel 方法
      */
     private StabilityAiImageModel buildStabilityAiImageModel(String apiKey, String url) {
         url = StrUtil.blankToDefault(url, StabilityAiApi.DEFAULT_BASE_URL);
@@ -597,10 +597,10 @@ public class AiModelFactoryImpl implements AiModelFactory {
         return new AiAutoConfiguration().buildGrokChatClient(properties);
     }
 
-    // ========== 各种创建 EmbeddingModel 的方�?==========
+    // ========== 各种创建 EmbeddingModel 的方�?==========
 
     /**
-     * 可参�?{@link DashScopeEmbeddingAutoConfiguration} �?dashscopeEmbeddingModel 方法
+     * 可参�?{@link DashScopeEmbeddingAutoConfiguration} �?dashscopeEmbeddingModel 方法
      */
     private DashScopeEmbeddingModel buildTongYiEmbeddingModel(String apiKey, String model) {
         DashScopeApi dashScopeApi = DashScopeApi.builder().apiKey(apiKey).build();
@@ -609,7 +609,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link ZhiPuAiEmbeddingAutoConfiguration} �?zhiPuAiEmbeddingModel 方法
+     * 可参�?{@link ZhiPuAiEmbeddingAutoConfiguration} �?zhiPuAiEmbeddingModel 方法
      */
     private ZhiPuAiEmbeddingModel buildZhiPuEmbeddingModel(String apiKey, String url, String model) {
         ZhiPuAiApi.Builder zhiPuAiApiBuilder = ZhiPuAiApi.builder().apiKey(apiKey);
@@ -621,7 +621,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link MiniMaxEmbeddingAutoConfiguration} �?miniMaxEmbeddingModel 方法
+     * 可参�?{@link MiniMaxEmbeddingAutoConfiguration} �?miniMaxEmbeddingModel 方法
      */
     private EmbeddingModel buildMiniMaxEmbeddingModel(String apiKey, String url, String model) {
         MiniMaxApi miniMaxApi = StrUtil.isEmpty(url)? new MiniMaxApi(apiKey)
@@ -631,11 +631,11 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link QianFanEmbeddingAutoConfiguration} �?qianFanEmbeddingModel 方法
+     * 可参�?{@link QianFanEmbeddingAutoConfiguration} �?qianFanEmbeddingModel 方法
      */
     private QianFanEmbeddingModel buildYiYanEmbeddingModel(String key, String model) {
         List<String> keys = StrUtil.split(key, '|');
-        Assert.equals(keys.size(), 2, "YiYanChatClient 的密钥需�?(appKey|secretKey) 格式");
+        Assert.equals(keys.size(), 2, "YiYanChatClient 的密钥需�?(appKey|secretKey) 格式");
         String appKey = keys.get(0);
         String secretKey = keys.get(1);
         QianFanApi qianFanApi = new QianFanApi(appKey, secretKey);
@@ -653,7 +653,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link OpenAiEmbeddingAutoConfiguration} �?openAiEmbeddingModel 方法
+     * 可参�?{@link OpenAiEmbeddingAutoConfiguration} �?openAiEmbeddingModel 方法
      */
     private OpenAiEmbeddingModel buildOpenAiEmbeddingModel(String openAiToken, String url, String model) {
         url = StrUtil.blankToDefault(url, OpenAiApiConstants.DEFAULT_BASE_URL);
@@ -663,10 +663,10 @@ public class AiModelFactoryImpl implements AiModelFactory {
     }
 
     /**
-     * 可参�?{@link AzureOpenAiEmbeddingAutoConfiguration} �?azureOpenAiEmbeddingModel 方法
+     * 可参�?{@link AzureOpenAiEmbeddingAutoConfiguration} �?azureOpenAiEmbeddingModel 方法
      */
     private AzureOpenAiEmbeddingModel buildAzureOpenAiEmbeddingModel(String apiKey, String url, String model) {
-        // TODO @芋艿：手头暂时没密钥，使用建议再测试�?
+        // TODO @芋艿：手头暂时没密钥，使用建议再测试�?
         AzureOpenAiEmbeddingAutoConfiguration azureOpenAiAutoConfiguration = new AzureOpenAiEmbeddingAutoConfiguration();
         // 创建 OpenAIClientBuilder 对象
         OpenAIClientBuilder openAIClientBuilder = new OpenAIClientBuilder()
@@ -677,10 +677,10 @@ public class AiModelFactoryImpl implements AiModelFactory {
                 getObservationRegistry(), getEmbeddingModelObservationConvention());
     }
 
-    // ========== 各种创建 VectorStore 的方�?==========
+    // ========== 各种创建 VectorStore 的方�?==========
 
     /**
-     * 注意：仅适合本地测试使用，生产建议还是使�?Qdrant、Milvus �?
+     * 注意：仅适合本地测试使用，生产建议还是使�?Qdrant、Milvus �?
      */
     @SneakyThrows
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -695,7 +695,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
         } else if (file.length() > 0) {
             vectorStore.load(file);
         }
-        // 定时持久化，每分钟一�?
+        // 定时持久化，每分钟一�?
         Timer timer = new Timer("SimpleVectorStoreTimer-" + file.getAbsolutePath());
         timer.scheduleAtFixedRate(new TimerTask() {
 
@@ -705,19 +705,19 @@ public class AiModelFactoryImpl implements AiModelFactory {
             }
 
         }, Duration.ofMinutes(1).toMillis(), Duration.ofMinutes(1).toMillis());
-        // 关闭时，进行持久�?
+        // 关闭时，进行持久�?
         RuntimeUtil.addShutdownHook(() -> vectorStore.save(file));
         return vectorStore;
     }
 
     /**
-     * 参�?{@link QdrantVectorStoreAutoConfiguration} �?vectorStore 方法
+     * 参�?{@link QdrantVectorStoreAutoConfiguration} �?vectorStore 方法
      */
     @SneakyThrows
     private QdrantVectorStore buildQdrantVectorStore(EmbeddingModel embeddingModel) {
         QdrantVectorStoreAutoConfiguration configuration = new QdrantVectorStoreAutoConfiguration();
         QdrantVectorStoreProperties properties = SpringUtil.getBean(QdrantVectorStoreProperties.class);
-        // 参�?QdrantVectorStoreAutoConfiguration 实现，创�?QdrantClient 对象
+        // 参�?QdrantVectorStoreAutoConfiguration 实现，创�?QdrantClient 对象
         QdrantGrpcClient.Builder grpcClientBuilder = QdrantGrpcClient.newBuilder(
                 properties.getHost(), properties.getPort(), properties.isUseTls());
         if (StrUtil.isNotEmpty(properties.getApiKey())) {
@@ -727,13 +727,13 @@ public class AiModelFactoryImpl implements AiModelFactory {
         // 创建 QdrantVectorStore 对象
         QdrantVectorStore vectorStore = configuration.vectorStore(embeddingModel, properties, qdrantClient,
                 getObservationRegistry(), getCustomObservationConvention(), getBatchingStrategy());
-        // 初始化索�?
+        // 初始化索�?
         vectorStore.afterPropertiesSet();
         return vectorStore;
     }
 
     /**
-     * 参�?{@link RedisVectorStoreAutoConfiguration} �?vectorStore 方法
+     * 参�?{@link RedisVectorStoreAutoConfiguration} �?vectorStore 方法
      */
     private RedisVectorStore buildRedisVectorStore(EmbeddingModel embeddingModel,
                                                    Map<String, Class<?>> metadataFields) {
@@ -761,18 +761,18 @@ public class AiModelFactoryImpl implements AiModelFactory {
                 .customObservationConvention(getCustomObservationConvention().getObject())
                 .batchingStrategy(getBatchingStrategy())
                 .build();
-        // 初始化索�?
+        // 初始化索�?
         redisVectorStore.afterPropertiesSet();
         return redisVectorStore;
     }
 
     /**
-     * 参�?{@link MilvusVectorStoreAutoConfiguration} �?vectorStore 方法
+     * 参�?{@link MilvusVectorStoreAutoConfiguration} �?vectorStore 方法
      */
     @SneakyThrows
     private MilvusVectorStore buildMilvusVectorStore(EmbeddingModel embeddingModel) {
         MilvusVectorStoreAutoConfiguration configuration = new MilvusVectorStoreAutoConfiguration();
-        // 获取配置属�?
+        // 获取配置属�?
         MilvusVectorStoreProperties serverProperties = SpringUtil.getBean(MilvusVectorStoreProperties.class);
         MilvusServiceClientProperties clientProperties = SpringUtil.getBean(MilvusServiceClientProperties.class);
 
@@ -796,7 +796,7 @@ public class AiModelFactoryImpl implements AiModelFactory {
         MilvusVectorStore vectorStore = configuration.vectorStore(milvusClient, embeddingModel, serverProperties,
                 getBatchingStrategy(), getObservationRegistry(), getCustomObservationConvention());
 
-        // 初始化索�?
+        // 初始化索�?
         vectorStore.afterPropertiesSet();
         return vectorStore;
     }

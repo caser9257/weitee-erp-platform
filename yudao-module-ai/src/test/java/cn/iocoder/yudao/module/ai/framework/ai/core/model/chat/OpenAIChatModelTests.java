@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * {@link OpenAiChatModel} 集成测试
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class OpenAIChatModelTests {
 
@@ -40,8 +40,8 @@ public class OpenAIChatModelTests {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -55,7 +55,7 @@ public class OpenAIChatModelTests {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
         messages.add(new UserMessage("帮我推理下，怎么实现一个用户中心！"));
 
         // 调用
@@ -67,7 +67,7 @@ public class OpenAIChatModelTests {
         }).then().block();
     }
 
-    // TODO @芋艿：无法触发思考的字段返回，需�?response api：https://github.com/spring-projects/spring-ai/issues/2962
+    // TODO @芋艿：无法触发思考的字段返回，需�?response api：https://github.com/spring-projects/spring-ai/issues/2962
     @Test
     @Disabled
     public void testStream_thinking() {

@@ -6,7 +6,7 @@ import cn.iocoder.yudao.module.iot.core.mq.message.IotDeviceMessage;
 /**
  * IoT 设备消息 Service 接口
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface IotDeviceMessageService {
 

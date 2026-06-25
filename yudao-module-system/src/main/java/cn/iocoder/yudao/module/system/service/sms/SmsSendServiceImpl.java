@@ -32,7 +32,7 @@ import static cn.iocoder.yudao.module.system.enums.ErrorCodeConstants.*;
 /**
  * 短信发送 Service 发送的实现
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Service
 @Slf4j

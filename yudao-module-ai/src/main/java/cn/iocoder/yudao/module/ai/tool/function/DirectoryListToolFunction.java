@@ -24,20 +24,20 @@ import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.
 /**
  * 工具：列出指定目录的文件列表
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Component("directory_list")
 public class DirectoryListToolFunction implements Function<DirectoryListToolFunction.Request, DirectoryListToolFunction.Response> {
 
     @Data
-    @JsonClassDescription("列出指定目录的文件列�?)
+    @JsonClassDescription("列出指定目录的文件列�?)
     public static class Request {
 
         /**
          * 目录路径
          */
         @JsonProperty(required = true, value = "path")
-        @JsonPropertyDescription("目录路径，例如说�?Users/yunai")
+        @JsonPropertyDescription("目录路径，例如说�?Users/yunai")
         private String path;
 
     }
@@ -56,7 +56,7 @@ public class DirectoryListToolFunction implements Function<DirectoryListToolFunc
         public static class File {
 
             /**
-             * 是否为目�?
+             * 是否为目�?
              */
             private Boolean directory;
 
@@ -66,12 +66,12 @@ public class DirectoryListToolFunction implements Function<DirectoryListToolFunc
             private String name;
 
             /**
-             * 大小，仅对文件有�?
+             * 大小，仅对文件有�?
              */
             private String size;
 
             /**
-             * 最后修改时�?
+             * 最后修改时�?
              */
             private String lastModified;
 

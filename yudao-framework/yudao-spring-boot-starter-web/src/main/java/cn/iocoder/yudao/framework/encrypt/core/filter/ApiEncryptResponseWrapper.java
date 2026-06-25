@@ -17,7 +17,7 @@ import java.io.PrintWriter;
 /**
  * 加密响应 {@link HttpServletResponseWrapper} 实现类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class ApiEncryptResponseWrapper extends HttpServletResponseWrapper {
 

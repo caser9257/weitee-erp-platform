@@ -19,7 +19,7 @@ import static cn.hutool.core.date.DatePattern.NORM_DATETIME_PATTERN;
 /**
  * 工具：查询指定城市的天气信息
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Component("weather_query")
 public class WeatherQueryToolFunction
@@ -28,14 +28,14 @@ public class WeatherQueryToolFunction
     private static final String[] WEATHER_CONDITIONS = { "晴朗", "多云", "阴天", "小雨", "大雨", "雷雨", "小雪", "大雪" };
 
     @Data
-    @JsonClassDescription("查询指定城市的天气信�?)
+    @JsonClassDescription("查询指定城市的天气信�?)
     public static class Request {
 
         /**
          * 城市名称
          */
         @JsonProperty(required = true, value = "city")
-        @JsonPropertyDescription("城市名称，例如：北京、上海、广�?)
+        @JsonPropertyDescription("城市名称，例如：北京、上海、广�?)
         private String city;
 
     }
@@ -61,7 +61,7 @@ public class WeatherQueryToolFunction
         public static class WeatherInfo {
 
             /**
-             * 温度（摄氏度�?
+             * 温度（摄氏度�?
              */
             private Integer temperature;
 
@@ -71,12 +71,12 @@ public class WeatherQueryToolFunction
             private String condition;
 
             /**
-             * 湿度百分�?
+             * 湿度百分�?
              */
             private Integer humidity;
 
             /**
-             * 风速（km/h�?
+             * 风速（km/h�?
              */
             private Integer windSpeed;
 
@@ -91,7 +91,7 @@ public class WeatherQueryToolFunction
 
     @Override
     public Response apply(Request request) {
-        // 检查城市名称是否为�?
+        // 检查城市名称是否为�?
         if (StrUtil.isBlank(request.getCity())) {
             return new Response("未知城市", null);
         }
@@ -103,8 +103,8 @@ public class WeatherQueryToolFunction
     }
 
     /**
-     * 生成模拟的天气数�?
-     * 在实际应用中，应替换为真�?API 调用
+     * 生成模拟的天气数�?
+     * 在实际应用中，应替换为真�?API 调用
      */
     private Response.WeatherInfo generateMockWeatherInfo() {
         int temperature = RandomUtil.randomInt(-5, 30);

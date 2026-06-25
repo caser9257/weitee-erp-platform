@@ -16,7 +16,7 @@ import jakarta.annotation.Resource;
 /**
  * 操作日志 Service 实现类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Service
 @Validated

@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * IoT TCP 协议配置
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Data
 public class IotTcpConfig {

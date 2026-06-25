@@ -11,10 +11,10 @@ import lombok.*;
 /**
  * AI 工具 DO
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @TableName("ai_tool")
-@KeySequence("ai_tool_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
+@KeySequence("ai_tool_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 @Builder
 @NoArgsConstructor
@@ -30,8 +30,8 @@ public class AiToolDO extends BaseDO {
      * 工具名称
      *
      * 对应 Bean 的名字，例如说：
-     * 1. {@link DirectoryListToolFunction} �?Bean 名字�?directory_list
-     * 2. {@link WeatherQueryToolFunction} �?Bean 名字�?weather_query
+     * 1. {@link DirectoryListToolFunction} �?Bean 名字�?directory_list
+     * 2. {@link WeatherQueryToolFunction} �?Bean 名字�?weather_query
      */
     private String name;
     /**
@@ -39,7 +39,7 @@ public class AiToolDO extends BaseDO {
      */
     private String description;
     /**
-     * 状�?
+     * 状�?
      *
      * 枚举 {@link cn.iocoder.yudao.framework.common.enums.CommonStatusEnum}
      */

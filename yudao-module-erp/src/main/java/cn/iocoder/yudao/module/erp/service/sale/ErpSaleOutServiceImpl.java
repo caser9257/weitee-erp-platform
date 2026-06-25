@@ -55,7 +55,7 @@ import static cn.iocoder.yudao.module.erp.enums.ErrorCodeConstants.*;
 /**
  * ERP 销售出库 Service 实现类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Service
 @Validated

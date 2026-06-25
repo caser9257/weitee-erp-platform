@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * AI API 密钥 Service 接口
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface AiApiKeyService {
 
@@ -48,7 +48,7 @@ public interface AiApiKeyService {
     /**
      * 校验 API 密钥
      *
-     * @param id 比那�?
+     * @param id 比那�?
      * @return API 密钥
      */
     AiApiKeyDO validateApiKey(Long id);
@@ -69,10 +69,10 @@ public interface AiApiKeyService {
     List<AiApiKeyDO> getApiKeyList();
 
     /**
-     * 获得默认�?API 密钥
+     * 获得默认�?API 密钥
      *
      * @param platform 平台
-     * @param status 状�?
+     * @param status 状�?
      * @return API 密钥
      */
     AiApiKeyDO getRequiredDefaultApiKey(String platform, Integer status);

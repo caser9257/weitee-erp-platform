@@ -3,9 +3,9 @@ package cn.iocoder.yudao.module.ai.service.knowledge.bo;
 import lombok.Data;
 
 /**
- * AI 知识库段落搜�?Response BO
+ * AI 知识库段落搜�?Response BO
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Data
 public class AiKnowledgeSegmentSearchRespBO {
@@ -19,7 +19,7 @@ public class AiKnowledgeSegmentSearchRespBO {
      */
     private Long documentId;
     /**
-     * 知识库编�?
+     * 知识库编�?
      */
     private Long knowledgeId;
 
@@ -38,7 +38,7 @@ public class AiKnowledgeSegmentSearchRespBO {
     private Integer tokens;
 
     /**
-     * 相似度分�?
+     * 相似度分�?
      */
     private Double score;
 

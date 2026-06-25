@@ -22,7 +22,7 @@ import static cn.iocoder.yudao.framework.common.util.collection.CollectionUtils.
  *
  * @author yunlong.li
  * @author ZJQ
- * @author 芋道源码
+ * @author WeTai
  */
 public interface BpmProcessDefinitionService {
 

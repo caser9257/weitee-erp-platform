@@ -21,7 +21,7 @@ import static org.springframework.ai.model.azure.openai.autoconfigure.AzureOpenA
 /**
  * {@link AzureOpenAiChatModel} 集成测试
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class AzureOpenAIChatModelTests {
 
@@ -41,8 +41,8 @@ public class AzureOpenAIChatModelTests {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -56,8 +56,8 @@ public class AzureOpenAIChatModelTests {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         Flux<ChatResponse> flux = chatModel.stream(new Prompt(messages));

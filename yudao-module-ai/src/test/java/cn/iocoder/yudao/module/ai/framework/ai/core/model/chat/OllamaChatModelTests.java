@@ -18,7 +18,7 @@ import java.util.List;
 /**
  * {@link OllamaChatModel} 集成测试
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class OllamaChatModelTests {
 
@@ -27,8 +27,8 @@ public class OllamaChatModelTests {
                     .baseUrl("http://127.0.0.1:11434") // Ollama 服务地址
                     .build())
             .defaultOptions(OllamaChatOptions.builder()
-//                    .model("qwen") // 模型（https://ollama.com/library/qwen�?
-                    .model("deepseek-r1") // 模型（https://ollama.com/library/deepseek-r1�?
+//                    .model("qwen") // 模型（https://ollama.com/library/qwen�?
+                    .model("deepseek-r1") // 模型（https://ollama.com/library/deepseek-r1�?
                     .build())
             .build();
 
@@ -37,8 +37,8 @@ public class OllamaChatModelTests {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -52,8 +52,8 @@ public class OllamaChatModelTests {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         Flux<ChatResponse> flux = chatModel.stream(new Prompt(messages));

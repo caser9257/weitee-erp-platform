@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * {@link BaiChuanChatModel} 集成测试
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public class BaiChuanChatModelTests {
 
@@ -29,7 +29,7 @@ public class BaiChuanChatModelTests {
                     .apiKey("sk-61b6766a94c70786ed02673f5e16af3c") // apiKey
                     .build())
             .defaultOptions(OpenAiChatOptions.builder()
-                    .model("Baichuan4-Turbo") // 模型（https://platform.baichuan-ai.com/docs/api�?
+                    .model("Baichuan4-Turbo") // 模型（https://platform.baichuan-ai.com/docs/api�?
                     .temperature(0.7)
                     .build())
             .build();
@@ -41,8 +41,8 @@ public class BaiChuanChatModelTests {
     public void testCall() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         ChatResponse response = chatModel.call(new Prompt(messages));
@@ -55,8 +55,8 @@ public class BaiChuanChatModelTests {
     public void testStream() {
         // 准备参数
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
-        messages.add(new UserMessage("1 + 1 = �?));
+        messages.add(new SystemMessage("你是一个优质的文言文作者，用文言文描述着各城市的人文风景�?));
+        messages.add(new UserMessage("1 + 1 = �?));
 
         // 调用
         Flux<ChatResponse> flux = chatModel.stream(new Prompt(messages));

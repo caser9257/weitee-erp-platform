@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * AI 工具 Service 接口
  *
- * @author 芋道源码
+ * @author WeTai
  */
 public interface AiToolService {
 
@@ -72,7 +72,7 @@ public interface AiToolService {
     /**
      * 获得工具列表
      *
-     * @param status 状�?
+     * @param status 状�?
      * @return 工具列表
      */
     List<AiToolDO> getToolListByStatus(Integer status);

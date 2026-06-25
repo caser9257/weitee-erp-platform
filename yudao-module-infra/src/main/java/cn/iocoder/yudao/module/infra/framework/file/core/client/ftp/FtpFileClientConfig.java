@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 /**
  * Ftp 文件客户端的配置类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Data
 public class FtpFileClientConfig implements FileClientConfig {

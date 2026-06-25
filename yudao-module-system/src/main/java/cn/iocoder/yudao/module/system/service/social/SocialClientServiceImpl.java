@@ -72,7 +72,7 @@ import static java.util.Collections.singletonList;
 /**
  * 社交应用 Service 实现类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Service
 @Slf4j

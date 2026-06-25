@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * 积木报表的配置类
  *
- * @author 芋道源码
+ * @author WeTai
  */
 @Configuration(proxyBeanMethods = false)
 @PropertySource("classpath:config/default-config.properties")
