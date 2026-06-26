@@ -1,2 +1,2 @@
-cn.iocoder.yudao.framework.tracer.config.YudaoTracerAutoConfiguration
-cn.iocoder.yudao.framework.tracer.config.YudaoMetricsAutoConfiguration
+cn.weitee.erp.framework.tracer.config.WeiteeTracerAutoConfiguration
+cn.weitee.erp.framework.tracer.config.WeiteeMetricsAutoConfiguration

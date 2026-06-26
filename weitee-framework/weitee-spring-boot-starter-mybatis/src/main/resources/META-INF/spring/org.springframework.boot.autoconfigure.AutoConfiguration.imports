@@ -1,3 +1,3 @@
-cn.iocoder.yudao.framework.datasource.config.YudaoDataSourceAutoConfiguration
-cn.iocoder.yudao.framework.mybatis.config.YudaoMybatisAutoConfiguration
-cn.iocoder.yudao.framework.translate.config.YudaoTranslateAutoConfiguration
+cn.weitee.erp.framework.datasource.config.WeiteeDataSourceAutoConfiguration
+cn.weitee.erp.framework.mybatis.config.WeiteeMybatisAutoConfiguration
+cn.weitee.erp.framework.translate.config.WeiteeTranslateAutoConfiguration

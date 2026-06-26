@@ -33,10 +33,17 @@ public interface FileOperationLogMapper extends BaseMapperX<FileOperationLogDO> 
      * 统计文件操作次数
      */
     default Map<String, Long> countByOperation(LocalDateTime startTime, LocalDateTime endTime) {
-        return selectMaps(new LambdaQueryWrapperX<FileOperationLogDO>()
+        List<Map<String, Object>> list = selectMaps(new LambdaQueryWrapperX<FileOperationLogDO>()
                 .betweenIfPresent(FileOperationLogDO::getCreateTime, startTime, endTime)
                 .select(FileOperationLogDO::getOperation)
                 .groupBy(FileOperationLogDO::getOperation));
+        java.util.Map<String, Long> result = new java.util.LinkedHashMap<>();
+        for (Map<String, Object> map : list) {
+            String operation = (String) map.get("operation");
+            Long count = ((Number) map.get("count")).longValue();
+            result.put(operation, count);
+        }
+        return result;
     }
 
     /**

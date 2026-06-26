@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.infra.controller.admin.file.vo.log;
 
+import cn.weitee.erp.framework.common.pojo.PageParam;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -8,13 +9,7 @@ import java.util.List;
 
 @Schema(description = "管理后台 - 文件操作日志分页 Request VO")
 @Data
-public class FileOperationLogPageReqVO {
-
-    @Schema(description = "页码", example = "1")
-    private Integer pageNo;
-
-    @Schema(description = "每页条数", example = "10")
-    private Integer pageSize;
+public class FileOperationLogPageReqVO extends PageParam {
 
     @Schema(description = "文件ID")
     private Long fileId;
@@ -29,6 +24,6 @@ public class FileOperationLogPageReqVO {
     private Integer result;
 
     @Schema(description = "创建时间")
-    private List<LocalDateTime> createTime;
+    private LocalDateTime[] createTime;
 
 }

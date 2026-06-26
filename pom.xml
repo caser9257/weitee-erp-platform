@@ -18,6 +18,7 @@
         <module>weitee-module-bpm</module>
         <module>weitee-module-report</module>
         <module>weitee-module-crm</module>
+        <module>weitee-module-project</module>
         <module>weitee-module-erp</module>
         <module>weitee-module-iot</module>
         <!-- AI 大模型的开启，请参考 https://doc.iocoder.cn/ai/build/ 文档，对 JDK 版本要要求！ -->

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -51,7 +52,7 @@ public class StockAlertListener {
      * - 注意：不使用 @Async，因为 @Async 会在新线程执行，导致 AFTER_COMMIT 语义不可靠
      *   （原始事务上下文在新线程中不存在，事件可能在事务未提交时就开始处理）
      */
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onStockBelowSafety(StockBelowSafetyEvent event) {
         try {

@@ -1,7 +1,7 @@
-cn.iocoder.yudao.framework.apilog.config.YudaoApiLogAutoConfiguration
-cn.iocoder.yudao.framework.jackson.config.YudaoJacksonAutoConfiguration
-cn.iocoder.yudao.framework.swagger.config.YudaoSwaggerAutoConfiguration
-cn.iocoder.yudao.framework.web.config.YudaoWebAutoConfiguration
-cn.iocoder.yudao.framework.xss.config.YudaoXssAutoConfiguration
-cn.iocoder.yudao.framework.banner.config.YudaoBannerAutoConfiguration
-cn.iocoder.yudao.framework.encrypt.config.YudaoApiEncryptAutoConfiguration
+cn.weitee.erp.framework.apilog.config.WeiteeApiLogAutoConfiguration
+cn.weitee.erp.framework.jackson.config.WeiteeJacksonAutoConfiguration
+cn.weitee.erp.framework.swagger.config.WeiteeSwaggerAutoConfiguration
+cn.weitee.erp.framework.web.config.WeiteeWebAutoConfiguration
+cn.weitee.erp.framework.xss.config.WeiteeXssAutoConfiguration
+cn.weitee.erp.framework.banner.config.WeiteeBannerAutoConfiguration
+cn.weitee.erp.framework.encrypt.config.WeiteeApiEncryptAutoConfiguration

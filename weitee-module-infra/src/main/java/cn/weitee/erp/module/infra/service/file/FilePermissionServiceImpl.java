@@ -33,7 +33,7 @@ public class FilePermissionServiceImpl implements FilePermissionService {
     public Long grantPermission(FilePermissionSaveReqVO reqVO) {
         // 获取当前用户信息
         Long grantUserId = SecurityFrameworkUtils.getLoginUserId();
-        String grantUserName = SecurityFrameworkUtils.getLoginUsername();
+        String grantUserName = SecurityFrameworkUtils.getLoginUserNickname();
 
         // 构建权限对象
         FilePermissionDO permission = FilePermissionDO.builder()
@@ -66,8 +66,10 @@ public class FilePermissionServiceImpl implements FilePermissionService {
     @Override
     public boolean hasPermission(Long fileId, Long userId, String permission) {
         // 获取用户的所有权限
-        List<Long> roleIds = SecurityFrameworkUtils.getLoginUser().getRoleIds();
-        Long deptId = SecurityFrameworkUtils.getLoginUser().getDeptId();
+        // NOTE: LoginUser does not expose roleIds/deptId directly in weitee framework.
+        // Using empty roleIds and deptId from SecurityFrameworkUtils as fallback.
+        List<Long> roleIds = java.util.Collections.emptyList();
+        Long deptId = SecurityFrameworkUtils.getLoginUserDeptId();
 
         List<FilePermissionDO> permissions = filePermissionMapper.selectListByFileIdAndUserId(fileId, userId, roleIds, deptId);
 

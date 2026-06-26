@@ -6,12 +6,12 @@ Author: dhb52 (https://gitee.com/dhb52)
 pip install simple-ddl-parser
 
 or with uv
-uv run --with simple-ddl-parser convertor.py postgres ../mysql/ruoyi-vue-pro.sql > ../postgresql/ruoyi-vue-pro.sql
-uv run --with simple-ddl-parser convertor.py sqlserver ../mysql/ruoyi-vue-pro.sql > ../sqlserver/ruoyi-vue-pro.sql
-uv run --with simple-ddl-parser convertor.py kingbase ../mysql/ruoyi-vue-pro.sql > ../kingbase/ruoyi-vue-pro.sql
-uv run --with simple-ddl-parser convertor.py opengauss ../mysql/ruoyi-vue-pro.sql > ../opengauss/ruoyi-vue-pro.sql
-uv run --with simple-ddl-parser convertor.py oracle ../mysql/ruoyi-vue-pro.sql > ../oracle/ruoyi-vue-pro.sql
-uv run --with simple-ddl-parser convertor.py dm8 ../mysql/ruoyi-vue-pro.sql > ../dm/ruoyi-vue-pro-dm8.sql
+uv run --with simple-ddl-parser convertor.py postgres ../mysql/base/weitee-erp.sql > ../postgresql/weitee-erp.sql
+uv run --with simple-ddl-parser convertor.py sqlserver ../mysql/base/weitee-erp.sql > ../sqlserver/weitee-erp.sql
+uv run --with simple-ddl-parser convertor.py kingbase ../mysql/base/weitee-erp.sql > ../kingbase/weitee-erp.sql
+uv run --with simple-ddl-parser convertor.py opengauss ../mysql/base/weitee-erp.sql > ../opengauss/weitee-erp.sql
+uv run --with simple-ddl-parser convertor.py oracle ../mysql/base/weitee-erp.sql > ../oracle/weitee-erp.sql
+uv run --with simple-ddl-parser convertor.py dm8 ../mysql/base/weitee-erp.sql > ../dm/weitee-erp-dm8.sql
 """
 
 import argparse
@@ -932,7 +932,7 @@ def main():
         "path",
         type=str,
         help="源数据库脚本路径",
-        default="../mysql/ruoyi-vue-pro.sql"
+        default="../mysql/base/weitee-erp.sql"
     )
     args = parser.parse_args()
 

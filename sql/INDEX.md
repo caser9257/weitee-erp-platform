@@ -28,13 +28,13 @@
 
 按顺序执行：
 
-1. `mysql/ruoyi-vue-pro.sql`
-2. `mysql/quartz.sql`
+1. `mysql/base/weitee-erp.sql`
+2. `mysql/base/quartz.sql`
 
 说明：
 
-- `ruoyi-vue-pro.sql` 是基础框架初始化入口，也是 `sql/tools/convertor.py` 转换其他数据库版本的来源。
-- 业务增量脚本并未完全回灌到 `ruoyi-vue-pro.sql`，所以 ERP 功能通常还需要按场景补执行对应增量脚本。
+- `weitee-erp.sql` 是基础框架初始化入口，也是 `sql/tools/convertor.py` 转换其他数据库版本的来源。
+- 业务增量脚本并未完全回灌到 `weitee-erp.sql`，所以 ERP 功能通常还需要按场景补执行对应增量脚本。
 
 ### 2. 执行增量脚本
 

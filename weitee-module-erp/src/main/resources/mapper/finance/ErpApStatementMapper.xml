@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.iocoder.weitee.module.erp.dal.mysql.finance.ErpApStatementMapper">
+<mapper namespace="cn.weitee.erp.module.erp.dal.mysql.finance.ErpApStatementMapper">
 
     <select id="selectSummaryList"
-            resultType="cn.iocoder.weitee.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementSummaryRespVO">
+            resultType="cn.weitee.erp.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementSummaryRespVO">
         SELECT supplier_id AS supplierId,
                COUNT(1) AS statementCount,
                IFNULL(SUM(amount), 0) AS totalAmount,
@@ -20,7 +20,7 @@
     </select>
 
     <select id="selectAgingList"
-            resultType="cn.iocoder.weitee.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementAgingRespVO">
+            resultType="cn.weitee.erp.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementAgingRespVO">
         SELECT supplier_id AS supplierId,
                IFNULL(SUM(CASE
                               WHEN remain_amount &gt; 0
@@ -66,7 +66,7 @@
     </select>
 
     <select id="selectReconciliationPage"
-            resultType="cn.iocoder.weitee.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementReconciliationRespVO">
+            resultType="cn.weitee.erp.module.erp.controller.admin.finance.vo.apstatement.ErpApStatementReconciliationRespVO">
         SELECT id AS statementId,
                statement_no AS statementNo,
                biz_type AS bizType,

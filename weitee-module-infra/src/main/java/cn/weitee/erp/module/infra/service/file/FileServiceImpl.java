@@ -172,7 +172,7 @@ public class FileServiceImpl implements FileService {
 
         // 获取当前用户信息
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        String userName = SecurityFrameworkUtils.getLoginUsername();
+        String userName = SecurityFrameworkUtils.getLoginUserNickname();
 
         // 软删除：设置删除信息
         file.setDeleteUserId(userId);

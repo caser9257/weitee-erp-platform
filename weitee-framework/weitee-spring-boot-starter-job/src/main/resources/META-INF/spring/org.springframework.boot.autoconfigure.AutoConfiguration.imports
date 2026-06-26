@@ -1,2 +1,2 @@
-cn.iocoder.yudao.framework.quartz.config.YudaoQuartzAutoConfiguration
-cn.iocoder.yudao.framework.quartz.config.YudaoAsyncAutoConfiguration
+cn.weitee.erp.framework.quartz.config.WeiteeQuartzAutoConfiguration
+cn.weitee.erp.framework.quartz.config.WeiteeAsyncAutoConfiguration

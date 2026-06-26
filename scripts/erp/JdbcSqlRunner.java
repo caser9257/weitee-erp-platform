@@ -9,7 +9,8 @@ import java.util.List;
 
 public class JdbcSqlRunner {
 
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/ruoyi-vue-pro"
+    private static final String DATABASE_NAME = System.getenv().getOrDefault("WEITEE_DB_NAME", "weitee-erp");
+    private static final String URL = "jdbc:mysql://127.0.0.1:3306/" + DATABASE_NAME
             + "?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
             + "&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true";
     private static final String USERNAME = "root";

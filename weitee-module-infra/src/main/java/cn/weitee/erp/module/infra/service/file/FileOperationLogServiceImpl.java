@@ -35,7 +35,7 @@ public class FileOperationLogServiceImpl implements FileOperationLogService {
     public Long log(Long fileId, String fileName, String operation, String description, Integer result, String failReason) {
         // 获取当前用户信息
         Long userId = SecurityFrameworkUtils.getLoginUserId();
-        String userName = SecurityFrameworkUtils.getLoginUsername();
+        String userName = SecurityFrameworkUtils.getLoginUserNickname();
 
         // 获取请求信息
         String ip = getClientIp();

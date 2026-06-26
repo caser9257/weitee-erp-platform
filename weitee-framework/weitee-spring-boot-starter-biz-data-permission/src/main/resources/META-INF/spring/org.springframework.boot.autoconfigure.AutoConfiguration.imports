@@ -1,2 +1,2 @@
-cn.iocoder.yudao.framework.datapermission.config.YudaoDataPermissionAutoConfiguration
-cn.iocoder.yudao.framework.datapermission.config.YudaoDeptDataPermissionAutoConfiguration
+cn.weitee.erp.framework.datapermission.config.WeiteeDataPermissionAutoConfiguration
+cn.weitee.erp.framework.datapermission.config.WeiteeDeptDataPermissionAutoConfiguration

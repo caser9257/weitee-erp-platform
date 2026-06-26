@@ -21,27 +21,29 @@ public interface FileMapper extends BaseMapperX<FileDO> {
      * 分页查询正常文件（不在回收站）
      */
     default PageResult<FileDO> selectPage(FilePageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<FileDO>()
-                .isNull(FileDO::getDeleteTime)  // 只查询未删除的文件
-                .likeIfPresent(FileDO::getName, reqVO.getName())
+        LambdaQueryWrapperX<FileDO> query = (LambdaQueryWrapperX<FileDO>) new LambdaQueryWrapperX<FileDO>()
+                .isNull(FileDO::getDeleteTime);  // 只查询未删除的文件
+        query.likeIfPresent(FileDO::getName, reqVO.getName())
                 .likeIfPresent(FileDO::getPath, reqVO.getPath())
                 .likeIfPresent(FileDO::getType, reqVO.getType())
                 .eqIfPresent(FileDO::getFolderId, reqVO.getFolderId())
                 .betweenIfPresent(FileDO::getCreateTime, reqVO.getCreateTime())
-                .orderByDesc(FileDO::getId));
+                .orderByDesc(FileDO::getId);
+        return selectPage(reqVO, query);
     }
 
     /**
      * 分页查询回收站文件（已删除的文件）
      */
     default PageResult<FileDO> selectRecyclePage(FilePageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<FileDO>()
-                .isNotNull(FileDO::getDeleteTime)  // 只查询已删除的文件
-                .likeIfPresent(FileDO::getName, reqVO.getName())
+        LambdaQueryWrapperX<FileDO> query = (LambdaQueryWrapperX<FileDO>) new LambdaQueryWrapperX<FileDO>()
+                .isNotNull(FileDO::getDeleteTime);  // 只查询已删除的文件
+        query.likeIfPresent(FileDO::getName, reqVO.getName())
                 .likeIfPresent(FileDO::getPath, reqVO.getPath())
                 .likeIfPresent(FileDO::getType, reqVO.getType())
                 .betweenIfPresent(FileDO::getDeleteTime, reqVO.getCreateTime())  // 复用创建时间作为删除时间筛选
-                .orderByDesc(FileDO::getDeleteTime));
+                .orderByDesc(FileDO::getDeleteTime);
+        return selectPage(reqVO, query);
     }
 
     /**

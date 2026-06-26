@@ -52,8 +52,7 @@ public interface FileAccessStatsMapper extends BaseMapperX<FileAccessStatsDO> {
                 .geIfPresent(FileAccessStatsDO::getStatsDate, startDate)
                 .leIfPresent(FileAccessStatsDO::getStatsDate, endDate)
                 .groupBy(FileAccessStatsDO::getFileId)
-                .orderByDesc("SUM(view_count + download_count)")
-                .last("LIMIT " + limit));
+                .last("ORDER BY SUM(view_count + download_count) DESC LIMIT " + limit));
     }
 
 }

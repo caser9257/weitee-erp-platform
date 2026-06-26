@@ -1,4 +1,4 @@
-cn.iocoder.yudao.framework.idempotent.config.YudaoIdempotentConfiguration
-cn.iocoder.yudao.framework.lock4j.config.YudaoLock4jConfiguration
-cn.iocoder.yudao.framework.ratelimiter.config.YudaoRateLimiterConfiguration
-cn.iocoder.yudao.framework.signature.config.YudaoApiSignatureAutoConfiguration
+cn.weitee.erp.framework.idempotent.config.WeiteeIdempotentConfiguration
+cn.weitee.erp.framework.lock4j.config.WeiteeLock4jConfiguration
+cn.weitee.erp.framework.ratelimiter.config.WeiteeRateLimiterConfiguration
+cn.weitee.erp.framework.signature.config.WeiteeApiSignatureAutoConfiguration

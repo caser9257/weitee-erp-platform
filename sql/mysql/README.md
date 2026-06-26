@@ -45,7 +45,7 @@ sql/mysql/
 新库初始化执行顺序：
 
 1. `base/quartz.sql` — Quartz 调度表
-2. `base/ruoyi-vue-pro.sql` — 基础框架 DDL + 种子数据
+2. `base/weitee-erp.sql` — 基础框架 DDL + 种子数据
 
 ## 脚本命名约定
 
