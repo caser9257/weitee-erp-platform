@@ -1,4 +1,4 @@
-USE `ruoyi-vue-pro`;
+USE `weitee-erp`;
 
 UPDATE `system_notify_template`
 SET
