@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 /**
  * 文件操作日志 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("infra_file_operation_log")
 @KeySequence("infra_file_operation_log_seq")
@@ -47,7 +47,7 @@ public class FileOperationLogDO extends BaseDO {
     private Long userId;
 
     /**
-     * 操作人名称
+     * 操作人名�?
      */
     private String userName;
 
@@ -57,7 +57,7 @@ public class FileOperationLogDO extends BaseDO {
     private String ip;
 
     /**
-     * 浏览器信息
+     * 浏览器信�?
      */
     private String userAgent;
 
@@ -67,7 +67,7 @@ public class FileOperationLogDO extends BaseDO {
     private String description;
 
     /**
-     * 操作结果：0-成功, 1-失败
+     * 操作结果�?-成功, 1-失败
      */
     private Integer result;
 

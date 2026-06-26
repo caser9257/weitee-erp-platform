@@ -8,9 +8,9 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 /**
- * 文件夹 DO
+ * 文件�?DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("infra_file_folder")
 @KeySequence("infra_file_folder_seq")
@@ -26,17 +26,17 @@ public class FileFolderDO extends BaseDO {
     private Long id;
 
     /**
-     * 文件夹名称
+     * 文件夹名�?
      */
     private String name;
 
     /**
-     * 父文件夹ID（0=根目录）
+     * 父文件夹ID�?=根目录）
      */
     private Long parentId;
 
     /**
-     * 文件夹路径
+     * 文件夹路�?
      */
     private String path;
 

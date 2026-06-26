@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * 文件-业务关联 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface FileBizRelService {
 
@@ -22,17 +22,17 @@ public interface FileBizRelService {
     void deleteFileBizRel(Long fileId, String bizType, Long bizId);
 
     /**
-     * 获取业务单据关联的文件列表
+     * 获取业务单据关联的文件列�?
      */
     List<FileBizRelDO> getFileBizRelList(String bizType, Long bizId);
 
     /**
-     * 获取文件关联的业务单据列表
+     * 获取文件关联的业务单据列�?
      */
     List<FileBizRelDO> getFileBizRelListByFileId(Long fileId);
 
     /**
-     * 删除业务单据的所有文件关联
+     * 删除业务单据的所有文件关�?
      */
     void deleteAllByBiz(String bizType, Long bizId);
 

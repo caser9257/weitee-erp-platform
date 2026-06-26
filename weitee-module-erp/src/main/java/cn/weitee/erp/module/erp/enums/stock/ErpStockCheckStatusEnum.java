@@ -7,51 +7,51 @@ import lombok.RequiredArgsConstructor;
 import java.util.Arrays;
 
 /**
- * ERP 盘点单状态枚举
+ * ERP 盘点单状态枚�?
  *
- * 场景 A 简化状态机：
- * DRAFT(0) → COUNTING(10) → REVIEWING(20) → APPROVED(30) → CLOSED(40)
+ * 场景 A 简化状态机�?
+ * DRAFT(0) �?COUNTING(10) �?REVIEWING(20) �?APPROVED(30) �?CLOSED(40)
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @RequiredArgsConstructor
 @Getter
 public enum ErpStockCheckStatusEnum implements ArrayValuable<Integer> {
 
     /**
-     * 草稿 - 新建盘点单
+     * 草稿 - 新建盘点�?
      */
     DRAFT(0, "草稿"),
 
     /**
-     * 盘点中 - 已生成快照，正在录入实盘数量
+     * 盘点�?- 已生成快照，正在录入实盘数量
      */
-    COUNTING(10, "盘点中"),
+    COUNTING(10, "盘点�?),
 
     /**
-     * 审核中 - 已提交，等待审核
+     * 审核�?- 已提交，等待审核
      */
-    REVIEWING(20, "审核中"),
+    REVIEWING(20, "审核�?),
 
     /**
-     * 已审核 - 审核通过，已生成凭证
+     * 已审�?- 审核通过，已生成凭证
      */
-    APPROVED(30, "已审核"),
+    APPROVED(30, "已审�?),
 
     /**
-     * 已关闭 - 终态，已解冻仓库
+     * 已关�?- 终态，已解冻仓�?
      */
-    CLOSED(40, "已关闭");
+    CLOSED(40, "已关�?);
 
     public static final Integer[] ARRAYS = Arrays.stream(values()).map(ErpStockCheckStatusEnum::getStatus).toArray(Integer[]::new);
 
     /**
-     * 状态值
+     * 状态�?
      */
     private final Integer status;
 
     /**
-     * 状态名称
+     * 状态名�?
      */
     private final String name;
 
@@ -61,9 +61,9 @@ public enum ErpStockCheckStatusEnum implements ArrayValuable<Integer> {
     }
 
     /**
-     * 根据状态值获取枚举
+     * 根据状态值获取枚�?
      *
-     * @param status 状态值
+     * @param status 状态�?
      * @return 枚举，不存在返回 null
      */
     public static ErpStockCheckStatusEnum fromStatus(Integer status) {
@@ -79,9 +79,9 @@ public enum ErpStockCheckStatusEnum implements ArrayValuable<Integer> {
     }
 
     /**
-     * 判断是否可以流转到目标状态
+     * 判断是否可以流转到目标状�?
      *
-     * @param targetStatus 目标状态
+     * @param targetStatus 目标状�?
      * @return 是否可以流转
      */
     public boolean canTransitionTo(Integer targetStatus) {
@@ -95,7 +95,7 @@ public enum ErpStockCheckStatusEnum implements ArrayValuable<Integer> {
             case COUNTING -> target == REVIEWING || target == DRAFT;
             case REVIEWING -> target == APPROVED || target == COUNTING;
             case APPROVED -> target == CLOSED;
-            case CLOSED -> false; // 终态，不允许流转
+            case CLOSED -> false; // 终态，不允许流�?
         };
     }
 

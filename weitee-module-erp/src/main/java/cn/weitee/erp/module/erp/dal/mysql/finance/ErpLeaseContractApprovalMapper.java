@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * 租赁合同审批记录 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface ErpLeaseContractApprovalMapper extends BaseMapperX<ErpLeaseContractApprovalDO> {

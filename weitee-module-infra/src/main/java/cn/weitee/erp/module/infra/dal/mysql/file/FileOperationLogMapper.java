@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * 文件操作日志 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FileOperationLogMapper extends BaseMapperX<FileOperationLogDO> {
@@ -40,7 +40,7 @@ public interface FileOperationLogMapper extends BaseMapperX<FileOperationLogDO> 
     }
 
     /**
-     * 获取文件的操作日志
+     * 获取文件的操作日�?
      */
     default List<FileOperationLogDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FileOperationLogDO>()

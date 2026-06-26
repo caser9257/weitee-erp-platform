@@ -9,7 +9,7 @@ import lombok.*;
 /**
  * 文件版本 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("infra_file_version")
 @KeySequence("infra_file_version_seq")
@@ -30,12 +30,12 @@ public class FileVersionDO extends BaseDO {
     private Long fileId;
 
     /**
-     * 版本号
+     * 版本�?
      */
     private Integer version;
 
     /**
-     * 文件名
+     * 文件�?
      */
     private String name;
 

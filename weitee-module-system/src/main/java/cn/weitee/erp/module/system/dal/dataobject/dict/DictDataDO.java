@@ -7,12 +7,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 字典数据表
+ * 字典数据�?
  *
- * @author ruoyi
+ * @author weitee
  */
 @TableName("system_dict_data")
-@KeySequence("system_dict_data_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("system_dict_data_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class DictDataDO extends BaseDO {
@@ -31,7 +31,7 @@ public class DictDataDO extends BaseDO {
      */
     private String label;
     /**
-     * 字典值
+     * 字典�?
      */
     private String value;
     /**
@@ -41,7 +41,7 @@ public class DictDataDO extends BaseDO {
      */
     private String dictType;
     /**
-     * 状态
+     * 状�?
      *
      * 枚举 {@link CommonStatusEnum}
      */
@@ -49,7 +49,7 @@ public class DictDataDO extends BaseDO {
     /**
      * 颜色类型
      *
-     * 对应到 element-ui 为 default、primary、success、info、warning、danger
+     * 对应�?element-ui �?default、primary、success、info、warning、danger
      */
     private String colorType;
     /**
@@ -64,7 +64,7 @@ public class DictDataDO extends BaseDO {
 
     /**
      * 业务属性JSON
-     * 用于存储扩展的业务配置信息，如费用类型的特殊属性
+     * 用于存储扩展的业务配置信息，如费用类型的特殊属�?
      */
     private String bizAttributes;
 

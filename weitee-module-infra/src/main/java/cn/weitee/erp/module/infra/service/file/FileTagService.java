@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 文件标签 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface FileTagService {
 
@@ -33,7 +33,7 @@ public interface FileTagService {
     List<FileTagDO> getFileTagList();
 
     /**
-     * 给文件添加标签
+     * 给文件添加标�?
      */
     void addFileTag(Long fileId, Long tagId);
 
@@ -43,7 +43,7 @@ public interface FileTagService {
     void removeFileTag(Long fileId, Long tagId);
 
     /**
-     * 获取文件的标签列表
+     * 获取文件的标签列�?
      */
     List<FileTagDO> getFileTags(Long fileId);
 

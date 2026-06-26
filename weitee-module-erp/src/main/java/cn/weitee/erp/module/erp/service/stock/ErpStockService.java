@@ -45,6 +45,24 @@ public interface ErpStockService {
     Map<Long, BigDecimal> getStockCountMap(Collection<Long> productIds);
 
     /**
+     * 批量获得产品库存（基于产品ID + 仓库ID）
+     *
+     * @param productIds 产品编号集合
+     * @param warehouseId 仓库编号
+     * @return 产品库存列表
+     */
+    List<ErpStockDO> getStockListByProductIdsAndWarehouseId(Collection<Long> productIds, Long warehouseId);
+
+    /**
+     * 批量获得产品库存（基于产品ID + 仓库ID列表）
+     *
+     * @param productId 产品编号
+     * @param warehouseIds 仓库编号集合
+     * @return 产品库存列表
+     */
+    List<ErpStockDO> getStockListByProductIdAndWarehouseIds(Long productId, Collection<Long> warehouseIds);
+
+    /**
      * 获得产品库存分页
      *
      * @param pageReqVO 分页查询

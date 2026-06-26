@@ -12,7 +12,7 @@ import java.time.LocalDate;
 /**
  * 租赁合同 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("erp_lease_contract")
 @KeySequence("erp_lease_contract_seq")
@@ -43,12 +43,12 @@ public class ErpLeaseContractDO extends BaseDO {
     private Long supplierId;
 
     /**
-     * 供应商名称（冗余）
+     * 供应商名称（冗余�?
      */
     private String supplierName;
 
     /**
-     * 开始日期
+     * 开始日�?
      */
     private LocalDate startDate;
 
@@ -58,27 +58,27 @@ public class ErpLeaseContractDO extends BaseDO {
     private LocalDate endDate;
 
     /**
-     * 月租金
+     * 月租�?
      */
     private BigDecimal monthlyRent;
 
     /**
-     * 付款周期（月）
+     * 付款周期（月�?
      */
     private Integer paymentCycle;
 
     /**
-     * 合同总金额
+     * 合同总金�?
      */
     private BigDecimal totalAmount;
 
     /**
-     * 成本中心ID（部门ID）
+     * 成本中心ID（部门ID�?
      */
     private Long costCenterId;
 
     /**
-     * 状态：0-草稿 5-审批中 10-生效 20-到期 30-终止
+     * 状态：0-草稿 5-审批�?10-生效 20-到期 30-终止
      */
     private Integer status;
 

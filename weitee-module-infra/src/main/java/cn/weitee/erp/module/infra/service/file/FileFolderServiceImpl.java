@@ -15,9 +15,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 文件夹 Service 实现
+ * 文件�?Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -93,7 +93,7 @@ public class FileFolderServiceImpl implements FileFolderService {
         List<FileFolderDO> tree = new ArrayList<>();
         for (FileFolderDO folder : allFolders) {
             if (parentId.equals(folder.getParentId())) {
-                // 递归构建子节点
+                // 递归构建子节�?
                 List<FileFolderDO> children = buildTree(allFolders, folder.getId());
                 folder.setChildren(children);
                 tree.add(folder);

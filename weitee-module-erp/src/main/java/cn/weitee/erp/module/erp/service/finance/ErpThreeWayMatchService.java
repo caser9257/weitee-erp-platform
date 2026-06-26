@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 三单匹配 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface ErpThreeWayMatchService {
 
@@ -18,7 +18,7 @@ public interface ErpThreeWayMatchService {
      *
      * @param leaseContractId 租赁合同ID
      * @param serviceReceiptId 服务接收单ID
-     * @param invoiceNo 发票号
+     * @param invoiceNo 发票�?
      * @return 匹配结果ID
      */
     Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo);
@@ -39,7 +39,7 @@ public interface ErpThreeWayMatchService {
     ErpThreeWayMatchDO getMatch(Long id);
 
     /**
-     * 确认匹配并生成应付台账
+     * 确认匹配并生成应付台�?
      */
     void confirmMatch(Long id);
 

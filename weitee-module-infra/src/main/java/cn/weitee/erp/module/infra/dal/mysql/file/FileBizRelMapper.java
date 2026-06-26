@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 文件-业务关联 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FileBizRelMapper extends BaseMapperX<FileBizRelDO> {
