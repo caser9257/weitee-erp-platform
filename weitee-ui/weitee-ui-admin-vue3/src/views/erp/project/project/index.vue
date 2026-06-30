@@ -1,5 +1,5 @@
 <template>
-  <doc-alert title="项目中心" url="https://doc.iocoder.cn/erp/project/" />
+  <doc-alert :title="pageDocTitle" url="https://doc.iocoder.cn/erp/project/" />
 
   <ContentWrap class="search-wrap">
     <el-form
@@ -48,7 +48,7 @@
           <Icon icon="ep:refresh" class="mr-5px" />重置
         </el-button>
         <el-button type="primary" @click="openForm('create')" v-hasPermi="['erp:project:create']">
-          <Icon icon="ep:plus" class="mr-5px" />新建项目
+          <Icon icon="ep:plus" class="mr-5px" />{{ createButtonText }}
         </el-button>
         <el-button
           :loading="exportLoading"
@@ -404,6 +404,7 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
 import { computed, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { DICT_TYPE } from '@/utils/dict'
 import { dateFormatter2, formatDate } from '@/utils/formatTime'
 import download from '@/utils/download'
@@ -423,6 +424,7 @@ defineOptions({ name: 'ErpProject' })
 const message = useMessage()
 const { t } = useI18n()
 const userStore = useUserStore()
+const route = useRoute()
 
 const queryFormRef = ref<FormInstance>()
 const formRef = ref()
@@ -471,6 +473,9 @@ const mcConfirmRules = reactive<FormRules>({
 })
 
 const currentUserId = computed(() => userStore.getUser.id)
+const isProjectInitiationPage = computed(() => route.path.replace(/\/+$/g, '') === '/sales/project-initiation')
+const pageDocTitle = computed(() => (isProjectInitiationPage.value ? '【销售】销售项目立项' : '项目中心'))
+const createButtonText = computed(() => (isProjectInitiationPage.value ? '新建立项' : '新建项目'))
 const detailTodoTasks = computed(() => detailProject.value?.todoTasks || [])
 const detailDrawerTitle = computed(() => {
   return `项目详情 - ${detailProject.value?.no || detailProjectNo.value || ''}`

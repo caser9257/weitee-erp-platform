@@ -1077,7 +1077,7 @@ const openProcessDetail = () => {
 }
 
 /** 打开弹窗 */
-const open = async (type: string, id?: number) => {
+const open = async (type: string, id?: number, defaults?: Partial<SaleOrderVO>) => {
   dialogVisible.value = true
   dialogTitle.value = t('action.' + type)
   formType.value = type
@@ -1089,6 +1089,12 @@ const open = async (type: string, id?: number) => {
       formData.value = await SaleOrderApi.getSaleOrder(id)
     } finally {
       formLoading.value = false
+    }
+  }
+  if (!id && defaults) {
+    formData.value = {
+      ...formData.value,
+      ...defaults
     }
   }
   customerList.value = await CustomerApi.getCustomerSimpleList()

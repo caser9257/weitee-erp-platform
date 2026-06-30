@@ -1165,6 +1165,13 @@ watch(
   line-height: 1.4;
 }
 
+.sale-order-page__subtitle {
+  margin: -8px 0 16px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
 .sale-order-query {
   :deep(.el-form-item) {
     margin-bottom: 0;
