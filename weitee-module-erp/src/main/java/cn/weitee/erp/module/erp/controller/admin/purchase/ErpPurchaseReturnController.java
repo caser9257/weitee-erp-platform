@@ -21,6 +21,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
+import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
@@ -47,7 +48,9 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_UPDATE_FAIL_PROCESSING;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
@@ -95,6 +98,11 @@ public class ErpPurchaseReturnController {
     @PreAuthorize("@ss.hasPermission('erp:purchase-return:update-status')")
     public CommonResult<Boolean> updatePurchaseReturnStatus(@RequestParam("id") Long id,
                                                       @RequestParam("status") Integer status) {
+        // 审批中的单据必须走 BPM 审批流程，禁止手动变更状态
+        ErpPurchaseReturnDO pr = purchaseReturnService.getPurchaseReturn(id);
+        if (pr != null && ErpAuditStatus.PROCESS.getStatus().equals(pr.getStatus())) {
+            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+        }
         purchaseReturnService.updatePurchaseReturnStatus(id, status);
         return success(true);
     }

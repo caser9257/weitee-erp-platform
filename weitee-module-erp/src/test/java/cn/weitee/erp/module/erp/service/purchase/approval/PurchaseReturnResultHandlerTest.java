@@ -46,18 +46,21 @@ class PurchaseReturnResultHandlerTest {
     }
 
     @Test
-    void onReject_shouldUpdateStatusToReject() throws Exception {
+    void onReject_shouldSetDraftAndClearProcessInstanceId() throws Exception {
         PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
-        AtomicReference<Long> rejectedId = new AtomicReference<>();
-        AtomicReference<Integer> rejectedStatus = new AtomicReference<>();
+        AtomicReference<ErpPurchaseReturnDO> updatedEntity = new AtomicReference<>();
+        AtomicReference<Long> clearedId = new AtomicReference<>();
 
-        injectField(handler, "purchaseReturnMapper", createMapperProxy(new ErpPurchaseReturnDO().setId(2L)));
-        injectField(handler, "purchaseReturnService", createServiceProxy(rejectedId, rejectedStatus));
+        injectField(handler, "purchaseReturnMapper", createMapperProxyForCancel(updatedEntity, clearedId));
+        injectField(handler, "purchaseReturnService", createServiceProxy(null, null));
 
         handler.onReject(2L, "PI-002", "rejected");
 
-        assertEquals(2L, rejectedId.get());
-        assertEquals(ErpAuditStatus.REJECT.getStatus(), rejectedStatus.get());
+        // Verify status set to DRAFT (same as onCancel — no stock/finance side effects)
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedEntity.get().getStatus());
+        assertEquals(2L, updatedEntity.get().getId());
+        // Verify processInstanceId cleared
+        assertEquals(2L, clearedId.get());
     }
 
     @Test

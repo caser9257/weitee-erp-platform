@@ -18,6 +18,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInItemDO;
+import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockInBpmService;
@@ -41,7 +42,9 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_IN_UPDATE_FAIL_PROCESSING;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
@@ -87,6 +90,11 @@ public class ErpStockInController {
     @PreAuthorize("@ss.hasPermission('erp:stock-in:update-status')")
     public CommonResult<Boolean> updateStockInStatus(@RequestParam("id") Long id,
                                                      @RequestParam("status") Integer status) {
+        // 审批中的单据必须走 BPM 审批流程，禁止手动变更状态
+        ErpStockInDO stockIn = stockInService.getStockIn(id);
+        if (stockIn != null && ErpAuditStatus.PROCESS.getStatus().equals(stockIn.getStatus())) {
+            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+        }
         stockInService.updateStockInStatus(id, status);
         return success(true);
     }

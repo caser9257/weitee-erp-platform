@@ -34,16 +34,19 @@ public class StockInResultHandler implements ApprovalResultHandler {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void onReject(Long bizId, String processInstanceId, String reason) {
-        validateExists(bizId);
-        stockInService.updateStockInStatusByBpm(bizId, processInstanceId,
-                ErpAuditStatus.REJECT.getStatus(), reason);
+        // 驳回：状态回 DRAFT，清理 processInstanceId，无库存副作用
+        // 与 onCancel 行为一致 —— 驳回不应触发 updateStockInStatus(REJECT) 的反审核逻辑
+        stockInMapper.updateById(new ErpStockInDO()
+                .setId(bizId).setStatus(ErpAuditStatus.DRAFT.getStatus()));
+        stockInMapper.clearProcessInstanceId(bizId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onCancel(Long bizId, String processInstanceId, String reason) {
-        // 撤回/驳回：状态回 DRAFT，清理 processInstanceId，无库存副作用
+        // 撤回：状态回 DRAFT，清理 processInstanceId，无库存副作用
         stockInMapper.updateById(new ErpStockInDO()
                 .setId(bizId).setStatus(ErpAuditStatus.DRAFT.getStatus()));
         stockInMapper.clearProcessInstanceId(bizId);

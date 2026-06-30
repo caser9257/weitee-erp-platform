@@ -46,18 +46,21 @@ class StockInResultHandlerTest {
     }
 
     @Test
-    void onReject_shouldUpdateStatusToReject() throws Exception {
+    void onReject_shouldSetDraftAndClearProcessInstanceId() throws Exception {
         StockInResultHandler handler = new StockInResultHandler();
-        AtomicReference<Long> rejectedId = new AtomicReference<>();
-        AtomicReference<Integer> rejectedStatus = new AtomicReference<>();
+        AtomicReference<ErpStockInDO> updatedEntity = new AtomicReference<>();
+        AtomicReference<Long> clearedId = new AtomicReference<>();
 
-        injectField(handler, "stockInMapper", createMapperProxy(new ErpStockInDO().setId(2L)));
-        injectField(handler, "stockInService", createServiceProxy(rejectedId, rejectedStatus));
+        injectField(handler, "stockInMapper", createMapperProxyForCancel(updatedEntity, clearedId));
+        injectField(handler, "stockInService", createServiceProxy(null, null));
 
         handler.onReject(2L, "PI-002", "rejected");
 
-        assertEquals(2L, rejectedId.get());
-        assertEquals(ErpAuditStatus.REJECT.getStatus(), rejectedStatus.get());
+        // Verify status set to DRAFT (same as onCancel — no stock side effects)
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedEntity.get().getStatus());
+        assertEquals(2L, updatedEntity.get().getId());
+        // Verify processInstanceId cleared
+        assertEquals(2L, clearedId.get());
     }
 
     @Test

@@ -253,13 +253,9 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
     @Transactional(rollbackFor = Exception.class)
     public void updateStockOutStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpStockOutDO stockOut = validateStockOutExists(id);
-        // 校验 processInstanceId 一致（数据库为空时允许回调，数据库非空时必须匹配）
-        if (stockOut.getProcessInstanceId() != null
-                && !ObjectUtil.equals(stockOut.getProcessInstanceId(), processInstanceId)) {
-            log.warn("[updateStockOutStatusByBpm] processInstanceId 不一致，忽略回调。id={}, expected={}, actual={}",
-                    id, stockOut.getProcessInstanceId(), processInstanceId);
-            return;
-        }
+        // 不再校验 processInstanceId：审批平台架构下，业务表 process_instance_id 存储的是
+        // snapshotId（Long），而 BPM 回调传入的是真实 processInstanceId（UUID），二者永远不一致。
+        // 事件分发器已通过 snapshot → bizId 路由确保回调准确性。
         updateStockOutStatus(id, status);
         // 清理 processInstanceId
         erpStockOutMapper.clearProcessInstanceId(id);

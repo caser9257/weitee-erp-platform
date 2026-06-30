@@ -492,19 +492,34 @@ SELECT 93130804, '审核驳回', 'erp:shipment-release:reject', 3, 4, @shipment_
 WHERE @shipment_release_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE id = 93130804 OR (deleted = b'0' AND permission = 'erp:shipment-release:reject'));
 
+-- 逐个更新按钮（每个按钮有独立的 name/permission/sort）
 UPDATE system_menu
-SET parent_id = @shipment_release_menu_id,
-    type = 3,
-    status = 0,
-    visible = b'1',
-    deleted = b'0',
-    updater = 'admin',
-    update_time = NOW()
-WHERE (deleted = b'0' OR id IN (93130801, 93130802, 93130803, 93130804))
-  AND (id IN (93130801, 93130802, 93130803, 93130804)
-       OR permission IN ('erp:shipment-release:check', 'erp:shipment-release:submit', 'erp:shipment-release:approve', 'erp:shipment-release:reject'))
-  AND type = 3
-  AND @shipment_release_menu_id IS NOT NULL;
+SET parent_id = @shipment_release_menu_id, name = '校验', permission = 'erp:shipment-release:check',
+    type = 3, sort = 1, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93130801 AND @shipment_release_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @shipment_release_menu_id, name = '提交审核', permission = 'erp:shipment-release:submit',
+    type = 3, sort = 2, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93130802 AND @shipment_release_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @shipment_release_menu_id, name = '审核通过', permission = 'erp:shipment-release:approve',
+    type = 3, sort = 3, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93130803 AND @shipment_release_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @shipment_release_menu_id, name = '审核驳回', permission = 'erp:shipment-release:reject',
+    type = 3, sort = 4, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93130804 AND @shipment_release_menu_id IS NOT NULL;
 
 INSERT INTO system_menu (
   id, name, permission, type, sort, parent_id, path, icon, component, component_name,
@@ -525,18 +540,18 @@ WHERE @market_ledger_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE id = 93130902 OR (deleted = b'0' AND permission = 'erp:market-ledger:export'));
 
 UPDATE system_menu
-SET parent_id = @market_ledger_menu_id,
-    type = 3,
-    status = 0,
-    visible = b'1',
-    deleted = b'0',
-    updater = 'admin',
-    update_time = NOW()
-WHERE (deleted = b'0' OR id IN (93130901, 93130902))
-  AND (id IN (93130901, 93130902)
-       OR permission IN ('erp:market-ledger:query', 'erp:market-ledger:export'))
-  AND type = 3
-  AND @market_ledger_menu_id IS NOT NULL;
+SET parent_id = @market_ledger_menu_id, name = '查询', permission = 'erp:market-ledger:query',
+    type = 3, sort = 1, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93130901 AND @market_ledger_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @market_ledger_menu_id, name = '导出', permission = 'erp:market-ledger:export',
+    type = 3, sort = 2, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93130902 AND @market_ledger_menu_id IS NOT NULL;
 
 INSERT INTO system_menu (
   id, name, permission, type, sort, parent_id, path, icon, component, component_name,
@@ -566,18 +581,25 @@ WHERE @market_alert_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE id = 93131003 OR (deleted = b'0' AND permission = 'erp:market-alert:check'));
 
 UPDATE system_menu
-SET parent_id = @market_alert_menu_id,
-    type = 3,
-    status = 0,
-    visible = b'1',
-    deleted = b'0',
-    updater = 'admin',
-    update_time = NOW()
-WHERE (deleted = b'0' OR id IN (93131001, 93131002, 93131003))
-  AND (id IN (93131001, 93131002, 93131003)
-       OR permission IN ('erp:market-alert:query', 'erp:market-alert:update', 'erp:market-alert:check'))
-  AND type = 3
-  AND @market_alert_menu_id IS NOT NULL;
+SET parent_id = @market_alert_menu_id, name = '查询', permission = 'erp:market-alert:query',
+    type = 3, sort = 1, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93131001 AND @market_alert_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @market_alert_menu_id, name = '更新规则', permission = 'erp:market-alert:update',
+    type = 3, sort = 2, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93131002 AND @market_alert_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @market_alert_menu_id, name = '检查预警', permission = 'erp:market-alert:check',
+    type = 3, sort = 3, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93131003 AND @market_alert_menu_id IS NOT NULL;
 
 INSERT INTO system_menu (
   id, name, permission, type, sort, parent_id, path, icon, component, component_name,
@@ -616,18 +638,32 @@ WHERE @invoice_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE id = 93202004 OR (deleted = b'0' AND permission = 'erp:invoice:delete'));
 
 UPDATE system_menu
-SET parent_id = @invoice_menu_id,
-    type = 3,
-    status = 0,
-    visible = b'1',
-    deleted = b'0',
-    updater = 'admin',
-    update_time = NOW()
-WHERE (deleted = b'0' OR id IN (93202001, 93202002, 93202003, 93202004))
-  AND (id IN (93202001, 93202002, 93202003, 93202004)
-       OR permission IN ('erp:invoice:query', 'erp:invoice:create', 'erp:invoice:update', 'erp:invoice:delete'))
-  AND type = 3
-  AND @invoice_menu_id IS NOT NULL;
+SET parent_id = @invoice_menu_id, name = '查询', permission = 'erp:invoice:query',
+    type = 3, sort = 1, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93202001 AND @invoice_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @invoice_menu_id, name = '新增', permission = 'erp:invoice:create',
+    type = 3, sort = 2, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93202002 AND @invoice_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @invoice_menu_id, name = '修改', permission = 'erp:invoice:update',
+    type = 3, sort = 3, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93202003 AND @invoice_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @invoice_menu_id, name = '删除', permission = 'erp:invoice:delete',
+    type = 3, sort = 4, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93202004 AND @invoice_menu_id IS NOT NULL;
 
 INSERT INTO system_menu (
   id, name, permission, type, sort, parent_id, path, icon, component, component_name,
@@ -648,18 +684,18 @@ WHERE @project_lifecycle_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE id = 93140802 OR (deleted = b'0' AND permission = 'pmo:project:lifecycle:update'));
 
 UPDATE system_menu
-SET parent_id = @project_lifecycle_menu_id,
-    type = 3,
-    status = 0,
-    visible = b'1',
-    deleted = b'0',
-    updater = 'admin',
-    update_time = NOW()
-WHERE (deleted = b'0' OR id IN (93140801, 93140802))
-  AND (id IN (93140801, 93140802)
-       OR permission IN ('pmo:project:lifecycle:query', 'pmo:project:lifecycle:update'))
-  AND type = 3
-  AND @project_lifecycle_menu_id IS NOT NULL;
+SET parent_id = @project_lifecycle_menu_id, name = '查询', permission = 'pmo:project:lifecycle:query',
+    type = 3, sort = 1, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93140801 AND @project_lifecycle_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @project_lifecycle_menu_id, name = '更新阶段', permission = 'pmo:project:lifecycle:update',
+    type = 3, sort = 2, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93140802 AND @project_lifecycle_menu_id IS NOT NULL;
 
 INSERT INTO system_menu (
   id, name, permission, type, sort, parent_id, path, icon, component, component_name,
@@ -680,17 +716,17 @@ WHERE @contract_import_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE id = 93131102 OR (deleted = b'0' AND permission = 'crm:contract:import:import'));
 
 UPDATE system_menu
-SET parent_id = @contract_import_menu_id,
-    type = 3,
-    status = 0,
-    visible = b'1',
-    deleted = b'0',
-    updater = 'admin',
-    update_time = NOW()
-WHERE (deleted = b'0' OR id IN (93131101, 93131102))
-  AND (id IN (93131101, 93131102)
-       OR permission IN ('crm:contract:import:template', 'crm:contract:import:import'))
-  AND type = 3
-  AND @contract_import_menu_id IS NOT NULL;
+SET parent_id = @contract_import_menu_id, name = '下载模板', permission = 'crm:contract:import:template',
+    type = 3, sort = 1, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93131101 AND @contract_import_menu_id IS NOT NULL;
+
+UPDATE system_menu
+SET parent_id = @contract_import_menu_id, name = '导入', permission = 'crm:contract:import:import',
+    type = 3, sort = 2, path = '', icon = '', component = '', component_name = NULL,
+    status = 0, visible = b'1', keep_alive = b'1', always_show = b'1', deleted = b'0',
+    updater = 'admin', update_time = NOW()
+WHERE id = 93131102 AND @contract_import_menu_id IS NOT NULL;
 
 SET FOREIGN_KEY_CHECKS = 1;
