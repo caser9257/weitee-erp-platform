@@ -158,17 +158,48 @@ public class ErpStockInServiceImpl implements ErpStockInService {
     }
 
     @Override
+    public void updateStockInStatusManually(Long id, Integer status) {
+        throw exception(STOCK_IN_MANUAL_STATUS_UPDATE_FORBIDDEN, id);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateStockInStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
-        // 1. 校验存在
         ErpStockInDO stockIn = validateStockInExists(id);
-        // 2. 不再校验 processInstanceId：审批平台架构下，业务表 process_instance_id 存储的是
-        //    snapshotId（Long），而 BPM 回调传入的是真实 processInstanceId（UUID），二者永远不一致。
-        //    事件分发器已通过 snapshot → bizId 路由确保回调准确性。
-        // 3. 更新状态
-        updateStockInStatus(id, status);
-        // 4. 清理 processInstanceId
-        erpStockInMapper.clearProcessInstanceId(id);
+        if (!ErpAuditStatus.APPROVE.getStatus().equals(status)) {
+            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+        }
+        int updateCount = erpStockInMapper.updateByIdStatusAndProcessInstanceId(id,
+                ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
+                new ErpStockInDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
+        if (updateCount == 0) {
+            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+        }
+        List<ErpStockInItemDO> stockInItems = erpStockInItemMapper.selectListByInId(id);
+        Set<Long> inProductIds = convertSet(stockInItems, ErpStockInItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(inProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
+        stockInItems.forEach(stockInItem -> {
+            BigDecimal count = stockInItem.getCount();
+            ErpStockDO stock = stockMap.get(stockInItem.getProductId() + ":" + stockInItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockInItem.getCount()) : null;
+            stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
+                    stockInItem.getProductId(), stockInItem.getWarehouseId(), count,
+                    ErpStockRecordBizTypeEnum.OTHER_IN.getType(), stockInItem.getInId(), stockInItem.getId(), stockIn.getNo(),
+                    price, amount));
+        });
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackStockInStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        validateStockInExists(id);
+        int updateCount = erpStockInMapper.resetStatusToDraftByBpm(id, processInstanceId);
+        if (updateCount == 0) {
+            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+        }
     }
 
     private List<ErpStockInItemDO> validateStockInItems(List<ErpStockInSaveReqVO.Item> list) {

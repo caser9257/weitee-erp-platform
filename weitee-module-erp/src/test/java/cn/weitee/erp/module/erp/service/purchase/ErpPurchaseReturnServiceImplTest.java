@@ -26,7 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_MANUAL_STATUS_UPDATE_FORBIDDEN;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_PROCESS_FAIL_EXISTS_REFUND;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -205,6 +207,35 @@ class ErpPurchaseReturnServiceImplTest {
 
         assertEquals(ErpBizTypeEnum.PURCHASE_RETURN.getType(), closedBizTypeRef.get());
         assertEquals(4L, closedBizIdRef.get());
+    }
+
+    @Test
+    void updatePurchaseReturnStatusManually_shouldThrowForbidden() {
+        ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.updatePurchaseReturnStatusManually(9L, ErpAuditStatus.APPROVE.getStatus()));
+
+        assertEquals(PURCHASE_RETURN_MANUAL_STATUS_UPDATE_FORBIDDEN.getCode(), ex.getCode());
+    }
+
+    @Test
+    void rollbackPurchaseReturnStatusToDraftByBpm_shouldThrowWhenNotProcessing() throws Exception {
+        ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
+        setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseReturnDO().setId(10L).setStatus(ErpAuditStatus.DRAFT.getStatus());
+            }
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                return 0;
+            }
+            return null;
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.rollbackPurchaseReturnStatusToDraftByBpm(10L, "PI-010", "reject"));
+
+        assertEquals(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING.getCode(), ex.getCode());
     }
 
     @SuppressWarnings("unchecked")

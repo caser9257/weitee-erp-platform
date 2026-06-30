@@ -1,8 +1,7 @@
 package cn.weitee.erp.module.erp.service.stock.approval;
 
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
-import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInDO;
-import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockInMapper;
+import cn.weitee.erp.module.bpm.service.approval.handler.SnapshotAwareApprovalResultHandler;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.stock.ErpStockInService;
 import org.springframework.stereotype.Component;
@@ -14,10 +13,8 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_IN_NOT_EXISTS;
 
 @Component
-public class StockInResultHandler implements ApprovalResultHandler {
+public class StockInResultHandler implements SnapshotAwareApprovalResultHandler {
 
-    @Resource
-    private ErpStockInMapper stockInMapper;
     @Resource
     private ErpStockInService stockInService;
 
@@ -34,26 +31,38 @@ public class StockInResultHandler implements ApprovalResultHandler {
     }
 
     @Override
+    public void onApproveWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
+        validateExists(bizId);
+        stockInService.updateStockInStatusByBpm(bizId, snapshotId,
+                ErpAuditStatus.APPROVE.getStatus(), reason);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void onReject(Long bizId, String processInstanceId, String reason) {
-        // 驳回：状态回 DRAFT，清理 processInstanceId，无库存副作用
-        // 与 onCancel 行为一致 —— 驳回不应触发 updateStockInStatus(REJECT) 的反审核逻辑
-        stockInMapper.updateById(new ErpStockInDO()
-                .setId(bizId).setStatus(ErpAuditStatus.DRAFT.getStatus()));
-        stockInMapper.clearProcessInstanceId(bizId);
+        stockInService.rollbackStockInStatusToDraftByBpm(bizId, processInstanceId, reason);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void onRejectWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
+        stockInService.rollbackStockInStatusToDraftByBpm(bizId, snapshotId, reason);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onCancel(Long bizId, String processInstanceId, String reason) {
-        // 撤回：状态回 DRAFT，清理 processInstanceId，无库存副作用
-        stockInMapper.updateById(new ErpStockInDO()
-                .setId(bizId).setStatus(ErpAuditStatus.DRAFT.getStatus()));
-        stockInMapper.clearProcessInstanceId(bizId);
+        stockInService.rollbackStockInStatusToDraftByBpm(bizId, processInstanceId, reason);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void onCancelWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
+        stockInService.rollbackStockInStatusToDraftByBpm(bizId, snapshotId, reason);
     }
 
     private void validateExists(Long stockInId) {
-        if (stockInMapper.selectById(stockInId) == null) {
+        if (stockInService.getStockIn(stockInId) == null) {
             throw exception(STOCK_IN_NOT_EXISTS);
         }
     }

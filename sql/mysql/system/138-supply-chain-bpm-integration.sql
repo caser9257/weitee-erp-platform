@@ -10,7 +10,7 @@ USE `ruoyi-vue-pro`;
 SET @col_exists = (
   SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'ruoyi-vue-pro'
+  WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'erp_purchase_return'
     AND COLUMN_NAME = 'process_instance_id'
 );
@@ -26,7 +26,7 @@ DEALLOCATE PREPARE stmt;
 SET @col_exists = (
   SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'ruoyi-vue-pro'
+  WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'erp_stock_in'
     AND COLUMN_NAME = 'process_instance_id'
 );
@@ -42,7 +42,7 @@ DEALLOCATE PREPARE stmt;
 SET @col_exists = (
   SELECT COUNT(*)
   FROM INFORMATION_SCHEMA.COLUMNS
-  WHERE TABLE_SCHEMA = 'ruoyi-vue-pro'
+  WHERE TABLE_SCHEMA = DATABASE()
     AND TABLE_NAME = 'erp_stock_out'
     AND COLUMN_NAME = 'process_instance_id'
 );

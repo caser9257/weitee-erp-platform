@@ -232,16 +232,53 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     }
 
     @Override
+    public void updatePurchaseReturnStatusManually(Long id, Integer status) {
+        throw exception(PURCHASE_RETURN_MANUAL_STATUS_UPDATE_FORBIDDEN, id);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseReturnStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpPurchaseReturnDO purchaseReturn = validatePurchaseReturnExists(id);
-        // 不再校验 processInstanceId：审批平台架构下，业务表 process_instance_id 存储的是
-        // snapshotId（Long），而 BPM 回调传入的是真实 processInstanceId（UUID），二者永远不一致。
-        // 事件分发器（BpmApprovalEventDispatcher）已通过 snapshot → bizId 路由确保回调准确性。
-        // 直接复用审核/反审核逻辑
-        updatePurchaseReturnStatus(id, status);
-        // 清理 processInstanceId
-        erpPurchaseReturnMapper.clearProcessInstanceId(id);
+        if (!ErpAuditStatus.APPROVE.getStatus().equals(status)) {
+            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+        }
+        int updateCount = erpPurchaseReturnMapper.updateByIdStatusAndProcessInstanceId(id,
+                ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
+                new ErpPurchaseReturnDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
+        if (updateCount == 0) {
+            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+        }
+
+        apStatementService.createStatementForPurchaseReturn(purchaseReturn);
+        List<ErpPurchaseReturnItemDO> purchaseReturnItems = erpPurchaseReturnItemMapper.selectListByReturnId(id);
+        Set<Long> returnProductIds = convertSet(purchaseReturnItems, ErpPurchaseReturnItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(returnProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
+        purchaseReturnItems.forEach(purchaseReturnItem -> {
+            BigDecimal count = purchaseReturnItem.getCount().negate();
+            ErpStockDO stock = stockMap.get(purchaseReturnItem.getProductId() + ":" + purchaseReturnItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(purchaseReturnItem.getCount()) : null;
+            stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
+                    purchaseReturnItem.getProductId(), purchaseReturnItem.getWarehouseId(), count,
+                    ErpStockRecordBizTypeEnum.PURCHASE_RETURN.getType(), purchaseReturnItem.getReturnId(), purchaseReturnItem.getId(), purchaseReturn.getNo(),
+                    price, amount));
+        });
+        updatePurchaseOrderReturnCount(purchaseReturn.getOrderId());
+        financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.PURCHASE_RETURN.getType(), id,
+                defaultTime(purchaseReturn.getReturnTime(), purchaseReturn.getCreateTime(), purchaseReturn.getUpdateTime()).toLocalDate());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackPurchaseReturnStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        validatePurchaseReturnExists(id);
+        int updateCount = erpPurchaseReturnMapper.resetStatusToDraftByBpm(id, processInstanceId);
+        if (updateCount == 0) {
+            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+        }
     }
 
     @Override

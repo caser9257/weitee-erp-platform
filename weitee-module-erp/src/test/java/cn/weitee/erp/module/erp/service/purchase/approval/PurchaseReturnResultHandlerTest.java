@@ -1,7 +1,6 @@
 package cn.weitee.erp.module.erp.service.purchase.approval;
 
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
-import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
 import org.junit.jupiter.api.Test;
@@ -27,8 +26,7 @@ class PurchaseReturnResultHandlerTest {
         AtomicReference<Long> approvedId = new AtomicReference<>();
         AtomicReference<Integer> approvedStatus = new AtomicReference<>();
 
-        injectField(handler, "purchaseReturnMapper", createMapperProxy(new ErpPurchaseReturnDO().setId(1L)));
-        injectField(handler, "purchaseReturnService", createServiceProxy(approvedId, approvedStatus));
+        injectField(handler, "purchaseReturnService", createServiceProxy(new ErpPurchaseReturnDO().setId(1L), approvedId, approvedStatus, null, null));
 
         handler.onApprove(1L, "PI-001", "approved");
 
@@ -37,10 +35,21 @@ class PurchaseReturnResultHandlerTest {
     }
 
     @Test
+    void onApproveWithSnapshot_shouldPassSnapshotId() throws Exception {
+        PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
+        AtomicReference<String> bindingId = new AtomicReference<>();
+
+        injectField(handler, "purchaseReturnService", createServiceProxy(new ErpPurchaseReturnDO().setId(11L), null, null, null, bindingId));
+
+        handler.onApproveWithSnapshot(11L, "PI-011", "SNAP-011", "approved");
+
+        assertEquals("SNAP-011", bindingId.get());
+    }
+
+    @Test
     void onApprove_shouldThrowWhenEntityNotExists() throws Exception {
         PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
-        injectField(handler, "purchaseReturnMapper", createMapperProxy(null)); // null = not found
-        injectField(handler, "purchaseReturnService", createServiceProxy(null, null));
+        injectField(handler, "purchaseReturnService", createServiceProxy(null, null, null, null, null));
 
         assertThrows(Exception.class, () -> handler.onApprove(999L, "PI-999", "not found"));
     }
@@ -48,71 +57,70 @@ class PurchaseReturnResultHandlerTest {
     @Test
     void onReject_shouldSetDraftAndClearProcessInstanceId() throws Exception {
         PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
-        AtomicReference<ErpPurchaseReturnDO> updatedEntity = new AtomicReference<>();
-        AtomicReference<Long> clearedId = new AtomicReference<>();
+        AtomicReference<Long> rollbackId = new AtomicReference<>();
 
-        injectField(handler, "purchaseReturnMapper", createMapperProxyForCancel(updatedEntity, clearedId));
-        injectField(handler, "purchaseReturnService", createServiceProxy(null, null));
+        injectField(handler, "purchaseReturnService", createServiceProxy(new ErpPurchaseReturnDO().setId(2L), null, null, rollbackId, null));
 
         handler.onReject(2L, "PI-002", "rejected");
 
-        // Verify status set to DRAFT (same as onCancel — no stock/finance side effects)
-        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedEntity.get().getStatus());
-        assertEquals(2L, updatedEntity.get().getId());
-        // Verify processInstanceId cleared
-        assertEquals(2L, clearedId.get());
+        assertEquals(2L, rollbackId.get());
+    }
+
+    @Test
+    void onRejectWithSnapshot_shouldPassSnapshotId() throws Exception {
+        PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
+        AtomicReference<String> bindingId = new AtomicReference<>();
+
+        injectField(handler, "purchaseReturnService", createServiceProxy(new ErpPurchaseReturnDO().setId(12L), null, null, null, bindingId));
+
+        handler.onRejectWithSnapshot(12L, "PI-012", "SNAP-012", "rejected");
+
+        assertEquals("SNAP-012", bindingId.get());
     }
 
     @Test
     void onCancel_shouldSetDraftAndClearProcessInstanceId() throws Exception {
         PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
-        AtomicReference<ErpPurchaseReturnDO> updatedEntity = new AtomicReference<>();
-        AtomicReference<Long> clearedId = new AtomicReference<>();
+        AtomicReference<Long> rollbackId = new AtomicReference<>();
 
-        injectField(handler, "purchaseReturnMapper", createMapperProxyForCancel(updatedEntity, clearedId));
-        injectField(handler, "purchaseReturnService", createServiceProxy(null, null));
+        injectField(handler, "purchaseReturnService", createServiceProxy(new ErpPurchaseReturnDO().setId(3L), null, null, rollbackId, null));
 
         handler.onCancel(3L, "PI-003", "cancel reason");
 
-        // Verify status set to DRAFT
-        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedEntity.get().getStatus());
-        assertEquals(3L, updatedEntity.get().getId());
-        // Verify processInstanceId cleared
-        assertEquals(3L, clearedId.get());
+        assertEquals(3L, rollbackId.get());
+    }
+
+    @Test
+    void onCancelWithSnapshot_shouldPassSnapshotId() throws Exception {
+        PurchaseReturnResultHandler handler = new PurchaseReturnResultHandler();
+        AtomicReference<String> bindingId = new AtomicReference<>();
+
+        injectField(handler, "purchaseReturnService", createServiceProxy(new ErpPurchaseReturnDO().setId(13L), null, null, null, bindingId));
+
+        handler.onCancelWithSnapshot(13L, "PI-013", "SNAP-013", "cancel");
+
+        assertEquals("SNAP-013", bindingId.get());
     }
 
     // ========== helpers ==========
 
-    private Object createMapperProxy(ErpPurchaseReturnDO entity) {
-        return createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) return entity;
-            return null;
-        });
-    }
-
-    private Object createMapperProxyForCancel(AtomicReference<ErpPurchaseReturnDO> updatedRef,
-                                               AtomicReference<Long> clearedIdRef) {
-        return createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return new ErpPurchaseReturnDO().setId((Long) args[0]);
-            }
-            if ("updateById".equals(methodName)) {
-                updatedRef.set((ErpPurchaseReturnDO) args[0]);
-                return 1;
-            }
-            if ("clearProcessInstanceId".equals(methodName)) {
-                clearedIdRef.set((Long) args[0]);
-                return 1;
-            }
-            return null;
-        });
-    }
-
-    private Object createServiceProxy(AtomicReference<Long> idRef, AtomicReference<Integer> statusRef) {
+    private Object createServiceProxy(ErpPurchaseReturnDO entity, AtomicReference<Long> idRef,
+                                      AtomicReference<Integer> statusRef, AtomicReference<Long> rollbackIdRef,
+                                      AtomicReference<String> bindingIdRef) {
         return createProxy(ErpPurchaseReturnService.class, (methodName, args) -> {
+            if ("getPurchaseReturn".equals(methodName)) {
+                return entity;
+            }
             if ("updatePurchaseReturnStatusByBpm".equals(methodName)) {
                 if (idRef != null) idRef.set((Long) args[0]);
                 if (statusRef != null) statusRef.set((Integer) args[2]);
+                if (bindingIdRef != null) bindingIdRef.set((String) args[1]);
+            }
+            if ("rollbackPurchaseReturnStatusToDraftByBpm".equals(methodName) && rollbackIdRef != null) {
+                rollbackIdRef.set((Long) args[0]);
+            }
+            if ("rollbackPurchaseReturnStatusToDraftByBpm".equals(methodName) && bindingIdRef != null) {
+                bindingIdRef.set((String) args[1]);
             }
             return null;
         });

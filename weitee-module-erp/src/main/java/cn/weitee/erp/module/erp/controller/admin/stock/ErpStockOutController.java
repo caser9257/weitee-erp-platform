@@ -104,13 +104,8 @@ public class ErpStockOutController {
     @Operation(summary = "更新其它出库单的状态")
     @PreAuthorize("@ss.hasPermission('erp:stock-out:update-status')")
     public CommonResult<Boolean> updateStockOutStatus(@RequestParam("id") Long id,
-                                                     @RequestParam("status") Integer status) {
-        // 审批中的单据必须走 BPM 审批流程，禁止手动变更状态
-        ErpStockOutDO stockOut = stockOutService.getStockOut(id);
-        if (stockOut != null && ErpAuditStatus.PROCESS.getStatus().equals(stockOut.getStatus())) {
-            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
-        }
-        stockOutService.updateStockOutStatus(id, status);
+                                                      @RequestParam("status") Integer status) {
+        stockOutService.updateStockOutStatusManually(id, status);
         return success(true);
     }
 

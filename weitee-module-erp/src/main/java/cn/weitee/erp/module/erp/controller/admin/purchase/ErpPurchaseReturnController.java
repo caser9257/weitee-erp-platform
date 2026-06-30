@@ -98,12 +98,7 @@ public class ErpPurchaseReturnController {
     @PreAuthorize("@ss.hasPermission('erp:purchase-return:update-status')")
     public CommonResult<Boolean> updatePurchaseReturnStatus(@RequestParam("id") Long id,
                                                       @RequestParam("status") Integer status) {
-        // 审批中的单据必须走 BPM 审批流程，禁止手动变更状态
-        ErpPurchaseReturnDO pr = purchaseReturnService.getPurchaseReturn(id);
-        if (pr != null && ErpAuditStatus.PROCESS.getStatus().equals(pr.getStatus())) {
-            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
-        }
-        purchaseReturnService.updatePurchaseReturnStatus(id, status);
+        purchaseReturnService.updatePurchaseReturnStatusManually(id, status);
         return success(true);
     }
 

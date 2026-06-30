@@ -41,6 +41,14 @@ public interface ErpStockInService {
     void updateStockInStatus(Long id, Integer status);
 
     /**
+     * 旧手工状态接口专用入口：供应链 BPM 接入后禁止再手工变更状态
+     *
+     * @param id 编号
+     * @param status 目标状态
+     */
+    void updateStockInStatusManually(Long id, Integer status);
+
+    /**
      * BPM 审批通过/驳回后更新其它入库单状态
      *
      * @param id 编号
@@ -49,6 +57,15 @@ public interface ErpStockInService {
      * @param reason 原因
      */
     void updateStockInStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
+
+    /**
+     * BPM 驳回 / 撤回后回退到草稿态
+     *
+     * @param id 编号
+     * @param processInstanceId 流程实例 ID
+     * @param reason 原因
+     */
+    void rollbackStockInStatusToDraftByBpm(Long id, String processInstanceId, String reason);
 
     /**
      * 删除其它入库单

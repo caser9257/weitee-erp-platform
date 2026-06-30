@@ -6,6 +6,7 @@ import cn.weitee.erp.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.in.ErpStockInPageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInItemDO;
+import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -40,6 +41,13 @@ public interface ErpStockInMapper extends BaseMapperX<ErpStockInDO> {
                 .eq(ErpStockInDO::getId, id).eq(ErpStockInDO::getStatus, status));
     }
 
+    default int updateByIdStatusAndProcessInstanceId(Long id, Integer status, String processInstanceId, ErpStockInDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpStockInDO>()
+                .eq(ErpStockInDO::getId, id)
+                .eq(ErpStockInDO::getStatus, status)
+                .eq(ErpStockInDO::getProcessInstanceId, processInstanceId));
+    }
+
     default ErpStockInDO selectByNo(String no) {
         return selectOne(ErpStockInDO::getNo, no);
     }
@@ -47,6 +55,15 @@ public interface ErpStockInMapper extends BaseMapperX<ErpStockInDO> {
     default void clearProcessInstanceId(Long id) {
         update(new LambdaUpdateWrapper<ErpStockInDO>()
                 .eq(ErpStockInDO::getId, id)
+                .set(ErpStockInDO::getProcessInstanceId, null));
+    }
+
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(new LambdaUpdateWrapper<ErpStockInDO>()
+                .eq(ErpStockInDO::getId, id)
+                .eq(ErpStockInDO::getStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpStockInDO::getProcessInstanceId, processInstanceId)
+                .set(ErpStockInDO::getStatus, ErpAuditStatus.DRAFT.getStatus())
                 .set(ErpStockInDO::getProcessInstanceId, null));
     }
 

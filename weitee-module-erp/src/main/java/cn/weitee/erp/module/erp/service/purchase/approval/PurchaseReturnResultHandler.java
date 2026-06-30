@@ -1,8 +1,7 @@
 package cn.weitee.erp.module.erp.service.purchase.approval;
 
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
-import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
-import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
+import cn.weitee.erp.module.bpm.service.approval.handler.SnapshotAwareApprovalResultHandler;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
 import org.springframework.stereotype.Component;
@@ -14,10 +13,8 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_NOT_EXISTS;
 
 @Component
-public class PurchaseReturnResultHandler implements ApprovalResultHandler {
+public class PurchaseReturnResultHandler implements SnapshotAwareApprovalResultHandler {
 
-    @Resource
-    private ErpPurchaseReturnMapper purchaseReturnMapper;
     @Resource
     private ErpPurchaseReturnService purchaseReturnService;
 
@@ -34,26 +31,38 @@ public class PurchaseReturnResultHandler implements ApprovalResultHandler {
     }
 
     @Override
+    public void onApproveWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
+        validateExists(bizId);
+        purchaseReturnService.updatePurchaseReturnStatusByBpm(bizId, snapshotId,
+                ErpAuditStatus.APPROVE.getStatus(), reason);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void onReject(Long bizId, String processInstanceId, String reason) {
-        // 驳回：状态回 DRAFT，清理 processInstanceId，无库存/财务副作用
-        // 与 onCancel 行为一致 —— 驳回不应触发 updatePurchaseReturnStatus(REJECT) 的反审核逻辑
-        purchaseReturnMapper.updateById(new ErpPurchaseReturnDO()
-                .setId(bizId).setStatus(ErpAuditStatus.DRAFT.getStatus()));
-        purchaseReturnMapper.clearProcessInstanceId(bizId);
+        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, processInstanceId, reason);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void onRejectWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
+        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, snapshotId, reason);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onCancel(Long bizId, String processInstanceId, String reason) {
-        // 撤回：状态回 DRAFT，清理 processInstanceId，无库存/财务副作用
-        purchaseReturnMapper.updateById(new ErpPurchaseReturnDO()
-                .setId(bizId).setStatus(ErpAuditStatus.DRAFT.getStatus()));
-        purchaseReturnMapper.clearProcessInstanceId(bizId);
+        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, processInstanceId, reason);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void onCancelWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
+        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, snapshotId, reason);
     }
 
     private void validateExists(Long purchaseReturnId) {
-        if (purchaseReturnMapper.selectById(purchaseReturnId) == null) {
+        if (purchaseReturnService.getPurchaseReturn(purchaseReturnId) == null) {
             throw exception(PURCHASE_RETURN_NOT_EXISTS);
         }
     }

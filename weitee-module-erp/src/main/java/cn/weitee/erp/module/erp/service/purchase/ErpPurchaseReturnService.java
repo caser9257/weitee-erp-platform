@@ -42,6 +42,14 @@ public interface ErpPurchaseReturnService {
     void updatePurchaseReturnStatus(Long id, Integer status);
 
     /**
+     * 旧手工状态接口专用入口：供应链 BPM 接入后禁止再手工变更状态
+     *
+     * @param id 编号
+     * @param status 目标状态
+     */
+    void updatePurchaseReturnStatusManually(Long id, Integer status);
+
+    /**
      * BPM 审批回调更新采购退货状态
      *
      * @param id 编号
@@ -50,6 +58,15 @@ public interface ErpPurchaseReturnService {
      * @param reason 原因（驳回/撤回时使用）
      */
     void updatePurchaseReturnStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
+
+    /**
+     * BPM 驳回 / 撤回后回退到草稿态
+     *
+     * @param id 编号
+     * @param processInstanceId 流程实例 ID
+     * @param reason 原因
+     */
+    void rollbackPurchaseReturnStatusToDraftByBpm(Long id, String processInstanceId, String reason);
 
     /**
      * 更新采购退货的退款金额

@@ -171,6 +171,11 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
         });
     }
 
+    @Override
+    public void updateStockOutStatusManually(Long id, Integer status) {
+        throw exception(STOCK_OUT_MANUAL_STATUS_UPDATE_FORBIDDEN, id);
+    }
+
     private void allocateStockOutBatches(ErpStockOutDO stockOut, List<ErpStockOutItemDO> stockOutItems) {
         stockOutItems.forEach(item -> stockBatchAllocationService.allocateOutbound(new ErpStockBatchAllocateOutboundReqBO()
                 .setProductId(item.getProductId())
@@ -253,12 +258,41 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
     @Transactional(rollbackFor = Exception.class)
     public void updateStockOutStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpStockOutDO stockOut = validateStockOutExists(id);
-        // 不再校验 processInstanceId：审批平台架构下，业务表 process_instance_id 存储的是
-        // snapshotId（Long），而 BPM 回调传入的是真实 processInstanceId（UUID），二者永远不一致。
-        // 事件分发器已通过 snapshot → bizId 路由确保回调准确性。
-        updateStockOutStatus(id, status);
-        // 清理 processInstanceId
-        erpStockOutMapper.clearProcessInstanceId(id);
+        if (!ErpAuditStatus.APPROVE.getStatus().equals(status)) {
+            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
+        }
+        int updateCount = erpStockOutMapper.updateByIdStatusAndProcessInstanceId(id,
+                ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
+                new ErpStockOutDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
+        if (updateCount == 0) {
+            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
+        }
+        List<ErpStockOutItemDO> stockOutItems = erpStockOutItemMapper.selectListByOutId(id);
+        allocateStockOutBatches(stockOut, stockOutItems);
+        Set<Long> outProductIds = convertSet(stockOutItems, ErpStockOutItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(outProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
+        stockOutItems.forEach(stockOutItem -> {
+            BigDecimal count = stockOutItem.getCount().negate();
+            ErpStockDO stock = stockMap.get(stockOutItem.getProductId() + ":" + stockOutItem.getWarehouseId());
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockOutItem.getCount()) : null;
+            stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
+                    stockOutItem.getProductId(), stockOutItem.getWarehouseId(), count,
+                    ErpStockRecordBizTypeEnum.OTHER_OUT.getType(), stockOutItem.getOutId(), stockOutItem.getId(), stockOut.getNo(),
+                    price, amount));
+        });
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackStockOutStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        validateStockOutExists(id);
+        int updateCount = erpStockOutMapper.resetStatusToDraftByBpm(id, processInstanceId);
+        if (updateCount == 0) {
+            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
+        }
     }
 
     @Override

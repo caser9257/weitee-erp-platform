@@ -9,6 +9,7 @@ import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalRecordDO;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalInstanceSnapshotStatusEnum;
 import cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
+import cn.weitee.erp.module.bpm.service.approval.handler.SnapshotAwareApprovalResultHandler;
 import cn.weitee.erp.module.bpm.service.message.BpmMessageService;
 import cn.weitee.erp.module.bpm.service.message.dto.BpmMessageSendWhenProcessInstanceApproveReqDTO;
 import cn.weitee.erp.module.bpm.service.message.dto.BpmMessageSendWhenProcessInstanceRejectReqDTO;
@@ -76,14 +77,15 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         Integer status = event.getStatus();
         Long bizId = Long.parseLong(snapshot.getBizId());
         String processInstanceId = event.getId();
+        String snapshotId = String.valueOf(snapshot.getId());
         String reason = event.getReason();
 
         if (ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.APPROVE.getStatus())) {
-            handleApprove(snapshot, handler, bizId, processInstanceId, reason);
+            handleApprove(snapshot, handler, bizId, processInstanceId, snapshotId, reason);
         } else if (ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.REJECT.getStatus())) {
-            handleReject(snapshot, handler, bizId, processInstanceId, reason);
+            handleReject(snapshot, handler, bizId, processInstanceId, snapshotId, reason);
         } else if (ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.CANCEL.getStatus())) {
-            handleCancel(snapshot, handler, bizId, processInstanceId, reason);
+            handleCancel(snapshot, handler, bizId, processInstanceId, snapshotId, reason);
         }
     }
 
@@ -101,11 +103,15 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
     }
 
     private void handleApprove(BpmApprovalInstanceSnapshotDO snapshot, ApprovalResultHandler handler,
-                               Long bizId, String processInstanceId, String reason) {
+                               Long bizId, String processInstanceId, String snapshotId, String reason) {
         // 1. 先调用结果处理器（业务状态回写）
         //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
-            handler.onApprove(bizId, processInstanceId, reason);
+            if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
+                snapshotAwareHandler.onApproveWithSnapshot(bizId, processInstanceId, snapshotId, reason);
+            } else {
+                handler.onApprove(bizId, processInstanceId, reason);
+            }
         } catch (Exception e) {
             log.error("[handleApprove][场景({}) 业务({}) 结果处理器异常，快照状态未更新]", snapshot.getSceneCode(), bizId, e);
             return; // 处理器失败，不更新快照状态，保持"审批中"
@@ -141,11 +147,15 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
     }
 
     private void handleReject(BpmApprovalInstanceSnapshotDO snapshot, ApprovalResultHandler handler,
-                              Long bizId, String processInstanceId, String reason) {
+                              Long bizId, String processInstanceId, String snapshotId, String reason) {
         // 1. 先调用结果处理器（业务状态回写）
         //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
-            handler.onReject(bizId, processInstanceId, reason);
+            if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
+                snapshotAwareHandler.onRejectWithSnapshot(bizId, processInstanceId, snapshotId, reason);
+            } else {
+                handler.onReject(bizId, processInstanceId, reason);
+            }
         } catch (Exception e) {
             log.error("[handleReject][场景({}) 业务({}) 结果处理器异常，快照状态未更新]", snapshot.getSceneCode(), bizId, e);
             return; // 处理器失败，不更新快照状态，保持"审批中"
@@ -182,11 +192,15 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
     }
 
     private void handleCancel(BpmApprovalInstanceSnapshotDO snapshot, ApprovalResultHandler handler,
-                              Long bizId, String processInstanceId, String reason) {
+                              Long bizId, String processInstanceId, String snapshotId, String reason) {
         // 1. 先调用结果处理器（业务状态回写）
         //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
-            handler.onCancel(bizId, processInstanceId, reason);
+            if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
+                snapshotAwareHandler.onCancelWithSnapshot(bizId, processInstanceId, snapshotId, reason);
+            } else {
+                handler.onCancel(bizId, processInstanceId, reason);
+            }
         } catch (Exception e) {
             log.error("[handleCancel][场景({}) 业务({}) 结果处理器异常，快照状态未更新]", snapshot.getSceneCode(), bizId, e);
             return; // 处理器失败，不更新快照状态，保持"审批中"

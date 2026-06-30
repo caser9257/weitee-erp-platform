@@ -81,6 +81,7 @@ public interface ErrorCodeConstants {
     ErrorCode PURCHASE_RETURN_BPM_CANCEL_FAIL = new ErrorCode(1_030_103_010, "当前采购退货单不存在可撤回的审批流程");
     ErrorCode PURCHASE_RETURN_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_103_011, "采购退货单({})审批中，无法修改");
     ErrorCode PURCHASE_RETURN_DELETE_FAIL_PROCESSING = new ErrorCode(1_030_103_012, "采购退货单({})审批中，无法删除");
+    ErrorCode PURCHASE_RETURN_MANUAL_STATUS_UPDATE_FORBIDDEN = new ErrorCode(1_030_103_013, "采购退货单({})已接入 BPM 审批，不允许手工更新状态");
 
     // ========== ERP 采购来源批次（1-030-104-000） ==========
     ErrorCode PURCHASE_SOURCE_BATCH_NOT_EXISTS = new ErrorCode(1_030_104_000, "采购来源批次不存在");
@@ -170,6 +171,7 @@ public interface ErrorCodeConstants {
     ErrorCode STOCK_IN_BPM_CANCEL_FAIL = new ErrorCode(1_030_401_007, "当前其它入库单不存在可撤回的审批流程");
     ErrorCode STOCK_IN_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_401_008, "其它入库单({})审批中，无法修改");
     ErrorCode STOCK_IN_DELETE_FAIL_PROCESSING = new ErrorCode(1_030_401_009, "其它入库单({})审批中，无法删除");
+    ErrorCode STOCK_IN_MANUAL_STATUS_UPDATE_FORBIDDEN = new ErrorCode(1_030_401_010, "其它入库单({})已接入 BPM 审批，不允许手工更新状态");
 
     // ========== ERP 其它出库单 1-030-402-000 ==========
     ErrorCode STOCK_OUT_NOT_EXISTS = new ErrorCode(1_030_402_000, "其它出库单不存在");
@@ -182,6 +184,7 @@ public interface ErrorCodeConstants {
     ErrorCode STOCK_OUT_BPM_CANCEL_FAIL = new ErrorCode(1_030_402_007, "当前其它出库单不存在可撤回的审批流程");
     ErrorCode STOCK_OUT_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_402_008, "其它出库单({})审批中，无法修改");
     ErrorCode STOCK_OUT_DELETE_FAIL_PROCESSING = new ErrorCode(1_030_402_009, "其它出库单({})审批中，无法删除");
+    ErrorCode STOCK_OUT_MANUAL_STATUS_UPDATE_FORBIDDEN = new ErrorCode(1_030_402_010, "其它出库单({})已接入 BPM 审批，不允许手工更新状态");
 
     // ========== ERP 库存调拨单 1-030-403-000 ==========
     ErrorCode STOCK_MOVE_NOT_EXISTS = new ErrorCode(1_030_403_000, "库存调拨单不存在");

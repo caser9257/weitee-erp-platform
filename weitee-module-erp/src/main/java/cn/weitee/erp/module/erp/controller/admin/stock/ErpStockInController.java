@@ -90,12 +90,7 @@ public class ErpStockInController {
     @PreAuthorize("@ss.hasPermission('erp:stock-in:update-status')")
     public CommonResult<Boolean> updateStockInStatus(@RequestParam("id") Long id,
                                                      @RequestParam("status") Integer status) {
-        // 审批中的单据必须走 BPM 审批流程，禁止手动变更状态
-        ErpStockInDO stockIn = stockInService.getStockIn(id);
-        if (stockIn != null && ErpAuditStatus.PROCESS.getStatus().equals(stockIn.getStatus())) {
-            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
-        }
-        stockInService.updateStockInStatus(id, status);
+        stockInService.updateStockInStatusManually(id, status);
         return success(true);
     }
 

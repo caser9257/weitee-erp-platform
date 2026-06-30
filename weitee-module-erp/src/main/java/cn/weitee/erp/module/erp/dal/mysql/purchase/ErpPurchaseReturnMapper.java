@@ -60,6 +60,13 @@ public interface ErpPurchaseReturnMapper extends BaseMapperX<ErpPurchaseReturnDO
                 .eq(ErpPurchaseReturnDO::getId, id).eq(ErpPurchaseReturnDO::getStatus, status));
     }
 
+    default int updateByIdStatusAndProcessInstanceId(Long id, Integer status, String processInstanceId, ErpPurchaseReturnDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpPurchaseReturnDO>()
+                .eq(ErpPurchaseReturnDO::getId, id)
+                .eq(ErpPurchaseReturnDO::getStatus, status)
+                .eq(ErpPurchaseReturnDO::getProcessInstanceId, processInstanceId));
+    }
+
     default ErpPurchaseReturnDO selectByNo(String no) {
         return selectOne(ErpPurchaseReturnDO::getNo, no);
     }
@@ -77,6 +84,15 @@ public interface ErpPurchaseReturnMapper extends BaseMapperX<ErpPurchaseReturnDO
     default void clearProcessInstanceId(Long id) {
         update(new LambdaUpdateWrapper<ErpPurchaseReturnDO>()
                 .eq(ErpPurchaseReturnDO::getId, id)
+                .set(ErpPurchaseReturnDO::getProcessInstanceId, null));
+    }
+
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(new LambdaUpdateWrapper<ErpPurchaseReturnDO>()
+                .eq(ErpPurchaseReturnDO::getId, id)
+                .eq(ErpPurchaseReturnDO::getStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpPurchaseReturnDO::getProcessInstanceId, processInstanceId)
+                .set(ErpPurchaseReturnDO::getStatus, ErpAuditStatus.DRAFT.getStatus())
                 .set(ErpPurchaseReturnDO::getProcessInstanceId, null));
     }
 

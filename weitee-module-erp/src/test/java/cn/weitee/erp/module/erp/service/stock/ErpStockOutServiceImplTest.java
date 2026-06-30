@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.erp.service.stock;
 
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutItemDO;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockOutItemMapper;
@@ -16,7 +17,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_MANUAL_STATUS_UPDATE_FORBIDDEN;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpStockOutServiceImplTest {
 
@@ -96,6 +100,35 @@ class ErpStockOutServiceImplTest {
         assertEquals(ErpStockRecordBizTypeEnum.OTHER_OUT.getType(), rollbackArgsRef.get()[0]);
         assertEquals(200L, rollbackArgsRef.get()[1]);
         assertEquals(ErpStockRecordBizTypeEnum.OTHER_OUT_CANCEL.getType(), rollbackArgsRef.get()[2]);
+    }
+
+    @Test
+    void updateStockOutStatusManually_shouldThrowForbidden() {
+        ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.updateStockOutStatusManually(9L, ErpAuditStatus.APPROVE.getStatus()));
+
+        assertEquals(STOCK_OUT_MANUAL_STATUS_UPDATE_FORBIDDEN.getCode(), ex.getCode());
+    }
+
+    @Test
+    void rollbackStockOutStatusToDraftByBpm_shouldThrowWhenNotProcessing() throws Exception {
+        ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
+        setField(service, "erpStockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockOutDO().setId(10L).setStatus(ErpAuditStatus.DRAFT.getStatus());
+            }
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                return 0;
+            }
+            return null;
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.rollbackStockOutStatusToDraftByBpm(10L, "PI-010", "cancel"));
+
+        assertEquals(STOCK_OUT_UPDATE_FAIL_PROCESSING.getCode(), ex.getCode());
     }
 
     @SuppressWarnings("unchecked")

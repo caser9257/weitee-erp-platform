@@ -44,6 +44,13 @@ public interface ErpStockOutMapper extends BaseMapperX<ErpStockOutDO> {
                 .eq(ErpStockOutDO::getId, id).eq(ErpStockOutDO::getStatus, status));
     }
 
+    default int updateByIdStatusAndProcessInstanceId(Long id, Integer status, String processInstanceId, ErpStockOutDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpStockOutDO>()
+                .eq(ErpStockOutDO::getId, id)
+                .eq(ErpStockOutDO::getStatus, status)
+                .eq(ErpStockOutDO::getProcessInstanceId, processInstanceId));
+    }
+
     default ErpStockOutDO selectByNo(String no) {
         return selectOne(ErpStockOutDO::getNo, no);
     }
@@ -59,6 +66,15 @@ public interface ErpStockOutMapper extends BaseMapperX<ErpStockOutDO> {
     default void clearProcessInstanceId(Long id) {
         update(new LambdaUpdateWrapper<ErpStockOutDO>()
                 .eq(ErpStockOutDO::getId, id)
+                .set(ErpStockOutDO::getProcessInstanceId, null));
+    }
+
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(new LambdaUpdateWrapper<ErpStockOutDO>()
+                .eq(ErpStockOutDO::getId, id)
+                .eq(ErpStockOutDO::getStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpStockOutDO::getProcessInstanceId, processInstanceId)
+                .set(ErpStockOutDO::getStatus, ErpAuditStatus.DRAFT.getStatus())
                 .set(ErpStockOutDO::getProcessInstanceId, null));
     }
 

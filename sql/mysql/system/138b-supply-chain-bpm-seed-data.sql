@@ -84,19 +84,34 @@ SET @so_version_id = (SELECT id FROM bpm_approval_scheme_version WHERE scheme_id
 INSERT INTO bpm_approval_rule (scheme_version_id, rule_name, rule_type, priority, is_default, condition_json, process_json, enabled, creator, create_time, updater, update_time, deleted)
 SELECT @pr_version_id, '默认规则', 'DEFAULT', 1, 1, NULL, 'erp_purchase_return_approval', 1, 'admin', NOW(), 'admin', NOW(), b'0'
 WHERE @pr_version_id IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM bpm_approval_rule WHERE scheme_version_id = @pr_version_id AND deleted = b'0');
+  AND NOT EXISTS (SELECT 1 FROM bpm_approval_rule WHERE scheme_version_id = @pr_version_id AND rule_name = '默认规则' AND deleted = b'0');
+
+UPDATE bpm_approval_rule
+SET rule_type = 'DEFAULT', priority = 1, is_default = 1, condition_json = NULL,
+    process_json = 'erp_purchase_return_approval', enabled = 1, deleted = b'0', updater = 'admin', update_time = NOW()
+WHERE scheme_version_id = @pr_version_id AND rule_name = '默认规则';
 
 -- 其它入库规则
 INSERT INTO bpm_approval_rule (scheme_version_id, rule_name, rule_type, priority, is_default, condition_json, process_json, enabled, creator, create_time, updater, update_time, deleted)
 SELECT @si_version_id, '默认规则', 'DEFAULT', 1, 1, NULL, 'erp_stock_in_approval', 1, 'admin', NOW(), 'admin', NOW(), b'0'
 WHERE @si_version_id IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM bpm_approval_rule WHERE scheme_version_id = @si_version_id AND deleted = b'0');
+  AND NOT EXISTS (SELECT 1 FROM bpm_approval_rule WHERE scheme_version_id = @si_version_id AND rule_name = '默认规则' AND deleted = b'0');
+
+UPDATE bpm_approval_rule
+SET rule_type = 'DEFAULT', priority = 1, is_default = 1, condition_json = NULL,
+    process_json = 'erp_stock_in_approval', enabled = 1, deleted = b'0', updater = 'admin', update_time = NOW()
+WHERE scheme_version_id = @si_version_id AND rule_name = '默认规则';
 
 -- 其它出库规则
 INSERT INTO bpm_approval_rule (scheme_version_id, rule_name, rule_type, priority, is_default, condition_json, process_json, enabled, creator, create_time, updater, update_time, deleted)
 SELECT @so_version_id, '默认规则', 'DEFAULT', 1, 1, NULL, 'erp_stock_out_approval', 1, 'admin', NOW(), 'admin', NOW(), b'0'
 WHERE @so_version_id IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM bpm_approval_rule WHERE scheme_version_id = @so_version_id AND deleted = b'0');
+  AND NOT EXISTS (SELECT 1 FROM bpm_approval_rule WHERE scheme_version_id = @so_version_id AND rule_name = '默认规则' AND deleted = b'0');
+
+UPDATE bpm_approval_rule
+SET rule_type = 'DEFAULT', priority = 1, is_default = 1, condition_json = NULL,
+    process_json = 'erp_stock_out_approval', enabled = 1, deleted = b'0', updater = 'admin', update_time = NOW()
+WHERE scheme_version_id = @so_version_id AND rule_name = '默认规则';
 
 -- ========== 5. 回填场景的 active_scheme_id ==========
 
@@ -113,14 +128,14 @@ WHERE scene_code = 'erp.stock.out.submit' AND (active_scheme_id IS NULL OR activ
 
 UPDATE bpm_approval_scheme SET active_version_id = @pr_version_id, latest_version_id = @pr_version_id, updater = 'admin', update_time = NOW()
 WHERE code = 'erp.purchase.return.scheme.v1' AND deleted = b'0'
-  AND (active_version_id IS NULL OR latest_version_id IS NULL);
+  AND (active_version_id != @pr_version_id OR latest_version_id != @pr_version_id OR active_version_id IS NULL OR latest_version_id IS NULL);
 
 UPDATE bpm_approval_scheme SET active_version_id = @si_version_id, latest_version_id = @si_version_id, updater = 'admin', update_time = NOW()
 WHERE code = 'erp.stock.in.scheme.v1' AND deleted = b'0'
-  AND (active_version_id IS NULL OR latest_version_id IS NULL);
+  AND (active_version_id != @si_version_id OR latest_version_id != @si_version_id OR active_version_id IS NULL OR latest_version_id IS NULL);
 
 UPDATE bpm_approval_scheme SET active_version_id = @so_version_id, latest_version_id = @so_version_id, updater = 'admin', update_time = NOW()
 WHERE code = 'erp.stock.out.scheme.v1' AND deleted = b'0'
-  AND (active_version_id IS NULL OR latest_version_id IS NULL);
+  AND (active_version_id != @so_version_id OR latest_version_id != @so_version_id OR active_version_id IS NULL OR latest_version_id IS NULL);
 
 SET FOREIGN_KEY_CHECKS = 1;
