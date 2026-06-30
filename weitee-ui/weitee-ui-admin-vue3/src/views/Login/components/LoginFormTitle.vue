@@ -1,44 +1,35 @@
 <template>
-  <div class="login-form-title enter-x text-left">
+  <div class="login-form-title">
     <p class="login-form-title__eyebrow">{{ getFormEyebrow }}</p>
     <h2 class="login-form-title__title">{{ getFormTitle }}</h2>
-    <p v-if="getFormDesc" class="login-form-title__desc">{{ getFormDesc }}</p>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { LoginStateEnum, useLoginState } from './useLogin'
+import { useLoginCopy } from './useLoginCopy'
 
 defineOptions({ name: 'LoginFormTitle' })
 
-const { t } = useI18n()
 const { getLoginState } = useLoginState()
+const { loginText } = useLoginCopy()
 
 const getFormEyebrow = computed(() => {
-  const eyebrowObj = {
-    [LoginStateEnum.RESET_PASSWORD]: t('sys.login.resetEyebrow'),
-    [LoginStateEnum.LOGIN]: t('sys.login.signInEyebrow'),
-    [LoginStateEnum.SSO]: t('sys.login.ssoEyebrow')
+  const eyebrowMap = {
+    [LoginStateEnum.RESET_PASSWORD]: loginText('resetEyebrow'),
+    [LoginStateEnum.LOGIN]: loginText('signInEyebrow'),
+    [LoginStateEnum.SSO]: loginText('ssoEyebrow')
   }
-  return eyebrowObj[unref(getLoginState)]
+  return eyebrowMap[unref(getLoginState)]
 })
 
 const getFormTitle = computed(() => {
-  const titleObj = {
-    [LoginStateEnum.RESET_PASSWORD]: t('sys.login.forgetFormTitle'),
-    [LoginStateEnum.LOGIN]: t('sys.login.signInTitle'),
-    [LoginStateEnum.SSO]: t('sys.login.ssoFormTitle')
+  const titleMap = {
+    [LoginStateEnum.RESET_PASSWORD]: loginText('forgetFormTitle'),
+    [LoginStateEnum.LOGIN]: loginText('signInTitle'),
+    [LoginStateEnum.SSO]: loginText('ssoFormTitle')
   }
-  return titleObj[unref(getLoginState)]
-})
-
-const getFormDesc = computed(() => {
-  const descObj = {
-    [LoginStateEnum.RESET_PASSWORD]: t('sys.login.forgetFormDesc'),
-    [LoginStateEnum.LOGIN]: t('sys.login.signInDesc'),
-    [LoginStateEnum.SSO]: t('sys.login.ssoFormDesc')
-  }
-  return descObj[unref(getLoginState)]
+  return titleMap[unref(getLoginState)]
 })
 </script>
 
@@ -46,37 +37,36 @@ const getFormDesc = computed(() => {
 .login-form-title {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  margin-bottom: 6px;
 
   &__eyebrow {
     margin: 0;
-    color: #7dd3fc;
+    color: #06b6d4;
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.24em;
+    font-weight: 800;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
   }
 
   &__title {
     margin: 0;
-    color: #f8fafc;
-    font-size: 34px;
-    font-weight: 700;
-    line-height: 1.2;
+    color: #0f172a;
+    font-size: 23px;
+    font-weight: 900;
+    line-height: 1.25;
+    letter-spacing: 0.3px;
   }
+}
 
-  &__desc {
-    margin: 0;
-    color: rgba(226, 232, 240, 0.82);
-    font-size: 14px;
-    line-height: 1.7;
-  }
+:global(.dark) .login-form-title__title {
+  color: #0f172a;
 }
 
 @media (max-width: 767px) {
   .login-form-title {
     &__title {
-      font-size: 28px;
+      font-size: 21px;
     }
   }
 }

@@ -85,13 +85,15 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
 
     // 2. 鐢熸垚 data锛圓ppRouteRecordRaw锛?
     // 璺敱鍦板潃杞瀛楁瘝澶у啓椹煎嘲锛屼綔涓鸿矾鐢卞悕绉帮紝閫傞厤keepAlive
+    // path 涓虹┖鏃惰繑鍥?''锛岄伩鍏嶅瀷杞椂鍒嗚緧鍑洪敊
+    const routePath = route.path || ''
     let data: AppRouteRecordRaw = {
       path:
-        route.path.indexOf('?') > -1 && !isUrl(route.path) ? route.path.split('?')[0] : route.path, // 娉ㄦ剰锛岄渶瑕佹帓闄?http 杩欑 url锛岄伩鍏嶅畠甯?? 鍙傛暟琚埅鍙栨帀
+        routePath.indexOf('?') > -1 && !isUrl(routePath) ? routePath.split('?')[0] : routePath,
       name:
         route.componentName && route.componentName.length > 0
           ? route.componentName
-          : toCamelCase(route.path, true),
+          : toCamelCase(routePath, true),
       redirect: route.redirect,
       meta: meta
     }
@@ -101,7 +103,7 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       data.meta = {
         hidden: meta.hidden
       }
-      data.name = toCamelCase(route.path, true) + 'Parent'
+      data.name = toCamelCase(routePath, true) + 'Parent'
       data.redirect = ''
       meta.alwaysShow = true
       const childrenData: AppRouteRecordRaw = {
@@ -109,20 +111,20 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
         name:
           route.componentName && route.componentName.length > 0
             ? route.componentName
-            : toCamelCase(route.path, true),
+            : toCamelCase(routePath, true),
         redirect: route.redirect,
         meta: meta
       }
       const componentPath = resolveRouteComponentPath(route)
-      childrenData.component = resolveViewModule(componentPath, route.path)
+      childrenData.component = resolveViewModule(componentPath, routePath)
       data.children = [childrenData]
     } else {
       // 鐩綍
       if (route.children?.length) {
         data.component = Layout
-        data.redirect = getRedirect(route.path, route.children)
+        data.redirect = getRedirect(routePath, route.children)
         // 澶栭摼
-      } else if (isUrl(route.path)) {
+      } else if (isUrl(routePath)) {
         data = {
           path: '/external-link',
           component: Layout,
@@ -135,7 +137,7 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       } else {
         // 瀵瑰悗绔紶component缁勪欢璺緞鍜屼笉浼犲仛鍏煎锛堝鏋滃悗绔紶component缁勪欢璺緞锛岄偅涔坧ath鍙互闅忎究鍐欙紝濡傛灉涓嶄紶锛宑omponent缁勪欢璺緞浼氭牴path淇濇寔涓€鑷达級
         const componentPath = resolveRouteComponentPath(route)
-        data.component = resolveViewModule(componentPath, route.path)
+        data.component = resolveViewModule(componentPath, routePath)
       }
       if (route.children) {
         data.children = generateRoute(route.children)
@@ -153,9 +155,11 @@ export const getRedirect = (parentPath: string, children: AppCustomRouteRecordRa
   const path = generateRoutePath(parentPath, children[0].path)
   // 閫掑綊瀛愯妭鐐?
   if (children[0].children) return getRedirect(path, children[0].children)
+  return path
 }
 
 const generateRoutePath = (parentPath: string, path: string) => {
+  if (!path) return parentPath // path 涓虹┖鏃惰繑鍥?parentPath锛岄伩鍏嶆嫻鎺嚭閿?
   if (parentPath.endsWith('/')) {
     parentPath = parentPath.slice(0, -1) // 绉婚櫎榛樿鐨?/
   }

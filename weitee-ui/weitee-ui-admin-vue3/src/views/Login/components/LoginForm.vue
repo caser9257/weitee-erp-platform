@@ -4,7 +4,7 @@
     ref="formLogin"
     :model="loginData.loginForm"
     :rules="loginRules"
-    class="login-form login-auth-form"
+    :class="['login-form', 'login-auth-form', { 'login-auth-form--dark': props.isDarkMode }]"
     label-position="top"
     label-width="120px"
     size="large"
@@ -14,30 +14,53 @@
 
       <div class="login-auth-form__fields">
         <el-form-item prop="username">
+          <label class="login-auth-form__label">{{ loginText('accountLabel') }}</label>
           <el-input
             v-model="loginData.loginForm.username"
-            :placeholder="t('sys.login.accountPlaceholder')"
+            :placeholder="loginText('accountPlaceholder')"
             :prefix-icon="iconAvatar"
             autocomplete="username"
           />
         </el-form-item>
 
         <el-form-item prop="password">
-          <el-input
-            v-model="loginData.loginForm.password"
-            :placeholder="t('sys.login.passwordPlaceholder')"
-            :prefix-icon="iconLock"
-            autocomplete="current-password"
-            show-password
-            type="password"
-            @keyup.enter="getCode()"
-          />
+          <label class="login-auth-form__label">{{ loginText('passwordLabel') }}</label>
+          <div class="login-auth-form__password">
+            <el-input
+              v-model="loginData.loginForm.password"
+              :placeholder="loginText('passwordPlaceholder')"
+              :prefix-icon="iconLock"
+              :type="showPassword ? 'text' : 'password'"
+              autocomplete="current-password"
+              @keyup.enter="getCode()"
+            >
+              <template #suffix>
+                <button
+                  class="login-auth-form__password-toggle"
+                  type="button"
+                  :aria-label="showPassword ? loginText('hidePassword') : loginText('showPassword')"
+                  @click="showPassword = !showPassword"
+                >
+                  <svg v-if="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.6 10.6A2 2 0 0012 15a2 2 0 001.4-3.4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.2 6.2C4.1 7.8 2.7 10 2 12c1.6 4.8 6.1 8 10 8 1.6 0 3.1-.3 4.4-.9" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.6 4.2A11.6 11.6 0 0112 4c4 0 8.4 3.2 10 8-.5 1.4-1.2 2.8-2.2 4" />
+                  </svg>
+                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z" />
+                    <circle cx="12" cy="12" r="3.2" />
+                  </svg>
+                </button>
+              </template>
+            </el-input>
+          </div>
         </el-form-item>
       </div>
 
       <div class="login-auth-form__meta">
         <el-checkbox v-model="loginData.loginForm.rememberMe" :disabled="loginLoading">
-          {{ t('sys.login.rememberMe') }}
+          {{ loginText('rememberMe') }}
         </el-checkbox>
         <el-link
           class="login-auth-form__forgot"
@@ -45,14 +68,14 @@
           type="primary"
           @click="setLoginState(LoginStateEnum.RESET_PASSWORD)"
         >
-          {{ t('sys.login.forgetPassword') }}
+          {{ loginText('forgetPassword') }}
         </el-link>
       </div>
 
       <XButton
         :disabled="!canSubmitLogin"
         :loading="loginLoading"
-        :title="t('sys.login.loginButton')"
+        :title="loginText('loginButton')"
         class="login-auth-form__submit w-full"
         type="primary"
         @click="getCode()"
@@ -80,8 +103,18 @@ import { usePermissionStore } from '@/store/modules/permission'
 import * as LoginApi from '@/api/login'
 import LoginFormTitle from './LoginFormTitle.vue'
 import { LoginStateEnum, useFormValid, useLoginState } from './useLogin'
+import { useLoginCopy } from './useLoginCopy'
+import { useMessage } from '@/hooks/web/useMessage'
 
 defineOptions({ name: 'LoginForm' })
+const props = withDefaults(
+  defineProps<{
+    isDarkMode?: boolean
+  }>(),
+  {
+    isDarkMode: false
+  }
+)
 
 const { t } = useI18n()
 const iconAvatar = useIcon({ icon: 'ep:user' })
@@ -97,6 +130,8 @@ const loginLoading = ref(false)
 const verify = ref()
 const captchaType = ref('blockPuzzle')
 const loading = ref<any>()
+const showPassword = ref(false)
+const { loginText } = useLoginCopy()
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
@@ -174,7 +209,7 @@ const handleLogin = async (params: any) => {
     }
     loading.value = ElLoading.service({
       lock: true,
-      text: t('sys.login.loadingText'),
+      text: loginText('loadingText'),
       background: 'rgba(2, 6, 23, 0.72)'
     })
     if (loginDataLoginForm.rememberMe) {
@@ -191,6 +226,8 @@ const handleLogin = async (params: any) => {
     } else {
       await push({ path: redirect.value || permissionStore.addRouters[0].path })
     }
+  } catch (error: any) {
+    message.error(error?.message || t('sys.api.apiRequestFailed'))
   } finally {
     loginLoading.value = false
     loading.value?.close?.()
@@ -216,7 +253,15 @@ onMounted(() => {
 .login-auth-form {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  padding: 30px 28px 26px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 25px 50px rgba(0, 0, 0, 0.3),
+    0 10px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
   &__content {
     display: flex;
@@ -227,7 +272,41 @@ onMounted(() => {
   &__fields {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 6px;
+  }
+
+  &__label {
+    display: inline-flex;
+    margin-bottom: 10px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  &__password {
+    width: 100%;
+  }
+
+  &__password-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: #96a4ba;
+    cursor: pointer;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
   }
 
   &__meta {
@@ -235,35 +314,178 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    color: rgba(226, 232, 240, 0.82);
-    font-size: 14px;
+    color: #7787a0;
+    font-size: 13px;
   }
 
   &__forgot {
-    font-weight: 500;
+    font-weight: 700;
   }
 
   &__submit {
-    min-height: 52px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    min-height: 60px;
+    margin-top: 2px;
   }
 }
 
 :deep(.el-form-item) {
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 :deep(.el-input__wrapper) {
-  min-height: 52px;
+  min-height: 46px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    0 2px 6px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0 14px;
+  transition: all 0.2s ease;
+}
+
+:deep(.el-input__prefix-inner),
+:deep(.el-input__suffix-inner) {
+  color: #94a3b8;
+}
+
+:deep(.el-input__inner) {
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+:deep(.el-input__inner::placeholder) {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+:deep(.el-input.is-focus .el-input__wrapper) {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 
+    0 0 0 3px rgba(6, 182, 212, 0.12),
+    0 0 0 1px rgba(6, 182, 212, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 :deep(.el-checkbox) {
-  color: rgba(226, 232, 240, 0.82);
+  color: #475569;
+  font-size: 13px;
+}
+
+:deep(.el-checkbox__inner) {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+:deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  border-color: #06b6d4;
+  box-shadow: 
+    0 0 0 1px rgba(6, 182, 212, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+:deep(.el-link) {
+  color: #475569;
+}
+
+:deep(.el-link:hover) {
+  color: #06b6d4;
+}
+
+:deep(.x-button.el-button--primary),
+:deep(.el-button--primary) {
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  box-shadow: 
+    0 0 0 1px rgba(6, 182, 212, 0.2),
+    0 12px 28px rgba(6, 182, 212, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    box-shadow: 
+      0 0 0 1px rgba(8, 145, 178, 0.3),
+      0 16px 32px rgba(8, 145, 178, 0.35),
+      0 6px 12px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 
+      0 0 0 1px rgba(8, 145, 178, 0.25),
+      0 8px 20px rgba(8, 145, 178, 0.3),
+      0 2px 6px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  }
+}
+
+.login-auth-form--dark {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+  box-shadow: 
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 25px 50px rgba(0, 0, 0, 0.3),
+    0 10px 20px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.login-auth-form--dark .login-auth-form__label,
+.login-auth-form--dark .login-auth-form__meta,
+.login-auth-form--dark :deep(.el-link) {
+  color: #475569;
+}
+
+.login-auth-form--dark .login-auth-form__password-toggle,
+.login-auth-form--dark :deep(.el-input__prefix-inner),
+.login-auth-form--dark :deep(.el-input__suffix-inner) {
+  color: #94a3b8;
+}
+
+.login-auth-form--dark :deep(.el-input__wrapper) {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.login-auth-form--dark :deep(.el-input__inner) {
+  color: #1e293b;
+}
+
+.login-auth-form--dark :deep(.el-input__inner::placeholder) {
+  color: #94a3b8;
+}
+
+.login-auth-form--dark :deep(.el-input.is-focus .el-input__wrapper) {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 
+    0 0 0 3px rgba(6, 182, 212, 0.12),
+    0 0 0 1px rgba(6, 182, 212, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 @media (max-width: 767px) {
   .login-auth-form {
+    padding: 24px 20px;
+
     &__meta {
       flex-direction: column;
       align-items: flex-start;

@@ -31,7 +31,7 @@ const routeMatchesPath = (
   targetPath: string,
   parentPath = '/'
 ): boolean => {
-  const fullPath = route.path.startsWith('/') ? route.path : joinRoutePath(parentPath, route.path)
+  const fullPath = route.path?.startsWith('/') ? route.path : joinRoutePath(parentPath, route.path)
   if (fullPath === targetPath) {
     return true
   }
@@ -51,7 +51,7 @@ const visitGroupedRoutes = (
 
   const groupKey = route.meta?.menuGroupKey as string | undefined
   const childRoutes = route.children || []
-  const fullPath = route.path.startsWith('/') ? route.path : joinRoutePath(parentPath, route.path)
+  const fullPath = route.path?.startsWith('/') ? route.path : joinRoutePath(parentPath, route.path)
 
   if (groupKey) {
     if (!groupedRouteMap.has(groupKey)) {
