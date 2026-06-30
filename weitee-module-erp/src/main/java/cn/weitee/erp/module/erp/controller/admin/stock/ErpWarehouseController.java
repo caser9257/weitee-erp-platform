@@ -69,10 +69,11 @@ public class ErpWarehouseController {
     }
 
     @PutMapping("/update-default-status")
+    @PreAuthorize("@ss.hasPermission('erp:warehouse:update')")
     @Operation(summary = "更新仓库默认状态")
     @Parameters({
             @Parameter(name = "id", description = "编号", required = true),
-            @Parameter(name = "status", description = "状态", required = true)
+            @Parameter(name = "defaultStatus", description = "默认状态", required = true)
     })
     public CommonResult<Boolean> updateWarehouseDefaultStatus(@RequestParam("id") Long id,
                                                               @RequestParam("defaultStatus") Boolean defaultStatus) {
@@ -109,6 +110,7 @@ public class ErpWarehouseController {
     }
 
     @GetMapping("/simple-list")
+    @PreAuthorize("@ss.hasPermission('erp:warehouse:query')")
     @Operation(summary = "获得仓库精简列表", description = "只包含被开启的仓库，主要用于前端的下拉选项")
     public CommonResult<List<ErpWarehouseRespVO>> getWarehouseSimpleList() {
         List<ErpWarehouseDO> list = warehouseService.getWarehouseListByStatus(CommonStatusEnum.ENABLE.getStatus());

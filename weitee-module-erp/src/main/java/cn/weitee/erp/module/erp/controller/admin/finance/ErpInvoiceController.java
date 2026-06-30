@@ -92,6 +92,7 @@ public class ErpInvoiceController {
     }
 
     @GetMapping("/invoiced-amount")
+    @PreAuthorize("@ss.hasPermission('erp:invoice:query')")
     @Operation(summary = "获得订单已开票金额")
     public CommonResult<BigDecimal> getInvoicedAmount(@RequestParam("orderId") Long orderId) {
         BigDecimal amount = erpInvoiceService.getInvoicedAmountByOrderId(orderId);

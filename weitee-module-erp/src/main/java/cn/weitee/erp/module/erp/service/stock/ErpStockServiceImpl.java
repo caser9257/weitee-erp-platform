@@ -18,6 +18,7 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -63,6 +64,11 @@ public class ErpStockServiceImpl implements ErpStockService {
     @Override
     public ErpStockDO getStock(Long productId, Long warehouseId) {
         return erpStockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
+    }
+
+    @Override
+    public List<ErpStockDO> getStockListByProductIds(Collection<Long> productIds) {
+        return erpStockMapper.selectListByProductIdIn(productIds);
     }
 
     @Override

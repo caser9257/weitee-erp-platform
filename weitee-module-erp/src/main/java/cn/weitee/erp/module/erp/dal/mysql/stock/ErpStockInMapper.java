@@ -44,4 +44,10 @@ public interface ErpStockInMapper extends BaseMapperX<ErpStockInDO> {
         return selectOne(ErpStockInDO::getNo, no);
     }
 
+    default void clearProcessInstanceId(Long id) {
+        update(new LambdaUpdateWrapper<ErpStockInDO>()
+                .eq(ErpStockInDO::getId, id)
+                .set(ErpStockInDO::getProcessInstanceId, null));
+    }
+
 }

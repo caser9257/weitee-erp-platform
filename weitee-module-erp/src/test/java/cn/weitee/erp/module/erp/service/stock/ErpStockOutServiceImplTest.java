@@ -6,6 +6,7 @@ import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockOutItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockOutMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
+import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import org.junit.jupiter.api.Test;
 
@@ -24,7 +25,7 @@ class ErpStockOutServiceImplTest {
         ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
         AtomicReference<ErpStockBatchAllocateOutboundReqBO> allocateReqRef = new AtomicReference<>();
 
-        setField(service, "stockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+        setField(service, "erpStockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return new ErpStockOutDO().setId(200L).setNo("QTCK202604290001")
                         .setStatus(ErpAuditStatus.PROCESS.getStatus());
@@ -34,7 +35,7 @@ class ErpStockOutServiceImplTest {
             }
             return null;
         }));
-        setField(service, "stockOutItemMapper", createProxy(ErpStockOutItemMapper.class, (methodName, args) -> {
+        setField(service, "erpStockOutItemMapper", createProxy(ErpStockOutItemMapper.class, (methodName, args) -> {
             if ("selectListByOutId".equals(methodName)) {
                 return List.of(new ErpStockOutItemDO().setId(201L).setOutId(200L)
                         .setProductId(1L).setWarehouseId(2L).setCount(new BigDecimal("3.000")));
@@ -49,6 +50,7 @@ class ErpStockOutServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> List.of()));
 
         service.updateStockOutStatus(200L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -63,7 +65,7 @@ class ErpStockOutServiceImplTest {
         ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
         AtomicReference<Object[]> rollbackArgsRef = new AtomicReference<>();
 
-        setField(service, "stockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+        setField(service, "erpStockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return new ErpStockOutDO().setId(200L).setNo("QTCK202604290001")
                         .setStatus(ErpAuditStatus.APPROVE.getStatus());
@@ -73,7 +75,7 @@ class ErpStockOutServiceImplTest {
             }
             return null;
         }));
-        setField(service, "stockOutItemMapper", createProxy(ErpStockOutItemMapper.class, (methodName, args) -> {
+        setField(service, "erpStockOutItemMapper", createProxy(ErpStockOutItemMapper.class, (methodName, args) -> {
             if ("selectListByOutId".equals(methodName)) {
                 return List.of(new ErpStockOutItemDO().setId(201L).setOutId(200L)
                         .setProductId(1L).setWarehouseId(2L).setCount(new BigDecimal("3.000")));
@@ -87,6 +89,7 @@ class ErpStockOutServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> List.of()));
 
         service.updateStockOutStatus(200L, ErpAuditStatus.PROCESS.getStatus());
 

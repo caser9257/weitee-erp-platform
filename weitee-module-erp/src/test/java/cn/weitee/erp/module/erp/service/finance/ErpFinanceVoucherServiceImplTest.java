@@ -687,6 +687,28 @@ class ErpFinanceVoucherServiceImplTest {
     }
 
     @Test
+    void approveVoucher_shouldSkipAlreadyApprovedVoucher() throws Exception {
+        ErpFinanceVoucherServiceImpl service = newService();
+        AtomicInteger updateCount = new AtomicInteger();
+
+        setField(service, "financeVoucherMapper", createProxy(ErpFinanceVoucherMapper.class, (methodName, args) -> {
+            if ("selectBatchIds".equals(methodName)) {
+                return List.of(new ErpFinanceVoucherDO().setId(1L).setVoucherNo("CWPZ1")
+                        .setStatus(ErpFinanceVoucherStatusEnum.APPROVED.getStatus()));
+            }
+            if ("updateById".equals(methodName)) {
+                updateCount.incrementAndGet();
+                return 1;
+            }
+            return null;
+        }));
+
+        service.approveVoucher(9L, new ErpFinanceVoucherActionReqVO().setIds(List.of(1L)));
+
+        assertEquals(0, updateCount.get());
+    }
+
+    @Test
     void cancelApproveVoucher_shouldUpdateGeneratedStatus() throws Exception {
         ErpFinanceVoucherServiceImpl service = newService();
         AtomicReference<ErpFinanceVoucherDO> updatedVoucherRef = new AtomicReference<>();
@@ -719,6 +741,8 @@ class ErpFinanceVoucherServiceImplTest {
         AtomicReference<ErpFinanceVoucherDO> updatedVoucherRef = new AtomicReference<>();
         AtomicReference<ErpFinanceVoucherDO> appliedVoucherRef = new AtomicReference<>();
         AtomicReference<List<ErpFinanceVoucherEntryDO>> appliedEntriesRef = new AtomicReference<>();
+        AtomicInteger batchQueryCount = new AtomicInteger();
+        AtomicInteger singleQueryCount = new AtomicInteger();
 
         setField(service, "financeVoucherMapper", createProxy(ErpFinanceVoucherMapper.class, (methodName, args) -> {
             if ("selectBatchIds".equals(methodName)) {
@@ -736,10 +760,15 @@ class ErpFinanceVoucherServiceImplTest {
         mockValidatedLedger(service, 1L);
         mockOpenPeriod(service, 20L, 1L, LocalDate.of(2026, 4, 29));
         setField(service, "financeVoucherEntryMapper", createProxy(ErpFinanceVoucherEntryMapper.class, (methodName, args) -> {
-            if ("selectListByVoucherId".equals(methodName)) {
+            if ("selectListByVoucherIds".equals(methodName)) {
+                batchQueryCount.incrementAndGet();
                 return List.of(new ErpFinanceVoucherEntryDO().setVoucherId(1L).setEntryNo(1)
                         .setSubjectCode("660201").setSubjectName("MGMT_EXPENSE_RD")
                         .setDebitAmount(new BigDecimal("300.00")).setCreditAmount(BigDecimal.ZERO));
+            }
+            if ("selectListByVoucherId".equals(methodName)) {
+                singleQueryCount.incrementAndGet();
+                return List.of();
             }
             return null;
         }));
@@ -758,6 +787,8 @@ class ErpFinanceVoucherServiceImplTest {
         assertEquals(9L, updatedVoucherRef.get().getPostUserId());
         assertEquals(1L, appliedVoucherRef.get().getId());
         assertEquals(1, appliedEntriesRef.get().size());
+        assertEquals(1, batchQueryCount.get());
+        assertEquals(0, singleQueryCount.get());
     }
 
     @Test

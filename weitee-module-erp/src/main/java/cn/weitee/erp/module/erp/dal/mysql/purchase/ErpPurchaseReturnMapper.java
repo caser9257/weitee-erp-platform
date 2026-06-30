@@ -74,4 +74,10 @@ public interface ErpPurchaseReturnMapper extends BaseMapperX<ErpPurchaseReturnDO
                 .eq(ErpPurchaseReturnDO::getStatus, ErpAuditStatus.APPROVE.getStatus()));
     }
 
+    default void clearProcessInstanceId(Long id) {
+        update(new LambdaUpdateWrapper<ErpPurchaseReturnDO>()
+                .eq(ErpPurchaseReturnDO::getId, id)
+                .set(ErpPurchaseReturnDO::getProcessInstanceId, null));
+    }
+
 }

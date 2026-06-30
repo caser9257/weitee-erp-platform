@@ -55,10 +55,11 @@ public class ErpAccountController {
     }
 
     @PutMapping("/update-default-status")
+    @PreAuthorize("@ss.hasPermission('erp:account:update')")
     @Operation(summary = "更新结算账户默认状态")
     @Parameters({
             @Parameter(name = "id", description = "编号", required = true),
-            @Parameter(name = "status", description = "状态", required = true)
+            @Parameter(name = "defaultStatus", description = "默认状态", required = true)
     })
     public CommonResult<Boolean> updateAccountDefaultStatus(@RequestParam("id") Long id,
                                                               @RequestParam("defaultStatus") Boolean defaultStatus) {
@@ -85,6 +86,7 @@ public class ErpAccountController {
     }
 
     @GetMapping("/simple-list")
+    @PreAuthorize("@ss.hasPermission('erp:account:query')")
     @Operation(summary = "获得结算账户精简列表", description = "只包含被开启的结算账户，主要用于前端的下拉选项")
     public CommonResult<List<ErpAccountRespVO>> getWarehouseSimpleList() {
         List<ErpAccountDO> list = accountService.getAccountListByStatus(CommonStatusEnum.ENABLE.getStatus());

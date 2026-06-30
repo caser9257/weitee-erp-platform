@@ -3,6 +3,9 @@ package cn.weitee.erp.module.erp.controller.admin.sale.vo.order;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,12 +26,14 @@ public class ErpSaleOrderSaveReqVO {
     private Long projectId;
 
     @Schema(description = "业务类型", example = "SELF_RESEARCH")
+    @NotBlank(message = "业务类型不能为空")
     private String businessType;
 
     @Schema(description = "来源研发项目编号", example = "1")
     private Long sourceProjectId;
 
     @Schema(description = "结算类型", example = "PRODUCT_SALE")
+    @NotBlank(message = "结算类型不能为空")
     private String settlementType;
 
     @Schema(description = "来源产品编号", example = "1")
@@ -60,6 +65,8 @@ public class ErpSaleOrderSaveReqVO {
     private String remark;
 
     @Schema(description = "订单清单列表")
+    @NotEmpty(message = "订单清单不能为空")
+    @Valid
     private List<Item> items;
 
     @Data

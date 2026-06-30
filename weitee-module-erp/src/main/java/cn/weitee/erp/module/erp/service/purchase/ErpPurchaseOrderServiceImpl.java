@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
@@ -314,7 +315,10 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseOrderInCount(Long id, Map<Long, BigDecimal> inCountMap) {
         List<ErpPurchaseOrderItemDO> orderItems = erpPurchaseOrderItemMapper.selectListByOrderId(id);
-        // 1. 更新每个采购订单项
+        // 1. 批量查询产品信息（消除 N+1）
+        Set<Long> productIds = convertSet(orderItems, ErpPurchaseOrderItemDO::getProductId);
+        Map<Long, ErpProductDO> productMap = convertMap(productService.validProductList(productIds), ErpProductDO::getId);
+        // 2. 更新每个采购订单项
         orderItems.forEach(item -> {
             BigDecimal inCount = inCountMap.getOrDefault(item.getId(), BigDecimal.ZERO);
             if (item.getInCount().equals(inCount)) {
@@ -322,11 +326,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
             }
             if (inCount.compareTo(item.getCount()) > 0) {
                 throw exception(PURCHASE_ORDER_ITEM_IN_FAIL_PRODUCT_EXCEED,
-                        productService.getProduct(item.getProductId()).getName(), item.getCount());
+                        productMap.get(item.getProductId()).getName(), item.getCount());
             }
             erpPurchaseOrderItemMapper.updateById(new ErpPurchaseOrderItemDO().setId(item.getId()).setInCount(inCount));
         });
-        // 2. 更新采购订单
+        // 3. 更新采购订单
         BigDecimal totalInCount = getSumValue(inCountMap.values(), value -> value, BigDecimal::add, BigDecimal.ZERO);
         erpPurchaseOrderMapper.updateById(new ErpPurchaseOrderDO().setId(id).setInCount(totalInCount));
     }
@@ -335,7 +339,10 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseOrderReturnCount(Long orderId, Map<Long, BigDecimal> returnCountMap) {
         List<ErpPurchaseOrderItemDO> orderItems = erpPurchaseOrderItemMapper.selectListByOrderId(orderId);
-        // 1. 更新每个采购订单项
+        // 1. 批量查询产品信息（消除 N+1）
+        Set<Long> productIds = convertSet(orderItems, ErpPurchaseOrderItemDO::getProductId);
+        Map<Long, ErpProductDO> productMap = convertMap(productService.validProductList(productIds), ErpProductDO::getId);
+        // 2. 更新每个采购订单项
         orderItems.forEach(item -> {
             BigDecimal returnCount = returnCountMap.getOrDefault(item.getId(), BigDecimal.ZERO);
             if (item.getReturnCount().equals(returnCount)) {
@@ -343,11 +350,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
             }
             if (returnCount.compareTo(item.getInCount()) > 0) {
                 throw exception(PURCHASE_ORDER_ITEM_RETURN_FAIL_IN_EXCEED,
-                        productService.getProduct(item.getProductId()).getName(), item.getInCount());
+                        productMap.get(item.getProductId()).getName(), item.getInCount());
             }
             erpPurchaseOrderItemMapper.updateById(new ErpPurchaseOrderItemDO().setId(item.getId()).setReturnCount(returnCount));
         });
-        // 2. 更新采购订单
+        // 3. 更新采购订单
         BigDecimal totalReturnCount = getSumValue(returnCountMap.values(), value -> value, BigDecimal::add, BigDecimal.ZERO);
         erpPurchaseOrderMapper.updateById(new ErpPurchaseOrderDO().setId(orderId).setReturnCount(totalReturnCount));
     }

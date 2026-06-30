@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
@@ -228,6 +230,11 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
 
         // 1. 更新库存
         List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
+        // 批量查询库存（消除 N+1）
+        Set<Long> checkProductIds = convertSet(stockCheckItems, ErpStockCheckItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(checkProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
         stockCheckItems.forEach(stockCheckItem -> {
             // 没有盈亏，不用出入库
             if (stockCheckItem.getCount().compareTo(BigDecimal.ZERO) == 0) {
@@ -240,7 +247,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
                     : ErpStockRecordBizTypeEnum.CHECK_LESS_OUT.getType();
 
             // 获取加权平均成本作为盘点价格
-            ErpStockDO stock = stockService.getStock(stockCheckItem.getProductId(), stockCheckItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(stockCheckItem.getProductId() + ":" + stockCheckItem.getWarehouseId());
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(stockCheckItem.getCount().abs()) : null;
 
@@ -418,13 +425,9 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             }
         });
 
-        // 2. 遍历删除，并记录操作日志
-        stockChecks.forEach(stockCheck -> {
-            // 2.1 删除盘点单
-            erpStockCheckMapper.deleteById(stockCheck.getId());
-            // 2.2 删除盘点单项
-            erpStockCheckItemMapper.deleteByCheckId(stockCheck.getId());
-        });
+        // 2. 批量删除盘点单和盘点项
+        erpStockCheckMapper.deleteByIds(ids);
+        stockChecks.forEach(stockCheck -> erpStockCheckItemMapper.deleteByCheckId(stockCheck.getId()));
     }
 
     private BigDecimal defaultAmount(BigDecimal amount) {

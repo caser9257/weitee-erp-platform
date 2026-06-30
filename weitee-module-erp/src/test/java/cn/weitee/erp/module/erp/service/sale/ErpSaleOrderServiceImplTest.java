@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.ArrayList;
@@ -246,6 +247,30 @@ class ErpSaleOrderServiceImplTest {
         assertEquals(2L, event.getSaleOrderId());
     }
 
+    @Test
+    void updateSaleOrderStatusByBpm_shouldRejectMismatchedProcessInstanceId() {
+        saleOrderRef.set(new ErpSaleOrderDO().setId(3L).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-OLD")
+                .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> {
+                    try {
+                        invokeUpdateSaleOrderStatusByBpm(3L, "PI-NEW", ErpAuditStatus.APPROVE.getStatus(), "通过");
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+
+        InvocationTargetException invocationTargetException = assertInstanceOf(InvocationTargetException.class, ex.getCause());
+        ServiceException serviceException = assertInstanceOf(ServiceException.class, invocationTargetException.getTargetException());
+        assertEquals(SALE_ORDER_STATUS_UPDATE_ILLEGAL.getCode(), serviceException.getCode());
+        assertEquals(0, auditLogs.size());
+        assertEquals(0, rejectLogs.size());
+        assertEquals(0, publishedEvents.size());
+        assertEquals(null, lastUpdateObjRef.get());
+    }
+
     private ErpSaleOrderMapper createSaleOrderMapperProxy() {
         return createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
@@ -317,7 +342,14 @@ class ErpSaleOrderServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        String actualFieldName = switch (fieldName) {
+            case "saleOrderMapper" -> "erpSaleOrderMapper";
+            case "saleOrderRejectLogMapper" -> "erpSaleOrderRejectLogMapper";
+            case "saleOrderAuditLogMapper" -> "erpSaleOrderAuditLogMapper";
+            case "mrpStockReservationMapper" -> "erpMrpStockReservationMapper";
+            default -> fieldName;
+        };
+        Field field = target.getClass().getDeclaredField(actualFieldName);
         field.setAccessible(true);
         field.set(target, value);
     }

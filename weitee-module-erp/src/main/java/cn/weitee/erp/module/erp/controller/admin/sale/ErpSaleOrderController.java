@@ -163,6 +163,8 @@ public class ErpSaleOrderController {
         List<ErpSaleOrderItemDO> saleOrderItemList = saleOrderService.getSaleOrderItemListByOrderId(id);
         List<ErpSaleOrderAuditLogDO> auditLogs = saleOrderService.getSaleOrderAuditLogListByOrderId(id);
         List<ErpSaleOrderRejectLogDO> rejectLogs = saleOrderService.getSaleOrderRejectLogListByOrderId(id);
+        Map<Long, BigDecimal> stockCountMap = stockService.getStockCountMap(
+                convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
                 convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         Map<Long, ErpCustomerDO> customerMap = customerService.getCustomerMap(List.of(saleOrder.getCustomerId()));
@@ -173,7 +175,7 @@ public class ErpSaleOrderController {
             userIds.add(saleOrder.getSaleUserId());
         }
         Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(userIds);
-        ErpSaleOrderRespVO respVO = buildSaleOrderRespVO(saleOrder, saleOrderItemList, auditLogs, rejectLogs,
+        ErpSaleOrderRespVO respVO = buildSaleOrderRespVO(saleOrder, saleOrderItemList, stockCountMap, auditLogs, rejectLogs,
                 productMap, customerMap, projectMap, userMap);
         respVO.setClosureSummary(BeanUtils.toBean(
                 saleOrderClosureService.getClosureSummary(id), ErpSaleOrderRespVO.ClosureSummary.class));
@@ -249,6 +251,8 @@ public class ErpSaleOrderController {
         List<ErpSaleOrderItemDO> saleOrderItemList = saleOrderService.getSaleOrderItemListByOrderIds(
                 convertSet(pageResult.getList(), ErpSaleOrderDO::getId));
         Map<Long, List<ErpSaleOrderItemDO>> saleOrderItemMap = convertMultiMap(saleOrderItemList, ErpSaleOrderItemDO::getOrderId);
+        Map<Long, BigDecimal> stockCountMap = stockService.getStockCountMap(
+                convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(
                 convertSet(saleOrderItemList, ErpSaleOrderItemDO::getProductId));
         Map<Long, ErpCustomerDO> customerMap = customerService.getCustomerMap(
@@ -262,13 +266,14 @@ public class ErpSaleOrderController {
                 .collect(Collectors.toSet()));
         Map<Long, AdminUserRespDTO> userMap = adminUserApi.getUserMap(userIds);
         List<ErpSaleOrderRespVO> respList = convertList(pageResult.getList(), saleOrder ->
-                buildSaleOrderRespVO(saleOrder, saleOrderItemMap.get(saleOrder.getId()), null, null,
+                buildSaleOrderRespVO(saleOrder, saleOrderItemMap.get(saleOrder.getId()), stockCountMap, null, null,
                         productMap, customerMap, projectMap, userMap));
         return new PageResult<>(respList, pageResult.getTotal());
     }
 
     private ErpSaleOrderRespVO buildSaleOrderRespVO(ErpSaleOrderDO saleOrder,
                                                     List<ErpSaleOrderItemDO> saleOrderItemList,
+                                                    Map<Long, BigDecimal> stockCountMap,
                                                     List<ErpSaleOrderAuditLogDO> auditLogs,
                                                     List<ErpSaleOrderRejectLogDO> rejectLogs,
                                                     Map<Long, ErpProductRespVO> productMap,
@@ -278,7 +283,7 @@ public class ErpSaleOrderController {
         ErpSaleOrderRespVO saleOrderRespVO = BeanUtils.toBean(saleOrder, ErpSaleOrderRespVO.class);
         saleOrderRespVO.setDeliveryDate(convertDeliveryDate(saleOrder.getDeliveryDate()));
         saleOrderRespVO.setItems(BeanUtils.toBean(saleOrderItemList, ErpSaleOrderRespVO.Item.class, item -> {
-            BigDecimal stockCount = stockService.getStockCount(item.getProductId());
+            BigDecimal stockCount = stockCountMap != null ? stockCountMap.get(item.getProductId()) : null;
             item.setStockCount(stockCount != null ? stockCount : BigDecimal.ZERO);
             item.setTotalProductPrice(item.getTotalPrice());
             item.setTotalPrice(calculateDisplayTotalPrice(item.getTotalProductPrice(), item.getTaxPrice()));

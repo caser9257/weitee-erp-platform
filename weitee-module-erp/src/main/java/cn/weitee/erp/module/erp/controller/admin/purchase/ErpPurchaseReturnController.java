@@ -10,10 +10,12 @@ import cn.weitee.erp.framework.common.util.collection.MapUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnCancelApprovalReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnPrintDataRespVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnRespVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO;
+import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSubmitReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpAccountDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnItemDO;
@@ -22,6 +24,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
+import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnBpmService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
@@ -47,6 +50,7 @@ import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 
 @Tag(name = "管理后台 - ERP 采购退货")
@@ -57,6 +61,8 @@ public class ErpPurchaseReturnController {
 
     @Resource
     private ErpPurchaseReturnService purchaseReturnService;
+    @Resource
+    private ErpPurchaseReturnBpmService purchaseReturnBpmService;
     @Resource
     private ErpStockService stockService;
     @Resource
@@ -90,6 +96,21 @@ public class ErpPurchaseReturnController {
     public CommonResult<Boolean> updatePurchaseReturnStatus(@RequestParam("id") Long id,
                                                       @RequestParam("status") Integer status) {
         purchaseReturnService.updatePurchaseReturnStatus(id, status);
+        return success(true);
+    }
+
+    @PostMapping("/submit")
+    @Operation(summary = "提交采购退货审批")
+    @PreAuthorize("@ss.hasPermission('erp:purchase-return:submit')")
+    public CommonResult<String> submitPurchaseReturn(@Valid @RequestBody ErpPurchaseReturnSubmitReqVO reqVO) {
+        return success(purchaseReturnBpmService.submitPurchaseReturn(getLoginUserId(), reqVO));
+    }
+
+    @DeleteMapping("/cancel-approval")
+    @Operation(summary = "撤回采购退货审批")
+    @PreAuthorize("@ss.hasPermission('erp:purchase-return:cancel-approval')")
+    public CommonResult<Boolean> cancelPurchaseReturnApproval(@Valid @RequestBody ErpPurchaseReturnCancelApprovalReqVO reqVO) {
+        purchaseReturnBpmService.cancelPurchaseReturnApproval(getLoginUserId(), reqVO);
         return success(true);
     }
 

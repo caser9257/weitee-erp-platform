@@ -42,6 +42,16 @@ public interface ErpPurchaseReturnService {
     void updatePurchaseReturnStatus(Long id, Integer status);
 
     /**
+     * BPM 审批回调更新采购退货状态
+     *
+     * @param id 编号
+     * @param processInstanceId 流程实例 ID
+     * @param status 状态
+     * @param reason 原因（驳回/撤回时使用）
+     */
+    void updatePurchaseReturnStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
+
+    /**
      * 更新采购退货的退款金额
      *
      * @param id 编号

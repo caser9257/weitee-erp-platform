@@ -146,6 +146,26 @@ SELECT 930143,'组装与拆卸','',2,30,@scm_root_id,'assemble','ep:set-up','erp
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/stock/assemble/index' AND `deleted`=b'0');
 
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930144,'采购退货','',2,40,@scm_root_id,'return','ep:minus','erp/purchase/return/index','FormalScmPurchaseReturn',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/purchase/return/index' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930145,'其它入库','',2,50,@scm_root_id,'stock-in','ep:zoom-in','erp/stock/in/index','FormalScmStockIn',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/stock/in/index' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930146,'其它出库','',2,60,@scm_root_id,'stock-out','ep:zoom-out','erp/stock/out/index','FormalScmStockOut',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/stock/out/index' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930147,'库存盘点','',2,70,@scm_root_id,'stock-check','ep:circle-check-filled','erp/stock/check/index','FormalScmStockCheck',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/stock/check/index' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930148,'库存调拨','',2,80,@scm_root_id,'stock-move','ep:folder-remove','erp/stock/move/index','FormalScmStockMove',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/stock/move/index' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
 SELECT 930150,'质量管理','',1,360,0,'/qms','ep:medal','','FormalQmsRoot',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=0 AND `path`='/qms' AND `deleted`=b'0');
 SET @qms_root_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=0 AND `path`='/qms' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
@@ -246,7 +266,9 @@ FROM (
   SELECT 930113 UNION ALL SELECT 930120 UNION ALL SELECT 930121 UNION ALL SELECT 930122 UNION ALL
   SELECT 930123 UNION ALL SELECT 930124 UNION ALL SELECT 930130 UNION ALL SELECT 930131 UNION ALL
   SELECT 930132 UNION ALL SELECT 930133 UNION ALL SELECT 930134 UNION ALL SELECT 930140 UNION ALL
-  SELECT 930141 UNION ALL SELECT 930142 UNION ALL SELECT 930143 UNION ALL SELECT 930150 UNION ALL
+  SELECT 930141 UNION ALL SELECT 930142 UNION ALL SELECT 930143 UNION ALL SELECT 930144 UNION ALL
+  SELECT 930145 UNION ALL SELECT 930146 UNION ALL SELECT 930147 UNION ALL SELECT 930148 UNION ALL
+  SELECT 930150 UNION ALL
   SELECT 930151 UNION ALL SELECT 930152 UNION ALL SELECT 930153 UNION ALL SELECT 930160 UNION ALL
   SELECT 930161 UNION ALL SELECT 930162 UNION ALL SELECT 930170 UNION ALL SELECT 930171 UNION ALL
   SELECT 930172 UNION ALL SELECT 930173 UNION ALL SELECT 930174 UNION ALL SELECT 930180 UNION ALL

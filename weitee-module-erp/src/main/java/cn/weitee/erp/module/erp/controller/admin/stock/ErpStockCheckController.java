@@ -38,7 +38,7 @@ import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.con
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 
-@Tag(name = "管理后台 - ERP 库存调拨单")
+@Tag(name = "管理后台 - ERP 库存盘点单")
 @RestController
 @RequestMapping("/erp/stock-check")
 @Validated
@@ -53,14 +53,14 @@ public class ErpStockCheckController {
     private AdminUserApi adminUserApi;
 
     @PostMapping("/create")
-    @Operation(summary = "创建库存调拨单")
+    @Operation(summary = "创建库存盘点单")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:create')")
     public CommonResult<Long> createStockCheck(@Valid @RequestBody ErpStockCheckSaveReqVO createReqVO) {
         return success(stockCheckService.createStockCheck(createReqVO));
     }
 
     @PutMapping("/update")
-    @Operation(summary = "更新库存调拨单")
+    @Operation(summary = "更新库存盘点单")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:update')")
     public CommonResult<Boolean> updateStockCheck(@Valid @RequestBody ErpStockCheckSaveReqVO updateReqVO) {
         stockCheckService.updateStockCheck(updateReqVO);
@@ -69,7 +69,7 @@ public class ErpStockCheckController {
 
     @Deprecated // 请使用专用端点：startCounting / submitForReview / approveAndClose / reject
     @PutMapping("/update-status")
-    @Operation(summary = "更新库存调拨单的状态（已废弃，请使用专用端点）")
+    @Operation(summary = "更新库存盘点单的状态（已废弃，请使用专用端点）")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:update-status')")
     public CommonResult<Boolean> updateStockCheckStatus(@RequestParam("id") Long id,
                                                      @RequestParam("status") Integer status) {
@@ -117,7 +117,7 @@ public class ErpStockCheckController {
     }
 
     @DeleteMapping("/delete")
-    @Operation(summary = "删除库存调拨单")
+    @Operation(summary = "删除库存盘点单")
     @Parameter(name = "ids", description = "编号数组", required = true)
     @PreAuthorize("@ss.hasPermission('erp:stock-check:delete')")
     public CommonResult<Boolean> deleteStockCheck(@RequestParam("ids") List<Long> ids) {
@@ -126,7 +126,7 @@ public class ErpStockCheckController {
     }
 
     @GetMapping("/get")
-    @Operation(summary = "获得库存调拨单")
+    @Operation(summary = "获得库存盘点单")
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:query')")
     public CommonResult<ErpStockCheckRespVO> getStockCheck(@RequestParam("id") Long id) {
@@ -144,7 +144,7 @@ public class ErpStockCheckController {
     }
 
     @GetMapping("/page")
-    @Operation(summary = "获得库存调拨单分页")
+    @Operation(summary = "获得库存盘点单分页")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:query')")
     public CommonResult<PageResult<ErpStockCheckRespVO>> getStockCheckPage(@Valid ErpStockCheckPageReqVO pageReqVO) {
         PageResult<ErpStockCheckDO> pageResult = stockCheckService.getStockCheckPage(pageReqVO);
@@ -152,7 +152,7 @@ public class ErpStockCheckController {
     }
 
     @GetMapping("/export-excel")
-    @Operation(summary = "导出库存调拨单 Excel")
+    @Operation(summary = "导出库存盘点单 Excel")
     @PreAuthorize("@ss.hasPermission('erp:stock-check:export')")
     @ApiAccessLog(operateType = EXPORT)
     public void exportStockCheckExcel(@Valid ErpStockCheckPageReqVO pageReqVO,
@@ -160,7 +160,7 @@ public class ErpStockCheckController {
         pageReqVO.setPageSize(PageParam.PAGE_SIZE_NONE);
         List<ErpStockCheckRespVO> list = buildStockCheckVOPageResult(stockCheckService.getStockCheckPage(pageReqVO)).getList();
         // 导出 Excel
-        ExcelUtils.write(response, "库存调拨单.xls", "数据", ErpStockCheckRespVO.class, list);
+        ExcelUtils.write(response, "库存盘点单.xls", "数据", ErpStockCheckRespVO.class, list);
     }
 
     private PageResult<ErpStockCheckRespVO> buildStockCheckVOPageResult(PageResult<ErpStockCheckDO> pageResult) {

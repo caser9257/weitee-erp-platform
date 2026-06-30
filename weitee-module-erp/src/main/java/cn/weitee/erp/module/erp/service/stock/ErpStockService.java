@@ -6,6 +6,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,6 +32,14 @@ public interface ErpStockService {
      * @return 产品库存
      */
     ErpStockDO getStock(Long productId, Long warehouseId);
+
+    /**
+     * 根据产品编号批量查询库存
+     *
+     * @param productIds 产品编号集合
+     * @return 库存列表
+     */
+    List<ErpStockDO> getStockListByProductIds(Collection<Long> productIds);
 
     /**
      * 获得产品库存数量

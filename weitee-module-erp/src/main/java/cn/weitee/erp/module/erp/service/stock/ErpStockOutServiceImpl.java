@@ -1,6 +1,8 @@
 package cn.weitee.erp.module.erp.service.stock;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.number.MoneyUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
@@ -22,6 +24,7 @@ import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -32,6 +35,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
@@ -46,6 +51,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpStockOutServiceImpl implements ErpStockOutService {
 
     @Resource
@@ -84,7 +90,7 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
 
         // 2.1 插入出库单
         ErpStockOutDO stockOut = BeanUtils.toBean(createReqVO, ErpStockOutDO.class, in -> in
-                .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setNo(no).setStatus(ErpAuditStatus.DRAFT.getStatus())
                 .setTotalCount(getSumValue(stockOutItems, ErpStockOutItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockOutItems, ErpStockOutItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockOutMapper.insert(stockOut);
@@ -101,6 +107,9 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
         ErpStockOutDO stockOut = validateStockOutExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(stockOut.getStatus())) {
             throw exception(STOCK_OUT_UPDATE_FAIL_APPROVE, stockOut.getNo());
+        }
+        if (ErpAuditStatus.PROCESS.getStatus().equals(stockOut.getStatus())) {
+            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, stockOut.getNo());
         }
         // 1.2 校验客户
         customerService.validateCustomer(updateReqVO.getCustomerId());
@@ -144,10 +153,15 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
             stockBatchAllocationService.rollbackOutbound(ErpStockRecordBizTypeEnum.OTHER_OUT.getType(), id,
                     ErpStockRecordBizTypeEnum.OTHER_OUT_CANCEL.getType(), "其它出库反审核");
         }
+        // 批量查询库存（消除 N+1）
+        Set<Long> outProductIds = convertSet(stockOutItems, ErpStockOutItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(outProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
         stockOutItems.forEach(stockOutItem -> {
             BigDecimal count = approve ? stockOutItem.getCount().negate() : stockOutItem.getCount();
             // 获取加权平均成本作为出库价格
-            ErpStockDO stock = stockService.getStock(stockOutItem.getProductId(), stockOutItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(stockOutItem.getProductId() + ":" + stockOutItem.getWarehouseId());
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(stockOutItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
@@ -213,6 +227,9 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
             if (ErpAuditStatus.APPROVE.getStatus().equals(stockOut.getStatus())) {
                 throw exception(STOCK_OUT_DELETE_FAIL_APPROVE, stockOut.getNo());
             }
+            if (ErpAuditStatus.PROCESS.getStatus().equals(stockOut.getStatus())) {
+                throw exception(STOCK_OUT_DELETE_FAIL_PROCESSING, stockOut.getNo());
+            }
         });
 
         // 2. 遍历删除，并记录操作日志
@@ -230,6 +247,22 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
             throw exception(STOCK_OUT_NOT_EXISTS);
         }
         return stockOut;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStockOutStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
+        ErpStockOutDO stockOut = validateStockOutExists(id);
+        // 校验 processInstanceId 一致（数据库为空时允许回调，数据库非空时必须匹配）
+        if (stockOut.getProcessInstanceId() != null
+                && !ObjectUtil.equals(stockOut.getProcessInstanceId(), processInstanceId)) {
+            log.warn("[updateStockOutStatusByBpm] processInstanceId 不一致，忽略回调。id={}, expected={}, actual={}",
+                    id, stockOut.getProcessInstanceId(), processInstanceId);
+            return;
+        }
+        updateStockOutStatus(id, status);
+        // 清理 processInstanceId
+        erpStockOutMapper.clearProcessInstanceId(id);
     }
 
     @Override

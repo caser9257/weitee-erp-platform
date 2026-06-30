@@ -12,6 +12,7 @@ import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -52,7 +53,7 @@ class ErpPurchaseReturnServiceImplTest {
         AtomicReference<Long> autoGenerateVoucherBizIdRef = new AtomicReference<>();
         AtomicReference<LocalDate> financeHookBizDateRef = new AtomicReference<>();
 
-        setField(service, "purchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseReturn;
             }
@@ -64,7 +65,7 @@ class ErpPurchaseReturnServiceImplTest {
             }
             return null;
         }));
-        setField(service, "purchaseReturnItemMapper", createProxy(ErpPurchaseReturnItemMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseReturnItemMapper", createProxy(ErpPurchaseReturnItemMapper.class, (methodName, args) -> {
             if ("selectListByReturnId".equals(methodName)) {
                 return List.of(new ErpPurchaseReturnItemDO()
                         .setReturnId(2L)
@@ -86,6 +87,7 @@ class ErpPurchaseReturnServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> List.of()));
         setField(service, "apStatementService", createProxy(ErpApStatementService.class, (methodName, args) -> {
             if ("createStatementForPurchaseReturn".equals(methodName)) {
                 createdStatementBizIdRef.set(((ErpPurchaseReturnDO) args[0]).getId());
@@ -101,7 +103,7 @@ class ErpPurchaseReturnServiceImplTest {
             }
             return null;
         }));
-        setField(service, "paymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> 0L));
+        setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> 0L));
 
         service.updatePurchaseReturnStatus(2L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -124,13 +126,13 @@ class ErpPurchaseReturnServiceImplTest {
                 .setStatus(ErpAuditStatus.APPROVE.getStatus())
                 .setRefundPrice(BigDecimal.ZERO);
 
-        setField(service, "purchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseReturn;
             }
             return null;
         }));
-        setField(service, "paymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> {
+        setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> {
             if ("selectCountByBizTypeAndBizIdAndStatus".equals(methodName)) {
                 assertEquals(ErpFinancePaymentAllocateStatusEnum.APPROVED.getStatus(), args[2]);
                 return 1L;
@@ -156,7 +158,7 @@ class ErpPurchaseReturnServiceImplTest {
         AtomicReference<Integer> closedBizTypeRef = new AtomicReference<>();
         AtomicReference<Long> closedBizIdRef = new AtomicReference<>();
 
-        setField(service, "purchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseReturn;
             }
@@ -168,7 +170,7 @@ class ErpPurchaseReturnServiceImplTest {
             }
             return null;
         }));
-        setField(service, "purchaseReturnItemMapper", createProxy(ErpPurchaseReturnItemMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseReturnItemMapper", createProxy(ErpPurchaseReturnItemMapper.class, (methodName, args) -> {
             if ("selectListByReturnId".equals(methodName)) {
                 return List.of(new ErpPurchaseReturnItemDO()
                         .setReturnId(4L)
@@ -183,7 +185,8 @@ class ErpPurchaseReturnServiceImplTest {
         }));
         setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
-        setField(service, "paymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> {
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> List.of()));
+        setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> {
             if ("selectCountByBizTypeAndBizIdAndStatus".equals(methodName)) {
                 return 0L;
             }
@@ -196,6 +199,7 @@ class ErpPurchaseReturnServiceImplTest {
             }
             return null;
         }));
+        setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> null));
 
         service.updatePurchaseReturnStatus(4L, ErpAuditStatus.PROCESS.getStatus());
 

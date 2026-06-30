@@ -17,6 +17,7 @@ import java.util.Arrays;
 @Getter
 public enum ErpAuditStatus implements ArrayValuable<Integer> {
 
+    DRAFT(0, "草稿"),     // 草稿，可编辑
     PROCESS(10, "未审核"), // 审核中
     APPROVE(20, "已审核"), // 审核通过
     REJECT(30, "已驳回"), // 审核驳回

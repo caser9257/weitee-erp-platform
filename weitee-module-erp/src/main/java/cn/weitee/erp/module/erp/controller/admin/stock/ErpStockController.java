@@ -73,6 +73,7 @@ public class ErpStockController {
     }
 
     @GetMapping("/get-count")
+    @PreAuthorize("@ss.hasPermission('erp:stock:query')")
     @Operation(summary = "获得产品库存数量")
     @Parameter(name = "productId", description = "产品编号", example = "10")
     public CommonResult<BigDecimal> getStockCount(@RequestParam("productId") Long productId) {

@@ -9,15 +9,18 @@ import cn.weitee.erp.framework.common.util.collection.MapUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.in.ErpStockInCancelApprovalReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.in.ErpStockInPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.in.ErpStockInRespVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.in.ErpStockInSaveReqVO;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.in.ErpStockInSubmitReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpSupplierDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInItemDO;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockInBpmService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockInService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
@@ -41,6 +44,7 @@ import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 
 @Tag(name = "管理后台 - ERP 其它入库单")
@@ -51,6 +55,8 @@ public class ErpStockInController {
 
     @Resource
     private ErpStockInService stockInService;
+    @Resource
+    private ErpStockInBpmService stockInBpmService;
     @Resource
     private ErpStockService stockService;
     @Resource
@@ -82,6 +88,22 @@ public class ErpStockInController {
     public CommonResult<Boolean> updateStockInStatus(@RequestParam("id") Long id,
                                                      @RequestParam("status") Integer status) {
         stockInService.updateStockInStatus(id, status);
+        return success(true);
+    }
+
+    @PostMapping("/submit")
+    @Operation(summary = "提交其它入库单审批")
+    @PreAuthorize("@ss.hasPermission('erp:stock-in:submit')")
+    public CommonResult<Boolean> submitStockIn(@Valid @RequestBody ErpStockInSubmitReqVO reqVO) {
+        stockInBpmService.submitStockIn(getLoginUserId(), reqVO);
+        return success(true);
+    }
+
+    @DeleteMapping("/cancel-approval")
+    @Operation(summary = "取消其它入库单审批")
+    @PreAuthorize("@ss.hasPermission('erp:stock-in:cancel-approval')")
+    public CommonResult<Boolean> cancelStockInApproval(@Valid @RequestBody ErpStockInCancelApprovalReqVO reqVO) {
+        stockInBpmService.cancelStockInApproval(getLoginUserId(), reqVO);
         return success(true);
     }
 

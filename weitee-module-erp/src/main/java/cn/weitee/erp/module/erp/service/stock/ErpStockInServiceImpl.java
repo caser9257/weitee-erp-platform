@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.stock;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.number.MoneyUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
@@ -18,6 +19,7 @@ import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -28,6 +30,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
@@ -41,6 +45,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpStockInServiceImpl implements ErpStockInService {
 
     @Resource
@@ -77,7 +82,7 @@ public class ErpStockInServiceImpl implements ErpStockInService {
 
         // 2.1 插入入库单
         ErpStockInDO stockIn = BeanUtils.toBean(createReqVO, ErpStockInDO.class, in -> in
-                .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setNo(no).setStatus(ErpAuditStatus.DRAFT.getStatus())
                 .setTotalCount(getSumValue(stockInItems, ErpStockInItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockInItems, ErpStockInItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockInMapper.insert(stockIn);
@@ -94,6 +99,9 @@ public class ErpStockInServiceImpl implements ErpStockInService {
         ErpStockInDO stockIn = validateStockInExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(stockIn.getStatus())) {
             throw exception(STOCK_IN_UPDATE_FAIL_APPROVE, stockIn.getNo());
+        }
+        if (ErpAuditStatus.PROCESS.getStatus().equals(stockIn.getStatus())) {
+            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, stockIn.getNo());
         }
         // 1.2 校验供应商
         supplierService.validateSupplier(updateReqVO.getSupplierId());
@@ -131,10 +139,15 @@ public class ErpStockInServiceImpl implements ErpStockInService {
         List<ErpStockInItemDO> stockInItems = erpStockInItemMapper.selectListByInId(id);
         Integer bizType = approve ? ErpStockRecordBizTypeEnum.OTHER_IN.getType()
                 : ErpStockRecordBizTypeEnum.OTHER_IN_CANCEL.getType();
+        // 批量查询库存（消除 N+1）
+        Set<Long> inProductIds = convertSet(stockInItems, ErpStockInItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(inProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
         stockInItems.forEach(stockInItem -> {
             BigDecimal count = approve ? stockInItem.getCount() : stockInItem.getCount().negate();
             // 获取加权平均成本作为入库价格
-            ErpStockDO stock = stockService.getStock(stockInItem.getProductId(), stockInItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(stockInItem.getProductId() + ":" + stockInItem.getWarehouseId());
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(stockInItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
@@ -142,6 +155,24 @@ public class ErpStockInServiceImpl implements ErpStockInService {
                     bizType, stockInItem.getInId(), stockInItem.getId(), stockIn.getNo(),
                     price, amount));
         });
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStockInStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
+        // 1. 校验存在
+        ErpStockInDO stockIn = validateStockInExists(id);
+        // 2. 校验流程实例 ID（数据库为空时允许回调，数据库非空时必须匹配）
+        if (stockIn.getProcessInstanceId() != null
+                && !ObjectUtil.equals(stockIn.getProcessInstanceId(), processInstanceId)) {
+            log.warn("[updateStockInStatusByBpm] processInstanceId 不一致，忽略回调。id={}, expected={}, actual={}",
+                    id, stockIn.getProcessInstanceId(), processInstanceId);
+            return;
+        }
+        // 3. 更新状态
+        updateStockInStatus(id, status);
+        // 4. 清理 processInstanceId
+        erpStockInMapper.clearProcessInstanceId(id);
     }
 
     private List<ErpStockInItemDO> validateStockInItems(List<ErpStockInSaveReqVO.Item> list) {
@@ -188,6 +219,9 @@ public class ErpStockInServiceImpl implements ErpStockInService {
         stockIns.forEach(stockIn -> {
             if (ErpAuditStatus.APPROVE.getStatus().equals(stockIn.getStatus())) {
                 throw exception(STOCK_IN_DELETE_FAIL_APPROVE, stockIn.getNo());
+            }
+            if (ErpAuditStatus.PROCESS.getStatus().equals(stockIn.getStatus())) {
+                throw exception(STOCK_IN_DELETE_FAIL_PROCESSING, stockIn.getNo());
             }
         });
 

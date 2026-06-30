@@ -415,6 +415,9 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         }
         LocalDateTime now = LocalDateTime.now();
         voucherList.forEach(voucher -> {
+            if (ErpFinanceVoucherStatusEnum.isApproved(voucher.getStatus())) {
+                return;
+            }
             if (!ErpFinanceVoucherStatusEnum.isGenerated(voucher.getStatus())) {
                 throw exception(FINANCE_VOUCHER_APPROVE_FAIL_STATUS, voucher.getVoucherNo());
             }
@@ -452,6 +455,9 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         if (CollUtil.isEmpty(voucherList)) {
             return;
         }
+        Map<Long, List<ErpFinanceVoucherEntryDO>> entryMap = new LinkedHashMap<>();
+        List<ErpFinanceVoucherEntryDO> entryList = getVoucherEntryListByVoucherIds(convertSet(voucherList, ErpFinanceVoucherDO::getId));
+        entryList.forEach(entry -> entryMap.computeIfAbsent(entry.getVoucherId(), key -> new ArrayList<>()).add(entry));
         LocalDateTime now = LocalDateTime.now();
         voucherList.forEach(voucher -> {
             if (!ErpFinanceVoucherStatusEnum.isApproved(voucher.getStatus())) {
@@ -459,7 +465,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             }
             validateVoucherPeriodOpen(voucher.getLedgerId(), voucher.getPeriodId(), voucher.getVoucherTime());
             financeGeneralLedgerService.applyPostedVoucher(voucher,
-                    erpFinanceVoucherEntryMapper.selectListByVoucherId(voucher.getId()));
+                    entryMap.getOrDefault(voucher.getId(), Collections.emptyList()));
             erpFinanceVoucherMapper.updateById(new ErpFinanceVoucherDO()
                     .setId(voucher.getId())
                     .setStatus(ErpFinanceVoucherStatusEnum.POSTED.getStatus())

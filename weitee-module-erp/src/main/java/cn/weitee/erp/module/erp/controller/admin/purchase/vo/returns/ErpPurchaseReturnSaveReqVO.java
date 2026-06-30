@@ -3,6 +3,8 @@ package cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,6 +41,8 @@ public class ErpPurchaseReturnSaveReqVO {
     private String remark;
 
     @Schema(description = "退货清单列表")
+    @NotEmpty(message = "退货清单不能为空")
+    @Valid
     private List<Item> items;
 
     @Data

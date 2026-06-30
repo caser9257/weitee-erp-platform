@@ -74,6 +74,20 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
         return BigDecimal.valueOf(MapUtil.getDouble(result.get(0), "sum_count", 0D));
     }
 
+    /**
+     * 根据产品编号批量查询库存（用于消除 N+1）
+     *
+     * @param productIds 产品编号集合
+     * @return 库存列表
+     */
+    default List<ErpStockDO> selectListByProductIdIn(Collection<Long> productIds) {
+        if (CollUtil.isEmpty(productIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapperX<ErpStockDO>()
+                .in(ErpStockDO::getProductId, productIds));
+    }
+
     default Map<Long, BigDecimal> selectSumMapByProductIds(Collection<Long> productIds) {
         if (CollUtil.isEmpty(productIds)) {
             return Collections.emptyMap();

@@ -41,6 +41,10 @@ public class ErpPurchaseReturnDO extends BaseDO {
      */
     private Integer status;
     /**
+     * BPM 流程实例 ID
+     */
+    private String processInstanceId;
+    /**
      * 供应商编号
      *
      * 关联 {@link ErpSupplierDO#getId()}

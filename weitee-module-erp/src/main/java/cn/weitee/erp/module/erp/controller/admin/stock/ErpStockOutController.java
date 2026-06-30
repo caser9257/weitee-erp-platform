@@ -9,15 +9,18 @@ import cn.weitee.erp.framework.common.util.collection.MapUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.out.ErpStockOutCancelApprovalReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.out.ErpStockOutPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.out.ErpStockOutRespVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.out.ErpStockOutSaveReqVO;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.out.ErpStockOutSubmitReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpCustomerDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutItemDO;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.sale.ErpCustomerService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockOutBpmService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockOutService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
@@ -41,6 +44,7 @@ import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 
 @Tag(name = "管理后台 - ERP 其它出库单")
@@ -57,9 +61,26 @@ public class ErpStockOutController {
     private ErpProductService productService;
     @Resource
     private ErpCustomerService customerService;
+    @Resource
+    private ErpStockOutBpmService stockOutBpmService;
 
     @Resource
     private AdminUserApi adminUserApi;
+
+    @PostMapping("/submit")
+    @Operation(summary = "提交其它出库单审批")
+    @PreAuthorize("@ss.hasPermission('erp:stock-out:submit')")
+    public CommonResult<String> submitStockOut(@Valid @RequestBody ErpStockOutSubmitReqVO reqVO) {
+        return success(stockOutBpmService.submitStockOut(getLoginUserId(), reqVO));
+    }
+
+    @DeleteMapping("/cancel-approval")
+    @Operation(summary = "取消其它出库单审批")
+    @PreAuthorize("@ss.hasPermission('erp:stock-out:cancel-approval')")
+    public CommonResult<Boolean> cancelStockOutApproval(@Valid @RequestBody ErpStockOutCancelApprovalReqVO reqVO) {
+        stockOutBpmService.cancelStockOutApproval(getLoginUserId(), reqVO);
+        return success(true);
+    }
 
     @PostMapping("/create")
     @Operation(summary = "创建其它出库单")

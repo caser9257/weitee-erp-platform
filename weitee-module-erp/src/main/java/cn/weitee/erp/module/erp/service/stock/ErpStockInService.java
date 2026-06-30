@@ -41,6 +41,16 @@ public interface ErpStockInService {
     void updateStockInStatus(Long id, Integer status);
 
     /**
+     * BPM 审批通过/驳回后更新其它入库单状态
+     *
+     * @param id 编号
+     * @param processInstanceId 流程实例 ID
+     * @param status 状态
+     * @param reason 原因
+     */
+    void updateStockInStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
+
+    /**
      * 删除其它入库单
      *
      * @param ids 编号数组

@@ -27,6 +27,7 @@ import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,6 +40,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
@@ -53,6 +56,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
  */
 @Service
 @Validated
+@Slf4j
 public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
 
     @Resource
@@ -100,7 +104,7 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
 
         // 2.1 插入退货
         ErpPurchaseReturnDO purchaseReturn = BeanUtils.toBean(createReqVO, ErpPurchaseReturnDO.class, in -> in
-                .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus()))
+                .setNo(no).setStatus(ErpAuditStatus.DRAFT.getStatus()))
                 .setOrderNo(purchaseOrder.getNo()).setSupplierId(purchaseOrder.getSupplierId());
         calculateTotalPrice(purchaseReturn, purchaseReturnItems);
         erpPurchaseReturnMapper.insert(purchaseReturn);
@@ -120,6 +124,9 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
         ErpPurchaseReturnDO purchaseReturn = validatePurchaseReturnExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(purchaseReturn.getStatus())) {
             throw exception(PURCHASE_RETURN_UPDATE_FAIL_APPROVE, purchaseReturn.getNo());
+        }
+        if (ErpAuditStatus.PROCESS.getStatus().equals(purchaseReturn.getStatus())) {
+            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, purchaseReturn.getNo());
         }
         // 1.2 校验采购订单已审核
         ErpPurchaseOrderDO purchaseOrder = purchaseOrderService.validatePurchaseOrder(updateReqVO.getOrderId());
@@ -196,10 +203,15 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
         List<ErpPurchaseReturnItemDO> purchaseReturnItems = erpPurchaseReturnItemMapper.selectListByReturnId(id);
         Integer bizType = approve ? ErpStockRecordBizTypeEnum.PURCHASE_RETURN.getType()
                 : ErpStockRecordBizTypeEnum.PURCHASE_RETURN_CANCEL.getType();
+        // 批量查询库存（消除 N+1）
+        Set<Long> returnProductIds = convertSet(purchaseReturnItems, ErpPurchaseReturnItemDO::getProductId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductIds(returnProductIds);
+        Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
+                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
         purchaseReturnItems.forEach(purchaseReturnItem -> {
             BigDecimal count = approve ? purchaseReturnItem.getCount().negate() : purchaseReturnItem.getCount();
             // 获取加权平均成本作为出库价格
-            ErpStockDO stock = stockService.getStock(purchaseReturnItem.getProductId(), purchaseReturnItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(purchaseReturnItem.getProductId() + ":" + purchaseReturnItem.getWarehouseId());
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(purchaseReturnItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
@@ -217,6 +229,23 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.PURCHASE_RETURN.getType(), id,
                     defaultTime(purchaseReturn.getReturnTime(), purchaseReturn.getCreateTime(), purchaseReturn.getUpdateTime()).toLocalDate());
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updatePurchaseReturnStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
+        ErpPurchaseReturnDO purchaseReturn = validatePurchaseReturnExists(id);
+        // 校验 processInstanceId 一致（数据库为空时允许回调，数据库非空时必须匹配）
+        if (purchaseReturn.getProcessInstanceId() != null
+                && !ObjectUtil.equals(purchaseReturn.getProcessInstanceId(), processInstanceId)) {
+            log.warn("[updatePurchaseReturnStatusByBpm] processInstanceId 不一致，忽略回调。id={}, expected={}, actual={}",
+                    id, purchaseReturn.getProcessInstanceId(), processInstanceId);
+            return;
+        }
+        // 直接复用审核/反审核逻辑
+        updatePurchaseReturnStatus(id, status);
+        // 清理 processInstanceId
+        erpPurchaseReturnMapper.clearProcessInstanceId(id);
     }
 
     @Override
@@ -279,6 +308,9 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
         purchaseReturns.forEach(purchaseReturn -> {
             if (ErpAuditStatus.APPROVE.getStatus().equals(purchaseReturn.getStatus())) {
                 throw exception(PURCHASE_RETURN_DELETE_FAIL_APPROVE, purchaseReturn.getNo());
+            }
+            if (ErpAuditStatus.PROCESS.getStatus().equals(purchaseReturn.getStatus())) {
+                throw exception(PURCHASE_RETURN_DELETE_FAIL_PROCESSING, purchaseReturn.getNo());
             }
         });
 

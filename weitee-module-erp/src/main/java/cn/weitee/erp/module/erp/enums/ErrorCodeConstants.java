@@ -11,7 +11,7 @@ public interface ErrorCodeConstants {
 
     // ========== ERP 供应商（1-030-100-000） ==========
     ErrorCode SUPPLIER_NOT_EXISTS = new ErrorCode(1_030_100_000, "供应商不存在");
-    ErrorCode SUPPLIER_NOT_ENABLE = new ErrorCode(1_030_100_000, "供应商({})未启用");
+    ErrorCode SUPPLIER_NOT_ENABLE = new ErrorCode(1_030_100_001, "供应商({})未启用");
     ErrorCode SUPPLIER_BATCH_UPDATE_FIELD_NOT_SUPPORT = new ErrorCode(1_030_100_002, "批量修改字段【{}】不支持");
     ErrorCode SUPPLIER_BATCH_UPDATE_FIELD_VALUE_INVALID = new ErrorCode(1_030_100_003, "批量修改字段【{}】的值【{}】不合法");
 
@@ -77,6 +77,10 @@ public interface ErrorCodeConstants {
     ErrorCode PURCHASE_RETURN_NOT_APPROVE = new ErrorCode(1_030_103_006, "采购退货单未审核，无法操作");
     ErrorCode PURCHASE_RETURN_FAIL_REFUND_PRICE_EXCEED = new ErrorCode(1_030_103_007, "退款金额({})超过采购退货单总金额({})");
     ErrorCode PURCHASE_RETURN_PROCESS_FAIL_EXISTS_REFUND = new ErrorCode(1_030_103_008, "反审核失败，已存在对应的退款单");
+    ErrorCode PURCHASE_RETURN_BPM_SUBMIT_FAIL = new ErrorCode(1_030_103_009, "当前采购退货单不允许提交审批");
+    ErrorCode PURCHASE_RETURN_BPM_CANCEL_FAIL = new ErrorCode(1_030_103_010, "当前采购退货单不存在可撤回的审批流程");
+    ErrorCode PURCHASE_RETURN_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_103_011, "采购退货单({})审批中，无法修改");
+    ErrorCode PURCHASE_RETURN_DELETE_FAIL_PROCESSING = new ErrorCode(1_030_103_012, "采购退货单({})审批中，无法删除");
 
     // ========== ERP 采购来源批次（1-030-104-000） ==========
     ErrorCode PURCHASE_SOURCE_BATCH_NOT_EXISTS = new ErrorCode(1_030_104_000, "采购来源批次不存在");
@@ -162,6 +166,10 @@ public interface ErrorCodeConstants {
     ErrorCode STOCK_IN_APPROVE_FAIL = new ErrorCode(1_030_401_003, "审核失败，只有未审核的入库单才能审核");
     ErrorCode STOCK_IN_NO_EXISTS = new ErrorCode(1_030_401_004, "生成入库单失败，请重新提交");
     ErrorCode STOCK_IN_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_401_005, "其它入库单({})已审核，无法修改");
+    ErrorCode STOCK_IN_BPM_SUBMIT_FAIL = new ErrorCode(1_030_401_006, "当前其它入库单不允许提交审批");
+    ErrorCode STOCK_IN_BPM_CANCEL_FAIL = new ErrorCode(1_030_401_007, "当前其它入库单不存在可撤回的审批流程");
+    ErrorCode STOCK_IN_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_401_008, "其它入库单({})审批中，无法修改");
+    ErrorCode STOCK_IN_DELETE_FAIL_PROCESSING = new ErrorCode(1_030_401_009, "其它入库单({})审批中，无法删除");
 
     // ========== ERP 其它出库单 1-030-402-000 ==========
     ErrorCode STOCK_OUT_NOT_EXISTS = new ErrorCode(1_030_402_000, "其它出库单不存在");
@@ -170,28 +178,32 @@ public interface ErrorCodeConstants {
     ErrorCode STOCK_OUT_APPROVE_FAIL = new ErrorCode(1_030_402_003, "审核失败，只有未审核的出库单才能审核");
     ErrorCode STOCK_OUT_NO_EXISTS = new ErrorCode(1_030_402_004, "生成出库单失败，请重新提交");
     ErrorCode STOCK_OUT_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_402_005, "其它出库单({})已审核，无法修改");
+    ErrorCode STOCK_OUT_BPM_SUBMIT_FAIL = new ErrorCode(1_030_402_006, "当前其它出库单不允许提交审批");
+    ErrorCode STOCK_OUT_BPM_CANCEL_FAIL = new ErrorCode(1_030_402_007, "当前其它出库单不存在可撤回的审批流程");
+    ErrorCode STOCK_OUT_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_402_008, "其它出库单({})审批中，无法修改");
+    ErrorCode STOCK_OUT_DELETE_FAIL_PROCESSING = new ErrorCode(1_030_402_009, "其它出库单({})审批中，无法删除");
 
     // ========== ERP 库存调拨单 1-030-403-000 ==========
-    ErrorCode STOCK_MOVE_NOT_EXISTS = new ErrorCode(1_030_402_000, "库存调拨单不存在");
-    ErrorCode STOCK_MOVE_DELETE_FAIL_APPROVE = new ErrorCode(1_030_402_001, "库存调拨单({})已审核，无法删除");
-    ErrorCode STOCK_MOVE_PROCESS_FAIL = new ErrorCode(1_030_402_002, "反审核失败，只有已审核的调拨单才能反审核");
-    ErrorCode STOCK_MOVE_APPROVE_FAIL = new ErrorCode(1_030_402_003, "审核失败，只有未审核的调拨单才能审核");
-    ErrorCode STOCK_MOVE_NO_EXISTS = new ErrorCode(1_030_402_004, "生成调拨号失败，请重新提交");
-    ErrorCode STOCK_MOVE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_402_005, "库存调拨单({})已审核，无法修改");
+    ErrorCode STOCK_MOVE_NOT_EXISTS = new ErrorCode(1_030_403_000, "库存调拨单不存在");
+    ErrorCode STOCK_MOVE_DELETE_FAIL_APPROVE = new ErrorCode(1_030_403_001, "库存调拨单({})已审核，无法删除");
+    ErrorCode STOCK_MOVE_PROCESS_FAIL = new ErrorCode(1_030_403_002, "反审核失败，只有已审核的调拨单才能反审核");
+    ErrorCode STOCK_MOVE_APPROVE_FAIL = new ErrorCode(1_030_403_003, "审核失败，只有未审核的调拨单才能审核");
+    ErrorCode STOCK_MOVE_NO_EXISTS = new ErrorCode(1_030_403_004, "生成调拨号失败，请重新提交");
+    ErrorCode STOCK_MOVE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_403_005, "库存调拨单({})已审核，无法修改");
 
-    // ========== ERP 库存盘点单 1-030-403-000 ==========
-    ErrorCode STOCK_CHECK_NOT_EXISTS = new ErrorCode(1_030_403_000, "库存盘点单不存在");
-    ErrorCode STOCK_CHECK_DELETE_FAIL_APPROVE = new ErrorCode(1_030_403_001, "库存盘点单({})已审核，无法删除");
-    ErrorCode STOCK_CHECK_PROCESS_FAIL = new ErrorCode(1_030_403_002, "反审核失败，只有已审核的盘点单才能反审核");
-    ErrorCode STOCK_CHECK_APPROVE_FAIL = new ErrorCode(1_030_403_003, "审核失败，只有未审核的盘点单才能审核");
-    ErrorCode STOCK_CHECK_NO_EXISTS = new ErrorCode(1_030_403_004, "生成盘点号失败，请重新提交");
-    ErrorCode STOCK_CHECK_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_403_005, "库存盘点单({})已审核，无法修改");
-    ErrorCode STOCK_CHECK_STATUS_TRANSITION_FAIL = new ErrorCode(1_030_403_006, "盘点单状态流转失败，当前状态({})不允许流转到目标状态({})");
-    ErrorCode STOCK_CHECK_SNAPSHOT_FAIL = new ErrorCode(1_030_403_007, "盘点单快照生成失败");
-    ErrorCode STOCK_CHECK_VOUCHER_GENERATE_FAIL = new ErrorCode(1_030_403_008, "盘点凭证生成失败");
-    ErrorCode STOCK_CHECK_VOUCHER_VOID_FAIL = new ErrorCode(1_030_403_009, "盘点凭证作废失败");
-    ErrorCode STOCK_CHECK_CLOSE_FAIL_VOUCHER_MISSING = new ErrorCode(1_030_403_010, "盘点单关闭失败，凭证未生成");
-    ErrorCode STOCK_CHECK_YEAR_END_NOT_CLOSED = new ErrorCode(1_030_403_011, "年末盘点单({})未完成，无法进行年结");
+    // ========== ERP 库存盘点单 1-030-405-000 ==========
+    ErrorCode STOCK_CHECK_NOT_EXISTS = new ErrorCode(1_030_405_000, "库存盘点单不存在");
+    ErrorCode STOCK_CHECK_DELETE_FAIL_APPROVE = new ErrorCode(1_030_405_001, "库存盘点单({})已审核，无法删除");
+    ErrorCode STOCK_CHECK_PROCESS_FAIL = new ErrorCode(1_030_405_002, "反审核失败，只有已审核的盘点单才能反审核");
+    ErrorCode STOCK_CHECK_APPROVE_FAIL = new ErrorCode(1_030_405_003, "审核失败，只有未审核的盘点单才能审核");
+    ErrorCode STOCK_CHECK_NO_EXISTS = new ErrorCode(1_030_405_004, "生成盘点号失败，请重新提交");
+    ErrorCode STOCK_CHECK_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_405_005, "库存盘点单({})已审核，无法修改");
+    ErrorCode STOCK_CHECK_STATUS_TRANSITION_FAIL = new ErrorCode(1_030_405_006, "盘点单状态流转失败，当前状态({})不允许流转到目标状态({})");
+    ErrorCode STOCK_CHECK_SNAPSHOT_FAIL = new ErrorCode(1_030_405_007, "盘点单快照生成失败");
+    ErrorCode STOCK_CHECK_VOUCHER_GENERATE_FAIL = new ErrorCode(1_030_405_008, "盘点凭证生成失败");
+    ErrorCode STOCK_CHECK_VOUCHER_VOID_FAIL = new ErrorCode(1_030_405_009, "盘点凭证作废失败");
+    ErrorCode STOCK_CHECK_CLOSE_FAIL_VOUCHER_MISSING = new ErrorCode(1_030_405_010, "盘点单关闭失败，凭证未生成");
+    ErrorCode STOCK_CHECK_YEAR_END_NOT_CLOSED = new ErrorCode(1_030_405_011, "年末盘点单({})未完成，无法进行年结");
 
     // ========== ERP 产品库存 1-030-404-000 ==========
     ErrorCode STOCK_COUNT_NEGATIVE = new ErrorCode(1_030_404_000, "操作失败，产品({})所在仓库({})的库存：{}，小于变更数量：{}");
@@ -220,7 +232,7 @@ public interface ErrorCodeConstants {
     ErrorCode PRODUCT_CATEGORY_PARENT_ERROR = new ErrorCode(1_030_501_003, "不能设置自己为父产品分类");
     ErrorCode PRODUCT_CATEGORY_NAME_DUPLICATE = new ErrorCode(1_030_501_004, "已经存在该分类名称的产品分类");
     ErrorCode PRODUCT_CATEGORY_PARENT_IS_CHILD = new ErrorCode(1_030_501_005, "不能设置自己的子分类为父分类");
-    ErrorCode PRODUCT_CATEGORY_EXITS_PRODUCT = new ErrorCode(1_030_502_002, "存在产品使用该分类，无法删除");
+    ErrorCode PRODUCT_CATEGORY_EXITS_PRODUCT = new ErrorCode(1_030_501_006, "存在产品使用该分类，无法删除");
 
     // ========== ERP 产品单位 1-030-502-000 ==========
     ErrorCode PRODUCT_UNIT_NOT_EXISTS = new ErrorCode(1_030_502_000, "产品单位不存在");
@@ -352,15 +364,15 @@ public interface ErrorCodeConstants {
     ErrorCode PROJECT_PC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_009, "当前项目 PC 状态不允许重复确认");
     ErrorCode PROJECT_MC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_010, "当前项目 MC 状态不允许重复确认");
 
-    // ========== ERP 租赁合同 1-030-605-000 ==========
-    ErrorCode LEASE_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_605_000, "租赁合同不存在");
-    ErrorCode LEASE_CONTRACT_NO_EXISTS = new ErrorCode(1_030_605_001, "生成租赁合同号失败，请重新提交");
-    ErrorCode LEASE_CONTRACT_STATUS_INVALID = new ErrorCode(1_030_605_002, "当前租赁合同状态不允许执行该操作");
+    // ========== ERP 租赁合同 1-030-610-000 ==========
+    ErrorCode LEASE_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_610_000, "租赁合同不存在");
+    ErrorCode LEASE_CONTRACT_NO_EXISTS = new ErrorCode(1_030_610_001, "生成租赁合同号失败，请重新提交");
+    ErrorCode LEASE_CONTRACT_STATUS_INVALID = new ErrorCode(1_030_610_002, "当前租赁合同状态不允许执行该操作");
 
-    // ========== ERP 服务接收单 1-030-606-000 ==========
-    ErrorCode SERVICE_RECEIPT_NOT_EXISTS = new ErrorCode(1_030_606_000, "服务接收单不存在");
-    ErrorCode SERVICE_RECEIPT_NO_EXISTS = new ErrorCode(1_030_606_001, "生成服务接收单号失败，请重新提交");
-    ErrorCode SERVICE_RECEIPT_STATUS_INVALID = new ErrorCode(1_030_606_002, "当前服务接收单状态不允许执行该操作");
+    // ========== ERP 服务接收单 1-030-611-000 ==========
+    ErrorCode SERVICE_RECEIPT_NOT_EXISTS = new ErrorCode(1_030_611_000, "服务接收单不存在");
+    ErrorCode SERVICE_RECEIPT_NO_EXISTS = new ErrorCode(1_030_611_001, "生成服务接收单号失败，请重新提交");
+    ErrorCode SERVICE_RECEIPT_STATUS_INVALID = new ErrorCode(1_030_611_002, "当前服务接收单状态不允许执行该操作");
 
     // ========== ERP 三单匹配 1-030-607-000 ==========
     ErrorCode THREE_WAY_MATCH_NOT_EXISTS = new ErrorCode(1_030_607_000, "三单匹配记录不存在");
