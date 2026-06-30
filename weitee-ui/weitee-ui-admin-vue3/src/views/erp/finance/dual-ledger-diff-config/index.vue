@@ -3,7 +3,7 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">鍙岃处濂楀彛寰勯厤缃?/div>
+          <div class="finance-shell__page-title">双账口径配置</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
               褰撳墠鍒楄〃 {{ total }}
@@ -27,7 +27,7 @@
 
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?/div>
+        <div class="finance-shell__section-title">筛选条件</div>
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
@@ -41,8 +41,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="宸紓椤? prop="diffItemType">
-            <el-select v-model="queryParams.diffItemType" class="!w-full" clearable placeholder="璇烽€夋嫨宸紓椤?>
+          <el-form-item label="差异项" prop="diffItemType">
+            <el-select v-model="queryParams.diffItemType" class="!w-full" clearable placeholder="请选择差异项">
               <el-option
                 v-for="item in DUAL_LEDGER_DIFF_ITEM_OPTIONS"
                 :key="item.value"
@@ -51,12 +51,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="瀵瑰璐︽潵婧? prop="externalSourceType">
+          <el-form-item label="外部账来源" prop="externalSourceType">
             <el-select
               v-model="queryParams.externalSourceType"
               class="!w-full"
               clearable
-              placeholder="璇烽€夋嫨瀵瑰璐︽潵婧?
+               placeholder="请选择外部账来源"
             >
               <el-option
                 v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
@@ -66,12 +66,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="鍐呴儴璐︽潵婧? prop="internalSourceType">
+          <el-form-item label="内部账来源" prop="internalSourceType">
             <el-select
               v-model="queryParams.internalSourceType"
               class="!w-full"
               clearable
-              placeholder="璇烽€夋嫨鍐呴儴璐︽潵婧?
+               placeholder="请选择内部账来源"
             >
               <el-option
                 v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
@@ -81,8 +81,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="鐘舵€? prop="status">
-            <el-select v-model="queryParams.status" class="!w-full" clearable placeholder="璇烽€夋嫨鐘舵€?>
+          <el-form-item label="状态" prop="status">
+            <el-select v-model="queryParams.status" class="!w-full" clearable placeholder="请选择状态">
               <el-option
                 v-for="item in COMMON_STATUS_OPTIONS"
                 :key="item.value"
@@ -96,7 +96,7 @@
               v-model="queryParams.remark"
               class="!w-full"
               clearable
-              placeholder="璇疯緭鍏ュ娉?
+               placeholder="请输入备注"
               @keyup.enter="handleQuery"
             />
           </el-form-item>
@@ -118,7 +118,7 @@
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
           <div class="finance-shell__section-title">鍙ｅ緞閰嶇疆鍒楄〃</div>
-          <div class="finance-shell__toolbar-count">褰撳墠鍏?<strong>{{ total }}</strong> 鏉?/div>
+          <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button type="primary" plain @click="openForm('create')" v-hasPermi="['erp:finance-dual-ledger-diff-config:create']">
@@ -152,12 +152,12 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="宸紓椤? min-width="120">
+            <el-table-column label="差异项" min-width="120">
               <template #default="{ row }">
                 {{ row.diffItemTypeName || getDiffItemTypeLabel(row.diffItemType) || '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="瀵瑰璐︽潵婧? min-width="220">
+            <el-table-column label="外部账来源" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__primary-text">
@@ -169,7 +169,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="鍐呴儴璐︽潵婧? min-width="220">
+            <el-table-column label="内部账来源" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__primary-text">
@@ -196,12 +196,12 @@
                 <span class="finance-shell__amount">{{ formatAmount(row.fixedAmount) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="鐘舵€? min-width="100" align="center">
+            <el-table-column label="状态" min-width="100" align="center">
               <template #default="{ row }">
                 <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
               </template>
             </el-table-column>
-            <el-table-column label="澶囨敞" min-width="200">
+            <el-table-column label="备注" min-width="200">
               <template #default="{ row }">
                 <span class="finance-shell__muted-text" :title="row.remark || '-'">
                   {{ row.remark || '-' }}
@@ -277,7 +277,7 @@
           </div>
           <div class="finance-shell__context-meta">
             <div class="finance-shell__context-meta-item">
-              <span>鐘舵€?/span>
+              <span>状态</span>
               <span>{{ getStatusLabel(detailData.status) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
@@ -298,14 +298,14 @@
               <div class="finance-shell__section-title">瑙勫垯璇︽儏</div>
               <div class="dual-ledger-diff-config-page__detail-list">
                 <div class="dual-ledger-diff-config-page__detail-item">
-                  <span>瀵瑰璐︽潵婧?/span>
+                  <span>外部账来源</span>
                   <strong>
                     {{ detailData.externalSourceTypeName || getSourceTypeLabel(detailData.externalSourceType) || '-' }}
                     / {{ detailData.externalSourceValueName || getDiffItemTypeLabel(detailData.externalSourceValue) || '-' }}
                   </strong>
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item">
-                  <span>鍐呴儴璐︽潵婧?/span>
+                  <span>内部账来源</span>
                   <strong>
                     {{ detailData.internalSourceTypeName || getSourceTypeLabel(detailData.internalSourceType) || '-' }}
                     / {{ detailData.internalSourceValueName || getDiffItemTypeLabel(detailData.internalSourceValue) || '-' }}
@@ -412,7 +412,7 @@ const getList = async () => {
     total.value = data.total || 0
   } catch (error: any) {
     if (!list.value.length) {
-      listErrorMessage.value = error?.message || '璇锋鏌ョ綉缁滄垨绋嶅悗閲嶈瘯銆?
+      listErrorMessage.value = error?.message || '请检查网络或稍后重试。'
     }
   } finally {
     loadingList.value = false
@@ -461,7 +461,7 @@ const loadDetail = async (id: number) => {
     detailData.value = await FinanceDualLedgerDiffConfigApi.getDualLedgerDiffConfig(id)
   } catch (error: any) {
     detailData.value = undefined
-    detailErrorMessage.value = error?.message || '璇锋鏌ョ綉缁滄垨绋嶅悗閲嶈瘯銆?
+    detailErrorMessage.value = error?.message || '请检查网络或稍后重试。'
   } finally {
     loadingDetail.value = false
   }
@@ -502,7 +502,7 @@ const handleDelete = async (id?: number) => {
     return
   }
   try {
-    await message.confirm('纭鍒犻櫎璇ュ彛寰勯厤缃悧锛?)
+    await message.confirm('确认删除该口径配置吗？')
   } catch (error) {
     if (isActionCanceled(error)) {
       return
@@ -512,7 +512,7 @@ const handleDelete = async (id?: number) => {
   deleteLoadingId.value = targetId
   try {
     await FinanceDualLedgerDiffConfigApi.deleteDualLedgerDiffConfig(targetId)
-    message.success('鍒犻櫎鎴愬姛')
+    message.success('删除成功')
     if (list.value.length === 1 && Number(queryParams.pageNo) > 1) {
       queryParams.pageNo = Number(queryParams.pageNo) - 1
     }

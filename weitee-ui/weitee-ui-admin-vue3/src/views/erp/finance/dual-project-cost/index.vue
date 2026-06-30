@@ -24,15 +24,15 @@
     <!-- 鎼滅储鍖?-->
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?/div>
+        <div class="finance-shell__section-title">绛涢€夋潯浠?</div>
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
           <el-form-item label="椤圭洰鍚嶇О" prop="projectName">
-            <el-input v-model="queryParams.projectName" placeholder="璇疯緭鍏ラ」鐩悕绉? clearable class="!w-full" @keyup.enter="handleQuery" />
+            <el-input v-model="queryParams.projectName" placeholder="璇疯緭鍏ラ」鐩悕绉?" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
           <el-form-item label="椤圭洰缂栧彿" prop="projectNo">
-            <el-input v-model="queryParams.projectNo" placeholder="璇疯緭鍏ラ」鐩紪鍙? clearable class="!w-full" @keyup.enter="handleQuery" />
+            <el-input v-model="queryParams.projectNo" placeholder="璇疯緭鍏ラ」鐩紪鍙?" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
           <el-form-item label="鏈熼棿" prop="period">
             <el-date-picker v-model="queryParams.period" type="month" placeholder="閫夋嫨鏈堜唤" value-format="YYYY-MM" class="!w-full" />
@@ -61,7 +61,7 @@
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
           <div class="finance-shell__section-title">椤圭洰鍙岃处鎴愭湰鍒楄〃</div>
-          <div class="finance-shell__toolbar-count">褰撳墠鍏?<strong>{{ total }}</strong> 鏉?/div>
+          <div class="finance-shell__toolbar-count">褰撳墠鍏?<strong>{{ total }}</strong> 鏉?</div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button type="primary" :loading="rebuilding" @click="handleRebuildAll">
@@ -142,7 +142,7 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏉ユ簮鏁? min-width="80" align="center">
+            <el-table-column label="鏉ユ簮鏁?" min-width="80" align="center">
               <template #default="{ row }">
                 <span class="finance-shell__mono">{{ row.sourceCount || 0 }}</span>
               </template>
@@ -211,7 +211,7 @@
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.diffAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">鏉ユ簮鍗曟嵁鏁?/div>
+                <div class="finance-shell__metric-label">鏉ユ簮鍗曟嵁鏁?</div>
                 <div class="finance-shell__metric-value">{{ detailData?.sourceCount || 0 }}</div>
               </div>
             </div>
@@ -256,7 +256,7 @@
     </el-drawer>
 
     <!-- 閲嶈窇瀵硅瘽妗?-->
-    <el-dialog v-model="rebuildDialogVisible" title="椤圭洰绾ч噸璺? width="480px" destroy-on-close>
+    <el-dialog v-model="rebuildDialogVisible" title="椤圭洰绾ч噸璺?" width="480px" destroy-on-close>
       <el-form ref="rebuildFormRef" :model="rebuildForm" label-width="88px">
         <el-form-item label="椤圭洰" required>
           <el-input :model-value="rebuildForm.projectName" disabled />
@@ -265,7 +265,7 @@
           <el-date-picker v-model="rebuildForm.period" type="month" placeholder="閫夋嫨鏈堜唤" value-format="YYYY-MM" class="!w-full" />
         </el-form-item>
         <el-form-item label="澶囨敞">
-          <el-input v-model="rebuildForm.remark" type="textarea" placeholder="璇疯緭鍏ュ娉? />
+          <el-input v-model="rebuildForm.remark" type="textarea" placeholder="璇疯緭鍏ュ娉?" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -320,7 +320,8 @@ const loadingDetail = ref(false)
 const detailData = ref<DualProjectCostVO>()
 const detailItems = ref<DualProjectCostVO[]>([])
 
-// 閲嶈窇瀵硅瘽妗?const rebuildDialogVisible = ref(false)
+// 閲嶈窇瀵硅瘽妗?
+const rebuildDialogVisible = ref(false)
 const rebuildFormRef = ref()
 const rebuildForm = reactive({
   projectId: undefined as number | undefined,
@@ -381,7 +382,7 @@ const clearDetailDrawer = () => {
 
 const handleRebuildAll = () => {
   if (!list.value.length) {
-    message.warning('鏆傛棤鏁版嵁鍙噸璺?)
+    message.warning('鏆傛棤鏁版嵁鍙噸璺?')
     return
   }
   const first = list.value[0]
@@ -394,7 +395,7 @@ const handleRebuildAll = () => {
 
 const confirmRebuild = async () => {
   if (!rebuildForm.projectId || !rebuildForm.period) {
-    message.warning('璇烽€夋嫨椤圭洰鍜屾湡闂?)
+    message.warning('璇烽€夋嫨椤圭洰鍜屾湡闂?')
     return
   }
   rebuilding.value = true

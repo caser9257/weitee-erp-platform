@@ -343,7 +343,8 @@ public class ErpSaleOrderController {
             userIds.addAll(auditLogs.stream()
                     .map(ErpSaleOrderAuditLogDO::getCreator)
                     .filter(StrUtil::isNotBlank)
-                    .map(Long::parseLong)
+                    .map(ErpUserIdUtils::parseUserId)
+                    .filter(java.util.Objects::nonNull)
                     .collect(Collectors.toSet()));
         }
         if (CollUtil.isEmpty(rejectLogs)) {
@@ -352,7 +353,8 @@ public class ErpSaleOrderController {
         userIds.addAll(rejectLogs.stream()
                 .map(ErpSaleOrderRejectLogDO::getCreator)
                 .filter(StrUtil::isNotBlank)
-                .map(Long::parseLong)
+                .map(ErpUserIdUtils::parseUserId)
+                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toSet()));
         return userIds;
     }

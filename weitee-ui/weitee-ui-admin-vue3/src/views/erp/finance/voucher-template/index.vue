@@ -11,7 +11,7 @@
             <span class="text-slate-700">鍑瘉妯℃澘</span>
           </div>
           <h1 class="voucher-template-page__title">鍑瘉妯℃澘閰嶇疆</h1>
-          <p class="voucher-template-page__subtitle">閽堝涓嶅悓鐨勪笟鍔＄被鍨嬶紝缁熶竴閰嶇疆鍏跺搴旂殑璐㈠姟璁拌处鍑瘉瑙勫垯涓庡垎褰曟ā鏉裤€?/p>
+          <p class="voucher-template-page__subtitle">閽堝涓嶅悓鐨勪笟鍔＄被鍨嬶紝缁熶竴閰嶇疆鍏跺搴旂殑璐㈠姟璁拌处鍑瘉瑙勫垯涓庡垎褰曟ā鏉裤€?</p>
         </div>
 
         <div class="voucher-template-page__header-actions">
@@ -49,7 +49,7 @@
         <div class="voucher-template-page__filter-head">
           <div class="voucher-template-page__section-title-row">
             <Icon icon="ep:filter" class="voucher-template-page__section-title-icon" />
-            <div class="voucher-template-page__section-title">绛涢€夋潯浠?/div>
+            <div class="voucher-template-page__section-title">绛涢€夋潯浠?</div>
           </div>
         </div>
 
@@ -78,8 +78,8 @@
           </div>
 
           <div class="voucher-template-page__field">
-            <label class="voucher-template-page__field-label">鍚敤鐘舵€?/label>
-            <el-select v-model="queryParams.status" clearable placeholder="鍏ㄩ儴鐘舵€? class="voucher-template-page__field-control">
+            <label class="voucher-template-page__field-label">鍚敤鐘舵€?</label>
+            <el-select v-model="queryParams.status" clearable placeholder="鍏ㄩ儴鐘舵€?" class="voucher-template-page__field-control">
               <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </div>
@@ -112,7 +112,7 @@
               <div class="voucher-template-page__section-title">妯℃澘鍒楄〃</div>
               <span class="voucher-template-page__table-filter-chip">宸茬瓫閫?{{ list.length }} / {{ total }}</span>
             </div>
-            <div class="voucher-template-page__section-subtitle">鍏?{{ total }} 鏉★紝褰撳墠鏁版嵁鐩存帴鏉ヨ嚜鍚庣鍒嗛〉鎺ュ彛銆?/div>
+            <div class="voucher-template-page__section-subtitle">鍏?{{ total }} 鏉★紝褰撳墠鏁版嵁鐩存帴鏉ヨ嚜鍚庣鍒嗛〉鎺ュ彛銆?</div>
           </div>
           <div class="voucher-template-page__table-head-right">
             <label class="voucher-template-page__remark-switch">
@@ -146,7 +146,7 @@
                       <span class="voucher-template-page__primary-title">{{ row.name || '-' }}</span>
                     </div>
                     <div v-if="showRemark" class="voucher-template-page__primary-desc">
-                      {{ row.defaultSummary || row.remark || '鏈厤缃鏄? }}
+                      {{ row.defaultSummary || row.remark || '鏈厤缃鏄?' }}
                     </div>
                   </div>
                 </template>
@@ -166,7 +166,7 @@
                 </template>
               </el-table-column>
 
-              <el-table-column label="鐘舵€? align="center" width="110">
+              <el-table-column label="鐘舵€?" align="center" width="110">
                 <template #default="{ row }">
                   <span class="voucher-template-page__status-badge" :class="resolveStatusClass(row.status)">
                     {{ getStatusLabel(row.status) }}
@@ -224,7 +224,7 @@
               <Icon icon="ep:document" />
             </div>
             <div class="voucher-template-page__empty-title">鏆傛棤鍑瘉妯℃澘鏁版嵁</div>
-            <div class="voucher-template-page__empty-text">褰撳墠鏉′欢涓嬫病鏈夊尮閰嶇粨鏋滐紝鍙互灏濊瘯閲嶇疆绛涢€夋潯浠跺悗閲嶆柊鏌ヨ銆?/div>
+            <div class="voucher-template-page__empty-text">褰撳墠鏉′欢涓嬫病鏈夊尮閰嶇粨鏋滐紝鍙互灏濊瘯閲嶇疆绛涢€夋潯浠跺悗閲嶆柊鏌ヨ銆?</div>
           </div>
         </template>
 
@@ -256,16 +256,16 @@
           </div>
           <div class="voucher-template-page__context-meta">
             <div class="voucher-template-page__context-meta-item">
-              <span>鐘舵€?/span>
+              <span>鐘舵€?</span>
               <span>{{ getStatusLabel(detailData.status) }}</span>
             </div>
             <div class="voucher-template-page__context-meta-item">
               <span>鑷姩鐢熸垚</span>
-              <span>{{ detailData.autoGenerate ? '鏄? : '鍚? }}</span>
+              <span>{{ detailData.autoGenerate ? '鏄?' : '鍚?' }}</span>
             </div>
             <div class="voucher-template-page__context-meta-item">
               <span>鐮斿彂妯℃澘</span>
-              <span>{{ detailData.researchTemplate ? '鏄? : '鍚? }}</span>
+              <span>{{ detailData.researchTemplate ? '鏄?' : '鍚?' }}</span>
             </div>
             <div class="voucher-template-page__context-meta-item">
               <span>鍒涘缓鏃堕棿</span>
@@ -277,15 +277,15 @@
         <div v-if="detailData" class="voucher-template-page__detail-grid">
           <div class="voucher-template-page__detail-card">
             <div class="voucher-template-page__detail-label">榛樿鎽樿</div>
-            <div class="voucher-template-page__detail-value">{{ detailData.defaultSummary || '鏈缃? }}</div>
+            <div class="voucher-template-page__detail-value">{{ detailData.defaultSummary || '鏈缃?' }}</div>
           </div>
           <div class="voucher-template-page__detail-card">
             <div class="voucher-template-page__detail-label">鐮斿彂鍒嗙被</div>
-            <div class="voucher-template-page__detail-value">{{ detailData.researchCategoryName || getResearchCategoryLabel(detailData.researchCategory) || '鏈厤缃? }}</div>
+            <div class="voucher-template-page__detail-value">{{ detailData.researchCategoryName || getResearchCategoryLabel(detailData.researchCategory) || '鏈厤缃?' }}</div>
           </div>
           <div class="voucher-template-page__detail-card">
             <div class="voucher-template-page__detail-label">澶囨敞</div>
-            <div class="voucher-template-page__detail-value">{{ detailData.remark || '鏃? }}</div>
+            <div class="voucher-template-page__detail-value">{{ detailData.remark || '鏃?' }}</div>
           </div>
         </div>
 
@@ -299,7 +299,7 @@
           <el-table-column label="閲戦鏉ユ簮" min-width="150">
             <template #default="{ row }">{{ row.amountSourceName || getAmountSourceLabel(row.amountSource) }}</template>
           </el-table-column>
-          <el-table-column label="鏉ユ簮鍊? align="right" min-width="120">
+          <el-table-column label="鏉ユ簮鍊?" align="right" min-width="120">
             <template #default="{ row }">{{ formatAmountSourceValue(row.amountSourceValue) }}</template>
           </el-table-column>
           <el-table-column label="鎽樿" prop="summary" min-width="180" />
@@ -321,9 +321,9 @@
             </el-select>
           </el-form-item>
           <el-form-item label="妯℃澘鍚嶇О" prop="name">
-            <el-input v-model="formData.name" placeholder="璇疯緭鍏ユā鏉垮悕绉? />
+            <el-input v-model="formData.name" placeholder="璇疯緭鍏ユā鏉垮悕绉?" />
           </el-form-item>
-          <el-form-item label="鐘舵€? prop="status">
+          <el-form-item label="鐘舵€?" prop="status">
             <el-radio-group v-model="formData.status">
               <el-radio :label="CommonStatusEnum.ENABLE">鍚敤</el-radio>
               <el-radio :label="CommonStatusEnum.DISABLE">绂佺敤</el-radio>
@@ -336,7 +336,7 @@
             <el-switch v-model="formData.researchTemplate" />
           </el-form-item>
           <el-form-item label="榛樿鎽樿" prop="defaultSummary" class="voucher-template-page__dialog-span">
-            <el-input v-model="formData.defaultSummary" placeholder="璇疯緭鍏ラ粯璁ゆ憳瑕? />
+            <el-input v-model="formData.defaultSummary" placeholder="璇疯緭鍏ラ粯璁ゆ憳瑕?" />
           </el-form-item>
           <el-form-item label="鐮斿彂鍒嗙被" prop="researchCategory">
             <el-select v-model="formData.researchCategory" placeholder="璇烽€夋嫨鐮斿彂鍒嗙被" clearable class="!w-full">
@@ -344,7 +344,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="澶囨敞" prop="remark" class="voucher-template-page__dialog-span">
-            <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="璇疯緭鍏ュ娉? />
+            <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="璇疯緭鍏ュ娉?" />
           </el-form-item>
         </div>
 
@@ -370,12 +370,12 @@
             </el-table-column>
             <el-table-column label="绉戠洰缂栫爜" min-width="140">
               <template #default="{ row }">
-                <el-input v-model="row.subjectCode" placeholder="璇疯緭鍏ョ鐩紪鐮? />
+                <el-input v-model="row.subjectCode" placeholder="璇疯緭鍏ョ鐩紪鐮?" />
               </template>
             </el-table-column>
             <el-table-column label="绉戠洰鍚嶇О" min-width="180">
               <template #default="{ row }">
-                <el-input v-model="row.subjectName" placeholder="璇疯緭鍏ョ鐩悕绉? />
+                <el-input v-model="row.subjectName" placeholder="璇疯緭鍏ョ鐩悕绉?" />
               </template>
             </el-table-column>
             <el-table-column label="閲戦鏉ユ簮" min-width="160">
@@ -385,7 +385,7 @@
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="鏉ユ簮鍊? min-width="140" align="right">
+            <el-table-column label="鏉ユ簮鍊?" min-width="140" align="right">
               <template #default="{ row }">
                 <el-input-number v-if="isAmountSourceValueRequired(row.amountSource)" v-model="row.amountSourceValue" :precision="6" :step="0.01" class="!w-full" />
                 <span v-else class="voucher-template-page__muted-text">鏃犻渶濉啓</span>
@@ -393,7 +393,7 @@
             </el-table-column>
             <el-table-column label="鎽樿" min-width="180">
               <template #default="{ row }">
-                <el-input v-model="row.summary" placeholder="璇疯緭鍏ュ垎褰曟憳瑕? />
+                <el-input v-model="row.summary" placeholder="璇疯緭鍏ュ垎褰曟憳瑕?" />
               </template>
             </el-table-column>
             <el-table-column label="鎿嶄綔" fixed="right" width="90" align="center">

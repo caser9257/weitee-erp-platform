@@ -3,7 +3,7 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">鍙岃处濂楀姣?/div>
+          <div class="finance-shell__page-title">双账核对比对</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip">缁撴灉 {{ total }}</span>
             <span class="finance-shell__metric-chip">涓€鑷?{{ consistentCount }}</span>
@@ -21,7 +21,7 @@
 
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?/div>
+        <div class="finance-shell__section-title">筛选条件</div>
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
@@ -31,17 +31,17 @@
             </el-select>
           </el-form-item>
           <el-form-item label="涓氬姟鍗曞彿" prop="bizNo">
-            <el-input v-model="queryParams.bizNo" placeholder="璇疯緭鍏ヤ笟鍔″崟鍙? clearable class="!w-full" @keyup.enter="handleQuery" />
+            <el-input v-model="queryParams.bizNo" placeholder="请输入业务单号" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
-          <el-form-item label="瀵规瘮鐘舵€? prop="compareStatus">
-            <el-select v-model="queryParams.compareStatus" placeholder="璇烽€夋嫨瀵规瘮鐘舵€? clearable class="!w-full">
+          <el-form-item label="比对状态" prop="compareStatus">
+            <el-select v-model="queryParams.compareStatus" placeholder="请选择比对状态" clearable class="!w-full">
               <el-option v-for="item in DUAL_LEDGER_COMPARE_STATUS_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item label="鏄惁涓€鑷? prop="consistent">
-            <el-select v-model="queryParams.consistent" placeholder="璇烽€夋嫨鏄惁涓€鑷? clearable class="!w-full">
-              <el-option label="涓€鑷? :value="true" />
-              <el-option label="涓嶄竴鑷? :value="false" />
+          <el-form-item label="是否一致" prop="consistent">
+            <el-select v-model="queryParams.consistent" placeholder="请选择是否一致" clearable class="!w-full">
+              <el-option label="一致" :value="true" />
+              <el-option label="不一致" :value="false" />
             </el-select>
           </el-form-item>
         </div>
@@ -63,7 +63,7 @@
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
           <div class="finance-shell__section-title">瀵规瘮缁撴灉鍒楄〃</div>
-          <div class="finance-shell__toolbar-count">褰撳墠鍏?<strong>{{ total }}</strong> 鏉?/div>
+          <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
       </div>
 
@@ -168,7 +168,7 @@
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell finance-shell__primary-cell--center">
                   <el-tag :type="row.consistent ? 'success' : 'danger'" effect="light">
-                    {{ row.compareStatusName || (row.consistent ? '涓€鑷? : '涓嶄竴鑷?) }}
+                    {{ row.compareStatusName || (row.consistent ? '一致' : '不一致') }}
                   </el-tag>
                   <div v-if="row.issueMessages && row.issueMessages.length" class="mt-1">
                     <el-tooltip v-for="(msg, idx) in row.issueMessages.slice(0, 2)" :key="idx" :content="msg" placement="top">
@@ -217,7 +217,7 @@
         <Pagination v-if="total > 0" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
       </template>
       <div v-else class="finance-dual-ledger-page__empty">
-        <el-empty description="鏆傛棤鍙岃处濂楀姣旀暟鎹?>
+        <el-empty description="暂无双账核对比对数据">
           <template #image>
             <div class="finance-shell__empty-icon">
               <Icon icon="ep:files" />
@@ -239,11 +239,11 @@
         <div class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ detailData?.bizNo || '-' }}</div>
-            <div class="finance-shell__context-subtitle">{{ detailData?.bizTypeName || '鍙岃处濂楀樊寮傛槑缁? }}</div>
+            <div class="finance-shell__context-subtitle">{{ detailData?.bizTypeName || '双账套差异明细' }}</div>
           </div>
           <div class="finance-shell__context-meta">
             <span class="finance-shell__page-chip">{{ detailData?.compareStatusName || '-' }}</span>
-            <span class="finance-shell__page-chip">{{ detailData?.consistent ? '涓€鑷? : '涓嶄竴鑷? }}</span>
+            <span class="finance-shell__page-chip">{{ detailData?.consistent ? '一致' : '不一致' }}</span>
           </div>
         </div>
 
@@ -290,7 +290,7 @@
             <div class="finance-shell__section-title">宸紓鏄庣粏</div>
             <div v-if="selectedDiffItems.length" class="finance-dual-ledger-page__detail-table">
               <el-table :data="selectedDiffItems" stripe class="finance-shell__table finance-shell__table--dense" :show-overflow-tooltip="false">
-                <el-table-column label="宸紓椤? min-width="140">
+                <el-table-column label="差异项" min-width="140">
                   <template #default="{ row }">
                     <div class="finance-shell__primary-cell">
                       <span class="finance-shell__primary-text">{{ row.diffItemTypeName || '-' }}</span>
@@ -327,7 +327,7 @@
               </el-table>
             </div>
             <div v-else class="finance-dual-ledger-page__empty finance-dual-ledger-page__empty--drawer">
-              <el-empty description="鏆傛棤宸紓椤规槑缁?>
+              <el-empty description="暂无差异项目明细">
                 <template #image>
                   <div class="finance-shell__empty-icon">
                     <Icon icon="ep:document" />
@@ -371,8 +371,9 @@
               <span v-if="exportRow?.externalVoucherNo" class="finance-shell__mono">鍑瘉鍙凤細{{ exportRow.externalVoucherNo }}</span>
               <span v-else>鏆傛棤鍑瘉</span>
             </div>
-            <div v-if="!hasExternalVoucher(exportRow!)" class="finance-dual-ledger-page__export-option-hint">
-              褰撳墠璐︾翱鏆傛棤鍙鍑哄嚟璇?            </div>
+              <div v-if="!hasExternalVoucher(exportRow!)" class="finance-dual-ledger-page__export-option-hint">
+                当前账簿暂无可导出凭证
+              </div>
           </div>
           <div v-if="exportLedgerSide === 'external'" class="finance-dual-ledger-page__export-option-check">
             <Icon icon="ep:check" />
@@ -468,9 +469,9 @@ const queryParams = reactive<DualLedgerResultPageReqVO>({
 
 const bizTypeOptions = [
   { label: '閲囪喘鍏ュ簱', value: ErpBizType.PURCHASE_IN },
-  { label: '閲囪喘閫€璐?, value: ErpBizType.PURCHASE_RETURN },
-  { label: '閿€鍞嚭搴?, value: ErpBizType.SALE_OUT },
-  { label: '閿€鍞€€璐?, value: ErpBizType.SALE_RETURN },
+  { label: '采购退货', value: ErpBizType.PURCHASE_RETURN },
+  { label: '销售出库', value: ErpBizType.SALE_OUT },
+  { label: '销售退货', value: ErpBizType.SALE_RETURN },
   { label: '濮斿鍏ュ簱', value: ErpBizType.OUTSOURCE_INBOUND },
   { label: '鑷埗鍏ュ簱', value: ErpBizType.PRODUCTION_INBOUND },
   { label: '璐圭敤鎶ラ攢', value: ErpBizType.FINANCE_EXPENSE }
@@ -497,7 +498,8 @@ const isRowExporting = (row: DualLedgerResultVO) => exportingBizId.value === row
 const handleOpenExport = (row: DualLedgerResultVO) => {
   if (!canOpenExport(row) || isRowExporting(row)) return
   exportRow.value = row
-  // 榛樿閫変腑绗竴涓彲鐢ㄧ殑璐﹀渚?  if (hasExternalVoucher(row)) {
+  // 默认选中第一个可用的账套侧
+  if (hasExternalVoucher(row)) {
     exportLedgerSide.value = 'external'
   } else {
     exportLedgerSide.value = 'internal'
@@ -510,11 +512,11 @@ const handleConfirmExport = async () => {
   const row = exportRow.value
   // 鏍￠獙閫変腑渚ф槸鍚︽湁鍑瘉
   if (exportLedgerSide.value === 'external' && !hasExternalVoucher(row)) {
-    message.warning('褰撳墠璐︾翱鏆傛棤鍙鍑哄嚟璇?)
+    message.warning('当前账簿暂无可导出凭证')
     return
   }
   if (exportLedgerSide.value === 'internal' && !hasInternalVoucher(row)) {
-    message.warning('褰撳墠璐︾翱鏆傛棤鍙鍑哄嚟璇?)
+    message.warning('当前账簿暂无可导出凭证')
     return
   }
   exportingBizId.value = row.bizId
@@ -554,7 +556,7 @@ const getList = async () => {
   } catch {
     list.value = []
     total.value = 0
-    listError.value = '鍙岃处濂楃粨鏋滃姞杞藉け璐ワ紝璇风◢鍚庨噸璇?
+    listError.value = '双账套结果加载失败，请稍后重试。'
   } finally {
     loadingList.value = false
   }
@@ -630,7 +632,7 @@ const handleRecompute = async (row: DualLedgerResultVO) => {
 
 onMounted(() => {
   if (!canAccess.value) {
-    message.error('褰撳墠瑙掕壊鏃犳潈璁块棶璇ラ〉闈?)
+    message.error('当前角色无权限访问该页面')
     router.replace('/')
     return
   }

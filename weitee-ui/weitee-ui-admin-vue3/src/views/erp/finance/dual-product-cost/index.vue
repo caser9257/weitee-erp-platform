@@ -24,15 +24,15 @@
     <!-- 鎼滅储鍖?-->
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?/div>
+        <div class="finance-shell__section-title">筛选条件</div>
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
           <el-form-item label="浜у搧鍚嶇О" prop="productName">
-            <el-input v-model="queryParams.productName" placeholder="璇疯緭鍏ヤ骇鍝佸悕绉? clearable class="!w-full" @keyup.enter="handleQuery" />
+            <el-input v-model="queryParams.productName" placeholder="请输入产品名称" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
           <el-form-item label="浜у搧缂栧彿" prop="productNo">
-            <el-input v-model="queryParams.productNo" placeholder="璇疯緭鍏ヤ骇鍝佺紪鍙? clearable class="!w-full" @keyup.enter="handleQuery" />
+            <el-input v-model="queryParams.productNo" placeholder="请输入产品编号" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
           <el-form-item label="宸ュ崟缂栧彿" prop="productionOrderId">
             <el-input v-model="queryParams.productionOrderId" placeholder="璇疯緭鍏ュ伐鍗旾D" clearable class="!w-full" @keyup.enter="handleQuery" />
@@ -59,18 +59,21 @@
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
           <div class="finance-shell__section-title">浜у搧鍙岃处鎴愭湰鍒楄〃</div>
-          <div class="finance-shell__toolbar-count">褰撳墠鍏?<strong>{{ total }}</strong> 鏉?/div>
+          <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button type="primary" :loading="rebuilding" @click="handleRebuildAll">
             <Icon icon="ep:refresh" class="mr-5px" />
-            浜у搧绾ч噸璺?          </el-button>
+            产品级重跑
+          </el-button>
           <el-button plain :disabled="!total" @click="handleExportExternal">
             <Icon icon="ep:download" class="mr-5px" />
-            瀵煎嚭澶栭儴璐?          </el-button>
+            导出外部账
+          </el-button>
           <el-button plain :disabled="!total" @click="handleExportInternal">
             <Icon icon="ep:download" class="mr-5px" />
-            瀵煎嚭鍐呴儴璐?          </el-button>
+            导出内部账
+          </el-button>
         </div>
       </div>
 
@@ -114,7 +117,8 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  澶栭儴璐︽€绘垚鏈?                </span>
+                  外部账总成本
+                </span>
               </template>
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalTotalAmount) }}</span>
@@ -124,7 +128,8 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  鍐呴儴璐︽€绘垚鏈?                </span>
+                  内部账总成本
+                </span>
               </template>
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalTotalAmount) }}</span>
@@ -268,7 +273,7 @@
     </el-drawer>
 
     <!-- 閲嶈窇瀵硅瘽妗?-->
-    <el-dialog v-model="rebuildDialogVisible" title="浜у搧绾ч噸璺? width="480px" destroy-on-close>
+    <el-dialog v-model="rebuildDialogVisible" title="产品级重跑" width="480px" destroy-on-close>
       <el-form ref="rebuildFormRef" :model="rebuildForm" label-width="88px">
         <el-form-item label="浜у搧" required>
           <el-input :model-value="rebuildForm.productName" disabled />
@@ -277,7 +282,7 @@
           <el-date-picker v-model="rebuildForm.period" type="month" placeholder="閫夋嫨鏈堜唤" value-format="YYYY-MM" class="!w-full" />
         </el-form-item>
         <el-form-item label="澶囨敞">
-          <el-input v-model="rebuildForm.remark" type="textarea" placeholder="璇疯緭鍏ュ娉? />
+          <el-input v-model="rebuildForm.remark" type="textarea" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -393,7 +398,7 @@ const clearDetailDrawer = () => {
 
 const handleRebuildAll = () => {
   if (!list.value.length) {
-    message.warning('鏆傛棤鏁版嵁鍙噸璺?)
+    message.warning('暂无数据可重跑')
     return
   }
   const first = list.value[0]
@@ -408,7 +413,7 @@ const handleRebuildAll = () => {
 
 const confirmRebuild = async () => {
   if (!rebuildForm.productId || !rebuildForm.period) {
-    message.warning('璇烽€夋嫨浜у搧鍜屾湡闂?)
+    message.warning('请选择产品和期间')
     return
   }
   rebuilding.value = true
@@ -433,7 +438,7 @@ const confirmRebuild = async () => {
 const handleExportExternal = async () => {
   try {
     const data = await DualProductCostApi.exportExternalProductCost(queryParams)
-    download.excel(data, '浜у搧澶栭儴璐︽垚鏈?xlsx')
+    download.excel(data, '产品外部账成本.xlsx')
   } catch {
     // 瀵煎嚭澶辫触
   }
@@ -442,7 +447,7 @@ const handleExportExternal = async () => {
 const handleExportInternal = async () => {
   try {
     const data = await DualProductCostApi.exportInternalProductCost(queryParams)
-    download.excel(data, '浜у搧鍐呴儴璐︽垚鏈?xlsx')
+    download.excel(data, '产品内部账成本.xlsx')
   } catch {
     // 瀵煎嚭澶辫触
   }

@@ -3,7 +3,7 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">棰勪粯娆?/div>
+          <div class="finance-shell__page-title">棰勪粯娆?</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
               褰撳墠鍒楄〃 {{ total }}
@@ -21,7 +21,7 @@
 
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">鍩虹绛涢€?/div>
+        <div class="finance-shell__section-title">鍩虹绛涢�?</div>
         <el-button link type="primary" @click="advancedExpanded = !advancedExpanded">
           <Icon :icon="advancedExpanded ? 'ep:arrow-up' : 'ep:arrow-down'" class="mr-5px" />
           {{ advancedExpanded ? '鏀惰捣楂樼骇鎼滅储' : '灞曞紑楂樼骇鎼滅储' }}
@@ -35,7 +35,7 @@
         @submit.prevent
       >
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
-          <el-form-item label="棰勪粯娆惧崟鍙? prop="no">
+          <el-form-item label="棰勪粯娆惧崟鍙?" prop="no">
             <el-input
               v-model="queryParams.no"
               placeholder="璇疯緭鍏ラ浠樻鍗曞彿"
@@ -49,18 +49,18 @@
               v-model="queryParams.prepaymentTime"
               value-format="YYYY-MM-DD HH:mm:ss"
               type="daterange"
-              start-placeholder="寮€濮嬫棩鏈?
+              start-placeholder="寮€濮嬫棩鏈?"
               end-placeholder="缁撴潫鏃ユ湡"
               :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
               class="!w-full"
             />
           </el-form-item>
-          <el-form-item label="渚涘簲鍟? prop="supplierId">
+          <el-form-item label="渚涘簲鍟?" prop="supplierId">
             <el-select
               v-model="queryParams.supplierId"
               clearable
               filterable
-              placeholder="璇烽€夋嫨渚涘簲鍟?
+              placeholder="璇烽€夋嫨渚涘簲鍟?"
               class="!w-full"
             >
               <el-option
@@ -71,8 +71,8 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="鐘舵€? prop="status">
-            <el-select v-model="queryParams.status" clearable placeholder="璇烽€夋嫨鐘舵€? class="!w-full">
+          <el-form-item label="状态" prop="status">
+            <el-select v-model="queryParams.status" clearable placeholder="请选择状态" class="!w-full">
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -83,12 +83,12 @@
           </el-form-item>
         </div>
         <div v-if="advancedExpanded" class="finance-shell__query-advanced">
-          <el-form-item label="鍒涘缓浜? prop="creator">
+          <el-form-item label="创建人" prop="creator">
             <el-select
               v-model="queryParams.creator"
               clearable
               filterable
-              placeholder="璇烽€夋嫨鍒涘缓浜?
+              placeholder="请选择创建人"
               class="!w-full"
             >
               <el-option
@@ -134,7 +134,7 @@
           <el-form-item label="澶囨敞" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="璇疯緭鍏ュ娉?
+              placeholder="璇疯緭鍏ュ娉?"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
@@ -157,7 +157,7 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">棰勪粯娆惧垪琛?/div>
+          <div class="finance-shell__section-title">棰勪粯娆惧垪琛?</div>
           <div class="finance-shell__toolbar-count">
             褰撳墠鍏?<strong>{{ total }}</strong> 鏉?          </div>
         </div>
@@ -186,7 +186,7 @@
       </div>
 
       <div v-if="listErrorMessage && !list.length" class="finance-prepayment-page__state">
-        <el-result icon="error" title="棰勪粯娆惧姞杞藉け璐? :sub-title="listErrorMessage">
+        <el-result icon="error" title="预付款加载失败" :sub-title="listErrorMessage">
           <template #extra>
             <el-button type="primary" @click="getList">閲嶈瘯</el-button>
           </template>
@@ -209,7 +209,7 @@
               label="閫夋嫨"
               :selectable="canSelectForBatchDelete"
             />
-            <el-table-column label="棰勪粯娆句俊鎭? min-width="220">
+            <el-table-column label="预付款信息" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__primary-text">{{ row.no || '-' }}</span>
@@ -250,7 +250,7 @@
                 <span class="finance-shell__amount">{{ formatAmount(row.remainPrice) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="鐘舵€? min-width="100" align="center">
+            <el-table-column label="状态" min-width="100" align="center">
               <template #default="{ row }">
                 <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
               </template>
@@ -336,7 +336,7 @@
             </el-table-column>
           </el-table>
         </div>
-        <el-empty v-else class="finance-prepayment-page__state" description="鏆傛棤棰勪粯娆炬暟鎹? />
+        <el-empty v-else class="finance-prepayment-page__state" description="暂无预付款数据" />
         <Pagination
           v-if="total > 0"
           :total="total"
@@ -361,18 +361,18 @@
       <div class="finance-prepayment-page__drawer">
         <div v-if="traceData.prepayment" class="finance-shell__context-card">
           <div class="finance-shell__context-main">
-            <div class="finance-shell__context-title">{{ traceData.prepayment.no || '棰勪粯娆捐拷婧? }}</div>
+            <div class="finance-shell__context-title">{{ traceData.prepayment.no || '预付款追踪' }}</div>
             <div class="finance-shell__context-subtitle">
               {{ traceData.prepayment.supplierName || '-' }} / {{ traceData.prepayment.accountName || '-' }}
             </div>
           </div>
           <div class="finance-shell__context-meta">
             <div class="finance-shell__context-meta-item">
-              <span>鐘舵€?/span>
+              <span>状态</span>
               <span>{{ resolveErpAuditStatusLabel(traceData.prepayment.status) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>鍓╀綑閲戦</span>
+              <span>剩余金额</span>
               <span>{{ formatAmount(traceData.prepayment.remainPrice) }}</span>
             </div>
           </div>
@@ -382,7 +382,7 @@
           <el-result
             v-if="traceErrorMessage"
             icon="error"
-            title="棰勪粯娆捐拷婧姞杞藉け璐?
+            title="棰勪粯娆捐拷婧姞杞藉け璐?"
             :sub-title="traceErrorMessage"
           >
             <template #extra>
@@ -437,7 +437,7 @@
                 >
                   <el-table-column type="selection" width="42" :selectable="canSelectRollbackRow" />
                   <el-table-column prop="bizNo" label="涓氬姟鍗曞彿" min-width="150" />
-                  <el-table-column prop="statusName" label="鐘舵€? min-width="110" align="center" />
+                  <el-table-column prop="statusName" label="鐘舵€?" min-width="110" align="center" />
                   <el-table-column label="鏍搁攢閲戦" min-width="120" align="right">
                     <template #default="{ row }">
                       <span class="finance-shell__amount">{{ formatAmount(row.allocateAmount) }}</span>
@@ -616,7 +616,7 @@ const handleDelete = async (ids: number[]) => {
     return
   }
   try {
-    await message.confirm(`纭畾鍒犻櫎閫変腑鐨?${ids.length} 鏉￠浠樻鍚楋紵`)
+    await message.confirm(`确认删除选中的 ${ids.length} 条预付款吗？`)
   } catch (error) {
     if (isActionCanceled(error)) {
       return
@@ -632,7 +632,7 @@ const handleDelete = async (ids: number[]) => {
   }
   try {
     await FinancePrepaymentApi.deleteFinancePrepayment(ids)
-    message.success('鍒犻櫎鎴愬姛')
+    message.success('删除成功')
     await getList()
   } finally {
     rowDeleteLoadingId.value = undefined
@@ -645,7 +645,7 @@ const handleUpdateStatus = async (id?: number, status?: number) => {
     return
   }
   try {
-    await message.confirm(`纭畾${status === 20 ? '瀹℃牳' : '鍙嶅鏍?}璇ラ浠樻鍚楋紵`)
+    await message.confirm(`确认${status === 20 ? '审核' : '反审核'}该预付款吗？`)
   } catch (error) {
     if (isActionCanceled(error)) {
       return
@@ -655,7 +655,7 @@ const handleUpdateStatus = async (id?: number, status?: number) => {
   statusLoadingId.value = Number(id)
   try {
     await FinancePrepaymentApi.updateFinancePrepaymentStatus(Number(id), Number(status))
-    message.success(`${status === 20 ? '瀹℃牳' : '鍙嶅鏍?}鎴愬姛`)
+    message.success(`${status === 20 ? '审核' : '反审核'}成功`)
     await getList()
     if (traceDrawerVisible.value && currentTraceId.value === Number(id)) {
       await loadTrace(Number(id))
@@ -732,7 +732,7 @@ const handleRollbackAllocate = async () => {
     return
   }
   try {
-    await message.confirm('纭畾鍥炴粴閫変腑鐨勬牳閿€璁板綍鍚楋紵')
+    await message.confirm('确认回滚选中的核销记录吗？')
   } catch (error) {
     if (isActionCanceled(error)) {
       return
@@ -744,7 +744,7 @@ const handleRollbackAllocate = async () => {
     await FinancePrepaymentApi.rollbackFinancePrepaymentAllocate({
       ids: selectedRollbackIds.value
     })
-    message.success('鍥炴粴鎴愬姛')
+    message.success('回滚成功')
     if (currentTraceId.value) {
       await Promise.all([getList(), loadTrace(currentTraceId.value)])
     } else {

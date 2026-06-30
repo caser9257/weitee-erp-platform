@@ -37,7 +37,7 @@
 
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?/div>
+        <div class="finance-shell__section-title">绛涢€夋潯浠?</div>
       </div>
       <el-form
         ref="queryFormRef"
@@ -86,7 +86,7 @@
           <el-form-item label="绉戠洰缂栫爜" prop="subjectCode">
             <el-input
               v-model="queryParams.subjectCode"
-              placeholder="璇疯緭鍏ョ鐩紪鐮?
+              placeholder="璇疯緭鍏ョ鐩紪鐮?"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
@@ -95,7 +95,7 @@
           <el-form-item label="绉戠洰鍚嶇О" prop="subjectName">
             <el-input
               v-model="queryParams.subjectName"
-              placeholder="璇疯緭鍏ョ鐩悕绉?
+              placeholder="璇疯緭鍏ョ鐩悕绉?"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
@@ -305,7 +305,7 @@
                 class="finance-shell__table finance-shell__table--dense"
                 :show-overflow-tooltip="false"
               >
-                <el-table-column label="鍑瘉鍙? prop="voucherNo" min-width="150" />
+                <el-table-column label="鍑瘉鍙?" prop="voucherNo" min-width="150" />
                 <el-table-column label="鍑瘉鏃堕棿" prop="voucherTime" min-width="170">
                   <template #default="{ row }">{{ formatDateTimeValue(row.voucherTime) }}</template>
                 </el-table-column>
@@ -326,7 +326,7 @@
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="鍑瘉鐘舵€? prop="voucherStatusName" min-width="120" />
+                <el-table-column label="鍑瘉鐘舵€?" prop="voucherStatusName" min-width="120" />
               </el-table>
             </div>
             <el-empty v-else description="鏆傛棤鎬昏处鏄庣粏鏁版嵁" />
@@ -563,7 +563,7 @@ const handleRebuild = async () => {
   }
   try {
     await ElMessageBox.confirm(
-      '纭閲嶅缓褰撳墠璐︾翱绉戠洰浣欓鍚楋紵绯荤粺灏嗘寜宸茶繃璐﹀嚟璇侀噸鏂扮敓鎴愪綑棰濄€?,
+      '确认重建当前账簿科目余额吗？系统将按已过账凭证重新生成余额。',
       '閲嶅缓浣欓',
       {
         confirmButtonText: '纭閲嶅缓',
@@ -581,7 +581,7 @@ const handleRebuild = async () => {
         ledgerId: queryParams.ledgerId
       })
     message.success(
-      `閲嶅缓鎴愬姛锛氶噸鏀惧嚟璇?${result.voucherCount || 0} 鏉★紝鍒嗗綍 ${result.entryCount || 0} 鏉★紝绉戠洰 ${result.subjectCount || 0} 涓猔
+      `重建成功：重放凭证 ${result.voucherCount || 0} 条，分录 ${result.entryCount || 0} 条，科目 ${result.subjectCount || 0} 个`
     )
     await getList()
     if (detailDrawerOpen.value && selectedRow.value?.subjectCode) {
