@@ -47,6 +47,15 @@ const followUpPage = defineAsyncComponent(
 const projectWarningPage = defineAsyncComponent(
   () => import('@/views/pmo/project/warning/index.vue')
 )
+const saleProjectInitiationPage = defineAsyncComponent(
+  () => import('@/views/erp/sale/project-initiation/index.vue')
+)
+const customerSuppliedMaterialPage = defineAsyncComponent(
+  () => import('@/views/erp/sale/customer-supplied-material/index.vue')
+)
+const incomingProcessingPage = defineAsyncComponent(
+  () => import('@/views/erp/sale/incoming-processing/index.vue')
+)
 const financeExpensePage = defineAsyncComponent(
   () => import('@/views/erp/finance/expense/index.vue')
 )
@@ -64,6 +73,15 @@ const resolvedComponent = computed(() => {
   }
   if (path === '/pmo/warning') {
     return projectWarningPage
+  }
+  if (path === '/sales/project-initiation') {
+    return saleProjectInitiationPage
+  }
+  if (path === '/sales/customer-supplied-material') {
+    return customerSuppliedMaterialPage
+  }
+  if (path === '/sales/incoming-processing') {
+    return incomingProcessingPage
   }
   if (path === '/finance/expense' || path === '/erp/finance/expense') {
     return financeExpensePage
