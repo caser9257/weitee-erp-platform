@@ -1,0 +1,85 @@
+import { useCache, CACHE_KEY } from '@/hooks/web/useCache'
+import { TokenType } from '@/api/login/types'
+import { decrypt, encrypt } from '@/utils/jsencrypt'
+
+const { wsCache } = useCache()
+
+const AccessTokenKey = 'ACCESS_TOKEN'
+const RefreshTokenKey = 'REFRESH_TOKEN'
+
+// 鑾峰彇token
+export const getAccessToken = () => {
+  const accessToken = wsCache.get(AccessTokenKey)
+  return accessToken ? accessToken : wsCache.get('ACCESS_TOKEN')
+}
+
+// 鍒锋柊token
+export const getRefreshToken = () => {
+  return wsCache.get(RefreshTokenKey)
+}
+
+// 璁剧疆token
+export const setToken = (token: TokenType) => {
+  wsCache.set(RefreshTokenKey, token.refreshToken)
+  wsCache.set(AccessTokenKey, token.accessToken)
+}
+
+// 鍒犻櫎token
+export const removeToken = () => {
+  wsCache.delete(AccessTokenKey)
+  wsCache.delete(RefreshTokenKey)
+}
+
+/** 鏍煎紡鍖杢oken锛坖wt鏍煎紡锛?*/
+export const formatToken = (token: string): string => {
+  return 'Bearer ' + token
+}
+
+// ========== 璐﹀彿鐩稿叧 ==========
+
+export type LoginFormType = {
+  username: string
+  password: string
+  rememberMe: boolean
+}
+
+export const getLoginForm = () => {
+  const loginForm: LoginFormType = wsCache.get(CACHE_KEY.LoginForm)
+  if (loginForm) {
+    loginForm.password = decrypt(loginForm.password) as string
+  }
+  return loginForm
+}
+
+export const setLoginForm = (loginForm: LoginFormType) => {
+  loginForm.password = encrypt(loginForm.password) as string
+  wsCache.set(CACHE_KEY.LoginForm, loginForm, { exp: 30 * 24 * 60 * 60 })
+}
+
+export const removeLoginForm = () => {
+  wsCache.delete(CACHE_KEY.LoginForm)
+}
+
+const TenantIdKey = 'tenantId'
+const VisitTenantIdKey = 'visitTenantId'
+
+export const getTenantId = () => {
+  return wsCache.get((CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey)
+}
+
+export const setTenantId = (tenantId: number | string) => {
+  wsCache.set((CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey, tenantId)
+}
+
+export const getVisitTenantId = () => {
+  return wsCache.get(
+    (CACHE_KEY as typeof CACHE_KEY & { VisitTenantId?: string }).VisitTenantId || VisitTenantIdKey
+  )
+}
+
+export const setVisitTenantId = (visitTenantId: number | string) => {
+  wsCache.set(
+    (CACHE_KEY as typeof CACHE_KEY & { VisitTenantId?: string }).VisitTenantId || VisitTenantIdKey,
+    visitTenantId
+  )
+}
