@@ -1,304 +1,434 @@
 <template>
-  <doc-alert title="【合同】合同管理、合同提醒" url="https://doc.iocoder.cn/crm/contract/" />
-  <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
+  <div class="sales-page-shell">
+    <doc-alert title="【合同】合同管理、合同提醒" url="https://doc.iocoder.cn/crm/contract/" />
+    <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
 
-  <ContentWrap>
-    <!-- 搜索工作栏 -->
-    <el-form
-      ref="queryFormRef"
-      :inline="true"
-      :model="queryParams"
-      class="-mb-15px"
-      label-width="68px"
-    >
-      <el-form-item label="合同编号" prop="no">
-        <el-input
-          v-model="queryParams.no"
-          class="!w-240px"
-          clearable
-          placeholder="请输入合同编号"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="合同名称" prop="name">
-        <el-input
-          v-model="queryParams.name"
-          class="!w-240px"
-          clearable
-          placeholder="请输入合同名称"
-          @keyup.enter="handleQuery"
-        />
-        <el-form-item label="客户" prop="customerId">
-          <el-select
-            v-model="queryParams.customerId"
-            class="!w-240px"
-            clearable
-            lable-key="name"
-            placeholder="请选择客户"
-            value-key="id"
-            @keyup.enter="handleQuery"
+    <ContentWrap class="sales-page-shell__hero">
+      <div class="page-hero">
+        <div class="page-hero__main">
+          <p class="page-hero__eyebrow">销售合同评审台账</p>
+          <h1 class="page-hero__title">客户与合同评审</h1>
+          <p class="page-hero__desc">
+            把客户、商机、合同金额、回款进度与审批状态聚合进同一张销售评审台账，减少来回切页确认信息。
+          </p>
+        </div>
+        <div class="page-hero__stats">
+          <div class="hero-stat-card">
+            <span class="hero-stat-card__label">当前结果</span>
+            <strong class="hero-stat-card__value">{{ total }}</strong>
+            <span class="hero-stat-card__meta">本次筛选合同数</span>
+          </div>
+          <div class="hero-stat-card">
+            <span class="hero-stat-card__label">合同总额</span>
+            <strong class="hero-stat-card__value hero-stat-card__value--mono">
+              {{ formatMoney(contractStats.totalPrice) }}
+            </strong>
+            <span class="hero-stat-card__meta">当前页合同金额汇总</span>
+          </div>
+          <div class="hero-stat-card">
+            <span class="hero-stat-card__label">已回款</span>
+            <strong class="hero-stat-card__value hero-stat-card__value--mono">
+              {{ formatMoney(contractStats.receivedPrice) }}
+            </strong>
+            <span class="hero-stat-card__meta">当前页累计回款</span>
+          </div>
+          <div class="hero-stat-card">
+            <span class="hero-stat-card__label">待审批</span>
+            <strong class="hero-stat-card__value">{{ contractStats.pendingAuditCount }}</strong>
+            <span class="hero-stat-card__meta">审核状态为草稿 / 待提审</span>
+          </div>
+        </div>
+      </div>
+    </ContentWrap>
+
+    <ContentWrap class="sales-page-shell__search-card">
+      <div class="search-card__header">
+        <div>
+          <div class="search-card__title">合同筛选</div>
+          <div class="search-card__subtitle"
+            >先切换归属范围，再按合同号、客户与名称快速缩小结果。</div
           >
-            <el-option
-              v-for="item in customerList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id!"
+        </div>
+      </div>
+
+      <el-tabs v-model="activeName" class="contract-scene-tabs" @tab-click="handleTabClick">
+        <el-tab-pane label="我负责的" name="1" />
+        <el-tab-pane label="我参与的" name="2" />
+        <el-tab-pane label="下属负责的" name="3" />
+      </el-tabs>
+
+      <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="query-form">
+        <div class="query-form__grid">
+          <el-form-item label="合同编号" prop="no">
+            <el-input
+              v-model="queryParams.no"
+              clearable
+              placeholder="请输入合同编号"
+              @keyup.enter="handleQuery"
             />
-          </el-select>
-        </el-form-item>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="handleQuery">
-          <Icon class="mr-5px" icon="ep:search" />
-          搜索
-        </el-button>
-        <el-button @click="resetQuery">
-          <Icon class="mr-5px" icon="ep:refresh" />
-          重置
-        </el-button>
-        <el-button v-hasPermi="['crm:contract:create']" type="primary" @click="openForm('create')">
-          <Icon class="mr-5px" icon="ep:plus" />
-          新增
-        </el-button>
-        <el-button
-          v-hasPermi="['crm:contract:export']"
-          :loading="exportLoading"
-          plain
-          type="success"
-          @click="handleExport"
+          </el-form-item>
+          <el-form-item label="合同名称" prop="name">
+            <el-input
+              v-model="queryParams.name"
+              clearable
+              placeholder="请输入合同名称"
+              @keyup.enter="handleQuery"
+            />
+          </el-form-item>
+          <el-form-item label="客户" prop="customerId">
+            <el-select
+              v-model="queryParams.customerId"
+              clearable
+              filterable
+              placeholder="请选择客户"
+            >
+              <el-option
+                v-for="item in customerList"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id!"
+              />
+            </el-select>
+          </el-form-item>
+        </div>
+        <div class="query-form__actions">
+          <el-button :loading="loading" type="primary" @click="handleQuery">
+            <Icon class="mr-5px" icon="ep:search" />
+            查询
+          </el-button>
+          <el-button @click="resetQuery">
+            <Icon class="mr-5px" icon="ep:refresh" />
+            重置
+          </el-button>
+        </div>
+      </el-form>
+    </ContentWrap>
+
+    <ContentWrap class="sales-page-shell__table-card">
+      <div class="table-toolbar">
+        <div class="table-toolbar__main">
+          <div class="table-toolbar__title">合同评审列表</div>
+          <div class="table-toolbar__meta">
+            当前场景：<strong>{{ currentSceneLabel }}</strong>
+            <span>共 {{ total }} 条</span>
+          </div>
+        </div>
+        <div class="table-toolbar__actions">
+          <el-button
+            v-hasPermi="['crm:contract:create']"
+            type="primary"
+            @click="openForm('create')"
+          >
+            <Icon class="mr-5px" icon="ep:plus" />
+            新增合同
+          </el-button>
+          <el-button
+            v-hasPermi="['crm:contract:export']"
+            :loading="exportLoading"
+            plain
+            type="success"
+            @click="handleExport"
+          >
+            <Icon class="mr-5px" icon="ep:download" />
+            导出
+          </el-button>
+        </div>
+      </div>
+
+      <div class="table-card__body">
+        <el-table
+          v-loading="loading"
+          :data="list"
+          stripe
+          class="sales-table contract-table"
+          :show-overflow-tooltip="false"
         >
-          <Icon class="mr-5px" icon="ep:download" />
-          导出
-        </el-button>
-      </el-form-item>
-    </el-form>
-  </ContentWrap>
+          <el-table-column label="合同信息" min-width="260" fixed="left">
+            <template #default="{ row }">
+              <div class="cell-stack">
+                <div class="cell-stack__title-row">
+                  <span class="cell-stack__mono">{{ row.no || '-' }}</span>
+                  <span class="soft-pill" :class="auditPillClass(row.auditStatus)">
+                    {{ auditStatusLabel(row.auditStatus) }}
+                  </span>
+                </div>
+                <el-link
+                  :underline="false"
+                  type="primary"
+                  class="cell-stack__title"
+                  @click="openDetail(row.id)"
+                >
+                  {{ row.name }}
+                </el-link>
+                <div class="cell-stack__meta">
+                  <span>下单：{{ formatDateText(row.orderDate, 'YYYY-MM-DD') }}</span>
+                  <span>开始：{{ formatDateText(row.startTime, 'YYYY-MM-DD') }}</span>
+                  <span>结束：{{ formatDateText(row.endTime, 'YYYY-MM-DD') }}</span>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
 
-  <!-- 列表 -->
-  <ContentWrap>
-    <el-tabs v-model="activeName" @tab-click="handleTabClick">
-      <el-tab-pane label="我负责的" name="1" />
-      <el-tab-pane label="我参与的" name="2" />
-      <el-tab-pane label="下属负责的" name="3" />
-    </el-tabs>
-    <el-table v-loading="loading" :data="list" :show-overflow-tooltip="true" :stripe="true">
-      <el-table-column align="center" fixed="left" label="合同编号" prop="no" width="180" />
-      <el-table-column align="center" fixed="left" label="合同名称" prop="name" width="160">
-        <template #default="scope">
-          <el-link :underline="false" type="primary" @click="openDetail(scope.row.id)">
-            {{ scope.row.name }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="客户名称" prop="customerName" width="120">
-        <template #default="scope">
-          <el-link
-            :underline="false"
-            type="primary"
-            @click="openCustomerDetail(scope.row.customerId)"
-          >
-            {{ scope.row.customerName }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="商机名称" prop="businessName" width="130">
-        <template #default="scope">
-          <el-link
-            :underline="false"
-            type="primary"
-            @click="openBusinessDetail(scope.row.businessId)"
-          >
-            {{ scope.row.businessName }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column
-        align="center"
-        label="合同金额（元）"
-        prop="totalPrice"
-        width="140"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        align="center"
-        label="下单时间"
-        prop="orderDate"
-        width="120"
-        :formatter="dateFormatter2"
-      />
-      <el-table-column
-        align="center"
-        label="合同开始时间"
-        prop="startTime"
-        width="120"
-        :formatter="dateFormatter2"
-      />
-      <el-table-column
-        align="center"
-        label="合同结束时间"
-        prop="endTime"
-        width="120"
-        :formatter="dateFormatter2"
-      />
-      <el-table-column align="center" label="客户签约人" prop="contactName" width="130">
-        <template #default="scope">
-          <el-link
-            :underline="false"
-            type="primary"
-            @click="openContactDetail(scope.row.signContactId)"
-          >
-            {{ scope.row.signContactName }}
-          </el-link>
-        </template>
-      </el-table-column>
-      <el-table-column align="center" label="公司签约人" prop="signUserName" width="130" />
-      <el-table-column align="center" label="备注" prop="remark" width="200" />
-      <el-table-column
-        align="center"
-        label="已回款金额（元）"
-        prop="totalReceivablePrice"
-        width="140"
-        :formatter="erpPriceTableColumnFormatter"
-      />
-      <el-table-column
-        align="center"
-        label="未回款金额（元）"
-        prop="totalReceivablePrice"
-        width="140"
-        :formatter="erpPriceTableColumnFormatter"
-      >
-        <template #default="scope">
-          {{ erpPriceInputFormatter(scope.row.totalPrice - scope.row.totalReceivablePrice) }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="最后跟进时间"
-        prop="contactLastTime"
-        width="180px"
-      />
-      <el-table-column align="center" label="负责人" prop="ownerUserName" width="120" />
-      <el-table-column align="center" label="所属部门" prop="ownerUserDeptName" width="100px" />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="更新时间"
-        prop="updateTime"
-        width="180px"
-      />
-      <el-table-column
-        :formatter="dateFormatter"
-        align="center"
-        label="创建时间"
-        prop="createTime"
-        width="180px"
-      />
-      <el-table-column align="center" label="创建人" prop="creatorName" width="120" />
-      <el-table-column align="center" fixed="right" label="合同状态" prop="auditStatus" width="120">
-        <template #default="scope">
-          <dict-tag :type="DICT_TYPE.CRM_AUDIT_STATUS" :value="scope.row.auditStatus" />
-        </template>
-      </el-table-column>
-      <el-table-column fixed="right" label="操作" width="250">
-        <template #default="scope">
-          <el-button
-            v-if="scope.row.auditStatus === 0"
-            v-hasPermi="['crm:contract:update']"
-            link
-            type="primary"
-            @click="openForm('update', scope.row.id)"
-          >
-            编辑
-          </el-button>
-          <el-button
-            v-if="scope.row.auditStatus === 0"
-            v-hasPermi="['crm:contract:update']"
-            link
-            type="primary"
-            @click="handleSubmit(scope.row)"
-          >
-            提交审核
-          </el-button>
-          <el-button
-            v-else
-            link
-            v-hasPermi="['crm:contract:update']"
-            type="primary"
-            @click="handleProcessDetail(scope.row)"
-          >
-            查看审批
-          </el-button>
-          <el-button
-            v-hasPermi="['crm:contract:query']"
-            link
-            type="primary"
-            @click="openDetail(scope.row.id)"
-          >
-            详情
-          </el-button>
-          <el-button
-            v-hasPermi="['crm:contract:delete']"
-            link
-            type="danger"
-            @click="handleDelete(scope.row.id)"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <!-- 分页 -->
-    <Pagination
-      v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
-      :total="total"
-      @pagination="getList"
-    />
-  </ContentWrap>
+          <el-table-column label="客户与商机" min-width="220">
+            <template #default="{ row }">
+              <div class="cell-stack">
+                <el-link
+                  :underline="false"
+                  type="primary"
+                  class="cell-stack__title"
+                  @click="openCustomerDetail(row.customerId)"
+                >
+                  {{ row.customerName || '-' }}
+                </el-link>
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">商机</span>
+                  <el-link
+                    :underline="false"
+                    type="primary"
+                    @click="openBusinessDetail(row.businessId)"
+                  >
+                    {{ row.businessName || '未关联商机' }}
+                  </el-link>
+                </div>
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">签约联系人</span>
+                  <el-link
+                    :underline="false"
+                    type="primary"
+                    @click="openContactDetail(row.signContactId)"
+                  >
+                    {{ row.signContactName || '-' }}
+                  </el-link>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
 
-  <!-- 表单弹窗：添加/修改 -->
-  <ContractForm ref="formRef" @success="getList" />
+          <el-table-column label="签约与归属" min-width="180">
+            <template #default="{ row }">
+              <div class="cell-stack">
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">公司签约人</span>
+                  <span>{{ row.signUserName || '-' }}</span>
+                </div>
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">负责人</span>
+                  <span>{{ row.ownerUserName || '-' }}</span>
+                </div>
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">所属部门</span>
+                  <span>{{ row.ownerUserDeptName || '未配置部门' }}</span>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="合同金额" min-width="190" align="right">
+            <template #default="{ row }">
+              <div class="amount-stack">
+                <div class="amount-stack__main">{{ formatMoney(row.totalPrice) }}</div>
+                <div class="amount-stack__meta"
+                  >已回款 {{ formatMoney(row.totalReceivablePrice) }}</div
+                >
+                <div class="amount-stack__meta amount-stack__meta--warning">
+                  未回款 {{ formatMoney(getUnreceivedPrice(row)) }}
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="跟进与备注" min-width="220">
+            <template #default="{ row }">
+              <div class="cell-stack">
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">最后跟进</span>
+                  <span>{{ formatDateText(row.contactLastTime) }}</span>
+                </div>
+                <div class="cell-stack__meta cell-stack__meta--truncate" :title="row.remark || '-'">
+                  {{ row.remark || '暂无备注' }}
+                </div>
+                <div class="cell-stack__meta">
+                  <span class="cell-stack__label">创建</span>
+                  <span>{{ formatDateText(row.createTime) }}</span>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+
+          <el-table-column fixed="right" label="操作" width="240">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.auditStatus === 0"
+                v-hasPermi="['crm:contract:update']"
+                link
+                type="primary"
+                @click="openForm('update', row.id)"
+              >
+                编辑
+              </el-button>
+              <el-button
+                v-if="row.auditStatus === 0"
+                v-hasPermi="['crm:contract:update']"
+                link
+                type="primary"
+                @click="handleSubmit(row)"
+              >
+                提交审核
+              </el-button>
+              <el-button
+                v-else
+                v-hasPermi="['crm:contract:update']"
+                link
+                type="primary"
+                @click="handleProcessDetail(row)"
+              >
+                查看审批
+              </el-button>
+              <el-button
+                v-hasPermi="['crm:contract:query']"
+                link
+                type="primary"
+                @click="openDetail(row.id)"
+              >
+                详情
+              </el-button>
+              <el-button
+                v-hasPermi="['crm:contract:delete']"
+                link
+                type="danger"
+                @click="handleDelete(row.id)"
+              >
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+
+          <template #empty>
+            <el-empty description="暂无合同数据，试试调整筛选条件" />
+          </template>
+        </el-table>
+      </div>
+
+      <Pagination
+        v-model:limit="queryParams.pageSize"
+        v-model:page="queryParams.pageNo"
+        :total="total"
+        @pagination="getList"
+      />
+    </ContentWrap>
+
+    <ContractForm ref="formRef" @success="getList" />
+  </div>
 </template>
+
 <script lang="ts" setup>
-import { dateFormatter, dateFormatter2 } from '@/utils/formatTime'
+import { formatDate } from '@/utils/formatTime'
 import download from '@/utils/download'
 import * as ContractApi from '@/api/crm/contract'
 import ContractForm from './ContractForm.vue'
-import { DICT_TYPE } from '@/utils/dict'
-import { erpPriceInputFormatter, erpPriceTableColumnFormatter } from '@/utils'
 import * as CustomerApi from '@/api/crm/customer'
 import { TabsPaneContext } from 'element-plus'
 
 defineOptions({ name: 'CrmContract' })
 
-const message = useMessage() // 消息弹窗
-const { t } = useI18n() // 国际化
+const message = useMessage()
+const { t } = useI18n()
 
-const loading = ref(true) // 列表的加载中
-const total = ref(0) // 列表的总页数
-const list = ref([]) // 列表的数据
+const loading = ref(true)
+const total = ref(0)
+const list = ref<ContractApi.ContractVO[]>([])
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
-  sceneType: '1', // 默认和 activeName 相等
+  sceneType: '1',
   name: null,
   customerId: null,
   orderDate: [],
   no: null
 })
-const queryFormRef = ref() // 搜索的表单
-const exportLoading = ref(false) // 导出的加载中
-const activeName = ref('1') // 列表 tab
-const customerList = ref<CustomerApi.CustomerVO[]>([]) // 客户列表
+const queryFormRef = ref()
+const exportLoading = ref(false)
+const activeName = ref('1')
+const customerList = ref<CustomerApi.CustomerVO[]>([])
 
-/** tab 切换 */
+const sceneLabelMap: Record<string, string> = {
+  '1': '我负责的',
+  '2': '我参与的',
+  '3': '下属负责的'
+}
+
+const currentSceneLabel = computed(() => sceneLabelMap[activeName.value] || '合同池')
+
+const contractStats = computed(() => {
+  return list.value.reduce(
+    (acc, item) => {
+      acc.totalPrice += Number(item.totalPrice || 0)
+      acc.receivedPrice += Number(item.totalReceivablePrice || 0)
+      if (Number(item.auditStatus) === 0) {
+        acc.pendingAuditCount += 1
+      }
+      return acc
+    },
+    {
+      totalPrice: 0,
+      receivedPrice: 0,
+      pendingAuditCount: 0
+    }
+  )
+})
+
+const formatDateText = (value?: string, pattern = 'YYYY-MM-DD HH:mm') => {
+  if (!value) {
+    return '-'
+  }
+  return formatDate(new Date(value), pattern)
+}
+
+const formatMoney = (value?: number | string | null) => {
+  const amount = Number(value || 0)
+  return `¥${amount.toLocaleString('zh-CN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
+
+const getUnreceivedPrice = (row: ContractApi.ContractVO) => {
+  return Number(row.totalPrice || 0) - Number(row.totalReceivablePrice || 0)
+}
+
+const auditStatusLabel = (status?: number) => {
+  switch (status) {
+    case 0:
+      return '待提审'
+    case 10:
+      return '审批中'
+    case 20:
+      return '已通过'
+    case 30:
+      return '已驳回'
+    default:
+      return '未知'
+  }
+}
+
+const auditPillClass = (status?: number) => {
+  switch (status) {
+    case 20:
+      return 'soft-pill--emerald'
+    case 10:
+      return 'soft-pill--blue'
+    case 30:
+      return 'soft-pill--rose'
+    default:
+      return 'soft-pill--amber'
+  }
+}
+
 const handleTabClick = (tab: TabsPaneContext) => {
   queryParams.sceneType = tab.paneName
   handleQuery()
 }
 
-/** 查询列表 */
 const getList = async () => {
   loading.value = true
   try {
@@ -310,43 +440,33 @@ const getList = async () => {
   }
 }
 
-/** 搜索按钮操作 */
 const handleQuery = () => {
   queryParams.pageNo = 1
   getList()
 }
 
-/** 重置按钮操作 */
 const resetQuery = () => {
-  queryFormRef.value.resetFields()
+  queryFormRef.value?.resetFields()
   handleQuery()
 }
 
-/** 添加/修改操作 */
 const formRef = ref()
 const openForm = (type: string, id?: number) => {
   formRef.value.open(type, id)
 }
 
-/** 删除按钮操作 */
 const handleDelete = async (id: number) => {
   try {
-    // 删除的二次确认
     await message.delConfirm()
-    // 发起删除
     await ContractApi.deleteContract(id)
     message.success(t('common.delSuccess'))
-    // 刷新列表
     await getList()
   } catch {}
 }
 
-/** 导出按钮操作 */
 const handleExport = async () => {
   try {
-    // 导出的二次确认
     await message.exportConfirm()
-    // 发起导出
     exportLoading.value = true
     const data = await ContractApi.exportContract(queryParams)
     download.excel(data, '合同.xls')
@@ -356,7 +476,6 @@ const handleExport = async () => {
   }
 }
 
-/** 提交审核 **/
 const handleSubmit = async (row: ContractApi.ContractVO) => {
   await message.confirm(`您确定提交【${row.name}】审核吗？`)
   await ContractApi.submitContract(row.id)
@@ -364,35 +483,399 @@ const handleSubmit = async (row: ContractApi.ContractVO) => {
   await getList()
 }
 
-/** 查看审批 */
+const { push } = useRouter()
 const handleProcessDetail = (row: ContractApi.ContractVO) => {
   push({ name: 'BpmProcessInstanceDetail', query: { id: row.processInstanceId } })
 }
 
-/** 打开合同详情 */
-const { push } = useRouter()
 const openDetail = (id: number) => {
   push({ name: 'CrmContractDetail', params: { id } })
 }
 
-/** 打开客户详情 */
 const openCustomerDetail = (id: number) => {
   push({ name: 'CrmCustomerDetail', params: { id } })
 }
 
-/** 打开联系人详情 */
 const openContactDetail = (id: number) => {
   push({ name: 'CrmContactDetail', params: { id } })
 }
 
-/** 打开商机详情 */
 const openBusinessDetail = (id: number) => {
   push({ name: 'CrmBusinessDetail', params: { id } })
 }
 
-/** 初始化 **/
 onMounted(async () => {
   await getList()
   customerList.value = await CustomerApi.getCustomerSimpleList()
 })
 </script>
+
+<style lang="scss" scoped>
+.sales-page-shell {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 4px 20px;
+  background: #f5f7fa;
+}
+
+.sales-page-shell__hero,
+.sales-page-shell__search-card,
+.sales-page-shell__table-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.04);
+}
+
+.page-hero {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.page-hero__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-hero__eyebrow {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-hero__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.page-hero__desc {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.page-hero__stats {
+  display: grid;
+  width: min(540px, 100%);
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hero-stat-card {
+  display: flex;
+  min-height: 116px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+}
+
+.hero-stat-card__label {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hero-stat-card__value {
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.hero-stat-card__value--mono {
+  font-size: 22px;
+  font-family: 'DIN Alternate', 'Roboto Mono', 'Courier New', monospace;
+}
+
+.hero-stat-card__meta {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.search-card__header,
+.table-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.search-card__title,
+.table-toolbar__title {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.search-card__subtitle,
+.table-toolbar__meta {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.contract-scene-tabs {
+  margin-top: 14px;
+}
+
+.query-form {
+  margin-top: 16px;
+}
+
+.query-form__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.query-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.table-toolbar {
+  margin-bottom: 16px;
+}
+
+.table-toolbar__main {
+  min-width: 0;
+}
+
+.table-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.table-card__body {
+  overflow-x: auto;
+}
+
+.sales-table {
+  min-width: 1180px;
+}
+
+.cell-stack {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cell-stack__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cell-stack__mono {
+  color: #0f172a;
+  font-family: 'DIN Alternate', 'Roboto Mono', 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cell-stack__title {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  color: #1677ff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cell-stack__meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.cell-stack__meta--truncate {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-stack__label {
+  color: #94a3b8;
+}
+
+.amount-stack {
+  text-align: right;
+}
+
+.amount-stack__main {
+  color: #0f172a;
+  font-family: 'DIN Alternate', 'Roboto Mono', 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.amount-stack__meta {
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.amount-stack__meta--warning {
+  color: #b45309;
+}
+
+.soft-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.soft-pill--blue {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.soft-pill--amber {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.soft-pill--emerald {
+  border-color: #bbf7d0;
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.soft-pill--rose {
+  border-color: #fecdd3;
+  background: #fff1f2;
+  color: #be123c;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+:deep(.el-form-item__label) {
+  padding-bottom: 8px;
+  color: #475569;
+  font-weight: 600;
+}
+
+:deep(.el-input__wrapper),
+:deep(.el-select__wrapper),
+:deep(.el-textarea__inner) {
+  min-height: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px #dbe3ef inset;
+}
+
+:deep(.el-tabs__header) {
+  margin: 0;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  background-color: #e2e8f0;
+}
+
+:deep(.el-tabs__item) {
+  height: 38px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #1677ff;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #1677ff;
+}
+
+:deep(.el-table) {
+  --el-table-header-bg-color: #f8fafc;
+  --el-table-border-color: #e2e8f0;
+  --el-table-row-hover-bg-color: #f8fbff;
+}
+
+:deep(.el-table th.el-table__cell) {
+  color: #64748b;
+  font-weight: 700;
+}
+
+:deep(.el-table td.el-table__cell) {
+  padding-top: 14px;
+  padding-bottom: 14px;
+  vertical-align: top;
+}
+
+@media (max-width: 1280px) {
+  .page-hero {
+    flex-direction: column;
+  }
+
+  .page-hero__stats {
+    width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  .sales-page-shell {
+    padding: 0 0 18px;
+  }
+
+  .page-hero__stats,
+  .query-form__grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .search-card__header,
+  .table-toolbar,
+  .table-toolbar__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .query-form__actions {
+    justify-content: stretch;
+  }
+
+  .query-form__actions :deep(.el-button),
+  .table-toolbar__actions :deep(.el-button) {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+</style>
