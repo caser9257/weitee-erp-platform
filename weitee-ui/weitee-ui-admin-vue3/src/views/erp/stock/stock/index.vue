@@ -1050,10 +1050,6 @@ const syncRouteOpen = async () => {
     queryParams.pageNo = 1
     await getList()
 
-    const nextQuery = { ...route.query }
-    routeOpen.cleanupKeys.forEach((key) => delete nextQuery[key])
-    await replace({ path: route.path, query: nextQuery })
-
     if (routeOpen.action === 'batch-trace') {
       const targetRow = list.value.find(
         (item) =>
@@ -1068,7 +1064,12 @@ const syncRouteOpen = async () => {
           routeOpen.batchNo
         )
       }
+      return
     }
+
+    const nextQuery = { ...route.query }
+    routeOpen.cleanupKeys.forEach((key) => delete nextQuery[key])
+    await replace({ path: route.path, query: nextQuery })
   } finally {
     routeOpenSyncing.value = false
   }
