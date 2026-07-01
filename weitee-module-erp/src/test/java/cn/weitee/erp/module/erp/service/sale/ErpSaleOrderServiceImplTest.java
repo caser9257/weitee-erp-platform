@@ -6,24 +6,39 @@ import cn.weitee.erp.module.erp.controller.admin.sale.vo.order.ErpSaleOrderUpdat
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderAuditLogDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderRejectLogDO;
+import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpMrpStockReservationMapper;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderAuditLogMapper;
+import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderRejectLogMapper;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
+import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
+import cn.weitee.erp.module.erp.enums.ErpBusinessTypeConstants;
+import cn.weitee.erp.module.erp.enums.ErpSettlementTypeConstants;
 import cn.weitee.erp.module.erp.enums.ErpSaleOrderAuditActionTypeConstants;
 import cn.weitee.erp.module.erp.framework.event.ErpSaleOrderApprovedEvent;
+import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.mrp.ErpMrpStockReservationSummaryService;
+import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.project.ErpProjectLifecycleService;
+import cn.weitee.erp.module.erp.service.project.ErpProjectService;
+import cn.weitee.erp.module.erp.service.sale.ErpCustomerService;
+import cn.weitee.erp.module.erp.service.sale.ErpSaleOrderDeliveryReadyService;
+import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +60,8 @@ class ErpSaleOrderServiceImplTest {
     private final AtomicReference<ErpSaleOrderDO> saleOrderRef = new AtomicReference<>();
     private final AtomicReference<Integer> updateCountRef = new AtomicReference<>(1);
     private final AtomicReference<ErpSaleOrderDO> lastUpdateObjRef = new AtomicReference<>();
+    private final AtomicReference<ErpSaleOrderDO> insertedSaleOrderRef = new AtomicReference<>();
+    private final List<ErpSaleOrderItemDO> insertedSaleOrderItems = new ArrayList<>();
     private final List<ErpSaleOrderRejectLogDO> rejectLogs = new ArrayList<>();
     private final List<ErpSaleOrderAuditLogDO> auditLogs = new ArrayList<>();
     private final List<Object> publishedEvents = new ArrayList<>();
@@ -57,16 +74,41 @@ class ErpSaleOrderServiceImplTest {
         saleOrderRef.set(null);
         updateCountRef.set(1);
         lastUpdateObjRef.set(null);
+        insertedSaleOrderRef.set(null);
+        insertedSaleOrderItems.clear();
         rejectLogs.clear();
         auditLogs.clear();
         publishedEvents.clear();
         setField(saleOrderService, "saleOrderMapper", createSaleOrderMapperProxy());
         setField(saleOrderService, "saleOrderRejectLogMapper", createRejectLogMapperProxy());
         setField(saleOrderService, "saleOrderAuditLogMapper", createAuditLogMapperProxy());
+        setField(saleOrderService, "saleOrderItemMapper", createSaleOrderItemMapperProxy());
         setField(saleOrderService, "mrpStockReservationMapper", createProxy(ErpMrpStockReservationMapper.class,
                 (methodName, args) -> "selectListBySourceOrderIds".equals(methodName) ? Collections.emptyList() : 1));
         setField(saleOrderService, "mrpStockReservationSummaryService",
                 createProxy(ErpMrpStockReservationSummaryService.class, (methodName, args) -> null));
+        setField(saleOrderService, "noRedisDAO", new ErpNoRedisDAO() {
+            @Override
+            public String generate(String prefix) {
+                return "SO-TEST-001";
+            }
+        });
+        setField(saleOrderService, "productService", createProxy(ErpProductService.class, (methodName, args) -> {
+            if ("validProductList".equals(methodName)) {
+                return List.of(new cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO()
+                        .setId(101L)
+                        .setUnitId(1001L));
+            }
+            return null;
+        }));
+        setField(saleOrderService, "customerService", createProxy(ErpCustomerService.class, (methodName, args) -> null));
+        setField(saleOrderService, "projectService", createProxy(ErpProjectService.class, (methodName, args) -> null));
+        setField(saleOrderService, "projectLifecycleService",
+                createProxy(ErpProjectLifecycleService.class, (methodName, args) -> null));
+        setField(saleOrderService, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
+        setField(saleOrderService, "saleOrderDeliveryReadyService",
+                createProxy(ErpSaleOrderDeliveryReadyService.class, (methodName, args) -> null));
+        setField(saleOrderService, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
         setField(saleOrderService, "eventPublisher", createEventPublisherProxy());
     }
 
@@ -130,6 +172,27 @@ class ErpSaleOrderServiceImplTest {
         assertEquals(1L, event.getSaleOrderId());
         assertEquals(1, auditLogs.size());
         assertEquals(ErpSaleOrderAuditActionTypeConstants.APPROVE, auditLogs.get(0).getActionType());
+    }
+
+    @Test
+    void updateSaleOrderStatus_shouldDeferApprovedEventUntilAfterCommitWhenSynchronizationActive() {
+        saleOrderRef.set(new ErpSaleOrderDO().setId(11L).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            saleOrderService.updateSaleOrderStatus(buildReqVO(11L, ErpAuditStatus.APPROVE.getStatus(), null));
+
+            assertEquals(0, publishedEvents.size());
+
+            triggerAfterCommitCallbacks();
+
+            assertEquals(1, publishedEvents.size());
+            ErpSaleOrderApprovedEvent event = assertInstanceOf(ErpSaleOrderApprovedEvent.class, publishedEvents.get(0));
+            assertEquals(11L, event.getSaleOrderId());
+        } finally {
+            clearSynchronizationIfActive();
+        }
     }
 
     @Test
@@ -248,15 +311,38 @@ class ErpSaleOrderServiceImplTest {
     }
 
     @Test
-    void updateSaleOrderStatusByBpm_shouldRejectMismatchedProcessInstanceId() {
+    void updateSaleOrderStatusByBpm_shouldDeferApprovedEventUntilAfterCommitWhenSynchronizationActive() throws Exception {
+        saleOrderRef.set(new ErpSaleOrderDO().setId(12L).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-BPM-APPROVE")
+                .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            invokeUpdateSaleOrderStatusByBpm(12L, "PI-BPM-APPROVE", ErpAuditStatus.APPROVE.getStatus(), "通过");
+
+            assertEquals(0, publishedEvents.size());
+
+            triggerAfterCommitCallbacks();
+
+            assertEquals(1, publishedEvents.size());
+            ErpSaleOrderApprovedEvent event = assertInstanceOf(ErpSaleOrderApprovedEvent.class, publishedEvents.get(0));
+            assertEquals(12L, event.getSaleOrderId());
+        } finally {
+            clearSynchronizationIfActive();
+        }
+    }
+
+    @Test
+    void updateSaleOrderStatusByBpm_shouldThrowWhenMapperRejectsTransition() {
         saleOrderRef.set(new ErpSaleOrderDO().setId(3L).setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId("PI-OLD")
                 .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+        updateCountRef.set(0);
 
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> {
                     try {
-                        invokeUpdateSaleOrderStatusByBpm(3L, "PI-NEW", ErpAuditStatus.APPROVE.getStatus(), "通过");
+                        invokeUpdateSaleOrderStatusByBpm(3L, "PI-OLD", ErpAuditStatus.APPROVE.getStatus(), "通过");
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -268,7 +354,42 @@ class ErpSaleOrderServiceImplTest {
         assertEquals(0, auditLogs.size());
         assertEquals(0, rejectLogs.size());
         assertEquals(0, publishedEvents.size());
-        assertEquals(null, lastUpdateObjRef.get());
+    }
+
+    @Test
+    void rollbackSaleOrderStatusToDraftByBpm_shouldWriteDraftAuditLog() throws Exception {
+        saleOrderRef.set(new ErpSaleOrderDO().setId(4L).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-CANCEL")
+                .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+
+        invokeRollbackSaleOrderStatusToDraftByBpm(4L, "PI-CANCEL", "撤回审批");
+
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), lastUpdateObjRef.get().getStatus());
+        assertEquals(null, lastUpdateObjRef.get().getProcessInstanceId());
+        assertEquals(1, auditLogs.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), auditLogs.get(0).getBeforeStatus());
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), auditLogs.get(0).getAfterStatus());
+        assertEquals("撤回审批", auditLogs.get(0).getReason());
+    }
+
+    @Test
+    void rollbackSaleOrderStatusToDraftByBpm_shouldThrowWhenNotProcessing() {
+        saleOrderRef.set(new ErpSaleOrderDO().setId(5L).setStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setProcessInstanceId("PI-DRAFT")
+                .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+        updateCountRef.set(0);
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> {
+                    try {
+                        invokeRollbackSaleOrderStatusToDraftByBpm(5L, "PI-DRAFT", "撤回失败");
+                    } catch (Exception e) {
+                        throw unwrap(e);
+                    }
+                });
+
+        ServiceException serviceException = assertInstanceOf(ServiceException.class, ex);
+        assertEquals(SALE_ORDER_STATUS_UPDATE_ILLEGAL.getCode(), serviceException.getCode());
     }
 
     private ErpSaleOrderMapper createSaleOrderMapperProxy() {
@@ -276,12 +397,42 @@ class ErpSaleOrderServiceImplTest {
             if ("selectById".equals(methodName)) {
                 return saleOrderRef.get();
             }
+            if ("selectByNo".equals(methodName)) {
+                return null;
+            }
             if ("selectByIds".equals(methodName)) {
                 return saleOrderRef.get() == null ? Collections.emptyList() : Collections.singletonList(saleOrderRef.get());
+            }
+            if ("insert".equals(methodName)) {
+                ErpSaleOrderDO saleOrder = (ErpSaleOrderDO) args[0];
+                saleOrder.setId(99L);
+                insertedSaleOrderRef.set(saleOrder);
+                return 1;
             }
             if ("updateByIdAndStatus".equals(methodName)) {
                 lastUpdateObjRef.set((ErpSaleOrderDO) args[2]);
                 return updateCountRef.get();
+            }
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                lastUpdateObjRef.set(new ErpSaleOrderDO()
+                        .setId((Long) args[0])
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
+                        .setProcessInstanceId(null));
+                return updateCountRef.get();
+            }
+            return null;
+        });
+    }
+
+    private ErpSaleOrderItemMapper createSaleOrderItemMapperProxy() {
+        return createProxy(ErpSaleOrderItemMapper.class, (methodName, args) -> {
+            if ("insertBatch".equals(methodName)) {
+                insertedSaleOrderItems.clear();
+                insertedSaleOrderItems.addAll((List<ErpSaleOrderItemDO>) args[0]);
+                return 1;
+            }
+            if ("selectListByOrderId".equals(methodName)) {
+                return Collections.emptyList();
             }
             return null;
         });
@@ -344,6 +495,7 @@ class ErpSaleOrderServiceImplTest {
     private void setField(Object target, String fieldName, Object value) throws Exception {
         String actualFieldName = switch (fieldName) {
             case "saleOrderMapper" -> "erpSaleOrderMapper";
+            case "saleOrderItemMapper" -> "erpSaleOrderItemMapper";
             case "saleOrderRejectLogMapper" -> "erpSaleOrderRejectLogMapper";
             case "saleOrderAuditLogMapper" -> "erpSaleOrderAuditLogMapper";
             case "mrpStockReservationMapper" -> "erpMrpStockReservationMapper";
@@ -362,11 +514,52 @@ class ErpSaleOrderServiceImplTest {
         return reqVO;
     }
 
+    private ErpSaleOrderSaveReqVO buildCreateReqVO() {
+        ErpSaleOrderSaveReqVO reqVO = new ErpSaleOrderSaveReqVO();
+        reqVO.setCustomerId(1L);
+        reqVO.setOrderTime(LocalDateTime.of(2026, 7, 1, 12, 0));
+        reqVO.setBusinessType(ErpBusinessTypeConstants.CUSTOMER_SUPPLIED);
+        reqVO.setSettlementType(ErpSettlementTypeConstants.PRODUCT_SALE);
+        ErpSaleOrderSaveReqVO.Item item = new ErpSaleOrderSaveReqVO.Item();
+        item.setProductId(101L);
+        item.setCount(BigDecimal.ONE);
+        item.setProductPrice(new BigDecimal("12.50"));
+        reqVO.setItems(List.of(item));
+        return reqVO;
+    }
+
     private void invokeUpdateSaleOrderStatusByBpm(Long id, String processInstanceId, Integer status, String reason)
             throws Exception {
         Method method = saleOrderService.getClass().getMethod("updateSaleOrderStatusByBpm",
                 Long.class, String.class, Integer.class, String.class);
         method.invoke(saleOrderService, id, processInstanceId, status, reason);
+    }
+
+    private void invokeRollbackSaleOrderStatusToDraftByBpm(Long id, String processInstanceId, String reason)
+            throws Exception {
+        Method method = saleOrderService.getClass().getMethod("rollbackSaleOrderStatusToDraftByBpm",
+                Long.class, String.class, String.class);
+        method.invoke(saleOrderService, id, processInstanceId, reason);
+    }
+
+    private RuntimeException unwrap(Exception exception) {
+        if (exception instanceof InvocationTargetException invocationTargetException
+                && invocationTargetException.getTargetException() instanceof RuntimeException runtimeException) {
+            return runtimeException;
+        }
+        return new RuntimeException(exception);
+    }
+
+    private void triggerAfterCommitCallbacks() {
+        for (TransactionSynchronization synchronization : TransactionSynchronizationManager.getSynchronizations()) {
+            synchronization.afterCommit();
+        }
+    }
+
+    private void clearSynchronizationIfActive() {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
     }
 
     private void assertTransactional(String methodName, Class<?>... parameterTypes) throws Exception {
