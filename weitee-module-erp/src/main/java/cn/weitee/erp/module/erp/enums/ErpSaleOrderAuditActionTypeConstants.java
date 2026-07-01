@@ -8,6 +8,7 @@ public interface ErpSaleOrderAuditActionTypeConstants {
     String APPROVE = "APPROVE";
     String REJECT = "REJECT";
     String RESUBMIT = "RESUBMIT";
+    String CANCEL = "CANCEL";
     String REVERSE_APPROVE = "REVERSE_APPROVE";
 
 }

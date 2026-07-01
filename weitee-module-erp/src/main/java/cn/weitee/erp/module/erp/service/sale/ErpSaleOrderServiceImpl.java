@@ -309,7 +309,8 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
             return;
         }
         if (approve) {
-            eventPublisher.publishEvent(new ErpSaleOrderApprovedEvent(reqVO.getId()));
+            ErpTransactionUtils.afterCommit(() ->
+                    eventPublisher.publishEvent(new ErpSaleOrderApprovedEvent(reqVO.getId())));
             // 事务提交后异步触发项目生命周期刷新
             if (saleOrder.getProjectId() != null) {
                 Long projectId = saleOrder.getProjectId();
@@ -354,8 +355,25 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
             return;
         }
         if (approve) {
-            eventPublisher.publishEvent(new ErpSaleOrderApprovedEvent(orderId));
+            ErpTransactionUtils.afterCommit(() ->
+                    eventPublisher.publishEvent(new ErpSaleOrderApprovedEvent(orderId)));
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackSaleOrderStatusToDraftByBpm(Long orderId, String processInstanceId, String reason) {
+        validateSaleOrderExists(orderId);
+        int updateCount = erpSaleOrderMapper.resetStatusToDraftByBpm(orderId, processInstanceId);
+        if (updateCount == 0) {
+            throw exception(SALE_ORDER_STATUS_UPDATE_ILLEGAL);
+        }
+        erpSaleOrderAuditLogMapper.insert(new ErpSaleOrderAuditLogDO()
+                .setOrderId(orderId)
+                .setActionType(ErpSaleOrderAuditActionTypeConstants.CANCEL)
+                .setBeforeStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setAfterStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setReason(reason));
     }
 
     private void validateSaleOrderStatusTransition(ErpSaleOrderDO saleOrder, ErpSaleOrderUpdateStatusReqVO reqVO) {
