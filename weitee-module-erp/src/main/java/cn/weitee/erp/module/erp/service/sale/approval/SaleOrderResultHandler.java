@@ -1,7 +1,6 @@
 package cn.weitee.erp.module.erp.service.sale.approval;
 
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
-import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.sale.ErpSaleOrderService;
 import org.springframework.stereotype.Component;
@@ -14,8 +13,6 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.SALE_ORDER_NOT_E
 @Component
 public class SaleOrderResultHandler implements ApprovalResultHandler {
 
-    @Resource
-    private ErpSaleOrderMapper saleOrderMapper;
     @Resource
     private ErpSaleOrderService saleOrderService;
 
@@ -40,11 +37,12 @@ public class SaleOrderResultHandler implements ApprovalResultHandler {
 
     @Override
     public void onCancel(Long bizId, String processInstanceId, String reason) {
-        saleOrderMapper.clearProcessInstanceId(bizId);
+        validateExists(bizId);
+        saleOrderService.rollbackSaleOrderStatusToDraftByBpm(bizId, processInstanceId, reason);
     }
 
     private void validateExists(Long orderId) {
-        if (saleOrderMapper.selectById(orderId) == null) {
+        if (saleOrderService.getSaleOrder(orderId) == null) {
             throw exception(SALE_ORDER_NOT_EXISTS);
         }
     }
