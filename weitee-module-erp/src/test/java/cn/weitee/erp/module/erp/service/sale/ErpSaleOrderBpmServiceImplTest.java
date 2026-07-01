@@ -44,7 +44,7 @@ class ErpSaleOrderBpmServiceImplTest {
                         .setOrderTime(LocalDateTime.of(2026, 4, 7, 9, 0))
                         .setDeliveryDate(LocalDate.of(2026, 4, 10))
         );
-        AtomicReference<ErpSaleOrderDO> updatedOrderRef = new AtomicReference<>();
+        List<ErpSaleOrderDO> updates = new ArrayList<>();
         AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
 
         setField(service, "saleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
@@ -52,7 +52,7 @@ class ErpSaleOrderBpmServiceImplTest {
                 return saleOrderRef.get();
             }
             if ("updateById".equals(methodName)) {
-                updatedOrderRef.set((ErpSaleOrderDO) args[0]);
+                updates.add((ErpSaleOrderDO) args[0]);
                 return 1;
             }
             return null;
@@ -82,10 +82,13 @@ class ErpSaleOrderBpmServiceImplTest {
         assertNull(result);
         assertEquals(11L, submitBizIdRef.get());
         // 第一次 updateById：设置 PROCESS 状态，processInstanceId=null
-        assertNotNull(updatedOrderRef.get());
-        assertEquals(11L, updatedOrderRef.get().getId());
-        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedOrderRef.get().getStatus());
-        assertNull(updatedOrderRef.get().getProcessInstanceId());
+        assertEquals(2, updates.size());
+        assertNotNull(updates.get(0));
+        assertEquals(11L, updates.get(0).getId());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updates.get(0).getStatus());
+        assertNull(updates.get(0).getProcessInstanceId());
+        assertEquals(11L, updates.get(1).getId());
+        assertEquals("PI-20260407-001", updates.get(1).getProcessInstanceId());
         assertTrue(auditLogs.isEmpty());
     }
 
@@ -130,6 +133,86 @@ class ErpSaleOrderBpmServiceImplTest {
     }
 
     @Test
+    void submitSaleOrder_shouldAllowRetryWhenOrderWasFailed() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpSaleOrderDO> saleOrderRef = new AtomicReference<>(
+                new ErpSaleOrderDO()
+                        .setId(16L)
+                        .setNo("SO-2026-FAILED")
+                        .setStatus(ErpAuditStatus.FAILED.getStatus())
+                        .setProcessInstanceId("PI-FAILED-OLD")
+        );
+        List<ErpSaleOrderDO> updates = new ArrayList<>();
+        AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
+
+        setField(service, "erpSaleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return saleOrderRef.get();
+            }
+            if ("updateById".equals(methodName)) {
+                updates.add((ErpSaleOrderDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("submit".equals(methodName)) {
+                submitBizIdRef.set((Long) args[1]);
+                return "PI-RETRY-001";
+            }
+            return null;
+        }));
+        setField(service, "erpSaleOrderAuditLogMapper", createProxy(ErpSaleOrderAuditLogMapper.class, (methodName, args) -> 1));
+
+        Object reqVO = createSubmitReqVO(16L, new HashMap<>());
+        Method method = service.getClass().getMethod("submitSaleOrder", Long.class, reqVO.getClass());
+        Object result = method.invoke(service, 9527L, reqVO);
+
+        assertNull(result);
+        assertEquals(16L, submitBizIdRef.get());
+        assertEquals(2, updates.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updates.get(0).getStatus());
+        assertNull(updates.get(0).getProcessInstanceId());
+        assertEquals("PI-RETRY-001", updates.get(1).getProcessInstanceId());
+    }
+
+    @Test
+    void submitSaleOrder_shouldKeepFailedStatusWhenBpmCreateFails() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpSaleOrderDO> saleOrderRef = new AtomicReference<>(
+                new ErpSaleOrderDO()
+                        .setId(17L)
+                        .setNo("SO-2026-FAILED-RETRY")
+                        .setStatus(ErpAuditStatus.FAILED.getStatus())
+        );
+        List<ErpSaleOrderDO> updates = new ArrayList<>();
+
+        setField(service, "erpSaleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return saleOrderRef.get();
+            }
+            if ("updateById".equals(methodName)) {
+                updates.add((ErpSaleOrderDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            throw new RuntimeException("bpm failed");
+        }));
+        setField(service, "erpSaleOrderAuditLogMapper", createProxy(ErpSaleOrderAuditLogMapper.class, (methodName, args) -> 1));
+
+        Object reqVO = createSubmitReqVO(17L, new HashMap<>());
+        Method method = service.getClass().getMethod("submitSaleOrder", Long.class, reqVO.getClass());
+        method.invoke(service, 9527L, reqVO);
+
+        assertEquals(2, updates.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updates.get(0).getStatus());
+        assertEquals(ErpAuditStatus.FAILED.getStatus(), updates.get(1).getStatus());
+        assertNull(updates.get(1).getProcessInstanceId());
+    }
+
+    @Test
     void cancelSaleOrderApproval_shouldCancelProcessAndClearBinding() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpSaleOrderDO> saleOrderRef = new AtomicReference<>(
@@ -141,16 +224,11 @@ class ErpSaleOrderBpmServiceImplTest {
                         .setOutCount(BigDecimal.ZERO)
                         .setReturnCount(BigDecimal.ZERO)
         );
-        AtomicReference<Long> clearedOrderIdRef = new AtomicReference<>();
         AtomicReference<Long> cancelBizIdRef = new AtomicReference<>();
 
         setField(service, "saleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return saleOrderRef.get();
-            }
-            if ("clearProcessInstanceId".equals(methodName)) {
-                clearedOrderIdRef.set((Long) args[0]);
-                return 1;
             }
             return null;
         }));
@@ -167,7 +245,6 @@ class ErpSaleOrderBpmServiceImplTest {
 
         // afterCommit 模式：BPM 撤回在 afterCommit 中执行
         assertEquals(13L, cancelBizIdRef.get());
-        assertEquals(13L, clearedOrderIdRef.get());
     }
 
     @Test
@@ -313,7 +390,12 @@ class ErpSaleOrderBpmServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        String actualFieldName = switch (fieldName) {
+            case "saleOrderMapper" -> "erpSaleOrderMapper";
+            case "saleOrderAuditLogMapper" -> "erpSaleOrderAuditLogMapper";
+            default -> fieldName;
+        };
+        Field field = target.getClass().getDeclaredField(actualFieldName);
         field.setAccessible(true);
         field.set(target, value);
     }
