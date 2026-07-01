@@ -7,7 +7,6 @@
     >
       <div class="stock-analysis-page__title-bar">
         <div class="stock-analysis-page__title-group">
-          <div class="stock-analysis-page__eyebrow">SCM 分析看板</div>
           <div class="stock-analysis-page__title">库存分析</div>
           <div class="stock-analysis-page__hero-meta">
             <span class="stock-analysis-page__hero-pill">库存结构</span>
@@ -17,6 +16,15 @@
         </div>
 
         <div class="stock-analysis-page__hero-actions">
+          <el-button
+            v-if="canReturnToSource"
+            class="stock-action-btn"
+            :loading="isNavigatingSource"
+            :disabled="isAnyNavigationPending"
+            @click="handleReturnToSource"
+          >
+            <Icon icon="ep:back" class="mr-5px" /> 返回来源
+          </el-button>
           <el-button
             class="stock-action-btn stock-action-btn--primary"
             type="primary"
@@ -494,7 +502,7 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { EChartsOption } from 'echarts'
 import { Echart } from '@/components/Echart'
 import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
@@ -517,6 +525,7 @@ type AnalysisQueryForm = {
   productId?: number
   warehouseId?: number
   bizType?: number
+  bizNo?: string
   createTime: string[]
   stockPageNo: number
   stockPageSize: number
@@ -550,6 +559,7 @@ type WarehouseSummaryRow = {
 
 const WAREHOUSE_CHART_COLORS = ['#2563eb', '#38bdf8', '#14b8a6', '#f59e0b', '#ef4444']
 
+const route = useRoute()
 const router = useRouter()
 const message = useMessage()
 
@@ -557,6 +567,7 @@ const createDefaultQueryForm = (): AnalysisQueryForm => ({
   productId: undefined,
   warehouseId: undefined,
   bizType: undefined,
+  bizNo: undefined,
   createTime: [],
   stockPageNo: 1,
   stockPageSize: 10,
@@ -584,11 +595,15 @@ const recordErrorMessage = ref('库存流水加载失败，请重试')
 const recordTotal = ref(0)
 const recordRows = ref<StockRecordRow[]>([])
 
-const navigatingAction = ref<'' | 'stock' | 'record'>('')
+const navigatingAction = ref<'' | 'stock' | 'record' | 'source'>('')
 
 const isAnyNavigationPending = computed(() => !!navigatingAction.value)
 const isNavigatingStock = computed(() => navigatingAction.value === 'stock')
 const isNavigatingRecord = computed(() => navigatingAction.value === 'record')
+const isNavigatingSource = computed(() => navigatingAction.value === 'source')
+const canReturnToSource = computed(
+  () => route.query.returnFrom === 'purchase-in' && !!route.query.purchaseInId
+)
 const isAnyLoading = computed(
   () => supportLoading.value || stockLoading.value || recordLoading.value || isAnyNavigationPending.value
 )
@@ -783,6 +798,7 @@ const buildRecordQuery = () => ({
   productId: queryParams.productId,
   warehouseId: queryParams.warehouseId,
   bizType: queryParams.bizType,
+  bizNo: queryParams.bizNo,
   createTime: queryParams.createTime?.length ? queryParams.createTime : undefined,
   pageNo: queryParams.recordPageNo,
   pageSize: queryParams.recordPageSize
@@ -903,9 +919,56 @@ const handleNavigate = async (action: 'stock' | 'record') => {
   }
 }
 
+const normalizeRouteNumber = (value: unknown) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined
+  }
+  const parsedValue = Number(value)
+  return Number.isNaN(parsedValue) || parsedValue <= 0 ? undefined : parsedValue
+}
+
+const syncRouteContext = () => {
+  queryParams.productId = normalizeRouteNumber(route.query.productId)
+  queryParams.warehouseId = normalizeRouteNumber(route.query.warehouseId)
+  queryParams.bizType = normalizeRouteNumber(route.query.bizType)
+  queryParams.bizNo = typeof route.query.bizNo === 'string' ? route.query.bizNo : undefined
+  queryParams.stockPageNo = 1
+  queryParams.recordPageNo = 1
+}
+
+const handleReturnToSource = async () => {
+  if (!canReturnToSource.value || isAnyNavigationPending.value) {
+    return
+  }
+  navigatingAction.value = 'source'
+  try {
+    await router.push({
+      path: '/scm/inbound',
+      query: {
+        openId: String(route.query.purchaseInId),
+        openType: 'detail',
+        from: 'stock-analysis'
+      }
+    })
+  } catch {
+    message.error('页面跳转失败，请重试')
+  } finally {
+    navigatingAction.value = ''
+  }
+}
+
 onMounted(async () => {
+  syncRouteContext()
   await Promise.allSettled([loadSupportOptions(), reloadAnalysis()])
 })
+
+watch(
+  () => [route.query.productId, route.query.warehouseId, route.query.bizNo, route.query.bizType],
+  async () => {
+    syncRouteContext()
+    await reloadAnalysis()
+  }
+)
 </script>
 
 <style scoped>

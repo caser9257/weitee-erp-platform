@@ -1,44 +1,44 @@
 <template>
   <div class="finance-shell finance-shell__stack project-dual-cost-page">
-    <!-- 椤靛ご -->
+    <!-- 页头 -->
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">椤圭洰鍙岃处鎴愭湰</div>
+          <div class="finance-shell__page-title">项目双账套成本</div>
           <div class="finance-shell__page-metrics">
-            <span class="finance-shell__metric-chip">缁撴灉 {{ total }}</span>
-            <span class="finance-shell__metric-chip">澶栭儴璐?{{ formatAmount(totalExternal) }}</span>
-            <span class="finance-shell__metric-chip">鍐呴儴璐?{{ formatAmount(totalInternal) }}</span>
-            <span class="finance-shell__metric-chip">宸紓 {{ formatAmount(totalDiff) }}</span>
+            <span class="finance-shell__metric-chip">结果 {{ total }}</span>
+            <span class="finance-shell__metric-chip">外部金额{{ formatAmount(totalExternal) }}</span>
+            <span class="finance-shell__metric-chip">内部金额{{ formatAmount(totalInternal) }}</span>
+            <span class="finance-shell__metric-chip">差异 {{ formatAmount(totalDiff) }}</span>
           </div>
         </div>
         <div class="finance-shell__page-header-actions">
           <el-button plain :loading="loadingList" @click="handleRefresh">
             <Icon icon="ep:refresh" class="mr-5px" />
-            鍒锋柊
+            刷新
           </el-button>
         </div>
       </div>
     </ContentWrap>
 
-    <!-- 鎼滅储鍖?-->
+    <!-- 搜索区-->
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?</div>
+        <div class="finance-shell__section-title">筛选条件</div>
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
-          <el-form-item label="椤圭洰鍚嶇О" prop="projectName">
-            <el-input v-model="queryParams.projectName" placeholder="璇疯緭鍏ラ」鐩悕绉?" clearable class="!w-full" @keyup.enter="handleQuery" />
+          <el-form-item label="项目名称" prop="projectName">
+            <el-input v-model="queryParams.projectName" placeholder="请输入项目名称" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
-          <el-form-item label="椤圭洰缂栧彿" prop="projectNo">
-            <el-input v-model="queryParams.projectNo" placeholder="璇疯緭鍏ラ」鐩紪鍙?" clearable class="!w-full" @keyup.enter="handleQuery" />
+          <el-form-item label="项目编号" prop="projectNo">
+            <el-input v-model="queryParams.projectNo" placeholder="请输入项目编号" clearable class="!w-full" @keyup.enter="handleQuery" />
           </el-form-item>
-          <el-form-item label="鏈熼棿" prop="period">
-            <el-date-picker v-model="queryParams.period" type="month" placeholder="閫夋嫨鏈堜唤" value-format="YYYY-MM" class="!w-full" />
+          <el-form-item label="期间" prop="period">
+            <el-date-picker v-model="queryParams.period" type="month" placeholder="选择月份" value-format="YYYY-MM" class="!w-full" />
           </el-form-item>
-          <el-form-item label="鎴愭湰绫诲埆" prop="costType">
-            <el-select v-model="queryParams.costType" placeholder="璇烽€夋嫨鎴愭湰绫诲埆" clearable class="!w-full">
+          <el-form-item label="成本类别" prop="costType">
+            <el-select v-model="queryParams.costType" placeholder="请选择成本类别" clearable class="!w-full">
               <el-option v-for="item in COST_TYPE_OPTIONS" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -46,39 +46,39 @@
         <div class="finance-shell__query-actions">
           <el-button type="primary" :loading="loadingList" @click="handleQuery">
             <Icon icon="ep:search" class="mr-5px" />
-            鏌ヨ
+            查询
           </el-button>
           <el-button @click="resetQuery">
             <Icon icon="ep:refresh-left" class="mr-5px" />
-            閲嶇疆
+            重置
           </el-button>
         </div>
       </el-form>
     </ContentWrap>
 
-    <!-- 琛ㄦ牸鍖?-->
+    <!-- 表格区-->
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">椤圭洰鍙岃处鎴愭湰鍒楄〃</div>
-          <div class="finance-shell__toolbar-count">褰撳墠鍏?<strong>{{ total }}</strong> 鏉?</div>
+          <div class="finance-shell__section-title">项目双账套成本列表</div>
+          <div class="finance-shell__toolbar-count">当前共<strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button type="primary" :loading="rebuilding" @click="handleRebuildAll">
             <Icon icon="ep:refresh" class="mr-5px" />
-            椤圭洰绾ч噸璺?          </el-button>
+            项目级重跑          </el-button>
           <el-button plain :disabled="!total" @click="handleExportExternal">
             <Icon icon="ep:download" class="mr-5px" />
-            瀵煎嚭澶栭儴璐?          </el-button>
+            瀵煎嚭外部金额          </el-button>
           <el-button plain :disabled="!total" @click="handleExportInternal">
             <Icon icon="ep:download" class="mr-5px" />
-            瀵煎嚭鍐呴儴璐?          </el-button>
+            瀵煎嚭内部金额          </el-button>
         </div>
       </div>
 
       <el-alert v-if="listError" class="mb-12px" :closable="false" show-icon type="error" :title="listError">
         <template #default>
-          <el-button link type="primary" :disabled="loadingList" @click="getList">閲嶆柊鍔犺浇</el-button>
+          <el-button link type="primary" :disabled="loadingList" @click="getList">重新加载</el-button>
         </template>
       </el-alert>
 
@@ -89,7 +89,7 @@
               <template #header>
                 <span class="finance-shell__column-header">
                   <Icon icon="ep:office-building" class="finance-shell__column-icon" />
-                  椤圭洰淇℃伅
+                  项目信息
                 </span>
               </template>
               <template #default="{ row }">
@@ -99,12 +99,12 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="鏈熼棿" min-width="100" align="center">
+            <el-table-column label="期间" min-width="100" align="center">
               <template #default="{ row }">
                 <span class="finance-shell__mono">{{ row.period || '-' }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="鎴愭湰绫诲埆" min-width="100" align="center">
+            <el-table-column label="成本类别" min-width="100" align="center">
               <template #default="{ row }">
                 <el-tag effect="light" size="small">{{ row.costTypeName || '-' }}</el-tag>
               </template>
@@ -113,7 +113,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  澶栭儴璐﹂噾棰?                </span>
+                  外部账金额                </span>
               </template>
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalAmount) }}</span>
@@ -123,7 +123,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  鍐呴儴璐﹂噾棰?                </span>
+                  内部账金额                </span>
               </template>
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalAmount) }}</span>
@@ -133,7 +133,7 @@
               <template #header>
                 <span class="finance-shell__column-header">
                   <Icon icon="ep:trend-charts" class="finance-shell__column-icon" />
-                  宸紓閲戦
+                  差异金额
                 </span>
               </template>
               <template #default="{ row }">
@@ -142,16 +142,16 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏉ユ簮鏁?" min-width="80" align="center">
+            <el-table-column label="来源数" min-width="80" align="center">
               <template #default="{ row }">
                 <span class="finance-shell__mono">{{ row.sourceCount || 0 }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="鎿嶄綔" fixed="right" align="center" width="120">
+            <el-table-column label="操作" fixed="right" align="center" width="120">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
                   <el-button link type="primary" @click.stop="handleViewDetail(row)">
-                    鏌ョ湅鏄庣粏
+                    查看明细
                   </el-button>
                 </div>
               </template>
@@ -161,7 +161,7 @@
         <Pagination v-if="total > 0" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
       </template>
       <div v-else class="project-dual-cost-page__empty">
-        <el-empty description="鏆傛棤椤圭洰鍙岃处鎴愭湰鏁版嵁">
+        <el-empty description="暂无项目双账套成本数据">
           <template #image>
             <div class="finance-shell__empty-icon">
               <Icon icon="ep:files" />
@@ -171,7 +171,7 @@
       </div>
     </ContentWrap>
 
-    <!-- 鏄庣粏 Drawer -->
+    <!-- 明细 Drawer -->
     <el-drawer
       v-model="detailDrawerVisible"
       size="520px"
@@ -184,7 +184,7 @@
         <div class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ detailData?.projectName || '-' }}</div>
-            <div class="finance-shell__context-subtitle">{{ detailData?.projectNo || '椤圭洰鍙岃处鎴愭湰鏄庣粏' }}</div>
+            <div class="finance-shell__context-subtitle">{{ detailData?.projectNo || '项目双账套成本明细' }}</div>
           </div>
           <div class="finance-shell__context-meta">
             <span class="finance-shell__page-chip">{{ detailData?.period || '-' }}</span>
@@ -199,42 +199,42 @@
           <div class="project-dual-cost-page__drawer-body">
             <div class="finance-shell__metric-grid project-dual-cost-page__drawer-metrics">
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">澶栭儴閲戦</div>
+                <div class="finance-shell__metric-label">外部金额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.externalAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">鍐呴儴閲戦</div>
+                <div class="finance-shell__metric-label">内部金额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.internalAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">宸紓閲戦</div>
+                <div class="finance-shell__metric-label">差异金额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.diffAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">鏉ユ簮鍗曟嵁鏁?</div>
+                <div class="finance-shell__metric-label">来源单据数</div>
                 <div class="finance-shell__metric-value">{{ detailData?.sourceCount || 0 }}</div>
               </div>
             </div>
 
-            <div class="finance-shell__section-title">鎴愭湰鏄庣粏</div>
+            <div class="finance-shell__section-title">成本明细</div>
             <div v-if="detailItems.length" class="project-dual-cost-page__detail-table">
               <el-table :data="detailItems" stripe class="finance-shell__table finance-shell__table--dense">
-                <el-table-column label="鎴愭湰绫诲埆" min-width="100">
+                <el-table-column label="成本类别" min-width="100">
                   <template #default="{ row }">
                     <span>{{ row.costTypeName || '-' }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="澶栭儴閲戦" min-width="120" align="right">
+                <el-table-column label="外部金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalAmount) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="鍐呴儴閲戦" min-width="120" align="right">
+                <el-table-column label="内部金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalAmount) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="宸紓" min-width="120" align="right">
+                <el-table-column label="差异" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono" :class="{ 'text-red-500': Number(row.diffAmount || 0) !== 0 }">
                       {{ formatAmount(row.diffAmount) }}
@@ -244,33 +244,33 @@
               </el-table>
             </div>
             <div v-else class="project-dual-cost-page__empty project-dual-cost-page__empty--drawer">
-              <el-empty description="鏆傛棤鏄庣粏鏁版嵁" :image-size="60" />
+              <el-empty description="暂无明细数据" :image-size="60" />
             </div>
           </div>
         </template>
 
         <div class="project-dual-cost-page__drawer-footer">
-          <el-button @click="detailDrawerVisible = false">鍏抽棴</el-button>
+          <el-button @click="detailDrawerVisible = false">关闭</el-button>
         </div>
       </div>
     </el-drawer>
 
-    <!-- 閲嶈窇瀵硅瘽妗?-->
-    <el-dialog v-model="rebuildDialogVisible" title="椤圭洰绾ч噸璺?" width="480px" destroy-on-close>
+    <!-- 重跑对话框-->
+    <el-dialog v-model="rebuildDialogVisible" title="项目级重跑" width="480px" destroy-on-close>
       <el-form ref="rebuildFormRef" :model="rebuildForm" label-width="88px">
-        <el-form-item label="椤圭洰" required>
+        <el-form-item label="项目" required>
           <el-input :model-value="rebuildForm.projectName" disabled />
         </el-form-item>
-        <el-form-item label="鏈熼棿" required>
-          <el-date-picker v-model="rebuildForm.period" type="month" placeholder="閫夋嫨鏈堜唤" value-format="YYYY-MM" class="!w-full" />
+        <el-form-item label="期间" required>
+          <el-date-picker v-model="rebuildForm.period" type="month" placeholder="选择月份" value-format="YYYY-MM" class="!w-full" />
         </el-form-item>
-        <el-form-item label="澶囨敞">
-          <el-input v-model="rebuildForm.remark" type="textarea" placeholder="璇疯緭鍏ュ娉?" />
+        <el-form-item label="备注">
+          <el-input v-model="rebuildForm.remark" type="textarea" placeholder="请输入备注" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button :disabled="rebuilding" @click="rebuildDialogVisible = false">鍙栨秷</el-button>
-        <el-button type="primary" :loading="rebuilding" @click="confirmRebuild">纭閲嶈窇</el-button>
+        <el-button :disabled="rebuilding" @click="rebuildDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="rebuilding" @click="confirmRebuild">确认重跑</el-button>
       </template>
     </el-dialog>
   </div>
@@ -309,18 +309,18 @@ const queryParams = reactive<DualProjectCostPageReqVO>({
 
 const queryFormRef = ref()
 
-// KPI 璁＄畻
+// KPI 计算
 const totalExternal = computed(() => list.value.reduce((sum, item) => sum + Number(item.externalAmount || 0), 0))
 const totalInternal = computed(() => list.value.reduce((sum, item) => sum + Number(item.internalAmount || 0), 0))
 const totalDiff = computed(() => list.value.reduce((sum, item) => sum + Number(item.diffAmount || 0), 0))
 
-// 鏄庣粏 Drawer
+// 明细 Drawer
 const detailDrawerVisible = ref(false)
 const loadingDetail = ref(false)
 const detailData = ref<DualProjectCostVO>()
 const detailItems = ref<DualProjectCostVO[]>([])
 
-// 閲嶈窇瀵硅瘽妗?
+// 重跑对话框
 const rebuildDialogVisible = ref(false)
 const rebuildFormRef = ref()
 const rebuildForm = reactive({
@@ -343,7 +343,7 @@ const getList = async () => {
   } catch {
     list.value = []
     total.value = 0
-    listError.value = '椤圭洰鍙岃处鎴愭湰鏁版嵁鍔犺浇澶辫触'
+    listError.value = '项目双账套成本数据加载失败'
   } finally {
     loadingList.value = false
   }
@@ -382,7 +382,7 @@ const clearDetailDrawer = () => {
 
 const handleRebuildAll = () => {
   if (!list.value.length) {
-    message.warning('鏆傛棤鏁版嵁鍙噸璺?')
+    message.warning('暂无数据可重跑')
     return
   }
   const first = list.value[0]
@@ -395,7 +395,7 @@ const handleRebuildAll = () => {
 
 const confirmRebuild = async () => {
   if (!rebuildForm.projectId || !rebuildForm.period) {
-    message.warning('璇烽€夋嫨椤圭洰鍜屾湡闂?')
+    message.warning('请选择项目和期间')
     return
   }
   rebuilding.value = true
@@ -405,11 +405,11 @@ const confirmRebuild = async () => {
       period: rebuildForm.period,
       remark: rebuildForm.remark
     })
-    message.success('閲嶈窇鎴愬姛')
+    message.success('重跑成功')
     rebuildDialogVisible.value = false
     await getList()
   } catch {
-    // 閲嶈窇澶辫触
+    // 重跑失败
   } finally {
     rebuilding.value = false
   }
@@ -418,18 +418,18 @@ const confirmRebuild = async () => {
 const handleExportExternal = async () => {
   try {
     const data = await DualProjectCostApi.exportExternalProjectCost(queryParams)
-    download.excel(data, '椤圭洰澶栭儴璐︽垚鏈?xlsx')
+    download.excel(data, '项目外部账成本.xlsx')
   } catch {
-    // 瀵煎嚭澶辫触
+    // 导出失败
   }
 }
 
 const handleExportInternal = async () => {
   try {
     const data = await DualProjectCostApi.exportInternalProjectCost(queryParams)
-    download.excel(data, '椤圭洰鍐呴儴璐︽垚鏈?xlsx')
+    download.excel(data, '项目内部账成本.xlsx')
   } catch {
-    // 瀵煎嚭澶辫触
+    // 导出失败
   }
 }
 

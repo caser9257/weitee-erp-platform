@@ -14,7 +14,6 @@
                     {{ userInitial }}
                   </el-avatar>
                   <div class="hero-card__heading">
-                    <p class="hero-card__eyebrow">首页工作台</p>
                     <h1>你好，{{ username }}</h1>
                     <div class="hero-card__meta">
                       <span class="hero-pill">制造执行大区</span>

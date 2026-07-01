@@ -55,10 +55,11 @@ const resolveMergedComponent = (remoteComponent?: string, localComponent?: strin
 const duplicatedLegacyMenuComponents = new Set(['erp/purchase/in-quality/index'])
 const duplicatedLegacyMenuChains = new Set(['purchase/in-quality'])
 const absorbedLegacyRootPaths = new Set(['/manufacturing', '/mrp'])
+const embeddedScmCapabilityPaths = new Set(['stock-occupancy', 'manufacture-bom'])
 const legacyMenuSourceMetaKey = '__legacyMenuSource'
 const legacyMenuSourceErp = 'erp'
 
-type ScmMenuDecoration = {
+type MenuDecoration = {
   menuGroupKey: string
   menuGroupTitle: string
   menuGroupIcon: string
@@ -67,7 +68,7 @@ type ScmMenuDecoration = {
   routeName?: string
 }
 
-const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
+const scmMenuDecorations = new Map<string, MenuDecoration>([
   [
     'plan-rule',
     {
@@ -110,28 +111,6 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
       menuGroupOrder: 10,
       menuOrder: 40,
       routeName: '采购需求汇总'
-    }
-  ],
-  [
-    'stock-occupancy',
-    {
-      menuGroupKey: '/scm/__group__/demand-plan',
-      menuGroupTitle: '需求与计划',
-      menuGroupIcon: 'ep:histogram',
-      menuGroupOrder: 10,
-      menuOrder: 50,
-      routeName: '库存占用追溯'
-    }
-  ],
-  [
-    'manufacture-bom',
-    {
-      menuGroupKey: '/scm/__group__/demand-plan',
-      menuGroupTitle: '需求与计划',
-      menuGroupIcon: 'ep:histogram',
-      menuGroupOrder: 10,
-      menuOrder: 60,
-      routeName: '制造BOM'
     }
   ],
   [
@@ -181,8 +160,8 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
   [
     'stock-in',
     {
-      menuGroupKey: '/scm/__group__/warehouse',
-      menuGroupTitle: '仓储作业',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:box',
       menuGroupOrder: 30,
       menuOrder: 10,
@@ -192,8 +171,8 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
   [
     'stock-out',
     {
-      menuGroupKey: '/scm/__group__/warehouse',
-      menuGroupTitle: '仓储作业',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:box',
       menuGroupOrder: 30,
       menuOrder: 20,
@@ -203,8 +182,8 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
   [
     'stock-move',
     {
-      menuGroupKey: '/scm/__group__/warehouse',
-      menuGroupTitle: '仓储作业',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:box',
       menuGroupOrder: 30,
       menuOrder: 30,
@@ -214,8 +193,8 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
   [
     'stock-check',
     {
-      menuGroupKey: '/scm/__group__/warehouse',
-      menuGroupTitle: '仓储作业',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:box',
       menuGroupOrder: 30,
       menuOrder: 40,
@@ -225,8 +204,8 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
   [
     'assemble',
     {
-      menuGroupKey: '/scm/__group__/warehouse',
-      menuGroupTitle: '仓储作业',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:box',
       menuGroupOrder: 30,
       menuOrder: 50,
@@ -236,78 +215,340 @@ const scmMenuDecorations = new Map<string, ScmMenuDecoration>([
   [
     'warehouse',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 10,
+      menuGroupOrder: 30,
+      menuOrder: 60,
       routeName: '仓库信息'
     }
   ],
   [
     'warehouse-category',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 15,
+      menuGroupOrder: 30,
+      menuOrder: 70,
       routeName: '仓库分类管理'
     }
   ],
   [
     'stock',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 20,
+      menuGroupOrder: 30,
+      menuOrder: 80,
       routeName: '即时库存查询'
     }
   ],
   [
     'stock-record',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 30,
+      menuGroupOrder: 30,
+      menuOrder: 90,
       routeName: '库存明细账'
     }
   ],
   [
     'stock-analysis',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
+      menuGroupKey: '/scm/__group__/inventory-warehouse',
+      menuGroupTitle: '库存与仓储',
       menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 40,
+      menuGroupOrder: 30,
+      menuOrder: 100,
       routeName: '库存分析'
     }
   ],
   [
     'netting-policy',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
-      menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 50,
+      menuGroupKey: '/scm/__group__/demand-plan',
+      menuGroupTitle: '需求与计划',
+      menuGroupIcon: 'ep:histogram',
+      menuGroupOrder: 10,
+      menuOrder: 70,
       routeName: '净需求策略'
     }
   ],
   [
     'substitute-material',
     {
-      menuGroupKey: '/scm/__group__/strategy-base',
-      menuGroupTitle: '库存查询与基础资料',
-      menuGroupIcon: 'ep:setting',
-      menuGroupOrder: 40,
-      menuOrder: 60,
+      menuGroupKey: '/scm/__group__/demand-plan',
+      menuGroupTitle: '需求与计划',
+      menuGroupIcon: 'ep:histogram',
+      menuGroupOrder: 10,
+      menuOrder: 80,
       routeName: '替代料台账'
+    }
+  ]
+])
+
+const financeMenuDecorations = new Map<string, MenuDecoration>([
+  [
+    'subject',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 10
+    }
+  ],
+  [
+    'period',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 20
+    }
+  ],
+  [
+    'account',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 30,
+      routeName: '结算账户'
+    }
+  ],
+  [
+    'ledger',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 40,
+      routeName: '财务账簿'
+    }
+  ],
+  [
+    'dual-ledger-config',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 50
+    }
+  ],
+  [
+    'dual-ledger-diff-config',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 60
+    }
+  ],
+  [
+    'report-item',
+    {
+      menuGroupKey: '/finance/__group__/basic-settings',
+      menuGroupTitle: '基础设置',
+      menuGroupIcon: 'ep:setting',
+      menuGroupOrder: 10,
+      menuOrder: 70
+    }
+  ],
+  [
+    'apar',
+    {
+      menuGroupKey: '/finance/__group__/receivables-payables',
+      menuGroupTitle: '往来与收付',
+      menuGroupIcon: 'ep:wallet',
+      menuGroupOrder: 20,
+      menuOrder: 10,
+      routeName: '应收应付账款池'
+    }
+  ],
+  [
+    'receipt',
+    {
+      menuGroupKey: '/finance/__group__/receivables-payables',
+      menuGroupTitle: '往来与收付',
+      menuGroupIcon: 'ep:wallet',
+      menuGroupOrder: 20,
+      menuOrder: 20,
+      routeName: '项目收款管理'
+    }
+  ],
+  [
+    'payment',
+    {
+      menuGroupKey: '/finance/__group__/receivables-payables',
+      menuGroupTitle: '往来与收付',
+      menuGroupIcon: 'ep:wallet',
+      menuGroupOrder: 20,
+      menuOrder: 30,
+      routeName: '项目付款管理'
+    }
+  ],
+  [
+    'prepayment',
+    {
+      menuGroupKey: '/finance/__group__/receivables-payables',
+      menuGroupTitle: '往来与收付',
+      menuGroupIcon: 'ep:wallet',
+      menuGroupOrder: 20,
+      menuOrder: 40
+    }
+  ],
+  [
+    'ap-estimate',
+    {
+      menuGroupKey: '/finance/__group__/expense-procurement',
+      menuGroupTitle: '费用与采购管理',
+      menuGroupIcon: 'ep:document-checked',
+      menuGroupOrder: 30,
+      menuOrder: 10
+    }
+  ],
+  [
+    'ap-invoice',
+    {
+      menuGroupKey: '/finance/__group__/expense-procurement',
+      menuGroupTitle: '费用与采购管理',
+      menuGroupIcon: 'ep:document-checked',
+      menuGroupOrder: 30,
+      menuOrder: 20
+    }
+  ],
+  [
+    'expense',
+    {
+      menuGroupKey: '/finance/__group__/expense-procurement',
+      menuGroupTitle: '费用与采购管理',
+      menuGroupIcon: 'ep:document-checked',
+      menuGroupOrder: 30,
+      menuOrder: 30
+    }
+  ],
+  [
+    'voucher',
+    {
+      menuGroupKey: '/finance/__group__/ledger-accounting',
+      menuGroupTitle: '总账与核算',
+      menuGroupIcon: 'ep:collection',
+      menuGroupOrder: 40,
+      menuOrder: 10,
+      routeName: '财务凭证'
+    }
+  ],
+  [
+    'general-ledger',
+    {
+      menuGroupKey: '/finance/__group__/ledger-accounting',
+      menuGroupTitle: '总账与核算',
+      menuGroupIcon: 'ep:collection',
+      menuGroupOrder: 40,
+      menuOrder: 20
+    }
+  ],
+  [
+    'assets',
+    {
+      menuGroupKey: '/finance/__group__/ledger-accounting',
+      menuGroupTitle: '总账与核算',
+      menuGroupIcon: 'ep:collection',
+      menuGroupOrder: 40,
+      menuOrder: 30,
+      routeName: '固定资产台账'
+    }
+  ],
+  [
+    'voucher-template',
+    {
+      menuGroupKey: '/finance/__group__/ledger-accounting',
+      menuGroupTitle: '总账与核算',
+      menuGroupIcon: 'ep:collection',
+      menuGroupOrder: 40,
+      menuOrder: 40
+    }
+  ],
+  [
+    'reports',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 10,
+      routeName: '财务报表'
+    }
+  ],
+  [
+    'cost',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 20,
+      routeName: '项目成本分析'
+    }
+  ],
+  [
+    'cost-product-trend',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 30
+    }
+  ],
+  [
+    'dual-ledger-result',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 40
+    }
+  ],
+  [
+    'dual-project-cost',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 50
+    }
+  ],
+  [
+    'dual-product-cost',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 60
+    }
+  ],
+  [
+    'cost-report',
+    {
+      menuGroupKey: '/finance/__group__/report-analysis',
+      menuGroupTitle: '报表与分析',
+      menuGroupIcon: 'ep:data-analysis',
+      menuGroupOrder: 50,
+      menuOrder: 70
     }
   ]
 ])
@@ -330,17 +571,21 @@ const sortByOrder = <T extends { meta?: Record<string, any> }>(routes: T[] = [])
   })
 }
 
-const decorateScmMenus = (routes: AppCustomRouteRecordRaw[] = []) => {
+const decorateMenusByRoot = (
+  routes: AppCustomRouteRecordRaw[] = [],
+  rootPath: string,
+  decorations: Map<string, MenuDecoration>
+) => {
   return routes.map((route) => {
     const clonedRoute = cloneRouteTree(route)
-    if (normalizeRoutePath(clonedRoute.path) !== '/scm') {
+    if (normalizeRoutePath(clonedRoute.path) !== rootPath) {
       return clonedRoute
     }
 
     clonedRoute.children = sortByOrder(
       (clonedRoute.children || []).map((child) => {
         const decoratedChild = cloneRouteTree(child)
-        const decoration = scmMenuDecorations.get(normalizeRouteSegment(decoratedChild.path))
+        const decoration = decorations.get(normalizeRouteSegment(decoratedChild.path))
         if (!decoration) {
           return decoratedChild
         }
@@ -364,6 +609,14 @@ const decorateScmMenus = (routes: AppCustomRouteRecordRaw[] = []) => {
 
     return clonedRoute
   })
+}
+
+const decorateFinanceMenus = (routes: AppCustomRouteRecordRaw[] = []) => {
+  return decorateMenusByRoot(routes, '/finance', financeMenuDecorations)
+}
+
+const decorateScmMenus = (routes: AppCustomRouteRecordRaw[] = []) => {
+  return decorateMenusByRoot(routes, '/scm', scmMenuDecorations)
 }
 
 const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
@@ -1008,12 +1261,86 @@ const shouldRetainRouteWhenFormalized = (route: AppCustomRouteRecordRaw) => {
     return false
   }
 
+  if (embeddedScmCapabilityPaths.has(normalizeRouteSegment(route.path))) {
+    return false
+  }
+
   const legacySource = route.meta?.[legacyMenuSourceMetaKey]
   if (legacySource === legacyMenuSourceErp && !formalRootPaths.has(normalizedPath)) {
     return false
   }
 
   return true
+}
+
+const shouldRetainFormalAugmentation = (
+  route: AppCustomRouteRecordRaw,
+  normalizedMenus: AppCustomRouteRecordRaw[] = []
+) => {
+  if (normalizeRoutePath(route.path) !== '/scm') {
+    return true
+  }
+
+  const remoteScmRoute = normalizedMenus.find((item) => normalizeRoutePath(item.path) === '/scm')
+  return !remoteScmRoute?.children?.length
+}
+
+const filterEmbeddedScmCapabilities = (
+  routes: AppCustomRouteRecordRaw[] = []
+): AppCustomRouteRecordRaw[] => {
+  return routes
+    .filter((route) => !embeddedScmCapabilityPaths.has(normalizeRouteSegment(route.path)))
+    .map((route) => {
+      const clonedRoute = cloneRouteTree(route)
+      clonedRoute.children = filterEmbeddedScmCapabilities(clonedRoute.children || [])
+      return clonedRoute
+    })
+}
+
+const scmCompatibilityGroupPaths = new Set(['demand-plan', 'procurement', 'inventory-warehouse'])
+
+const createHiddenCompatibilityRoute = (route: AppCustomRouteRecordRaw): AppCustomRouteRecordRaw => {
+  const compatibilityRoute = cloneRouteTree(route)
+  compatibilityRoute.meta = {
+    ...(compatibilityRoute.meta || {}),
+    hidden: true
+  }
+  compatibilityRoute.visible = false
+  compatibilityRoute.children = undefined
+  return compatibilityRoute
+}
+
+const appendScmFlatCompatibilityRoutes = (
+  routes: AppCustomRouteRecordRaw[] = []
+): AppCustomRouteRecordRaw[] => {
+  return routes.map((route) => {
+    if (normalizeRoutePath(route.path) !== '/scm') {
+      return route
+    }
+
+    const clonedRoute = cloneRouteTree(route)
+    const children = clonedRoute.children || []
+    const existingPaths = new Set(children.map((child) => normalizeRoutePath(child.path)))
+    const compatibilityRoutes: AppCustomRouteRecordRaw[] = []
+
+    for (const groupRoute of children) {
+      if (!scmCompatibilityGroupPaths.has(normalizeRouteSegment(groupRoute.path))) {
+        continue
+      }
+
+      for (const childRoute of groupRoute.children || []) {
+        const childPath = normalizeRoutePath(childRoute.path)
+        if (!childPath || existingPaths.has(childPath)) {
+          continue
+        }
+        existingPaths.add(childPath)
+        compatibilityRoutes.push(createHiddenCompatibilityRoute(childRoute))
+      }
+    }
+
+    clonedRoute.children = [...children, ...compatibilityRoutes]
+    return clonedRoute
+  })
 }
 
 export const mergeProjectDrivenMenus = (
@@ -1030,9 +1357,15 @@ export const mergeProjectDrivenMenus = (
     : flattenedMenus
   const menuAugmentations = formalized
     ? mergeMenusByPath(flattenErpRootMenus(flatMenuAugmentations)).filter((route) =>
-        shouldRetainRouteWhenFormalized(route)
+        shouldRetainRouteWhenFormalized(route) && shouldRetainFormalAugmentation(route, normalizedMenus)
       )
     : flatMenuAugmentations
 
-  return decorateScmMenus(mergeMenusByPath([...normalizedMenus, ...menuAugmentations]))
+  return decorateScmMenus(
+    decorateFinanceMenus(
+      appendScmFlatCompatibilityRoutes(
+        filterEmbeddedScmCapabilities(mergeMenusByPath([...normalizedMenus, ...menuAugmentations]))
+      )
+    )
+  )
 }

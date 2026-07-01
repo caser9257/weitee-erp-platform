@@ -688,7 +688,7 @@
     </template>
   </Dialog>
 
-  <Dialog :title="basisDialogTitle" v-model="basisDialogVisible" width="760px">
+  <Dialog :title="basisDialogTitle" v-model="basisDialogVisible" width="920px">
     <div v-if="basisDialogData" class="basis-dialog">
       <div class="basis-trace">
         <div class="basis-trace__title">运算摘要</div>
@@ -760,6 +760,76 @@
           <div class="basis-card__value">{{ item.value }}</div>
         </div>
       </div>
+
+      <div class="basis-reservation">
+        <div class="basis-reservation__header">
+          <div class="basis-reservation__title">库存占用明细</div>
+          <el-button
+            link
+            type="primary"
+            :disabled="basisReservationLoading || !basisReservationQuery.productId"
+            @click="refreshBasisReservation"
+          >
+            <Icon icon="ep:refresh" class="mr-4px" />
+            刷新
+          </el-button>
+        </div>
+
+        <el-alert
+          v-if="basisReservationErrorMessage"
+          :title="basisReservationErrorMessage"
+          type="error"
+          :closable="false"
+          show-icon
+          class="basis-reservation__alert"
+        />
+
+        <el-empty
+          v-else-if="!basisReservationLoading && !basisReservationList.length"
+          description="暂无库存占用明细"
+        />
+
+        <el-table
+          v-else
+          v-loading="basisReservationLoading"
+          :data="basisReservationList"
+          stripe
+          show-overflow-tooltip
+          class="basis-reservation__table"
+          max-height="320px"
+        >
+          <el-table-column label="占用编号" prop="id" width="110" align="center" />
+          <el-table-column label="计划编号" prop="planNo" min-width="140" />
+          <el-table-column label="项目" prop="projectName" min-width="160" />
+          <el-table-column label="物料" prop="productName" min-width="160" />
+          <el-table-column label="来源销售单" prop="sourceOrderNo" min-width="140" align="center" />
+          <el-table-column label="占用数量" prop="reservedQty" width="120" align="right">
+            <template #default="{ row }">
+              {{ formatMrpQty(row.reservedQty) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" prop="status" width="110" align="center">
+            <template #default="{ row }">
+              <el-tag :type="getReservationStatusTagType(row.status)">
+                {{ getReservationStatusLabel(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="创建时间" prop="createTime" min-width="170" align="center">
+            <template #default="{ row }">
+              {{ formatBasisReservationTime(row.createTime) }}
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <Pagination
+          v-if="basisReservationTotal > 0"
+          v-model:page="basisReservationQuery.pageNo"
+          v-model:limit="basisReservationQuery.pageSize"
+          :total="basisReservationTotal"
+          @pagination="getBasisReservationList"
+        />
+      </div>
     </div>
   </Dialog>
 
@@ -778,8 +848,14 @@ import {
   PurchaseSuggestConvertReqVO,
   ProductionSuggestConvertReqVO
 } from '@/api/erp/mrp/suggest'
+import {
+  StockReservationApi,
+  type StockReservationPageReqVO,
+  type StockReservationVO
+} from '@/api/erp/mrp/stock-reservation'
 import { useRoute, useRouter } from 'vue-router'
 import { checkPermi } from '@/utils/permission'
+import { formatDate } from '@/utils/formatTime'
 
 defineOptions({ name: 'ErpMrpSuggest' })
 
@@ -959,6 +1035,20 @@ const basisDialogData = ref<
     }
   | undefined
 >()
+const basisReservationLoading = ref(false)
+const basisReservationErrorMessage = ref('')
+const basisReservationList = ref<StockReservationVO[]>([])
+const basisReservationTotal = ref(0)
+const basisReservationQuery = reactive<StockReservationPageReqVO>({
+  pageNo: 1,
+  pageSize: 5,
+  planId: undefined,
+  projectId: undefined,
+  productId: undefined,
+  sourceOrderId: undefined,
+  status: 0
+})
+let basisReservationRequestId = 0
 
 const getBasisActionLabel = (data: NonNullable<typeof basisDialogData.value>) => {
   return data.mode === 'production' ? '建议生产' : '建议采购'
@@ -985,6 +1075,87 @@ const getBasisMetricCards = (data: NonNullable<typeof basisDialogData.value>) =>
     { label: '项目在制', value: formatMrpQty(data.wipQty) },
     { label: '本次冻结现货', value: formatMrpQty(data.reservedStockQty) }
   ]
+}
+
+const getReservationStatusLabel = (status?: number) => {
+  return status === 1 ? '已释放' : '占用中'
+}
+
+const getReservationStatusTagType = (status?: number) => {
+  return status === 1 ? 'success' : 'warning'
+}
+
+const formatBasisReservationTime = (value?: string | number) => {
+  if (value === undefined || value === null || value === '') {
+    return '-'
+  }
+  return formatDate(value) || String(value)
+}
+
+const resetBasisReservationState = () => {
+  basisReservationRequestId += 1
+  basisReservationErrorMessage.value = ''
+  basisReservationList.value = []
+  basisReservationTotal.value = 0
+  basisReservationLoading.value = false
+  basisReservationQuery.pageNo = 1
+  basisReservationQuery.pageSize = 5
+  basisReservationQuery.planId = undefined
+  basisReservationQuery.projectId = undefined
+  basisReservationQuery.productId = undefined
+  basisReservationQuery.sourceOrderId = undefined
+  basisReservationQuery.status = 0
+}
+
+const getBasisReservationList = async () => {
+  if (!basisDialogData.value || !basisReservationQuery.planId || !basisReservationQuery.productId) {
+    basisReservationList.value = []
+    basisReservationTotal.value = 0
+    return
+  }
+  const currentRequestId = ++basisReservationRequestId
+  basisReservationLoading.value = true
+  basisReservationErrorMessage.value = ''
+  try {
+    const data = await StockReservationApi.getStockReservationPage(basisReservationQuery)
+    if (currentRequestId !== basisReservationRequestId) {
+      return
+    }
+    basisReservationList.value = data.list
+    basisReservationTotal.value = data.total
+  } catch (error: any) {
+    if (currentRequestId !== basisReservationRequestId) {
+      return
+    }
+    basisReservationErrorMessage.value = error?.message || '占用明细加载失败'
+  } finally {
+    if (currentRequestId === basisReservationRequestId) {
+      basisReservationLoading.value = false
+    }
+  }
+}
+
+const refreshBasisReservation = async () => {
+  basisReservationQuery.pageNo = 1
+  await getBasisReservationList()
+}
+
+const openBasisReservation = async (payload: {
+  planId: number
+  projectId?: number
+  productId?: number
+  sourceOrderId?: number
+}) => {
+  resetBasisReservationState()
+  basisReservationQuery.planId = payload.planId
+  basisReservationQuery.projectId = payload.projectId
+  basisReservationQuery.productId = payload.productId
+  basisReservationQuery.sourceOrderId = payload.sourceOrderId
+  if (!basisReservationQuery.productId) {
+    basisReservationErrorMessage.value = '当前建议缺少物料/产品信息，无法加载库存占用明细'
+    return
+  }
+  await getBasisReservationList()
 }
 
 const getPurchaseList = async () => {
@@ -1279,6 +1450,12 @@ const openPurchaseBasis = (row: PurchaseSuggestVO) => {
     mode: 'purchase'
   }
   basisDialogVisible.value = true
+  void openBasisReservation({
+    planId: row.planId,
+    projectId: row.projectId,
+    productId: row.materialId,
+    sourceOrderId: row.sourceOrderId
+  })
 }
 
 const openProductionBasis = (row: ProductionSuggestVO) => {
@@ -1299,6 +1476,12 @@ const openProductionBasis = (row: ProductionSuggestVO) => {
     mode: 'production'
   }
   basisDialogVisible.value = true
+  void openBasisReservation({
+    planId: row.planId,
+    projectId: row.projectId,
+    productId: row.productId,
+    sourceOrderId: row.sourceOrderId
+  })
 }
 
 const openPurchaseOrderDetail = async (purchaseOrderId: number) => {
@@ -1352,6 +1535,7 @@ const syncTraceFromRoute = async () => {
   purchaseConvertDialogVisible.value = false
   productionConvertDialogVisible.value = false
   basisDialogVisible.value = false
+  resetBasisReservationState()
   purchaseQueryParams.planId = planId
   purchaseQueryParams.sourceOrderId = sourceOrderId
   purchaseQueryParams.status = defaultPurchaseStatus.value
@@ -2238,6 +2422,35 @@ watch(
   font-size: 22px;
 }
 
+.basis-reservation {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e6edf5;
+}
+
+.basis-reservation__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.basis-reservation__title {
+  color: #16324f;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.basis-reservation__alert {
+  margin-bottom: 12px;
+}
+
+.basis-reservation__table {
+  width: 100%;
+}
+
 @media (max-width: 1440px) {
   .mrp-workbench-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2320,6 +2533,11 @@ watch(
 
   .basis-trace__grid {
     grid-template-columns: 1fr;
+  }
+
+  .basis-reservation__header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

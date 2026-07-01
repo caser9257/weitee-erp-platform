@@ -108,3 +108,51 @@ assert.equal(
   }),
   '/scm/__group__/warehouse'
 )
+
+const databaseGroupedRoutes = [
+  {
+    path: '/scm',
+    name: '供应链管理',
+    meta: { title: '供应链管理', icon: 'ep:shopping-cart-full' },
+    children: [
+      {
+        path: 'demand-plan',
+        name: '需求与计划',
+        component: {},
+        meta: { title: '需求与计划', icon: 'ep:histogram', order: 10 },
+        children: [
+          { path: 'plan-rule', name: '计划参数', meta: { title: '计划参数' } },
+          { path: 'suggest', name: 'MRP 运算', meta: { title: 'MRP 运算' } }
+        ]
+      },
+      {
+        path: 'procurement',
+        name: '采购执行',
+        component: {},
+        meta: { title: '采购执行', icon: 'ep:shopping-cart-full', order: 20 },
+        children: [
+          { path: 'purchase-order', name: '采购订单台账', meta: { title: '采购订单台账' } },
+          { path: 'inbound', name: '收货入库', meta: { title: '收货入库' } },
+          { path: 'outsource-inbound', name: '委外入库', meta: { title: '委外入库' } },
+          { path: 'return', name: '采购退货', meta: { title: '采购退货' } }
+        ]
+      }
+    ]
+  }
+] as any[]
+
+const databaseGroupedModel = buildGroupedMenuEntries(databaseGroupedRoutes)
+
+assert.equal(hasGroupedMenuEntries(databaseGroupedRoutes), true)
+assert.deepEqual(
+  databaseGroupedModel.groups.map((group) => group.key),
+  ['/scm/demand-plan', '/scm/procurement']
+)
+assert.deepEqual(
+  databaseGroupedModel.groups.find((group) => group.key === '/scm/procurement')?.routes.map((route) => route.path),
+  ['purchase-order', 'inbound', 'outsource-inbound', 'return']
+)
+assert.deepEqual(
+  databaseGroupedModel.directRoutes.map((route) => route.path),
+  []
+)

@@ -372,17 +372,6 @@ const projectDrivenMenus: AppCustomRouteRecordRaw[] = [
         keepAlive: false
       },
       {
-        path: 'stock-occupancy',
-        name: '\u5e93\u5b58\u5360\u7528\u8ffd\u6eaf',
-        icon: 'ep:lock',
-        component: 'erp/mrp/stock-reservation/index',
-        componentName: 'ProjectScmStockReservation',
-        redirect: '',
-        meta: {},
-        visible: true,
-        keepAlive: false
-      },
-      {
         path: 'netting-policy',
         name: '\u51c0\u9700\u6c42\u7b56\u7565',
         icon: 'ep:operation',

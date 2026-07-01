@@ -36,7 +36,7 @@ export type PurchaseInActionDescriptor =
     }
   | {
       visible: true
-      label: '生成采购入库' | '继续处理' | '查看入库单'
+      label: '去入库主控'
       action: 'create' | 'detail' | 'view'
     }
 
@@ -99,20 +99,20 @@ export function getPurchaseInActionDescriptor(
   if (input.hasPendingPurchaseIn && pendingPurchaseInId > 0) {
     return {
       visible: true,
-      label: '继续处理',
+      label: '去入库主控',
       action: 'detail'
     }
   }
   if (input.hasPendingPurchaseIn) {
     return {
       visible: true,
-      label: '查看入库单',
+      label: '去入库主控',
       action: 'view'
     }
   }
   return {
     visible: true,
-    label: '生成采购入库',
+    label: '去入库主控',
     action: 'create'
   }
 }

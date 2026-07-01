@@ -592,6 +592,7 @@ import {
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { WarehouseCategoryApi, WarehouseCategoryVO } from '@/api/erp/stock/warehouse-category'
+import { useRoute, useRouter } from 'vue-router'
 import {
   getTonePillClass,
   resolveBizToneClass,
@@ -599,6 +600,11 @@ import {
   resolveSummaryCardClass,
   resolveWarehouseTone
 } from '../shared/stockTone'
+import {
+  buildRouteOpenStockRowFromBatch,
+  findRouteOpenBatch,
+  resolveStockRouteOpen
+} from './stockRouteOpen.helpers'
 
 defineOptions({ name: 'ErpStock' })
 
@@ -611,6 +617,8 @@ type StockRow = StockVO & {
 }
 
 const message = useMessage()
+const route = useRoute()
+const { replace } = useRouter()
 
 const stockListLoading = ref(true)
 const stockListError = ref('')
@@ -646,6 +654,7 @@ const allocationList = ref<StockBatchAllocationVO[]>([])
 const reservationList = ref<StockBatchReservationVO[]>([])
 const batchRecordList = ref<StockBatchRecordVO[]>([])
 const batchRecordTotal = ref(0)
+const routeOpenSyncing = ref(false)
 const batchQueryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -678,6 +687,13 @@ const showStockListErrorState = computed(
 )
 const isActiveBatchSession = (token: number) =>
   token === batchSessionToken.value && batchDrawerOpen.value
+const normalizeRouteNumber = (value: unknown) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    return undefined
+  }
+  const parsedValue = Number(value)
+  return Number.isNaN(parsedValue) || parsedValue <= 0 ? undefined : parsedValue
+}
 const resolveBizLabel = (value?: number | string | boolean | null) =>
   resolveDictLabel(getIntDictOptions(DICT_TYPE.ERP_STOCK_RECORD_BIZ_TYPE), value)
 const resolveWarehouseCategoryName = (row?: StockRow) => {
@@ -785,7 +801,7 @@ const handleExport = async () => {
   }
 }
 
-const openBatchDrawer = async (row: StockRow) => {
+const openBatchDrawer = async (row: StockRow, batchNo?: string) => {
   if (isAnyBatchActionLoading.value) {
     return
   }
@@ -798,9 +814,47 @@ const openBatchDrawer = async (row: StockRow) => {
   batchQueryParams.pageSize = 10
   batchQueryParams.productId = row.productId
   batchQueryParams.warehouseId = row.warehouseId
-  batchQueryParams.batchNo = undefined
+  batchQueryParams.batchNo = batchNo
   clearBatchTrace()
   await getBatchList(sessionToken)
+}
+
+const openBatchDrawerFromRouteFallback = async (
+  productId: number,
+  warehouseId: number,
+  routeBatchNo?: string
+) => {
+  try {
+    const data = await StockBatchApi.getStockBatchPage({
+      pageNo: 1,
+      pageSize: 50,
+      productId,
+      warehouseId
+    })
+    const routeBatch = findRouteOpenBatch(data.list || [], productId, warehouseId, routeBatchNo)
+    if (!routeBatch) {
+      message.warning('暂无符合条件的库存批次')
+      return
+    }
+    const fallbackRow = buildRouteOpenStockRowFromBatch(routeBatch, { productId, warehouseId })
+    batchSessionToken.value += 1
+    const sessionToken = batchSessionToken.value
+    currentStock.value = fallbackRow as StockRow
+    batchDrawerOpen.value = true
+    activeBatchTab.value = 'allocation'
+    batchQueryParams.pageNo = 1
+    batchQueryParams.pageSize = 10
+    batchQueryParams.productId = productId
+    batchQueryParams.warehouseId = warehouseId
+    batchQueryParams.batchNo = undefined
+    clearBatchTrace()
+    batchList.value = data.list || []
+    batchTotal.value = data.total || 0
+    await selectBatch(routeBatch, sessionToken)
+  } catch {
+    batchListError.value = '批次余额加载失败'
+    message.error(batchListError.value)
+  }
 }
 
 const getBatchList = async (token = batchSessionToken.value) => {
@@ -975,9 +1029,62 @@ const formatCount = (value?: number | string) => {
 
 const formatDateTime = (value?: string) => (value ? formatDate(value) : '-')
 
+const syncRouteOpen = async () => {
+  if (routeOpenSyncing.value) {
+    return
+  }
+  const routeOpen = resolveStockRouteOpen({
+    productId: normalizeRouteNumber(route.query.productId),
+    warehouseId: normalizeRouteNumber(route.query.warehouseId),
+    batchNo: typeof route.query.batchNo === 'string' ? route.query.batchNo : '',
+    openAction: typeof route.query.openAction === 'string' ? route.query.openAction : ''
+  })
+  if (routeOpen.action === 'none') {
+    return
+  }
+
+  routeOpenSyncing.value = true
+  try {
+    queryParams.productId = routeOpen.productId
+    queryParams.warehouseId = routeOpen.warehouseId
+    queryParams.pageNo = 1
+    await getList()
+
+    const nextQuery = { ...route.query }
+    routeOpen.cleanupKeys.forEach((key) => delete nextQuery[key])
+    await replace({ path: route.path, query: nextQuery })
+
+    if (routeOpen.action === 'batch-trace') {
+      const targetRow = list.value.find(
+        (item) =>
+          item.productId === routeOpen.productId && item.warehouseId === routeOpen.warehouseId
+      )
+      if (targetRow) {
+        await openBatchDrawer(targetRow, routeOpen.batchNo)
+      } else {
+        await openBatchDrawerFromRouteFallback(
+          routeOpen.productId,
+          routeOpen.warehouseId,
+          routeOpen.batchNo
+        )
+      }
+    }
+  } finally {
+    routeOpenSyncing.value = false
+  }
+}
+
 onMounted(async () => {
   await Promise.allSettled([getList(), loadFilterOptions()])
+  await syncRouteOpen()
 })
+
+watch(
+  () => [route.query.productId, route.query.warehouseId, route.query.batchNo, route.query.openAction],
+  async () => {
+    await syncRouteOpen()
+  }
+)
 </script>
 
 <style scoped>

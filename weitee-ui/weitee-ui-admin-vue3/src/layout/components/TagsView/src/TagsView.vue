@@ -14,6 +14,7 @@ import { ElScrollbar } from 'element-plus'
 import { useScrollTo } from '@/hooks/event/useScrollTo'
 import { useTagsView } from '@/hooks/web/useTagsView'
 import { cloneDeep } from 'lodash-es'
+import { getTagsViewIdentityKey } from '@/utils/tagsViewIdentity'
 
 defineOptions({ name: 'TagsView' })
 
@@ -48,6 +49,13 @@ const tagsViewImmerse = computed(() => appStore.getTagsViewImmerse)
 const tagsViewIcon = computed(() => appStore.getTagsViewIcon)
 
 const isDark = computed(() => appStore.getIsDark)
+
+const isSameTag = (
+  left?: RouteLocationNormalizedLoaded,
+  right?: RouteLocationNormalizedLoaded
+) => {
+  return !!left && !!right && getTagsViewIdentityKey(left) === getTagsViewIdentityKey(right)
+}
 
 // 初始化tag
 const initTags = () => {
@@ -128,7 +136,7 @@ const closeRightTags = () => {
 const moveToCurrentTag = async () => {
   await nextTick()
   for (const v of unref(visitedViews)) {
-    if (v.fullPath === unref(currentRoute).fullPath) {
+    if (isSameTag(v, unref(currentRoute))) {
       moveToTarget(v)
       break
     }
@@ -148,7 +156,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
     firstTag = tagList[0]
     lastTag = tagList[tagList.length - 1]
   }
-  if ((firstTag?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath) {
+  if (isSameTag(firstTag?.to as RouteLocationNormalizedLoaded, currentTag)) {
     // 直接滚动到0的位置
     const { start } = useScrollTo({
       el: wrap$!,
@@ -157,7 +165,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
       duration: 500
     })
     start()
-  } else if ((lastTag?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath) {
+  } else if (isSameTag(lastTag?.to as RouteLocationNormalizedLoaded, currentTag)) {
     // 滚动到最后的位置
     const { start } = useScrollTo({
       el: wrap$!,
@@ -168,8 +176,8 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
     start()
   } else {
     // find preTag and nextTag
-    const currentIndex: number = tagList.findIndex(
-      (item) => (item?.to as RouteLocationNormalizedLoaded).fullPath === currentTag.fullPath
+    const currentIndex: number = tagList.findIndex((item) =>
+      isSameTag(item?.to as RouteLocationNormalizedLoaded, currentTag)
     )
     const tgsRefs = document.getElementsByClassName(`${prefixCls}__item`)
 
@@ -204,7 +212,7 @@ const moveToTarget = (currentTag: RouteLocationNormalizedLoaded) => {
 
 // 是否是当前tag
 const isActive = (route: RouteLocationNormalizedLoaded): boolean => {
-  return route.fullPath === unref(currentRoute).fullPath
+  return isSameTag(route, unref(currentRoute))
 }
 
 // 所有右键菜单组件的元素
@@ -215,7 +223,7 @@ const visibleChange = (visible: boolean, tagItem: RouteLocationNormalizedLoaded)
   if (visible) {
     for (const v of unref(itemRefs)) {
       const elDropdownMenuRef = v.elDropdownMenuRef
-      if (tagItem.fullPath !== v.tagItem.fullPath) {
+      if (!isSameTag(tagItem, v.tagItem)) {
         elDropdownMenuRef?.handleClose()
         setSelectTag(tagItem)
       }
@@ -300,7 +308,7 @@ watch(
         <div class="h-[var(--tags-view-height)] flex">
           <ContextMenu
             v-for="item in visitedViews"
-            :key="item.fullPath"
+            :key="getTagsViewIdentityKey(item)"
             :ref="itemRefs.set"
             @auxclick="closeTabOnMouseMidClick($event, item)"
             :class="[
@@ -317,7 +325,7 @@ watch(
               {
                 icon: 'ep:refresh',
                 label: t('common.reload'),
-                disabled: selectedTag?.fullPath !== item.fullPath,
+                disabled: !isSameTag(selectedTag, item),
                 command: () => {
                   refreshSelectedTag(item)
                 }
@@ -336,8 +344,7 @@ watch(
                 label: t('common.closeTheLeftTab'),
                 disabled:
                   !!visitedViews?.length &&
-                  (item.fullPath === visitedViews[0].fullPath ||
-                    selectedTag?.fullPath !== item.fullPath),
+                  (isSameTag(item, visitedViews[0]) || !isSameTag(selectedTag, item)),
                 command: () => {
                   closeLeftTags()
                 }
@@ -347,8 +354,8 @@ watch(
                 label: t('common.closeTheRightTab'),
                 disabled:
                   !!visitedViews?.length &&
-                  (item.fullPath === visitedViews[visitedViews.length - 1].fullPath ||
-                    selectedTag?.fullPath !== item.fullPath),
+                  (isSameTag(item, visitedViews[visitedViews.length - 1]) ||
+                    !isSameTag(selectedTag, item)),
                 command: () => {
                   closeRightTags()
                 }
@@ -357,7 +364,7 @@ watch(
                 divided: true,
                 icon: 'ep:discount',
                 label: t('common.closeOther'),
-                disabled: selectedTag?.fullPath !== item.fullPath,
+                disabled: !isSameTag(selectedTag, item),
                 command: () => {
                   closeOthersTags()
                 }
@@ -452,7 +459,7 @@ watch(
           divided: true,
           icon: 'ep:d-arrow-left',
           label: t('common.closeTheLeftTab'),
-          disabled: !!visitedViews?.length && selectedTag?.fullPath === visitedViews[0].fullPath,
+          disabled: !!visitedViews?.length && isSameTag(selectedTag, visitedViews[0]),
           command: () => {
             closeLeftTags()
           }
@@ -462,7 +469,7 @@ watch(
           label: t('common.closeTheRightTab'),
           disabled:
             !!visitedViews?.length &&
-            selectedTag?.fullPath === visitedViews[visitedViews.length - 1].fullPath,
+            isSameTag(selectedTag, visitedViews[visitedViews.length - 1]),
           command: () => {
             closeRightTags()
           }

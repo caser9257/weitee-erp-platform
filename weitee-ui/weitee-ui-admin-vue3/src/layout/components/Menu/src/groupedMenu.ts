@@ -19,8 +19,19 @@ const joinRoutePath = (parentPath: string, path: string) => {
 
 const isGroupedRoute = (route: AppRouteRecordRaw) => Boolean(route.meta?.menuGroupKey)
 
+const isDatabaseGroupRoute = (route: AppRouteRecordRaw) => {
+  const children = route.children || []
+  const routePath = route.path || ''
+  return (
+    Boolean(routePath) &&
+    !routePath.startsWith('/') &&
+    children.length > 0 &&
+    children.every((child) => !child.children?.length)
+  )
+}
+
 const hasGroupedDescendant = (route: AppRouteRecordRaw): boolean => {
-  if (isGroupedRoute(route)) {
+  if (isGroupedRoute(route) || isDatabaseGroupRoute(route)) {
     return true
   }
   return (route.children || []).some((child) => hasGroupedDescendant(child))
@@ -52,6 +63,21 @@ const visitGroupedRoutes = (
   const groupKey = route.meta?.menuGroupKey as string | undefined
   const childRoutes = route.children || []
   const fullPath = route.path?.startsWith('/') ? route.path : joinRoutePath(parentPath, route.path)
+
+  if (!groupKey && isDatabaseGroupRoute(route)) {
+    groupedRouteMap.set(fullPath, {
+      key: fullPath,
+      title: (route.meta?.title as string) || route.name || '',
+      icon: route.meta?.icon as string | undefined,
+      order: Number(route.meta?.order ?? Number.MAX_SAFE_INTEGER),
+      basePath: fullPath,
+      routes: childRoutes.map((child) => ({
+        ...child,
+        children: child.children?.map((nestedChild) => ({ ...nestedChild }))
+      }))
+    })
+    return
+  }
 
   if (groupKey) {
     if (!groupedRouteMap.has(groupKey)) {

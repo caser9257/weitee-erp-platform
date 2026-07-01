@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.erp.service.stock;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.category.ErpWarehouseCategoryListReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.category.ErpWarehouseCategorySaveReqVO;
@@ -11,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -79,6 +81,9 @@ public class ErpWarehouseCategoryServiceImpl implements ErpWarehouseCategoryServ
 
     @Override
     public List<ErpWarehouseCategoryDO> getWarehouseCategoryList(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
         return erpWarehouseCategoryMapper.selectByIds(ids);
     }
 

@@ -24,7 +24,7 @@ assert.equal(
     hasPendingPurchaseIn: true,
     pendingPurchaseInId: 12
   }).label,
-  '继续处理'
+  '去入库主控'
 )
 
 assert.equal(
@@ -70,7 +70,7 @@ assert.equal(
     inCount: 0,
     hasPendingPurchaseIn: false
   }).label,
-  '生成采购入库'
+  '去入库主控'
 )
 
 assert.equal(

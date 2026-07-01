@@ -5,6 +5,7 @@ import { defineStore } from 'pinia'
 import { store } from '../index'
 import { findIndex } from '@/utils'
 import { useUserStoreWithOut } from './user'
+import { getTagsViewIdentityKey } from '@/utils/tagsViewIdentity'
 
 export interface TagsViewState {
   visitedViews: RouteLocationNormalizedLoaded[]
@@ -37,9 +38,19 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 新增tag
     addVisitedView(view: RouteLocationNormalizedLoaded) {
-      if (this.visitedViews.some((v) => v.fullPath === view.fullPath)) return
       if (view.meta?.noTagsView) return
       const visitedView = Object.assign({}, view, { title: view.meta?.title || 'no-name' })
+      const viewIdentityKey = getTagsViewIdentityKey(visitedView)
+      const existingIndex = this.visitedViews.findIndex(
+        (v) => getTagsViewIdentityKey(v) === viewIdentityKey
+      )
+      if (existingIndex > -1) {
+        const existingView = this.visitedViews[existingIndex]
+        this.visitedViews[existingIndex] = Object.assign({}, existingView, visitedView, {
+          meta: Object.assign({}, existingView.meta, visitedView.meta)
+        })
+        return
+      }
 
       if (visitedView.meta) {
         const titleSuffixList: string[] = []
@@ -82,8 +93,9 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 删除tag
     delVisitedView(view: RouteLocationNormalizedLoaded) {
+      const viewIdentityKey = getTagsViewIdentityKey(view)
       for (const [i, v] of this.visitedViews.entries()) {
-        if (v.fullPath === view.fullPath) {
+        if (getTagsViewIdentityKey(v) === viewIdentityKey) {
           this.visitedViews.splice(i, 1)
           break
         }
@@ -124,40 +136,46 @@ export const useTagsViewStore = defineStore('tagsView', {
     },
     // 删除其他tag
     delOthersVisitedViews(view: RouteLocationNormalizedLoaded) {
+      const viewIdentityKey = getTagsViewIdentityKey(view)
       this.visitedViews = this.visitedViews.filter((v) => {
-        return v?.meta?.affix || v.fullPath === view.fullPath
+        return v?.meta?.affix || getTagsViewIdentityKey(v) === viewIdentityKey
       })
     },
     // 删除左侧
     delLeftViews(view: RouteLocationNormalizedLoaded) {
+      const viewIdentityKey = getTagsViewIdentityKey(view)
       const index = findIndex<RouteLocationNormalizedLoaded>(
         this.visitedViews,
-        (v) => v.fullPath === view.fullPath
+        (v) => getTagsViewIdentityKey(v) === viewIdentityKey
       )
       if (index > -1) {
         this.visitedViews = this.visitedViews.filter((v, i) => {
-          return v?.meta?.affix || v.fullPath === view.fullPath || i > index
+          return v?.meta?.affix || getTagsViewIdentityKey(v) === viewIdentityKey || i > index
         })
         this.addCachedView()
       }
     },
     // 删除右侧
     delRightViews(view: RouteLocationNormalizedLoaded) {
+      const viewIdentityKey = getTagsViewIdentityKey(view)
       const index = findIndex<RouteLocationNormalizedLoaded>(
         this.visitedViews,
-        (v) => v.fullPath === view.fullPath
+        (v) => getTagsViewIdentityKey(v) === viewIdentityKey
       )
       if (index > -1) {
         this.visitedViews = this.visitedViews.filter((v, i) => {
-          return v?.meta?.affix || v.fullPath === view.fullPath || i < index
+          return v?.meta?.affix || getTagsViewIdentityKey(v) === viewIdentityKey || i < index
         })
         this.addCachedView()
       }
     },
     updateVisitedView(view: RouteLocationNormalizedLoaded) {
-      for (let v of this.visitedViews) {
-        if (v.fullPath === view.fullPath) {
-          v = Object.assign(v, view)
+      const viewIdentityKey = getTagsViewIdentityKey(view)
+      for (const [i, v] of this.visitedViews.entries()) {
+        if (getTagsViewIdentityKey(v) === viewIdentityKey) {
+          this.visitedViews[i] = Object.assign({}, v, view, {
+            meta: Object.assign({}, v.meta, view.meta)
+          })
           break
         }
       }

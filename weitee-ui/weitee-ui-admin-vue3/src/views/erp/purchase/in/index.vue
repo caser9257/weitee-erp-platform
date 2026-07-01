@@ -3,6 +3,31 @@
 
   <ContentWrap class="purchase-in-page__filter-card">
     <div class="purchase-in-page__title">采购入库台账</div>
+    <div class="purchase-in-main-control">
+      <div class="purchase-in-main-control__head">
+        <div class="purchase-in-main-control__title">供应链主控</div>
+        <div class="purchase-in-main-control__current">
+          当前阶段
+          <span>{{ currentMainControlStage.label }}</span>
+        </div>
+      </div>
+      <div class="purchase-in-main-control__stages">
+        <button
+          v-for="stage in PURCHASE_IN_MAIN_CONTROL_STAGES"
+          :key="stage.key"
+          type="button"
+          class="purchase-in-main-control__stage"
+          :class="[
+            `purchase-in-main-control__stage--${stage.tone}`,
+            { 'is-active': mainControlStage === stage.key }
+          ]"
+          :disabled="loading"
+          @click="handleMainControlStageChange(stage.key)"
+        >
+          {{ stage.label }}
+        </button>
+      </div>
+    </div>
     <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="purchase-in-query">
       <div class="purchase-in-query__grid purchase-in-query__grid--primary">
         <el-form-item label="入库单号" prop="no">
@@ -383,11 +408,9 @@
               v-if="getOverflowActionDescriptors(row).length"
               @command="(command) => handleCommand(command, row)"
             >
-              <el-tooltip content="更多操作" placement="top">
-                <el-button link type="primary" class="ledger-actions__more">
-                  <Icon icon="ep:more-filled" />
-                </el-button>
-              </el-tooltip>
+              <el-button link type="primary" class="ledger-actions__more" title="更多操作">
+                <Icon icon="ep:more-filled" />
+              </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item
@@ -530,11 +553,9 @@
               v-if="getOverflowActionDescriptors(row).length"
               @command="(command) => handleCommand(command, row)"
             >
-              <el-tooltip content="更多操作" placement="top">
-                <el-button link type="primary" class="purchase-in-mobile-card__more">
-                  <Icon icon="ep:more-filled" />
-                </el-button>
-              </el-tooltip>
+              <el-button link type="primary" class="purchase-in-mobile-card__more" title="更多操作">
+                <Icon icon="ep:more-filled" />
+              </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item
@@ -618,6 +639,15 @@ import {
   getPurchaseInToolbarDescriptor
 } from './purchaseInStatus.helpers'
 import { resolvePurchaseInRouteOpen } from './purchaseInRouteOpen.helpers'
+import {
+  getPurchaseInMainControlActions,
+  getPurchaseInMainControlStageQuery,
+  getPurchaseInPrimaryStockContext,
+  PURCHASE_IN_MAIN_CONTROL_STAGES,
+  STOCK_RECORD_BIZ_TYPE,
+  type PurchaseInMainControlActionKey,
+  type PurchaseInMainControlStageKey
+} from './purchaseInMainControl.helpers'
 import { useWindowSize } from '@vueuse/core'
 
 defineOptions({ name: 'ErpPurchaseIn' })
@@ -650,6 +680,10 @@ type PurchaseInActionKey =
   | 'qualityDetail'
   | 'qualityCheck'
   | 'stockExecute'
+  | 'viewPurchaseOrder'
+  | 'viewStock'
+  | 'traceBatch'
+  | 'viewStockFlow'
   | 'print'
   | 'delete'
 
@@ -682,6 +716,7 @@ const listLoadFailed = ref(false)
 const list = ref<PurchaseInVO[]>([])
 const total = ref(0)
 const advancedSearchVisible = ref(false)
+const mainControlStage = ref<PurchaseInMainControlStageKey>('all')
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
@@ -694,6 +729,7 @@ const queryParams = reactive({
   paymentStatus: undefined,
   accountId: undefined,
   status: undefined,
+  stockInStatus: undefined,
   qaStatus: undefined,
   remark: undefined,
   creator: undefined
@@ -717,6 +753,11 @@ const currentUserId = computed(() => String(userStore.getUser.id || ''))
 const isCompactLayout = computed(() => width.value < 1180)
 const canRetryList = computed(() => listLoadFailed.value && !loading.value)
 const selectedIdSet = computed(() => new Set(selectionList.value.map((item) => item.id)))
+const currentMainControlStage = computed(
+  () =>
+    PURCHASE_IN_MAIN_CONTROL_STAGES.find((stage) => stage.key === mainControlStage.value) ||
+    PURCHASE_IN_MAIN_CONTROL_STAGES[0]
+)
 
 const advancedFilterCount = computed(() => {
   const fields = [
@@ -979,6 +1020,15 @@ const getOverflowActionDescriptors = (row: PurchaseInVO): PurchaseInActionDescri
   const rowActionState = resolveRowActionState(row)
   const inlineActionKeys = new Set(getInlineActionDescriptors(row).map((item) => item.key))
   const actions: PurchaseInActionDescriptor[] = []
+  getPurchaseInMainControlActions(row)
+    .filter((action) => !inlineActionKeys.has(action.key))
+    .forEach((action) =>
+      actions.push({
+        key: action.key,
+        label: action.label,
+        disabled: action.disabled
+      })
+    )
 
   if (canUpdatePurchaseIn && rowActionState.canEdit && !inlineActionKeys.has('edit')) {
     actions.push({ key: 'edit', label: '编辑' })
@@ -1084,9 +1134,27 @@ const handleQuery = () => {
   getList()
 }
 
+const applyMainControlStageQuery = () => {
+  const stageQuery = getPurchaseInMainControlStageQuery(mainControlStage.value)
+  queryParams.status = stageQuery.status
+  queryParams.qaStatus = stageQuery.qaStatus
+  queryParams.stockInStatus = stageQuery.stockInStatus
+}
+
+const handleMainControlStageChange = (stage: PurchaseInMainControlStageKey) => {
+  if (loading.value || mainControlStage.value === stage) {
+    return
+  }
+  mainControlStage.value = stage
+  applyMainControlStageQuery()
+  handleQuery()
+}
+
 const resetQuery = () => {
   queryFormRef.value.resetFields()
   advancedSearchVisible.value = false
+  mainControlStage.value = 'all'
+  queryParams.stockInStatus = undefined
   handleQuery()
 }
 
@@ -1211,6 +1279,77 @@ const handleQualityCheck = (row: PurchaseInVO) => {
   openQualityCheckDialog(row)
 }
 
+const handleMainControlAction = (command: PurchaseInMainControlActionKey, row: PurchaseInVO) => {
+  const action = getPurchaseInMainControlActions(row).find((item) => item.key === command)
+  if (!action || action.disabled) {
+    if (action?.reason === 'missing-order') {
+      message.warning('当前采购入库缺少关联订单')
+    } else if (action?.reason === 'missing-stock-context') {
+      message.warning('缺少库存上下文')
+    } else {
+      message.warning('缺少库存流水上下文')
+    }
+    return
+  }
+
+  const stockContext = getPurchaseInPrimaryStockContext(row)
+  if (command === 'viewPurchaseOrder') {
+    push({
+      path: '/scm/purchase-order',
+      query: {
+        ...(row.orderId ? { openId: String(row.orderId), openType: 'detail' } : {}),
+        ...(row.orderNo ? { purchaseOrderNo: row.orderNo } : {}),
+        from: 'purchase-in'
+      }
+    })
+    return
+  }
+
+  if (command === 'viewStock' && stockContext) {
+    push({
+      path: '/scm/stock',
+      query: {
+        productId: String(stockContext.productId),
+        warehouseId: String(stockContext.warehouseId),
+        returnFrom: 'purchase-in',
+        purchaseInId: row.id ? String(row.id) : undefined
+      }
+    })
+    return
+  }
+
+  if (command === 'traceBatch' && stockContext) {
+    push({
+      path: '/scm/stock',
+      query: {
+        productId: String(stockContext.productId),
+        warehouseId: String(stockContext.warehouseId),
+        batchNo: stockContext.batchNo,
+        openAction: 'batch-trace',
+        returnFrom: 'purchase-in',
+        purchaseInId: row.id ? String(row.id) : undefined
+      }
+    })
+    return
+  }
+
+  push({
+    path: '/scm/stock-analysis',
+    query: {
+      ...(stockContext
+        ? {
+            productId: String(stockContext.productId),
+            warehouseId: String(stockContext.warehouseId)
+          }
+        : {}),
+      bizNo: row.no,
+      bizType: String(STOCK_RECORD_BIZ_TYPE.PURCHASE_IN),
+      returnFrom: 'purchase-in',
+      purchaseInId: row.id ? String(row.id) : undefined
+    }
+  })
+}
+
 const handleCommand = (command: string, row: PurchaseInVO) => {
   switch (command) {
     case 'detail':
@@ -1236,6 +1375,12 @@ const handleCommand = (command: string, row: PurchaseInVO) => {
       break
     case 'stockExecute':
       openStockExecuteDialog(row)
+      break
+    case 'viewPurchaseOrder':
+    case 'viewStock':
+    case 'traceBatch':
+    case 'viewStockFlow':
+      handleMainControlAction(command, row)
       break
     case 'print':
       if (row.id) {
@@ -1293,6 +1438,7 @@ const normalizeRouteNumber = (value: unknown) => {
 
 const syncOrderFilterFromRoute = async () => {
   queryParams.orderNo = typeof route.query.orderNo === 'string' ? route.query.orderNo : undefined
+  applyMainControlStageQuery()
   queryParams.pageNo = 1
   await getList()
 }
@@ -1351,6 +1497,100 @@ watch(
   font-size: 28px;
   font-weight: 800;
   letter-spacing: 0.01em;
+}
+
+.purchase-in-main-control {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 16px;
+  background: var(--erp-slate-50);
+}
+
+.purchase-in-main-control__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.purchase-in-main-control__title {
+  color: var(--erp-slate-900);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 24px;
+}
+
+.purchase-in-main-control__current {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--erp-slate-500);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.purchase-in-main-control__current span {
+  color: var(--erp-primary-600);
+  font-weight: 700;
+}
+
+.purchase-in-main-control__stages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.purchase-in-main-control__stage {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 999px;
+  background: var(--el-bg-color);
+  color: var(--erp-slate-600);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 20px;
+  transition: all 0.2s ease;
+}
+
+.purchase-in-main-control__stage:hover:not(:disabled) {
+  border-color: var(--erp-primary-100);
+  color: var(--erp-primary-600);
+}
+
+.purchase-in-main-control__stage:disabled {
+  cursor: not-allowed;
+  color: var(--erp-slate-400);
+}
+
+.purchase-in-main-control__stage.is-active {
+  border-color: var(--erp-primary-100);
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
+}
+
+.purchase-in-main-control__stage--amber.is-active {
+  border-color: var(--erp-warning-100);
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
+}
+
+.purchase-in-main-control__stage--green.is-active {
+  border-color: var(--erp-success-100);
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
+}
+
+.purchase-in-main-control__stage--slate.is-active {
+  border-color: var(--erp-slate-200);
+  background: var(--el-bg-color);
+  color: var(--erp-slate-800);
 }
 
 .purchase-in-query {
@@ -1953,6 +2193,11 @@ watch(
   .purchase-in-toolbar__actions :deep(.el-button),
   .purchase-in-toolbar__meta :deep(.el-button) {
     flex: 1;
+  }
+
+  .purchase-in-main-control__stage {
+    flex: 1;
+    min-width: 118px;
   }
 
   .purchase-in-mobile-card {

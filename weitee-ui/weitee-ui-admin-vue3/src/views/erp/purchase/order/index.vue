@@ -631,6 +631,7 @@ import {
   getPurchaseOrderRowActionDescriptor,
   getPurchaseOrderToolbarDescriptor
 } from './purchaseOrderStatus.helpers'
+import { resolvePurchaseOrderRouteContext } from './purchaseOrderRouteContext.helpers'
 import { useWindowSize } from '@vueuse/core'
 
 defineOptions({ name: 'ErpPurchaseOrder' })
@@ -1122,9 +1123,10 @@ const openSubmitDialog = (row: PurchaseOrderVO) => {
 
 const openPurchaseInList = (row: PurchaseOrderVO) => {
   push({
-    path: '/erp/purchase/in',
+    path: '/scm/inbound',
     query: {
       orderNo: row.no,
+      purchaseOrderId: row.id ? String(row.id) : undefined,
       from: 'purchase-order'
     }
   })
@@ -1133,9 +1135,10 @@ const openPurchaseInList = (row: PurchaseOrderVO) => {
 const openPendingPurchaseIn = (row: PurchaseOrderVO) => {
   if (row.pendingPurchaseInId) {
     push({
-      path: '/erp/purchase/in',
+      path: '/scm/inbound',
       query: {
         orderNo: row.no,
+        purchaseOrderId: row.id ? String(row.id) : undefined,
         openId: String(row.pendingPurchaseInId),
         openType: 'detail',
         from: 'purchase-order'
@@ -1147,7 +1150,15 @@ const openPendingPurchaseIn = (row: PurchaseOrderVO) => {
 }
 
 const openPurchaseInForm = (row: PurchaseOrderVO) => {
-  purchaseInFormRef.value?.open('create', undefined, row.id)
+  push({
+    path: '/scm/inbound',
+    query: {
+      orderNo: row.no,
+      purchaseOrderId: row.id ? String(row.id) : undefined,
+      openType: 'create',
+      from: 'purchase-order'
+    }
+  })
 }
 
 const openPurchaseOrderTodoTask = () => {
@@ -1210,11 +1221,17 @@ const normalizeRouteNumber = (value: unknown) => {
   return Number.isNaN(parsedValue) || parsedValue <= 0 ? undefined : parsedValue
 }
 
-const syncTraceFromRoute = async () => {
-  traceOrderId.value = normalizeRouteNumber(route.query.sourceOrderId)
-  traceOrderNo.value =
-    typeof route.query.sourceOrderNo === 'string' ? route.query.sourceOrderNo : ''
-  queryParams.sourceOrderId = traceOrderId.value
+const syncRouteContextFromQuery = async () => {
+  const routeContext = resolvePurchaseOrderRouteContext({
+    sourceOrderId: route.query.sourceOrderId,
+    sourceOrderNo: route.query.sourceOrderNo,
+    purchaseOrderNo: route.query.purchaseOrderNo,
+    from: route.query.from
+  })
+  traceOrderId.value = routeContext.traceOrderId
+  traceOrderNo.value = routeContext.traceOrderNo
+  queryParams.no = routeContext.purchaseOrderNo || undefined
+  queryParams.sourceOrderId = routeContext.traceOrderId
   queryParams.pageNo = 1
   await getList()
 }
@@ -1223,6 +1240,7 @@ const clearTraceFilter = async () => {
   const nextQuery = { ...route.query }
   delete nextQuery.sourceOrderId
   delete nextQuery.sourceOrderNo
+  delete nextQuery.purchaseOrderNo
   delete nextQuery.traceFrom
   await replace({
     path: route.path,
@@ -1378,10 +1396,10 @@ const toggleSelection = (row: PurchaseOrderVO, checked: unknown) => {
 
 const initPage = async () => {
   if (shouldBlockSaleTraceByPermission.value) {
-    await syncTraceFromRoute()
+    await syncRouteContextFromQuery()
     return
   }
-  await Promise.allSettled([loadFilterOptions(), syncTraceFromRoute()])
+  await Promise.allSettled([loadFilterOptions(), syncRouteContextFromQuery()])
 }
 
 onMounted(async () => {
@@ -1390,9 +1408,9 @@ onMounted(async () => {
 })
 
 watch(
-  () => [route.query.sourceOrderId, route.query.sourceOrderNo],
+  () => [route.query.sourceOrderId, route.query.sourceOrderNo, route.query.purchaseOrderNo],
   async () => {
-    await syncTraceFromRoute()
+    await syncRouteContextFromQuery()
   }
 )
 

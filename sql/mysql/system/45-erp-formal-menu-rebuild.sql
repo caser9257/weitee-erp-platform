@@ -1,4 +1,4 @@
-﻿/*
+/*
  Target: ERP 正式菜单体系兼容重建
  Schema: ruoyi-vue-pro
  Date: 2026-04-15
@@ -106,31 +106,35 @@ INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`p
 SELECT 930130,'综合计划管理','',1,340,0,'/pmo','ep:data-board','','FormalPmoRoot',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=0 AND `path`='/pmo' AND `deleted`=b'0');
 SET @pmo_root_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=0 AND `path`='/pmo' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
-SET @pmo_plan_rule_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/plan-rule/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
-UPDATE `system_menu` SET `name`='计划参数',`type`=2,`sort`=10,`parent_id`=@pmo_root_id,`path`='plan-rule',`icon`='ep:setting',`component`='erp/mrp/plan-rule/index',`component_name`='FormalPmoPlanRule',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@pmo_plan_rule_menu_id;
-INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
-SELECT 930131,'计划参数','',2,10,@pmo_root_id,'plan-rule','ep:setting','erp/mrp/plan-rule/index','FormalPmoPlanRule',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
-WHERE @pmo_plan_rule_menu_id IS NULL;
-SET @pmo_plan_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/plan/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
-UPDATE `system_menu` SET `name`='MRP 计划',`type`=2,`sort`=20,`parent_id`=@pmo_root_id,`path`='plan',`icon`='ep:calendar',`component`='erp/mrp/plan/index',`component_name`='FormalPmoPlan',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@pmo_plan_menu_id;
-INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
-SELECT 930132,'MRP 计划','',2,20,@pmo_root_id,'plan','ep:calendar','erp/mrp/plan/index','FormalPmoPlan',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
-WHERE @pmo_plan_menu_id IS NULL;
-SET @pmo_bom_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/bom/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
-UPDATE `system_menu` SET `name`='制造 BOM',`type`=2,`sort`=30,`parent_id`=@pmo_root_id,`path`='bom',`icon`='ep:collection',`component`='erp/mrp/bom/index',`component_name`='FormalPmoManufactureBom',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@pmo_bom_menu_id;
-INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
-SELECT 930133,'制造 BOM','',2,30,@pmo_root_id,'bom','ep:collection','erp/mrp/bom/index','FormalPmoManufactureBom',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
-WHERE @pmo_bom_menu_id IS NULL;
-SET @pmo_suggest_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/suggest/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
-UPDATE `system_menu` SET `name`='MRP 运算',`type`=2,`sort`=40,`parent_id`=@pmo_root_id,`path`='suggest',`icon`='ep:histogram',`component`='erp/mrp/suggest/index',`component_name`='FormalPmoSuggest',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@pmo_suggest_menu_id;
-INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
-SELECT 930134,'MRP 运算','',2,40,@pmo_root_id,'suggest','ep:histogram','erp/mrp/suggest/index','FormalPmoSuggest',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
-WHERE @pmo_suggest_menu_id IS NULL;
-
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
 SELECT 930140,'供应链管理','',1,350,0,'/scm','ep:shopping-cart-full','','FormalScmRoot',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=0 AND `path`='/scm' AND `deleted`=b'0');
 SET @scm_root_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=0 AND `path`='/scm' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930160,'工艺管理','',1,370,0,'/process','ep:connection','','FormalProcessRoot',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=0 AND `path`='/process' AND `deleted`=b'0');
+SET @process_root_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=0 AND `path`='/process' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_plan_rule_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/plan-rule/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+UPDATE `system_menu` SET `name`='计划参数',`type`=2,`sort`=30,`parent_id`=@scm_root_id,`path`='plan-rule',`icon`='ep:setting',`component`='erp/mrp/plan-rule/index',`component_name`='FormalScmPlanRule',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_plan_rule_menu_id;
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930131,'计划参数','',2,30,@scm_root_id,'plan-rule','ep:setting','erp/mrp/plan-rule/index','FormalScmPlanRule',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @scm_plan_rule_menu_id IS NULL;
+SET @scm_plan_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/plan/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+UPDATE `system_menu` SET `name`='MRP 计划',`type`=2,`sort`=40,`parent_id`=@scm_root_id,`path`='plan',`icon`='ep:calendar',`component`='erp/mrp/plan/index',`component_name`='FormalScmPlan',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_plan_menu_id;
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930132,'MRP 计划','',2,40,@scm_root_id,'plan','ep:calendar','erp/mrp/plan/index','FormalScmPlan',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @scm_plan_menu_id IS NULL;
+SET @process_bom_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/bom/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+UPDATE `system_menu` SET `name`='制造 BOM',`type`=2,`sort`=10,`parent_id`=@process_root_id,`path`='bom',`icon`='ep:collection',`component`='erp/mrp/bom/index',`component_name`='FormalProcessManufactureBom',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@process_bom_menu_id;
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930133,'制造 BOM','',2,10,@process_root_id,'bom','ep:collection','erp/mrp/bom/index','FormalProcessManufactureBom',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @process_bom_menu_id IS NULL;
+SET @scm_suggest_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/suggest/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+UPDATE `system_menu` SET `name`='MRP 运算',`type`=2,`sort`=50,`parent_id`=@scm_root_id,`path`='suggest',`icon`='ep:histogram',`component`='erp/mrp/suggest/index',`component_name`='FormalScmSuggest',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_suggest_menu_id;
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 930134,'MRP 运算','',2,50,@scm_root_id,'suggest','ep:histogram','erp/mrp/suggest/index','FormalScmSuggest',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @scm_suggest_menu_id IS NULL;
+
 SET @scm_purchase_order_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/purchase/order/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
 UPDATE `system_menu` SET `name`='采购订单台账',`type`=2,`sort`=10,`parent_id`=@scm_root_id,`path`='purchase-order',`icon`='ep:shopping-trolley',`component`='erp/purchase/order/index',`component_name`='FormalScmPurchaseOrder',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_purchase_order_menu_id;
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
@@ -181,10 +185,6 @@ INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`p
 SELECT 930153,'完工与出货检验','',2,30,@qms_root_id,'oqc','ep:circle-check','qms/oqc/index','FormalQmsOqc',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='qms/oqc/index' AND `deleted`=b'0');
 
-INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
-SELECT 930160,'工艺管理','',1,370,0,'/process','ep:connection','','FormalProcessRoot',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
-WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=0 AND `path`='/process' AND `deleted`=b'0');
-SET @process_root_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=0 AND `path`='/process' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
 SET @process_route_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/manufacturing/process-route/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
 UPDATE `system_menu` SET `name`='工艺路线',`type`=2,`sort`=10,`parent_id`=@process_root_id,`path`='route',`icon`='ep:share',`component`='erp/manufacturing/process-route/index',`component_name`='FormalProcessRoute',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@process_route_menu_id;
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
@@ -333,6 +333,314 @@ WHERE `deleted` = b'0'
   AND (
     (`parent_id` = @legacy_erp_root_id AND `path` IN ('project', 'sale', 'purchase', 'stock', 'finance', 'rd', 'mrp', 'manufacturing'))
     OR (`parent_id` = 0 AND `path` IN ('/sale', '/purchase', '/stock', '/rd', '/mrp', '/manufacturing'))
+  );
+
+-- SCM is the supply-chain navigation aggregate; MRP remains the planning domain behind its pages.
+SET @scm_plan_rule_menu_id := (
+  SELECT `id`
+  FROM `system_menu`
+  WHERE `component` = 'erp/mrp/plan-rule/index' AND `deleted` = b'0'
+  ORDER BY `id`
+  LIMIT 1
+);
+
+SET @scm_plan_menu_id := (
+  SELECT `id`
+  FROM `system_menu`
+  WHERE `component` = 'erp/mrp/plan/index' AND `deleted` = b'0'
+  ORDER BY `id`
+  LIMIT 1
+);
+
+SET @scm_suggest_menu_id := (
+  SELECT `id`
+  FROM `system_menu`
+  WHERE `component` = 'erp/mrp/suggest/index' AND `deleted` = b'0'
+  ORDER BY `id`
+  LIMIT 1
+);
+
+SET @process_manufacture_bom_menu_id := (
+  SELECT `id`
+  FROM `system_menu`
+  WHERE `component` = 'erp/mrp/bom/index' AND `deleted` = b'0'
+  ORDER BY `id`
+  LIMIT 1
+);
+
+UPDATE `system_menu`
+SET `name` = '计划参数',
+    `type` = 2,
+    `sort` = 30,
+    `parent_id` = @scm_root_id,
+    `path` = 'plan-rule',
+    `icon` = 'ep:setting',
+    `component` = 'erp/mrp/plan-rule/index',
+    `component_name` = 'FormalScmPlanRule',
+    `status` = 0,
+    `visible` = b'1',
+    `keep_alive` = b'1',
+    `always_show` = b'1',
+    `updater` = '1',
+    `update_time` = NOW()
+WHERE `id` = @scm_plan_rule_menu_id;
+
+UPDATE `system_menu`
+SET `name` = 'MRP 计划',
+    `type` = 2,
+    `sort` = 40,
+    `parent_id` = @scm_root_id,
+    `path` = 'plan',
+    `icon` = 'ep:calendar',
+    `component` = 'erp/mrp/plan/index',
+    `component_name` = 'FormalScmPlan',
+    `status` = 0,
+    `visible` = b'1',
+    `keep_alive` = b'1',
+    `always_show` = b'1',
+    `updater` = '1',
+    `update_time` = NOW()
+WHERE `id` = @scm_plan_menu_id;
+
+UPDATE `system_menu`
+SET `name` = 'MRP 运算',
+    `type` = 2,
+    `sort` = 50,
+    `parent_id` = @scm_root_id,
+    `path` = 'suggest',
+    `icon` = 'ep:histogram',
+    `component` = 'erp/mrp/suggest/index',
+    `component_name` = 'FormalScmSuggest',
+    `status` = 0,
+    `visible` = b'1',
+    `keep_alive` = b'1',
+    `always_show` = b'1',
+    `updater` = '1',
+    `update_time` = NOW()
+WHERE `id` = @scm_suggest_menu_id;
+
+UPDATE `system_menu`
+SET `name` = '制造 BOM',
+    `type` = 2,
+    `sort` = 10,
+    `parent_id` = @process_root_id,
+    `path` = 'bom',
+    `icon` = 'ep:collection',
+    `component` = 'erp/mrp/bom/index',
+    `component_name` = 'FormalProcessManufactureBom',
+    `status` = 0,
+    `visible` = b'1',
+    `keep_alive` = b'1',
+    `always_show` = b'1',
+    `updater` = '1',
+    `update_time` = NOW()
+WHERE `id` = @process_manufacture_bom_menu_id;
+
+UPDATE `system_menu`
+SET `status` = 1, `visible` = b'0', `updater` = '1', `update_time` = NOW()
+WHERE `deleted` = b'0'
+  AND (
+    (`type` = 1 AND `path` IN ('/mrp', 'mrp'))
+    OR (`type` = 2 AND `component` = 'erp/mrp/plan-rule/index' AND `id` <> @scm_plan_rule_menu_id)
+    OR (`type` = 2 AND `component` = 'erp/mrp/plan/index' AND `id` <> @scm_plan_menu_id)
+    OR (`type` = 2 AND `component` = 'erp/mrp/suggest/index' AND `id` <> @scm_suggest_menu_id)
+    OR (`type` = 2 AND `component` = 'erp/mrp/bom/index' AND `id` <> @process_manufacture_bom_menu_id)
+    OR (`type` = 2 AND `component` = 'erp/mrp/stock-reservation/index')
+  );
+
+UPDATE `system_menu` root
+LEFT JOIN `system_menu` child
+  ON child.`parent_id` = root.`id`
+ AND child.`deleted` = b'0'
+ AND child.`status` = 0
+ AND child.`visible` = b'1'
+SET root.`status` = 1,
+    root.`visible` = b'0',
+    root.`updater` = '1',
+    root.`update_time` = NOW()
+WHERE root.`deleted` = b'0'
+  AND root.`type` = 1
+  AND root.`path` = '/pmo'
+  AND child.`id` IS NULL;
+
+INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT DISTINCT rm.`role_id`, @scm_root_id, '1', NOW(), '1', NOW(), b'0'
+FROM `system_role_menu` rm
+WHERE rm.`deleted` = b'0'
+  AND rm.`menu_id` IN (@scm_plan_rule_menu_id, @scm_plan_menu_id, @scm_suggest_menu_id)
+  AND @scm_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_role_menu` exists_rm
+    WHERE exists_rm.`role_id` = rm.`role_id`
+      AND exists_rm.`menu_id` = @scm_root_id
+      AND exists_rm.`deleted` = b'0'
+  );
+
+INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT DISTINCT rm.`role_id`, @process_root_id, '1', NOW(), '1', NOW(), b'0'
+FROM `system_role_menu` rm
+WHERE rm.`deleted` = b'0'
+  AND rm.`menu_id` = @process_manufacture_bom_menu_id
+  AND @process_root_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_role_menu` exists_rm
+    WHERE exists_rm.`role_id` = rm.`role_id`
+      AND exists_rm.`menu_id` = @process_root_id
+      AND exists_rm.`deleted` = b'0'
+  );
+
+-- Final SCM menu grouping must be database-backed, not frontend-only decoration.
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 931620,'需求与计划','',1,10,@scm_root_id,'demand-plan','ep:histogram','','FormalScmDemandPlanGroup',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @scm_root_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=@scm_root_id AND `path`='demand-plan' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 931621,'采购执行','',1,20,@scm_root_id,'procurement','ep:shopping-cart-full','','FormalScmProcurementGroup',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @scm_root_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=@scm_root_id AND `path`='procurement' AND `deleted`=b'0');
+
+INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 931622,'库存与仓储','',1,30,@scm_root_id,'inventory-warehouse','ep:box','','FormalScmInventoryWarehouseGroup',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
+WHERE @scm_root_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `parent_id`=@scm_root_id AND `path`='inventory-warehouse' AND `deleted`=b'0');
+
+SET @scm_demand_group_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=@scm_root_id AND `path`='demand-plan' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_procurement_group_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=@scm_root_id AND `path`='procurement' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_inventory_group_id := (SELECT `id` FROM `system_menu` WHERE `parent_id`=@scm_root_id AND `path`='inventory-warehouse' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+
+UPDATE `system_menu`
+SET `name`='需求与计划',`type`=1,`sort`=10,`parent_id`=@scm_root_id,`path`='demand-plan',`icon`='ep:histogram',
+    `component`='',`component_name`='FormalScmDemandPlanGroup',`status`=0,`visible`=b'1',`keep_alive`=b'1',
+    `always_show`=b'1',`updater`='1',`update_time`=NOW()
+WHERE `id`=@scm_demand_group_id;
+
+UPDATE `system_menu`
+SET `name`='采购执行',`type`=1,`sort`=20,`parent_id`=@scm_root_id,`path`='procurement',`icon`='ep:shopping-cart-full',
+    `component`='',`component_name`='FormalScmProcurementGroup',`status`=0,`visible`=b'1',`keep_alive`=b'1',
+    `always_show`=b'1',`updater`='1',`update_time`=NOW()
+WHERE `id`=@scm_procurement_group_id;
+
+UPDATE `system_menu`
+SET `name`='库存与仓储',`type`=1,`sort`=30,`parent_id`=@scm_root_id,`path`='inventory-warehouse',`icon`='ep:box',
+    `component`='',`component_name`='FormalScmInventoryWarehouseGroup',`status`=0,`visible`=b'1',`keep_alive`=b'1',
+    `always_show`=b'1',`updater`='1',`update_time`=NOW()
+WHERE `id`=@scm_inventory_group_id;
+
+SET @scm_plan_rule_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/plan-rule/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_plan_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/plan/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_suggest_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/suggest/index' AND `deleted`=b'0' AND `path`<>'purchase-request' ORDER BY `id` LIMIT 1);
+SET @scm_netting_policy_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/netting-policy/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_substitute_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/substitute/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_purchase_order_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/purchase/order/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_inbound_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/purchase/in/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_outsource_inbound_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/mrp/outsource-inbound/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_return_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/purchase/return/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_in_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/in/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_out_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/out/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_move_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/move/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_check_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/check/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_assemble_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/assemble/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_warehouse_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/warehouse/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_warehouse_category_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/warehouse-category/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/stock/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_record_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/record/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+SET @scm_stock_analysis_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/stock/analysis/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
+
+UPDATE `system_menu` SET `name`='计划参数',`sort`=10,`parent_id`=@scm_demand_group_id,`path`='plan-rule',`component_name`='FormalScmPlanRule',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_plan_rule_menu_id;
+UPDATE `system_menu` SET `name`='MRP 计划',`sort`=20,`parent_id`=@scm_demand_group_id,`path`='plan',`component_name`='FormalScmPlan',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_plan_menu_id;
+UPDATE `system_menu` SET `name`='MRP 运算',`sort`=30,`parent_id`=@scm_demand_group_id,`path`='suggest',`component_name`='FormalScmSuggest',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_suggest_menu_id;
+UPDATE `system_menu` SET `name`='净需求策略',`sort`=50,`parent_id`=@scm_demand_group_id,`path`='netting-policy',`component_name`='FormalScmNettingPolicy',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_netting_policy_menu_id;
+UPDATE `system_menu` SET `name`='替代料台账',`sort`=60,`parent_id`=@scm_demand_group_id,`path`='substitute-material',`component_name`='ProjectScmSubstitute',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_substitute_menu_id;
+
+UPDATE `system_menu` SET `name`='采购订单台账',`sort`=10,`parent_id`=@scm_procurement_group_id,`path`='purchase-order',`component_name`='FormalScmPurchaseOrder',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_purchase_order_menu_id;
+UPDATE `system_menu` SET `name`='收货入库',`sort`=20,`parent_id`=@scm_procurement_group_id,`path`='inbound',`component_name`='FormalScmInbound',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_inbound_menu_id;
+UPDATE `system_menu` SET `name`='委外入库',`sort`=30,`parent_id`=@scm_procurement_group_id,`path`='outsource-inbound',`component_name`='ErpMrpOutsourceInboundPage',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_outsource_inbound_menu_id;
+UPDATE `system_menu` SET `name`='采购退货',`sort`=40,`parent_id`=@scm_procurement_group_id,`path`='return',`component_name`='FormalScmPurchaseReturn',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_return_menu_id;
+
+UPDATE `system_menu` SET `name`='其他入库',`sort`=10,`parent_id`=@scm_inventory_group_id,`path`='stock-in',`component_name`='FormalScmStockIn',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_in_menu_id;
+UPDATE `system_menu` SET `name`='其他出库',`sort`=20,`parent_id`=@scm_inventory_group_id,`path`='stock-out',`component_name`='FormalScmStockOut',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_out_menu_id;
+UPDATE `system_menu` SET `name`='库存调拨',`sort`=30,`parent_id`=@scm_inventory_group_id,`path`='stock-move',`component_name`='FormalScmStockMove',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_move_menu_id;
+UPDATE `system_menu` SET `name`='库存盘点',`sort`=40,`parent_id`=@scm_inventory_group_id,`path`='stock-check',`component_name`='FormalScmStockCheck',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_check_menu_id;
+UPDATE `system_menu` SET `name`='组装与拆卸',`sort`=50,`parent_id`=@scm_inventory_group_id,`path`='assemble',`component_name`='FormalScmAssemble',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_assemble_menu_id;
+UPDATE `system_menu` SET `name`='仓库信息',`sort`=60,`parent_id`=@scm_inventory_group_id,`path`='warehouse',`component_name`='ProjectScmWarehouse',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_warehouse_menu_id;
+UPDATE `system_menu` SET `name`='仓库分类管理',`sort`=70,`parent_id`=@scm_inventory_group_id,`path`='warehouse-category',`component_name`='ErpWarehouseCategory',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_warehouse_category_menu_id;
+UPDATE `system_menu` SET `name`='即时库存查询',`sort`=80,`parent_id`=@scm_inventory_group_id,`path`='stock',`component_name`='ProjectScmStock',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_menu_id;
+UPDATE `system_menu` SET `name`='库存明细账',`sort`=90,`parent_id`=@scm_inventory_group_id,`path`='stock-record',`component_name`='ProjectScmStockRecord',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_record_menu_id;
+UPDATE `system_menu` SET `name`='库存分析',`sort`=100,`parent_id`=@scm_inventory_group_id,`path`='stock-analysis',`component_name`='ProjectScmStockAnalysis',`status`=0,`visible`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@scm_stock_analysis_menu_id;
+
+UPDATE `system_menu`
+SET `status`=1,`visible`=b'0',`updater`='1',`update_time`=NOW()
+WHERE `deleted`=b'0'
+  AND (
+    (`type`=2 AND `component`='erp/mrp/stock-reservation/index')
+    OR (`type`=2 AND `path`='purchase-request' AND `component`='erp/mrp/suggest/index')
+  );
+
+INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT DISTINCT rm.`role_id`, ancestor.`menu_id`, '1', NOW(), '1', NOW(), b'0'
+FROM `system_role_menu` rm
+JOIN (
+  SELECT @scm_root_id AS `menu_id`, @scm_plan_rule_menu_id AS `child_id`
+  UNION ALL SELECT @scm_root_id, @scm_plan_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_suggest_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_netting_policy_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_substitute_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_purchase_order_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_inbound_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_outsource_inbound_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_return_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_in_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_out_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_move_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_check_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_assemble_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_warehouse_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_warehouse_category_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_record_menu_id
+  UNION ALL SELECT @scm_root_id, @scm_stock_analysis_menu_id
+  UNION ALL SELECT @scm_demand_group_id, @scm_plan_rule_menu_id
+  UNION ALL SELECT @scm_demand_group_id, @scm_plan_menu_id
+  UNION ALL SELECT @scm_demand_group_id, @scm_suggest_menu_id
+  UNION ALL SELECT @scm_demand_group_id, @scm_netting_policy_menu_id
+  UNION ALL SELECT @scm_demand_group_id, @scm_substitute_menu_id
+  UNION ALL SELECT @scm_procurement_group_id, @scm_purchase_order_menu_id
+  UNION ALL SELECT @scm_procurement_group_id, @scm_inbound_menu_id
+  UNION ALL SELECT @scm_procurement_group_id, @scm_outsource_inbound_menu_id
+  UNION ALL SELECT @scm_procurement_group_id, @scm_return_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_in_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_out_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_move_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_check_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_assemble_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_warehouse_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_warehouse_category_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_record_menu_id
+  UNION ALL SELECT @scm_inventory_group_id, @scm_stock_analysis_menu_id
+) ancestor ON ancestor.`child_id`=rm.`menu_id`
+WHERE rm.`deleted`=b'0'
+  AND ancestor.`menu_id` IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_role_menu` exists_rm
+    WHERE exists_rm.`role_id`=rm.`role_id`
+      AND exists_rm.`menu_id`=ancestor.`menu_id`
+      AND exists_rm.`deleted`=b'0'
+  );
+
+INSERT INTO `system_role_menu` (`role_id`,`menu_id`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
+SELECT 1, target.`menu_id`, '1', NOW(), '1', NOW(), b'0'
+FROM (
+  SELECT @scm_root_id AS `menu_id`
+  UNION SELECT @scm_demand_group_id
+  UNION SELECT @scm_procurement_group_id
+  UNION SELECT @scm_inventory_group_id
+) target
+WHERE target.`menu_id` IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM `system_role_menu` rm
+    WHERE rm.`role_id`=1 AND rm.`menu_id`=target.`menu_id` AND rm.`deleted`=b'0'
   );
 
 SET FOREIGN_KEY_CHECKS = 1;

@@ -37,6 +37,7 @@ public class ErpPurchaseInPageReqVO extends PageParam {
     @Schema(description = "入库状态", example = "2")
     private Integer status;
     private Integer qaStatus;
+    private Integer stockInStatus;
 
     @Schema(description = "创建者")
     private String creator;

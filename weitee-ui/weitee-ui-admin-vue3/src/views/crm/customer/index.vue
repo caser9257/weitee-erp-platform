@@ -4,34 +4,26 @@
     <doc-alert title="【通用】数据权限" url="https://doc.iocoder.cn/crm/permission/" />
 
     <ContentWrap class="sales-page-shell__hero">
-      <div class="page-hero">
-        <div class="page-hero__main">
-          <p class="page-hero__eyebrow">Sales Customer Hub</p>
+      <div class="page-hero page-hero--compact">
+        <div class="page-hero__header">
           <h1 class="page-hero__title">客户信息</h1>
-          <p class="page-hero__desc">
-            统一收口客户档案、跟进节奏、归属人与状态标签，提升销售扫描效率与筛选效率。
-          </p>
         </div>
-        <div class="page-hero__stats">
-          <div class="hero-stat-card">
+        <div class="page-hero__stats page-hero__stats--row">
+          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--blue">
             <span class="hero-stat-card__label">当前结果</span>
             <strong class="hero-stat-card__value">{{ total }}</strong>
-            <span class="hero-stat-card__meta">本次筛选命中客户数</span>
           </div>
-          <div class="hero-stat-card">
+          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--green">
             <span class="hero-stat-card__label">已成交</span>
             <strong class="hero-stat-card__value">{{ customerStats.dealCount }}</strong>
-            <span class="hero-stat-card__meta">当前页成交客户</span>
           </div>
-          <div class="hero-stat-card">
+          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--amber">
             <span class="hero-stat-card__label">锁定客户</span>
             <strong class="hero-stat-card__value">{{ customerStats.lockedCount }}</strong>
-            <span class="hero-stat-card__meta">当前页锁定状态客户</span>
           </div>
-          <div class="hero-stat-card">
+          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--teal">
             <span class="hero-stat-card__label">待跟进</span>
             <strong class="hero-stat-card__value">{{ customerStats.nextFollowCount }}</strong>
-            <span class="hero-stat-card__meta">已配置下次联系时间</span>
           </div>
         </div>
       </div>
@@ -41,7 +33,6 @@
       <div class="search-card__header">
         <div>
           <div class="search-card__title">客户视角</div>
-          <div class="search-card__subtitle">通过归属范围切换当前客户池，再组合条件精准过滤。</div>
         </div>
       </div>
 
@@ -453,58 +444,46 @@ onMounted(() => {
 
 .page-hero {
   display: flex;
-  gap: 20px;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.page-hero__header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-}
-
-.page-hero__main {
-  min-width: 0;
-  flex: 1;
-}
-
-.page-hero__eyebrow {
-  margin: 0 0 10px;
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
 }
 
 .page-hero__title {
   margin: 0;
   color: #0f172a;
-  font-size: 28px;
-  font-weight: 800;
-  line-height: 1.2;
-}
-
-.page-hero__desc {
-  max-width: 680px;
-  margin: 12px 0 0;
-  color: #475569;
-  font-size: 14px;
-  line-height: 1.7;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .page-hero__stats {
   display: grid;
-  width: min(520px, 100%);
-  flex: 0 0 auto;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
   gap: 12px;
+}
+
+.page-hero__stats--row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .hero-stat-card {
   display: flex;
-  min-height: 116px;
   flex-direction: column;
   justify-content: space-between;
-  padding: 16px 18px;
-  border: 1px solid #dbeafe;
+  padding: 14px 16px;
+  border: 1px solid var(--erp-slate-200, #e2e8f0);
   border-radius: 14px;
-  background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
+  background: var(--erp-stat-gradient-slate);
+}
+
+.hero-stat-card--compact {
+  min-height: 80px;
 }
 
 .hero-stat-card__label {
@@ -515,14 +494,44 @@ onMounted(() => {
 
 .hero-stat-card__value {
   color: #0f172a;
-  font-size: 28px;
-  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 1.1;
 }
 
-.hero-stat-card__meta {
-  color: #94a3b8;
-  font-size: 12px;
+.hero-stat-card--blue {
+  background: var(--erp-stat-gradient-blue);
+  border-color: var(--erp-stat-border-blue);
+}
+
+.hero-stat-card--green {
+  background: var(--erp-stat-gradient-green);
+  border-color: var(--erp-stat-border-green);
+}
+
+.hero-stat-card--teal {
+  background: var(--erp-stat-gradient-teal);
+  border-color: var(--erp-stat-border-teal);
+}
+
+.hero-stat-card--slate {
+  background: var(--erp-stat-gradient-slate);
+  border-color: var(--erp-stat-border-slate);
+}
+
+.hero-stat-card--gold {
+  background: var(--erp-stat-gradient-gold);
+  border-color: var(--erp-stat-border-gold);
+}
+
+.hero-stat-card--amber {
+  background: var(--erp-stat-gradient-amber);
+  border-color: var(--erp-stat-border-amber);
+}
+
+.hero-stat-card--rose {
+  background: var(--erp-stat-gradient-rose);
+  border-color: var(--erp-stat-border-rose);
 }
 
 .search-card__header,
@@ -540,7 +549,6 @@ onMounted(() => {
   font-weight: 700;
 }
 
-.search-card__subtitle,
 .table-toolbar__meta {
   margin-top: 4px;
   color: #64748b;
@@ -728,12 +736,8 @@ onMounted(() => {
 }
 
 @media (max-width: 1280px) {
-  .page-hero {
-    flex-direction: column;
-  }
-
-  .page-hero__stats {
-    width: 100%;
+  .page-hero__stats--row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .query-form__grid {
@@ -746,7 +750,10 @@ onMounted(() => {
     padding: 0 0 18px;
   }
 
-  .page-hero__stats,
+  .page-hero__stats--row {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
   .query-form__grid {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }

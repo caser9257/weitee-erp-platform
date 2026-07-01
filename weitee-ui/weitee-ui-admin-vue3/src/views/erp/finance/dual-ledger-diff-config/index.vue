@@ -6,20 +6,20 @@
           <div class="finance-shell__page-title">双账口径配置</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
-              褰撳墠鍒楄〃 {{ total }}
+              当前列表 {{ total }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--success">
-              鍚敤 {{ enabledCount }}
+              启用 {{ enabledCount }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--warning">
-              鍋滅敤 {{ disabledCount }}
+              停用 {{ disabledCount }}
             </span>
           </div>
         </div>
         <div class="finance-shell__page-header-actions">
           <el-button plain :loading="refreshingList" :disabled="loadingList || refreshingList" @click="handleRefresh">
             <Icon icon="ep:refresh" class="mr-5px" />
-            鍒锋柊
+            刷新
           </el-button>
         </div>
       </div>
@@ -31,8 +31,8 @@
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
-          <el-form-item label="涓氬姟绫诲瀷" prop="bizType">
-            <el-select v-model="queryParams.bizType" class="!w-full" clearable placeholder="璇烽€夋嫨涓氬姟绫诲瀷">
+          <el-form-item label="业务类型" prop="bizType">
+            <el-select v-model="queryParams.bizType" class="!w-full" clearable placeholder="请选择业务类型">
               <el-option
                 v-for="item in ERP_BIZ_TYPE_OPTIONS"
                 :key="item.value"
@@ -91,7 +91,7 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="澶囨敞" prop="remark">
+          <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
               class="!w-full"
@@ -104,11 +104,11 @@
         <div class="finance-shell__query-actions">
           <el-button type="primary" :loading="loadingList" :disabled="loadingList || refreshingList" @click="handleQuery">
             <Icon icon="ep:search" class="mr-5px" />
-            鏌ヨ
+            查询
           </el-button>
           <el-button :disabled="loadingList || refreshingList" @click="resetQuery">
             <Icon icon="ep:refresh-left" class="mr-5px" />
-            閲嶇疆
+            重置
           </el-button>
         </div>
       </el-form>
@@ -117,21 +117,21 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">鍙ｅ緞閰嶇疆鍒楄〃</div>
+          <div class="finance-shell__section-title">口径配置列表</div>
           <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button type="primary" plain @click="openForm('create')" v-hasPermi="['erp:finance-dual-ledger-diff-config:create']">
             <Icon icon="ep:plus" class="mr-5px" />
-            鏂板閰嶇疆
+            新增配置
           </el-button>
         </div>
       </div>
 
       <div v-if="listErrorMessage && !list.length" class="dual-ledger-diff-config-page__state">
-        <el-result icon="error" title="鍙ｅ緞閰嶇疆鍔犺浇澶辫触" :sub-title="listErrorMessage">
+        <el-result icon="error" title="口径配置加载失败" :sub-title="listErrorMessage">
           <template #extra>
-            <el-button type="primary" @click="getList">閲嶈瘯</el-button>
+            <el-button type="primary" @click="getList">重试</el-button>
           </template>
         </el-result>
       </div>
@@ -145,7 +145,7 @@
             class="finance-shell__table finance-shell__table--dense"
             :show-overflow-tooltip="false"
           >
-            <el-table-column label="涓氬姟绫诲瀷" min-width="120">
+            <el-table-column label="业务类型" min-width="120">
               <template #default="{ row }">
                 <span class="finance-shell__metric-pill finance-shell__metric-pill--primary">
                   {{ row.bizTypeName || getBizTypeLabel(row.bizType) }}
@@ -181,17 +181,17 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="璁＄畻绫诲瀷" min-width="120">
+            <el-table-column label="计算类型" min-width="120">
               <template #default="{ row }">
                 {{ row.calculationTypeName || getCalculationTypeLabel(row.calculationType) || '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="姣斾緥绯绘暟" min-width="120" align="right">
+            <el-table-column label="比例系数" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount">{{ formatRatioValue(row.ratio) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="鍥哄畾宸" min-width="120" align="right">
+            <el-table-column label="固定差额" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount">{{ formatAmount(row.fixedAmount) }}</span>
               </template>
@@ -208,7 +208,7 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鎿嶄綔" fixed="right" align="center" width="180">
+            <el-table-column label="操作" fixed="right" align="center" width="180">
               <template #default="{ row }">
                 <div class="dual-ledger-diff-config-page__row-actions">
                   <el-button
@@ -218,7 +218,7 @@
                     @click="openDetailDrawer(row)"
                     v-hasPermi="['erp:finance-dual-ledger-diff-config:query']"
                   >
-                    鏌ョ湅
+                    查看
                   </el-button>
                   <el-button
                     link
@@ -227,7 +227,7 @@
                     @click="openForm('update', row.id)"
                     v-hasPermi="['erp:finance-dual-ledger-diff-config:update']"
                   >
-                    缂栬緫
+                    编辑
                   </el-button>
                   <el-button
                     link
@@ -237,14 +237,14 @@
                     @click="handleDelete(row.id)"
                     v-hasPermi="['erp:finance-dual-ledger-diff-config:delete']"
                   >
-                    鍒犻櫎
+                    删除
                   </el-button>
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
-        <el-empty v-else class="dual-ledger-diff-config-page__state" description="鏆傛棤鍙ｅ緞閰嶇疆" />
+        <el-empty v-else class="dual-ledger-diff-config-page__state" description="暂无口径配置" />
         <Pagination
           v-if="total > 0"
           v-model:page="queryParams.pageNo"
@@ -269,7 +269,7 @@
         <div v-if="detailData" class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">
-              {{ detailData.diffItemTypeName || getDiffItemTypeLabel(detailData.diffItemType) || '鍙ｅ緞閰嶇疆璇︽儏' }}
+              {{ detailData.diffItemTypeName || getDiffItemTypeLabel(detailData.diffItemType) || '口径配置详情' }}
             </div>
             <div class="finance-shell__context-subtitle">
               {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) || '-' }}
@@ -281,21 +281,21 @@
               <span>{{ getStatusLabel(detailData.status) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>璁＄畻绫诲瀷</span>
+              <span>计算类型</span>
               <span>{{ detailData.calculationTypeName || getCalculationTypeLabel(detailData.calculationType) || '-' }}</span>
             </div>
           </div>
         </div>
 
         <div class="dual-ledger-diff-config-page__drawer-body" v-loading="loadingDetail">
-          <el-result v-if="detailErrorMessage" icon="error" title="瑙勫垯璇︽儏鍔犺浇澶辫触" :sub-title="detailErrorMessage">
+          <el-result v-if="detailErrorMessage" icon="error" title="规则详情加载失败" :sub-title="detailErrorMessage">
             <template #extra>
-              <el-button type="primary" @click="retryLoadDetail">閲嶈瘯</el-button>
+              <el-button type="primary" @click="retryLoadDetail">重试</el-button>
             </template>
           </el-result>
           <template v-else-if="detailData">
             <div class="finance-shell__section">
-              <div class="finance-shell__section-title">瑙勫垯璇︽儏</div>
+              <div class="finance-shell__section-title">规则详情</div>
               <div class="dual-ledger-diff-config-page__detail-list">
                 <div class="dual-ledger-diff-config-page__detail-item">
                   <span>外部账来源</span>
@@ -312,15 +312,15 @@
                   </strong>
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item">
-                  <span>姣斾緥绯绘暟</span>
+                  <span>比例系数</span>
                   <strong>{{ formatRatioValue(detailData.ratio) }}</strong>
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item">
-                  <span>鍥哄畾宸</span>
+                  <span>固定差额</span>
                   <strong>{{ formatAmount(detailData.fixedAmount) }}</strong>
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item dual-ledger-diff-config-page__detail-item--full">
-                  <span>澶囨敞</span>
+                  <span>备注</span>
                   <strong>{{ detailData.remark || '-' }}</strong>
                 </div>
               </div>
@@ -329,7 +329,7 @@
         </div>
 
         <div class="dual-ledger-diff-config-page__drawer-footer">
-          <el-button @click="detailDrawerVisible = false">鍏抽棴</el-button>
+          <el-button @click="detailDrawerVisible = false">关闭</el-button>
         </div>
       </div>
     </el-drawer>

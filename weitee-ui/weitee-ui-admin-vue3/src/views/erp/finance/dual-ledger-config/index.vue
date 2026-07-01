@@ -6,20 +6,20 @@
           <div class="finance-shell__page-title">双账账簿映射</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
-              褰撳墠鍒楄〃 {{ total }}
+              当前列表 {{ total }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--success">
-              鍚敤 {{ enabledCount }}
+              启用 {{ enabledCount }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--warning">
-              鍋滅敤 {{ disabledCount }}
+              停用 {{ disabledCount }}
             </span>
           </div>
         </div>
         <div class="finance-shell__page-header-actions">
           <el-button plain :loading="refreshingList" :disabled="loadingList || refreshingList" @click="handleRefresh">
             <Icon icon="ep:refresh" class="mr-5px" />
-            鍒锋柊
+            刷新
           </el-button>
         </div>
       </div>
@@ -31,8 +31,8 @@
       </div>
       <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-shell__query-form" @submit.prevent>
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
-          <el-form-item label="涓氬姟绫诲瀷" prop="bizType">
-            <el-select v-model="queryParams.bizType" class="!w-full" clearable placeholder="璇烽€夋嫨涓氬姟绫诲瀷">
+          <el-form-item label="业务类型" prop="bizType">
+            <el-select v-model="queryParams.bizType" class="!w-full" clearable placeholder="请选择业务类型">
               <el-option
                 v-for="item in ERP_BIZ_TYPE_OPTIONS"
                 :key="item.value"
@@ -83,7 +83,7 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="澶囨敞" prop="remark">
+          <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
               class="!w-full"
@@ -96,11 +96,11 @@
         <div class="finance-shell__query-actions">
           <el-button type="primary" :loading="loadingList" :disabled="loadingList || refreshingList" @click="handleQuery">
             <Icon icon="ep:search" class="mr-5px" />
-            鏌ヨ
+            查询
           </el-button>
           <el-button :disabled="loadingList || refreshingList" @click="resetQuery">
             <Icon icon="ep:refresh-left" class="mr-5px" />
-            閲嶇疆
+            重置
           </el-button>
         </div>
       </el-form>
@@ -109,21 +109,21 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">璐︾翱鏄犲皠鍒楄〃</div>
+          <div class="finance-shell__section-title">账簿映射列表</div>
           <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button type="primary" plain @click="openForm('create')" v-hasPermi="['erp:finance-dual-ledger-config:create']">
             <Icon icon="ep:plus" class="mr-5px" />
-            鏂板鏄犲皠
+            新增映射
           </el-button>
         </div>
       </div>
 
       <div v-if="listErrorMessage && !list.length" class="dual-ledger-config-page__state">
-        <el-result icon="error" title="璐︾翱鏄犲皠鍔犺浇澶辫触" :sub-title="listErrorMessage">
+        <el-result icon="error" title="账簿映射加载失败" :sub-title="listErrorMessage">
           <template #extra>
-            <el-button type="primary" @click="getList">閲嶈瘯</el-button>
+            <el-button type="primary" @click="getList">重试</el-button>
           </template>
         </el-result>
       </div>
@@ -137,7 +137,7 @@
             class="finance-shell__table finance-shell__table--dense"
             :show-overflow-tooltip="false"
           >
-            <el-table-column label="涓氬姟绫诲瀷" min-width="140">
+            <el-table-column label="业务类型" min-width="140">
               <template #default="{ row }">
                 <span class="finance-shell__metric-pill finance-shell__metric-pill--primary">
                   {{ row.bizTypeName || getBizTypeLabel(row.bizType) }}
@@ -172,7 +172,7 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鎿嶄綔" fixed="right" align="center" width="180">
+            <el-table-column label="操作" fixed="right" align="center" width="180">
               <template #default="{ row }">
                 <div class="dual-ledger-config-page__row-actions">
                   <el-button
@@ -182,7 +182,7 @@
                     @click="openDetailDrawer(row)"
                     v-hasPermi="['erp:finance-dual-ledger-config:query']"
                   >
-                    鏌ョ湅
+                    查看
                   </el-button>
                   <el-button
                     link
@@ -191,7 +191,7 @@
                     @click="openForm('update', row.id)"
                     v-hasPermi="['erp:finance-dual-ledger-config:update']"
                   >
-                    缂栬緫
+                    编辑
                   </el-button>
                   <el-button
                     link
@@ -201,14 +201,14 @@
                     @click="handleDelete(row.id)"
                     v-hasPermi="['erp:finance-dual-ledger-config:delete']"
                   >
-                    鍒犻櫎
+                    删除
                   </el-button>
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
-        <el-empty v-else class="dual-ledger-config-page__state" description="鏆傛棤璐︾翱鏄犲皠" />
+        <el-empty v-else class="dual-ledger-config-page__state" description="暂无账簿映射" />
         <Pagination
           v-if="total > 0"
           v-model:page="queryParams.pageNo"
@@ -233,7 +233,7 @@
         <div v-if="detailData" class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">
-              {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) || '鏄犲皠璇︽儏' }}
+              {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) || '映射详情' }}
             </div>
              <div class="finance-shell__context-subtitle">双账账簿映射详情</div>
           </div>
@@ -246,14 +246,14 @@
         </div>
 
         <div class="dual-ledger-config-page__drawer-body" v-loading="loadingDetail">
-          <el-result v-if="detailErrorMessage" icon="error" title="鏄犲皠璇︽儏鍔犺浇澶辫触" :sub-title="detailErrorMessage">
+          <el-result v-if="detailErrorMessage" icon="error" title="映射详情加载失败" :sub-title="detailErrorMessage">
             <template #extra>
-              <el-button type="primary" @click="retryLoadDetail">閲嶈瘯</el-button>
+              <el-button type="primary" @click="retryLoadDetail">重试</el-button>
             </template>
           </el-result>
           <template v-else-if="detailData">
             <div class="finance-shell__section">
-              <div class="finance-shell__section-title">鏄犲皠璇︽儏</div>
+              <div class="finance-shell__section-title">映射详情</div>
               <div class="dual-ledger-config-page__detail-list">
                 <div class="dual-ledger-config-page__detail-item">
                    <span>外部账账簿</span>

@@ -4,15 +4,9 @@
       <div class="finance-asset-page__hero">
         <div>
           <div class="finance-asset-page__title">固定资产台账</div>
-          <div class="finance-asset-page__summary">
-            统一维护固定资产卡片、候选入账、折旧参数和净值信息，支撑后续财务核算。
-          </div>
         </div>
         <div class="finance-asset-page__hero-actions">
           <el-tag effect="light" round>资产管理</el-tag>
-          <el-tag :type="loadingList ? 'warning' : 'success'" effect="light" round>
-            {{ loadingList ? '列表加载中' : '正式模块已接入' }}
-          </el-tag>
         </div>
       </div>
     </ContentWrap>

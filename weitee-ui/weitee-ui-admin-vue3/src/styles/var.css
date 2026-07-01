@@ -53,6 +53,96 @@
   --app-footer-height: 50px;
 
   --transition-time-02: 0.2s;
+
+  /* ==========================================================
+     ERP Design Token - 统计卡片颜色系统
+     用于 KPI 统计卡片、指标卡片、数据概览卡片等场景
+     ========================================================== */
+
+  /* Blue 系列 - 常规/主色/中性 */
+  --erp-blue-50: rgba(219, 234, 254, 0.6);
+  --erp-blue-100: #dbeafe;
+  --erp-blue-200: #bfdbfe;
+  --erp-blue-600: #2563eb;
+
+  /* Green 系列 - 成功/完成/正向 */
+  --erp-green-50: rgba(220, 252, 231, 0.6);
+  --erp-green-100: #dcfce7;
+  --erp-green-200: #bbf7d0;
+  --erp-green-600: #16a34a;
+
+  /* Teal 系列 - 流转/信息/辅助 */
+  --erp-teal-50: rgba(204, 251, 241, 0.6);
+  --erp-teal-100: #ccfbf1;
+  --erp-teal-200: #99f6e4;
+  --erp-teal-600: #0d9488;
+
+  /* Amber 系列 - 警告/待办/阻塞 */
+  --erp-amber-50: rgba(254, 243, 199, 0.6);
+  --erp-amber-100: #fef3c7;
+  --erp-amber-200: #fde68a;
+  --erp-amber-600: #d97706;
+
+  /* Rose 系列 - 危险/异常/高优先级 */
+  --erp-rose-50: rgba(255, 228, 230, 0.6);
+  --erp-rose-100: #ffe4e6;
+  --erp-rose-200: #fecdd3;
+  --erp-rose-600: #e11d48;
+
+  /* Slate 系列 - 禁用态/中性灰 */
+  --erp-slate-50: rgba(241, 245, 249, 0.7);
+  --erp-slate-100: #f1f5f9;
+  --erp-slate-200: #e2e8f0;
+  --erp-slate-400: #94a3b8;
+  --erp-slate-500: #64748b;
+  --erp-slate-600: #475569;
+  --erp-slate-800: #1e293b;
+  --erp-slate-900: #0f172a;
+
+  /* Gold 系列 - 金色/高亮 */
+  --erp-gold-50: rgba(254, 249, 195, 0.6);
+  --erp-gold-100: #fef9c3;
+  --erp-gold-200: #fef08a;
+  --erp-gold-500: #eab308;
+
+  /* 统计卡片背景渐变 */
+  --erp-stat-gradient-blue: linear-gradient(135deg, var(--erp-blue-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --erp-stat-gradient-green: linear-gradient(135deg, var(--erp-green-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --erp-stat-gradient-teal: linear-gradient(135deg, var(--erp-teal-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --erp-stat-gradient-amber: linear-gradient(135deg, var(--erp-amber-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --erp-stat-gradient-rose: linear-gradient(135deg, var(--erp-rose-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --erp-stat-gradient-slate: linear-gradient(135deg, var(--erp-slate-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+  --erp-stat-gradient-gold: linear-gradient(135deg, var(--erp-gold-50) 0%, rgba(255, 255, 255, 0.98) 100%);
+
+  /* 统计卡片边框颜色 */
+  --erp-stat-border-blue: var(--erp-blue-100);
+  --erp-stat-border-green: var(--erp-green-100);
+  --erp-stat-border-teal: var(--erp-teal-100);
+  --erp-stat-border-amber: var(--erp-amber-100);
+  --erp-stat-border-rose: var(--erp-rose-100);
+  --erp-stat-border-slate: var(--erp-slate-100);
+  --erp-stat-border-gold: var(--erp-gold-100);
+
+  /* 语义颜色映射 */
+  --erp-primary-50: var(--erp-blue-50);
+  --erp-primary-100: var(--erp-blue-100);
+  --erp-primary-600: var(--erp-blue-600);
+
+  --erp-success-50: var(--erp-green-50);
+  --erp-success-100: var(--erp-green-100);
+  --erp-success-600: var(--erp-green-600);
+
+  --erp-warning-50: var(--erp-amber-50);
+  --erp-warning-100: var(--erp-amber-100);
+  --erp-warning-600: var(--erp-amber-600);
+
+  --erp-danger-50: var(--erp-rose-50);
+  --erp-danger-100: var(--erp-rose-100);
+  --erp-danger-600: var(--erp-rose-600);
+
+  --erp-disabled-50: var(--erp-slate-50);
+  --erp-disabled-100: var(--erp-slate-100);
+  --erp-disabled-600: var(--erp-slate-600);
 }
 
 .dark {
