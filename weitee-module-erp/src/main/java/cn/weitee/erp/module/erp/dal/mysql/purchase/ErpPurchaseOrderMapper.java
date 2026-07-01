@@ -89,6 +89,15 @@ public interface ErpPurchaseOrderMapper extends BaseMapperX<ErpPurchaseOrderDO> 
                 .set(ErpPurchaseOrderDO::getProcessInstanceId, null));
     }
 
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(new LambdaUpdateWrapper<ErpPurchaseOrderDO>()
+                .eq(ErpPurchaseOrderDO::getId, id)
+                .eq(ErpPurchaseOrderDO::getStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpPurchaseOrderDO::getProcessInstanceId, processInstanceId)
+                .set(ErpPurchaseOrderDO::getStatus, ErpAuditStatus.DRAFT.getStatus())
+                .set(ErpPurchaseOrderDO::getProcessInstanceId, null));
+    }
+
     default ErpPurchaseOrderDO selectByNo(String no) {
         return selectOne(ErpPurchaseOrderDO::getNo, no);
     }

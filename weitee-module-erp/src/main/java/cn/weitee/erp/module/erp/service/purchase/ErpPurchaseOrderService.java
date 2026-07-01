@@ -56,6 +56,8 @@ public interface ErpPurchaseOrderService {
 
     void updatePurchaseOrderStatusByBpm(Long orderId, String processInstanceId, Integer status, String reason);
 
+    void rollbackPurchaseOrderStatusToDraftByBpm(Long orderId, String processInstanceId, String reason);
+
     /**
      * 更新采购订单的入库数量
      *

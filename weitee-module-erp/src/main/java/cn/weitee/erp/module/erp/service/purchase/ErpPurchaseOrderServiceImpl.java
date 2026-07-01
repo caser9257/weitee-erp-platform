@@ -268,6 +268,22 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackPurchaseOrderStatusToDraftByBpm(Long orderId, String processInstanceId, String reason) {
+        validatePurchaseOrderExists(orderId);
+        int updateCount = erpPurchaseOrderMapper.resetStatusToDraftByBpm(orderId, processInstanceId);
+        if (updateCount == 0) {
+            throw exception(PURCHASE_ORDER_UPDATE_FAIL_PROCESSING);
+        }
+        erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
+                .setOrderId(orderId)
+                .setActionType(ErpPurchaseOrderAuditActionTypeConstants.CANCEL)
+                .setBeforeStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setAfterStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setReason(reason));
+    }
+
     private List<ErpPurchaseOrderItemDO> validatePurchaseOrderItems(List<ErpPurchaseOrderSaveReqVO.Item> list) {
         // 1. 校验产品存在
         List<ErpProductDO> productList = productService.validProductList(
