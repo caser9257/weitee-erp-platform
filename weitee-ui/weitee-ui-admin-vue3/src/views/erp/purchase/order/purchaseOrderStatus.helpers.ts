@@ -64,9 +64,11 @@ export type PurchaseOrderToolbarDescriptor = {
 const normalizeNumber = (value?: number | string | null) => Number(value || 0)
 
 const PURCHASE_ORDER_STATUS = {
+  DRAFT: 0,
   PROCESS: 10,
   APPROVE: 20,
-  REJECT: 30
+  REJECT: 30,
+  FAILED: 60
 } as const
 
 const isInboundCompleted = (totalCount: number, inCount: number) => totalCount > 0 && inCount >= totalCount
@@ -131,11 +133,15 @@ export function getPurchaseOrderRowActionDescriptor(
     !isApprovalRunning
   const canEdit =
     !isSaleTraceMode &&
-    (input.status === PURCHASE_ORDER_STATUS.REJECT ||
+    (input.status === PURCHASE_ORDER_STATUS.DRAFT ||
+      input.status === PURCHASE_ORDER_STATUS.REJECT ||
+      input.status === PURCHASE_ORDER_STATUS.FAILED ||
       (input.status === PURCHASE_ORDER_STATUS.PROCESS && !input.processInstanceId))
   const canSubmit =
     !isSaleTraceMode &&
-    (input.status === PURCHASE_ORDER_STATUS.REJECT ||
+    (input.status === PURCHASE_ORDER_STATUS.DRAFT ||
+      input.status === PURCHASE_ORDER_STATUS.REJECT ||
+      input.status === PURCHASE_ORDER_STATUS.FAILED ||
       (input.status === PURCHASE_ORDER_STATUS.PROCESS && !input.processInstanceId))
   const canCancelApproval = !isSaleTraceMode && isApprovalRunning && isProcessStarter
   const canViewProcess = !!input.processInstanceId
