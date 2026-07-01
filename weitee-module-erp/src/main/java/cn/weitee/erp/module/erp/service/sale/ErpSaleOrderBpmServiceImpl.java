@@ -104,11 +104,6 @@ public class ErpSaleOrderBpmServiceImpl implements ErpSaleOrderBpmService {
         });
     }
 
-    @Override
-    public void handleProcessInstanceResult(Long orderId, String processInstanceId, Integer status, String reason) {
-        // 结果回写已收敛到 SaleOrderResultHandler，由 BpmApprovalEventDispatcher 统一分发
-    }
-
     private ErpSaleOrderDO getRequiredSaleOrder(Long orderId) {
         ErpSaleOrderDO saleOrder = erpSaleOrderMapper.selectById(orderId);
         if (saleOrder == null) {
