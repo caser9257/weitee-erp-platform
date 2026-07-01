@@ -31,9 +31,11 @@ export type SaleOrderToolbarDescriptor = {
 }
 
 const SALE_ORDER_STATUS = {
+  DRAFT: 0,
   PROCESS: 10,
   APPROVE: 20,
-  REJECT: 30
+  REJECT: 30,
+  FAILED: 60
 } as const
 
 const normalizeNumber = (value?: number | string | null) => Number(value || 0)
@@ -49,10 +51,14 @@ export function getSaleOrderRowActionDescriptor(
   return {
     isApprovalRunning,
     canEdit:
+      input.status === SALE_ORDER_STATUS.DRAFT ||
       input.status === SALE_ORDER_STATUS.REJECT ||
+      input.status === SALE_ORDER_STATUS.FAILED ||
       (input.status === SALE_ORDER_STATUS.PROCESS && !input.processInstanceId),
     canSubmit:
+      input.status === SALE_ORDER_STATUS.DRAFT ||
       input.status === SALE_ORDER_STATUS.REJECT ||
+      input.status === SALE_ORDER_STATUS.FAILED ||
       (input.status === SALE_ORDER_STATUS.PROCESS && !input.processInstanceId),
     canCancelApproval: isApprovalRunning && isProcessStarter,
     canViewProcess: !!input.processInstanceId,

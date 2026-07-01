@@ -46,6 +46,36 @@ assert.equal(rejectedDraftActions.canSubmit, true)
 assert.equal(rejectedDraftActions.canCancelApproval, false)
 assert.equal(rejectedDraftActions.canDelete, true)
 
+const draftActions = getSaleOrderRowActionDescriptor({
+  status: 0,
+  processInstanceId: undefined,
+  creator: '100',
+  currentUserId: '100'
+})
+
+assert.equal(draftActions.isApprovalRunning, false)
+assert.equal(draftActions.canEdit, true)
+assert.equal(draftActions.canSubmit, true)
+assert.equal(draftActions.canCancelApproval, false)
+assert.equal(draftActions.canViewProcess, false)
+assert.equal(draftActions.canTraceDownstream, false)
+assert.equal(draftActions.canDelete, true)
+
+const failedRetryActions = getSaleOrderRowActionDescriptor({
+  status: 60,
+  processInstanceId: undefined,
+  creator: '100',
+  currentUserId: '100'
+})
+
+assert.equal(failedRetryActions.isApprovalRunning, false)
+assert.equal(failedRetryActions.canEdit, true)
+assert.equal(failedRetryActions.canSubmit, true)
+assert.equal(failedRetryActions.canCancelApproval, false)
+assert.equal(failedRetryActions.canViewProcess, false)
+assert.equal(failedRetryActions.canTraceDownstream, false)
+assert.equal(failedRetryActions.canDelete, true)
+
 const toolbarWithSelection = getSaleOrderToolbarDescriptor({
   batchEditableSelectionCount: 2,
   deletableSelectionCount: 2
