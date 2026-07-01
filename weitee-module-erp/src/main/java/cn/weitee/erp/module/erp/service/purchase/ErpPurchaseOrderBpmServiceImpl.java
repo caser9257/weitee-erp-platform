@@ -4,7 +4,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.module.bpm.service.approval.BpmApprovalRuntimeService;
-import cn.weitee.erp.module.bpm.service.task.BpmProcessInstanceService;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderCancelApprovalReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSubmitReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
@@ -120,11 +119,6 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
                 log.warn("[cancelPurchaseOrderApproval] BPM 撤回失败，orderId={}", orderId, e);
             }
         });
-    }
-
-    @Override
-    public void handleProcessInstanceResult(Long orderId, String processInstanceId, Integer status, String reason) {
-        // 旧监听器入口保留兼容，结果回写已收敛到 PurchaseOrderResultHandler
     }
 
     private Map<String, Object> buildVariables(ErpPurchaseOrderDO purchaseOrder) {

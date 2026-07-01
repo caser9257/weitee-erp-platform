@@ -9,6 +9,4 @@ public interface ErpPurchaseOrderBpmService {
 
     void cancelPurchaseOrderApproval(Long userId, ErpPurchaseOrderCancelApprovalReqVO reqVO);
 
-    void handleProcessInstanceResult(Long orderId, String processInstanceId, Integer status, String reason);
-
 }
