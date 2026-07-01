@@ -117,6 +117,86 @@ class ErpPurchaseOrderBpmServiceImplTest {
     }
 
     @Test
+    void submitPurchaseOrder_shouldAllowRetryWhenOrderWasFailed() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>(
+                new ErpPurchaseOrderDO()
+                        .setId(25L)
+                        .setNo("PO-2026-FAILED")
+                        .setStatus(ErpAuditStatus.FAILED.getStatus())
+                        .setProcessInstanceId("PI-FAILED-OLD")
+        );
+        List<ErpPurchaseOrderDO> updatedOrders = new ArrayList<>();
+        AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
+
+        setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return purchaseOrderRef.get();
+            }
+            if ("updateById".equals(methodName)) {
+                updatedOrders.add((ErpPurchaseOrderDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("submit".equals(methodName)) {
+                submitBizIdRef.set((Long) args[1]);
+                return "PI-PO-RETRY-001";
+            }
+            return null;
+        }));
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
+
+        Object reqVO = createSubmitReqVO(25L, new HashMap<>());
+        Method method = service.getClass().getMethod("submitPurchaseOrder", Long.class, reqVO.getClass());
+        Object result = method.invoke(service, 9527L, reqVO);
+
+        assertNull(result);
+        assertEquals(25L, submitBizIdRef.get());
+        assertEquals(2, updatedOrders.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedOrders.get(0).getStatus());
+        assertNull(updatedOrders.get(0).getProcessInstanceId());
+        assertEquals("PI-PO-RETRY-001", updatedOrders.get(1).getProcessInstanceId());
+    }
+
+    @Test
+    void submitPurchaseOrder_shouldKeepFailedStatusWhenBpmCreateFails() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>(
+                new ErpPurchaseOrderDO()
+                        .setId(26L)
+                        .setNo("PO-2026-FAILED-RETRY")
+                        .setStatus(ErpAuditStatus.FAILED.getStatus())
+        );
+        List<ErpPurchaseOrderDO> updatedOrders = new ArrayList<>();
+
+        setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return purchaseOrderRef.get();
+            }
+            if ("updateById".equals(methodName)) {
+                updatedOrders.add((ErpPurchaseOrderDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            throw new RuntimeException("bpm failed");
+        }));
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
+
+        Object reqVO = createSubmitReqVO(26L, new HashMap<>());
+        Method method = service.getClass().getMethod("submitPurchaseOrder", Long.class, reqVO.getClass());
+        method.invoke(service, 9527L, reqVO);
+
+        assertEquals(2, updatedOrders.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedOrders.get(0).getStatus());
+        assertEquals(ErpAuditStatus.FAILED.getStatus(), updatedOrders.get(1).getStatus());
+        assertNull(updatedOrders.get(1).getProcessInstanceId());
+    }
+
+    @Test
     void cancelPurchaseOrderApproval_shouldCancelProcessAndClearBinding() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>(
@@ -252,7 +332,13 @@ class ErpPurchaseOrderBpmServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        String actualFieldName = switch (fieldName) {
+            case "purchaseOrderMapper" -> "erpPurchaseOrderMapper";
+            case "purchaseOrderAuditLogMapper" -> "erpPurchaseOrderAuditLogMapper";
+            case "purchaseSuggestMapper" -> "erpPurchaseSuggestMapper";
+            default -> fieldName;
+        };
+        Field field = target.getClass().getDeclaredField(actualFieldName);
         field.setAccessible(true);
         field.set(target, value);
     }
