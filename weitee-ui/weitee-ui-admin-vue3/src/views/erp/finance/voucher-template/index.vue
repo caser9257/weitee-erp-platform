@@ -4,20 +4,25 @@
       <div class="voucher-template-page__header">
         <div>
           <div class="voucher-template-page__breadcrumb">
-            <span>璐㈠姟鏍哥畻绠＄悊</span>
+            <span>财务核算管理</span>
             <span>/</span>
-            <span>涓氬姟閰嶇疆</span>
+            <span>业务配置</span>
             <span>/</span>
-            <span class="text-slate-700">鍑瘉妯℃澘</span>
+            <span class="text-slate-700">凭证模板</span>
           </div>
-          <h1 class="voucher-template-page__title">鍑瘉妯℃澘閰嶇疆</h1>
-          <p class="voucher-template-page__subtitle">閽堝涓嶅悓鐨勪笟鍔＄被鍨嬶紝缁熶竴閰嶇疆鍏跺搴旂殑璐㈠姟璁拌处鍑瘉瑙勫垯涓庡垎褰曟ā鏉裤€?</p>
+          <h1 class="voucher-template-page__title">凭证模板配置</h1>
         </div>
 
         <div class="voucher-template-page__header-actions">
-          <el-button class="voucher-template-page__header-button voucher-template-page__header-button--ghost" :loading="refreshing" :disabled="!canRefresh" @click="handleRefresh">
+          <el-button
+            class="voucher-template-page__header-button voucher-template-page__header-button--ghost"
+            :loading="refreshing"
+            :disabled="!canRefresh"
+            @click="handleRefresh"
+          >
             <Icon icon="ep:refresh-left" class="mr-1.5" />
-            閲嶇疆绛涢€?          </el-button>
+            重置筛选
+          </el-button>
           <el-button
             v-hasPermi="['erp:finance-voucher-template:create']"
             class="voucher-template-page__header-button voucher-template-page__header-button--primary"
@@ -25,17 +30,23 @@
             @click="openCreateDialog"
           >
             <Icon icon="ep:plus" class="mr-1.5" />
-            鏂板鍑瘉妯℃澘
+            新增凭证模板
           </el-button>
         </div>
       </div>
 
       <div class="voucher-template-page__summary-grid">
-        <div v-for="card in summaryCards" :key="card.label" class="voucher-template-page__summary-card">
+        <div
+          v-for="card in summaryCards"
+          :key="card.label"
+          class="voucher-template-page__summary-card"
+        >
           <div class="voucher-template-page__summary-main">
             <div class="voucher-template-page__summary-label">{{ card.label }}</div>
             <div class="voucher-template-page__summary-value-row">
-              <span class="voucher-template-page__summary-value" :class="card.valueClass">{{ card.value }}</span>
+              <span class="voucher-template-page__summary-value" :class="card.valueClass">{{
+                card.value
+              }}</span>
               <span class="voucher-template-page__summary-suffix">{{ card.suffix }}</span>
             </div>
           </div>
@@ -49,14 +60,20 @@
         <div class="voucher-template-page__filter-head">
           <div class="voucher-template-page__section-title-row">
             <Icon icon="ep:filter" class="voucher-template-page__section-title-icon" />
-            <div class="voucher-template-page__section-title">绛涢€夋潯浠?</div>
+            <div class="voucher-template-page__section-title">筛选条件</div>
           </div>
         </div>
 
         <div class="voucher-template-page__filter-grid">
           <div class="voucher-template-page__field">
-            <label class="voucher-template-page__field-label">妯℃澘鍚嶇О</label>
-            <el-input v-model="queryParams.name" clearable placeholder="杈撳叆鍚嶇О鍏抽敭璇?.." class="voucher-template-page__field-control" @keyup.enter="handleQuery">
+            <label class="voucher-template-page__field-label">模板名称</label>
+            <el-input
+              v-model="queryParams.name"
+              clearable
+              placeholder="输入名称关键字"
+              class="voucher-template-page__field-control"
+              @keyup.enter="handleQuery"
+            >
               <template #prefix>
                 <Icon icon="ep:search" class="voucher-template-page__search-icon" />
               </template>
@@ -64,43 +81,91 @@
           </div>
 
           <div class="voucher-template-page__field">
-            <label class="voucher-template-page__field-label">璐︾翱</label>
-            <el-select v-model="queryParams.ledgerId" clearable filterable placeholder="鍏ㄩ儴璐︾翱" class="voucher-template-page__field-control" :loading="ledgerLoading">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+            <label class="voucher-template-page__field-label">账套</label>
+            <el-select
+              v-model="queryParams.ledgerId"
+              clearable
+              filterable
+              placeholder="全部账套"
+              class="voucher-template-page__field-control"
+              :loading="ledgerLoading"
+            >
+              <el-option
+                v-for="item in ledgerOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
             </el-select>
           </div>
 
           <div class="voucher-template-page__field">
-            <label class="voucher-template-page__field-label">涓氬姟绫诲瀷</label>
-            <el-select v-model="queryParams.bizType" clearable placeholder="鍏ㄩ儴涓氬姟" class="voucher-template-page__field-control">
-              <el-option v-for="item in bizTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <label class="voucher-template-page__field-label">业务类型</label>
+            <el-select
+              v-model="queryParams.bizType"
+              clearable
+              placeholder="全部业务"
+              class="voucher-template-page__field-control"
+            >
+              <el-option
+                v-for="item in bizTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </div>
 
           <div class="voucher-template-page__field">
-            <label class="voucher-template-page__field-label">鍚敤鐘舵€?</label>
-            <el-select v-model="queryParams.status" clearable placeholder="鍏ㄩ儴鐘舵€?" class="voucher-template-page__field-control">
-              <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <label class="voucher-template-page__field-label">启用状态</label>
+            <el-select
+              v-model="queryParams.status"
+              clearable
+              placeholder="全部状态"
+              class="voucher-template-page__field-control"
+            >
+              <el-option
+                v-for="item in statusOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </div>
 
           <div class="voucher-template-page__field">
-            <label class="voucher-template-page__field-label">鐢熸垚鏂瑰紡</label>
-            <el-select v-model="queryParams.autoGenerate" clearable placeholder="鍏ㄩ儴鏂瑰紡" class="voucher-template-page__field-control">
-              <el-option label="鑷姩鐢熸垚" :value="true" />
-              <el-option label="鎵嬪伐閰嶇疆" :value="false" />
+            <label class="voucher-template-page__field-label">生成方式</label>
+            <el-select
+              v-model="queryParams.autoGenerate"
+              clearable
+              placeholder="全部方式"
+              class="voucher-template-page__field-control"
+            >
+              <el-option label="自动生成" :value="true" />
+              <el-option label="手工配置" :value="false" />
             </el-select>
           </div>
         </div>
 
-        <div class="voucher-template-page__filter-actions voucher-template-page__filter-actions--bottom">
-          <el-button class="voucher-template-page__secondary-button" :disabled="!canReset" @click="resetQuery">
+        <div
+          class="voucher-template-page__filter-actions voucher-template-page__filter-actions--bottom"
+        >
+          <el-button
+            class="voucher-template-page__secondary-button"
+            :disabled="!canReset"
+            @click="resetQuery"
+          >
             <Icon icon="ep:refresh-left" class="mr-1.5" />
-            閲嶇疆
+            重置
           </el-button>
-          <el-button class="voucher-template-page__query-button" :loading="listLoading" :disabled="!canQuery" @click="handleQuery">
+          <el-button
+            class="voucher-template-page__query-button"
+            :loading="listLoading"
+            :disabled="!canQuery"
+            @click="handleQuery"
+          >
             <Icon icon="ep:search" class="mr-1.5" />
-            鏌ヨ
+            查询
           </el-button>
         </div>
       </div>
@@ -109,27 +174,42 @@
         <div class="voucher-template-page__table-head">
           <div>
             <div class="voucher-template-page__table-title-row">
-              <div class="voucher-template-page__section-title">妯℃澘鍒楄〃</div>
-              <span class="voucher-template-page__table-filter-chip">宸茬瓫閫?{{ list.length }} / {{ total }}</span>
+              <div class="voucher-template-page__section-title">模板列表</div>
+              <span class="voucher-template-page__table-filter-chip"
+                >已筛选 {{ list.length }} / {{ total }}</span
+              >
             </div>
-            <div class="voucher-template-page__section-subtitle">鍏?{{ total }} 鏉★紝褰撳墠鏁版嵁鐩存帴鏉ヨ嚜鍚庣鍒嗛〉鎺ュ彛銆?</div>
           </div>
           <div class="voucher-template-page__table-head-right">
             <label class="voucher-template-page__remark-switch">
-              <el-checkbox v-model="showRemark">鏄剧ず澶囨敞璇存槑</el-checkbox>
+              <el-checkbox v-model="showRemark">显示备注</el-checkbox>
             </label>
-
           </div>
         </div>
 
-        <el-alert v-if="listErrorMessage && !list.length" :title="listErrorMessage" type="error" :closable="false" show-icon class="mb-3" />
+        <el-alert
+          v-if="listErrorMessage && !list.length"
+          :title="listErrorMessage"
+          type="error"
+          :closable="false"
+          show-icon
+          class="mb-3"
+        />
 
         <template v-else>
           <div v-if="listLoading || list.length" class="voucher-template-page__table-wrap">
-            <el-table v-loading="listLoading" :data="list" row-key="id" class="voucher-template-page__table" :show-overflow-tooltip="false">
-              <el-table-column label="搴忓彿" align="center" width="72">
+            <el-table
+              v-loading="listLoading"
+              :data="list"
+              row-key="id"
+              class="voucher-template-page__table"
+              :show-overflow-tooltip="false"
+            >
+              <el-table-column label="序号" align="center" width="72">
                 <template #default="{ $index }">
-                  <span class="voucher-template-page__table-index">{{ (queryParams.pageNo - 1) * queryParams.pageSize + $index + 1 }}</span>
+                  <span class="voucher-template-page__table-index">{{
+                    (queryParams.pageNo - 1) * queryParams.pageSize + $index + 1
+                  }}</span>
                 </template>
               </el-table-column>
 
@@ -137,16 +217,18 @@
                 <template #header>
                   <span class="voucher-template-page__column-header">
                     <Icon icon="ep:document" class="voucher-template-page__column-icon" />
-                    妯℃澘鍚嶇О & 璇存槑
+                    模板名称
                   </span>
                 </template>
                 <template #default="{ row }">
                   <div class="voucher-template-page__primary-cell">
                     <div class="voucher-template-page__primary-title-row">
-                      <span class="voucher-template-page__primary-title">{{ row.name || '-' }}</span>
+                      <span class="voucher-template-page__primary-title">{{
+                        row.name || '-'
+                      }}</span>
                     </div>
                     <div v-if="showRemark" class="voucher-template-page__primary-desc">
-                      {{ row.defaultSummary || row.remark || '鏈厤缃鏄?' }}
+                      {{ row.defaultSummary || row.remark || '未配置备注' }}
                     </div>
                   </div>
                 </template>
@@ -154,64 +236,112 @@
 
               <el-table-column min-width="230">
                 <template #header>
-                  <span class="voucher-template-page__column-header voucher-template-page__column-header--pipeline">
+                  <span
+                    class="voucher-template-page__column-header voucher-template-page__column-header--pipeline"
+                  >
                     <Icon icon="ep:office-building" class="voucher-template-page__column-icon" />
-                    閫傜敤璐︾翱鍙婁笟鍔?                  </span>
+                    适用账套及业务
+                  </span>
                 </template>
                 <template #default="{ row }">
                   <div class="voucher-template-page__secondary-cell">
-                    <div class="voucher-template-page__secondary-title">{{ row.ledgerName || '-' }}</div>
-                    <div class="voucher-template-page__secondary-desc">{{ row.bizTypeName || getBizTypeLabel(row.bizType) }}</div>
+                    <div class="voucher-template-page__secondary-title">{{
+                      row.ledgerName || '-'
+                    }}</div>
+                    <div class="voucher-template-page__secondary-desc">{{
+                      row.bizTypeName || getBizTypeLabel(row.bizType)
+                    }}</div>
                   </div>
                 </template>
               </el-table-column>
 
-              <el-table-column label="鐘舵€?" align="center" width="110">
+              <el-table-column label="状态" align="center" width="110">
                 <template #default="{ row }">
-                  <span class="voucher-template-page__status-badge" :class="resolveStatusClass(row.status)">
+                  <span
+                    class="voucher-template-page__status-badge"
+                    :class="resolveStatusClass(row.status)"
+                  >
                     {{ getStatusLabel(row.status) }}
                   </span>
                 </template>
               </el-table-column>
 
-              <el-table-column label="鏂瑰紡" align="center" width="100">
+              <el-table-column label="方式" align="center" width="100">
                 <template #default="{ row }">
-                  <span class="voucher-template-page__type-badge" :class="row.autoGenerate ? 'voucher-template-page__type-badge--auto' : 'voucher-template-page__type-badge--manual'">
-                    {{ row.autoGenerate ? '鑷姩鐢熸垚' : '鎵嬪伐閰嶇疆' }}
+                  <span
+                    class="voucher-template-page__type-badge"
+                    :class="
+                      row.autoGenerate
+                        ? 'voucher-template-page__type-badge--auto'
+                        : 'voucher-template-page__type-badge--manual'
+                    "
+                  >
+                    {{ row.autoGenerate ? '自动生成' : '手工配置' }}
                   </span>
                 </template>
               </el-table-column>
 
-              <el-table-column label="鍒嗗綍" align="center" width="90">
+              <el-table-column label="分录" align="center" width="90">
                 <template #default="{ row }">
                   <span
                     class="voucher-template-page__count-badge"
-                    :class="(row.items?.length || 0) > 0 ? 'voucher-template-page__count-badge--ok' : 'voucher-template-page__count-badge--empty'"
+                    :class="
+                      (row.items?.length || 0) > 0
+                        ? 'voucher-template-page__count-badge--ok'
+                        : 'voucher-template-page__count-badge--empty'
+                    "
                   >
-                    {{ row.items?.length || 0 }}娈?                  </span>
+                    {{ row.items?.length || 0 }}段
+                  </span>
                 </template>
               </el-table-column>
 
-              <el-table-column label="鏇存柊鏃堕棿" min-width="170">
+              <el-table-column label="更新时间" min-width="170">
                 <template #default="{ row }">
-                  <span class="voucher-template-page__time-text">{{ formatDateTimeValue(row.updateTime) }}</span>
+                  <span class="voucher-template-page__time-text">{{
+                    formatDateTimeValue(row.updateTime)
+                  }}</span>
                 </template>
               </el-table-column>
 
-              <el-table-column fixed="right" label="鎿嶄綔" align="center" width="300">
+              <el-table-column fixed="right" label="操作" align="center" width="300">
                 <template #default="{ row }">
                   <div class="voucher-template-page__row-actions">
-                    <el-button v-hasPermi="['erp:finance-voucher-template:query']" link type="primary" :disabled="detailLoading || rowBusy(row.id)" @click="openDetailDrawer(row.id)">
-                      鏌ョ湅
+                    <el-button
+                      v-hasPermi="['erp:finance-voucher-template:query']"
+                      link
+                      type="primary"
+                      :disabled="detailLoading || rowBusy(row.id)"
+                      @click="openDetailDrawer(row.id)"
+                    >
+                      查看
                     </el-button>
-                    <el-button v-hasPermi="['erp:finance-voucher-template:update']" link type="primary" :disabled="dialogSubmitting || rowBusy(row.id)" @click="openEditDialog(row.id)">
-                      缂栬緫
+                    <el-button
+                      v-hasPermi="['erp:finance-voucher-template:update']"
+                      link
+                      type="primary"
+                      :disabled="dialogSubmitting || rowBusy(row.id)"
+                      @click="openEditDialog(row.id)"
+                    >
+                      编辑
                     </el-button>
-                    <el-button v-hasPermi="['erp:finance-voucher-template:create']" link type="primary" :disabled="dialogSubmitting || rowBusy(row.id)" @click="openCopyDialog(row.id)">
-                      澶嶅埗
+                    <el-button
+                      v-hasPermi="['erp:finance-voucher-template:create']"
+                      link
+                      type="primary"
+                      :disabled="dialogSubmitting || rowBusy(row.id)"
+                      @click="openCopyDialog(row.id)"
+                    >
+                      复制
                     </el-button>
-                    <el-button v-hasPermi="['erp:finance-voucher-template:delete']" link type="danger" :disabled="deleting || rowBusy(row.id)" @click="handleDelete(row)">
-                      鍒犻櫎
+                    <el-button
+                      v-hasPermi="['erp:finance-voucher-template:delete']"
+                      link
+                      type="danger"
+                      :disabled="deleting || rowBusy(row.id)"
+                      @click="handleDelete(row)"
+                    >
+                      删除
                     </el-button>
                   </div>
                 </template>
@@ -223,26 +353,31 @@
             <div class="voucher-template-page__empty-icon">
               <Icon icon="ep:document" />
             </div>
-            <div class="voucher-template-page__empty-title">鏆傛棤鍑瘉妯℃澘鏁版嵁</div>
-            <div class="voucher-template-page__empty-text">褰撳墠鏉′欢涓嬫病鏈夊尮閰嶇粨鏋滐紝鍙互灏濊瘯閲嶇疆绛涢€夋潯浠跺悗閲嶆柊鏌ヨ銆?</div>
+            <div class="voucher-template-page__empty-title">暂无凭证模板数据</div>
           </div>
         </template>
 
-        <Pagination v-if="total > 0" v-model:limit="queryParams.pageSize" v-model:page="queryParams.pageNo" :total="total" @pagination="getList" />
+        <Pagination
+          v-if="total > 0"
+          v-model:limit="queryParams.pageSize"
+          v-model:page="queryParams.pageNo"
+          :total="total"
+          @pagination="getList"
+        />
       </div>
     </div>
 
     <el-drawer
       v-model="detailDrawerOpen"
-      title="妯℃澘璇︽儏"
+      title="模板详情"
       size="760px"
       destroy-on-close
       modal-class="voucher-template-page__drawer-modal"
       @closed="resetDetailDrawer"
     >
-      <el-result v-if="detailErrorMessage" icon="error" title="妯℃澘璇︽儏鍔犺浇澶辫触">
+      <el-result v-if="detailErrorMessage" icon="error" title="模板详情加载失败">
         <template #extra>
-          <el-button type="primary" @click="retryDetail">閲嶈瘯</el-button>
+          <el-button type="primary" @click="retryDetail">重试</el-button>
         </template>
       </el-result>
 
@@ -251,24 +386,25 @@
           <div class="voucher-template-page__context-main">
             <div class="voucher-template-page__context-title">{{ detailData.name || '-' }}</div>
             <div class="voucher-template-page__context-subtitle">
-              {{ detailData.ledgerName || '-' }} / {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) }}
+              {{ detailData.ledgerName || '-' }} /
+              {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) }}
             </div>
           </div>
           <div class="voucher-template-page__context-meta">
             <div class="voucher-template-page__context-meta-item">
-              <span>鐘舵€?</span>
+              <span>状态</span>
               <span>{{ getStatusLabel(detailData.status) }}</span>
             </div>
             <div class="voucher-template-page__context-meta-item">
-              <span>鑷姩鐢熸垚</span>
-              <span>{{ detailData.autoGenerate ? '鏄?' : '鍚?' }}</span>
+              <span>自动生成</span>
+              <span>{{ detailData.autoGenerate ? '是' : '否' }}</span>
             </div>
             <div class="voucher-template-page__context-meta-item">
-              <span>鐮斿彂妯℃澘</span>
-              <span>{{ detailData.researchTemplate ? '鏄?' : '鍚?' }}</span>
+              <span>研发模板</span>
+              <span>{{ detailData.researchTemplate ? '是' : '否' }}</span>
             </div>
             <div class="voucher-template-page__context-meta-item">
-              <span>鍒涘缓鏃堕棿</span>
+              <span>创建时间</span>
               <span>{{ formatDateTimeValue(detailData.createTime) }}</span>
             </div>
           </div>
@@ -276,129 +412,213 @@
 
         <div v-if="detailData" class="voucher-template-page__detail-grid">
           <div class="voucher-template-page__detail-card">
-            <div class="voucher-template-page__detail-label">榛樿鎽樿</div>
-            <div class="voucher-template-page__detail-value">{{ detailData.defaultSummary || '鏈缃?' }}</div>
+            <div class="voucher-template-page__detail-label">默认摘要</div>
+            <div class="voucher-template-page__detail-value">{{
+              detailData.defaultSummary || '未设置'
+            }}</div>
           </div>
           <div class="voucher-template-page__detail-card">
-            <div class="voucher-template-page__detail-label">鐮斿彂鍒嗙被</div>
-            <div class="voucher-template-page__detail-value">{{ detailData.researchCategoryName || getResearchCategoryLabel(detailData.researchCategory) || '鏈厤缃?' }}</div>
+            <div class="voucher-template-page__detail-label">研发分类</div>
+            <div class="voucher-template-page__detail-value">{{
+              detailData.researchCategoryName ||
+              getResearchCategoryLabel(detailData.researchCategory) ||
+              '未配置'
+            }}</div>
           </div>
           <div class="voucher-template-page__detail-card">
-            <div class="voucher-template-page__detail-label">澶囨敞</div>
-            <div class="voucher-template-page__detail-value">{{ detailData.remark || '鏃?' }}</div>
+            <div class="voucher-template-page__detail-label">备注</div>
+            <div class="voucher-template-page__detail-value">{{ detailData.remark || '无' }}</div>
           </div>
         </div>
 
-        <el-table v-loading="detailLoading" :data="detailData?.items || []" class="voucher-template-page__detail-table" :show-overflow-tooltip="false">
-          <el-table-column label="搴忓彿" prop="entryNo" align="right" width="80" />
-          <el-table-column label="鏂瑰悜" min-width="90">
-            <template #default="{ row }">{{ row.entryDirectionName || getDirectionLabel(row.entryDirection) }}</template>
+        <el-table
+          v-loading="detailLoading"
+          :data="detailData?.items || []"
+          class="voucher-template-page__detail-table"
+          :show-overflow-tooltip="false"
+        >
+          <el-table-column label="序号" prop="entryNo" align="right" width="80" />
+          <el-table-column label="方向" min-width="90">
+            <template #default="{ row }">{{
+              row.entryDirectionName || getDirectionLabel(row.entryDirection)
+            }}</template>
           </el-table-column>
-          <el-table-column label="绉戠洰缂栫爜" prop="subjectCode" min-width="140" />
-          <el-table-column label="绉戠洰鍚嶇О" prop="subjectName" min-width="180" />
-          <el-table-column label="閲戦鏉ユ簮" min-width="150">
-            <template #default="{ row }">{{ row.amountSourceName || getAmountSourceLabel(row.amountSource) }}</template>
+          <el-table-column label="科目编码" prop="subjectCode" min-width="140" />
+          <el-table-column label="科目名称" prop="subjectName" min-width="180" />
+          <el-table-column label="金额来源" min-width="150">
+            <template #default="{ row }">{{
+              row.amountSourceName || getAmountSourceLabel(row.amountSource)
+            }}</template>
           </el-table-column>
-          <el-table-column label="鏉ユ簮鍊?" align="right" min-width="120">
-            <template #default="{ row }">{{ formatAmountSourceValue(row.amountSourceValue) }}</template>
+          <el-table-column label="来源值" align="right" min-width="120">
+            <template #default="{ row }">{{
+              formatAmountSourceValue(row.amountSourceValue)
+            }}</template>
           </el-table-column>
-          <el-table-column label="鎽樿" prop="summary" min-width="180" />
+          <el-table-column label="摘要" prop="summary" min-width="180" />
         </el-table>
       </template>
     </el-drawer>
 
-    <Dialog v-model="dialogVisible" :title="dialogTitle" width="1180px" scroll maxHeight="80vh" @closed="resetDialog">
-      <el-form ref="dialogFormRef" :model="formData" :rules="formRules" label-width="110px" class="voucher-template-page__dialog-form">
+    <Dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="1180px"
+      scroll
+      maxHeight="80vh"
+      @closed="resetDialog"
+    >
+      <el-form
+        ref="dialogFormRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="110px"
+        class="voucher-template-page__dialog-form"
+      >
         <div class="voucher-template-page__dialog-grid">
-          <el-form-item label="璐﹀" prop="ledgerId">
-            <el-select v-model="formData.ledgerId" placeholder="璇烽€夋嫨璐﹀" filterable class="!w-full">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+          <el-form-item label="账套" prop="ledgerId">
+            <el-select
+              v-model="formData.ledgerId"
+              placeholder="请选择账套"
+              filterable
+              class="!w-full"
+            >
+              <el-option
+                v-for="item in ledgerOptions"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+              />
             </el-select>
           </el-form-item>
-          <el-form-item label="涓氬姟绫诲瀷" prop="bizType">
-            <el-select v-model="formData.bizType" placeholder="璇烽€夋嫨涓氬姟绫诲瀷" class="!w-full">
-              <el-option v-for="item in bizTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+          <el-form-item label="业务类型" prop="bizType">
+            <el-select v-model="formData.bizType" placeholder="请选择业务类型" class="!w-full">
+              <el-option
+                v-for="item in bizTypeOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
-          <el-form-item label="妯℃澘鍚嶇О" prop="name">
-            <el-input v-model="formData.name" placeholder="璇疯緭鍏ユā鏉垮悕绉?" />
+          <el-form-item label="模板名称" prop="name">
+            <el-input v-model="formData.name" placeholder="请输入模板名称" />
           </el-form-item>
-          <el-form-item label="鐘舵€?" prop="status">
+          <el-form-item label="状态" prop="status">
             <el-radio-group v-model="formData.status">
-              <el-radio :label="CommonStatusEnum.ENABLE">鍚敤</el-radio>
-              <el-radio :label="CommonStatusEnum.DISABLE">绂佺敤</el-radio>
+              <el-radio :label="CommonStatusEnum.ENABLE">启用</el-radio>
+              <el-radio :label="CommonStatusEnum.DISABLE">禁用</el-radio>
             </el-radio-group>
           </el-form-item>
-          <el-form-item label="鑷姩鐢熸垚" prop="autoGenerate">
+          <el-form-item label="自动生成" prop="autoGenerate">
             <el-switch v-model="formData.autoGenerate" />
           </el-form-item>
-          <el-form-item label="鐮斿彂妯℃澘" prop="researchTemplate">
+          <el-form-item label="研发模板" prop="researchTemplate">
             <el-switch v-model="formData.researchTemplate" />
           </el-form-item>
-          <el-form-item label="榛樿鎽樿" prop="defaultSummary" class="voucher-template-page__dialog-span">
-            <el-input v-model="formData.defaultSummary" placeholder="璇疯緭鍏ラ粯璁ゆ憳瑕?" />
+          <el-form-item
+            label="默认摘要"
+            prop="defaultSummary"
+            class="voucher-template-page__dialog-span"
+          >
+            <el-input v-model="formData.defaultSummary" placeholder="请输入默认摘要" />
           </el-form-item>
-          <el-form-item label="鐮斿彂鍒嗙被" prop="researchCategory">
-            <el-select v-model="formData.researchCategory" placeholder="璇烽€夋嫨鐮斿彂鍒嗙被" clearable class="!w-full">
-              <el-option v-for="item in researchCategoryOptions" :key="item.value" :label="item.label" :value="item.value" />
+          <el-form-item label="研发分类" prop="researchCategory">
+            <el-select
+              v-model="formData.researchCategory"
+              placeholder="请选择研发分类"
+              clearable
+              class="!w-full"
+            >
+              <el-option
+                v-for="item in researchCategoryOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
           </el-form-item>
-          <el-form-item label="澶囨敞" prop="remark" class="voucher-template-page__dialog-span">
-            <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="璇疯緭鍏ュ娉?" />
+          <el-form-item label="备注" prop="remark" class="voucher-template-page__dialog-span">
+            <el-input
+              v-model="formData.remark"
+              type="textarea"
+              :rows="3"
+              placeholder="请输入备注"
+            />
           </el-form-item>
         </div>
 
         <div class="voucher-template-page__dialog-head">
-          <div class="voucher-template-page__section-title">妯℃澘鍒嗗綍</div>
+          <div class="voucher-template-page__section-title">模板分录</div>
           <el-button size="small" type="primary" plain @click="addItem">
             <Icon icon="ep:plus" class="mr-1.5" />
-            鏂板鍒嗗綍
+            新增分录
           </el-button>
         </div>
 
         <div class="voucher-template-page__dialog-table-wrap">
-          <el-table :data="formData.items" class="voucher-template-page__dialog-table" :show-overflow-tooltip="false">
-            <el-table-column label="搴忓彿" width="90" align="right">
+          <el-table
+            :data="formData.items"
+            class="voucher-template-page__dialog-table"
+            :show-overflow-tooltip="false"
+          >
+            <el-table-column label="序号" width="90" align="right">
               <template #default="{ $index }">{{ $index + 1 }}</template>
             </el-table-column>
-            <el-table-column label="鏂瑰悜" min-width="120">
+            <el-table-column label="方向" min-width="120">
               <template #default="{ row }">
-                <el-select v-model="row.entryDirection" placeholder="璇烽€夋嫨鏂瑰悜" class="!w-full">
-                  <el-option v-for="item in directionOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <el-select v-model="row.entryDirection" placeholder="请选择方向" class="!w-full">
+                  <el-option
+                    v-for="item in directionOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="绉戠洰缂栫爜" min-width="140">
+            <el-table-column label="科目编码" min-width="140">
               <template #default="{ row }">
-                <el-input v-model="row.subjectCode" placeholder="璇疯緭鍏ョ鐩紪鐮?" />
+                <el-input v-model="row.subjectCode" placeholder="请输入科目编码" />
               </template>
             </el-table-column>
-            <el-table-column label="绉戠洰鍚嶇О" min-width="180">
+            <el-table-column label="科目名称" min-width="180">
               <template #default="{ row }">
-                <el-input v-model="row.subjectName" placeholder="璇疯緭鍏ョ鐩悕绉?" />
+                <el-input v-model="row.subjectName" placeholder="请输入科目名称" />
               </template>
             </el-table-column>
-            <el-table-column label="閲戦鏉ユ簮" min-width="160">
+            <el-table-column label="金额来源" min-width="160">
               <template #default="{ row }">
-                <el-select v-model="row.amountSource" placeholder="璇烽€夋嫨閲戦鏉ユ簮" class="!w-full">
-                  <el-option v-for="item in amountSourceOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <el-select v-model="row.amountSource" placeholder="请选择金额来源" class="!w-full">
+                  <el-option
+                    v-for="item in amountSourceOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="鏉ユ簮鍊?" min-width="140" align="right">
+            <el-table-column label="来源值" min-width="140" align="right">
               <template #default="{ row }">
-                <el-input-number v-if="isAmountSourceValueRequired(row.amountSource)" v-model="row.amountSourceValue" :precision="6" :step="0.01" class="!w-full" />
-                <span v-else class="voucher-template-page__muted-text">鏃犻渶濉啓</span>
+                <el-input-number
+                  v-if="isAmountSourceValueRequired(row.amountSource)"
+                  v-model="row.amountSourceValue"
+                  :precision="6"
+                  :step="0.01"
+                  class="!w-full"
+                />
+                <span v-else class="voucher-template-page__muted-text">无需填写</span>
               </template>
             </el-table-column>
-            <el-table-column label="鎽樿" min-width="180">
+            <el-table-column label="摘要" min-width="180">
               <template #default="{ row }">
-                <el-input v-model="row.summary" placeholder="璇疯緭鍏ュ垎褰曟憳瑕?" />
+                <el-input v-model="row.summary" placeholder="请输入分录摘要" />
               </template>
             </el-table-column>
-            <el-table-column label="鎿嶄綔" fixed="right" width="90" align="center">
+            <el-table-column label="操作" fixed="right" width="90" align="center">
               <template #default="{ $index }">
-                <el-button link type="danger" @click="removeItem($index)">鍒犻櫎</el-button>
+                <el-button link type="danger" @click="removeItem($index)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -406,8 +626,8 @@
       </el-form>
 
       <template #footer>
-        <el-button :disabled="dialogSubmitting" @click="dialogVisible = false">鍙栨秷</el-button>
-        <el-button type="primary" :loading="dialogSubmitting" @click="submitDialog">淇濆瓨</el-button>
+        <el-button :disabled="dialogSubmitting" @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="dialogSubmitting" @click="submitDialog">保存</el-button>
       </template>
     </Dialog>
   </div>
@@ -467,39 +687,39 @@ const createQueryParams = (): VoucherTemplatePageQueryReqVO => ({
 const queryParams = reactive<VoucherTemplatePageQueryReqVO>(createQueryParams())
 
 const bizTypeOptions = [
-  { label: '閲囪喘璁㈠崟', value: ErpBizType.PURCHASE_ORDER },
-  { label: '閲囪喘鍏ュ簱', value: ErpBizType.PURCHASE_IN },
-  { label: '閲囪喘閫€璐?, value: ErpBizType.PURCHASE_RETURN },
-  { label: '閿€鍞鍗?, value: ErpBizType.SALE_ORDER },
-  { label: '閿€鍞嚭搴?, value: ErpBizType.SALE_OUT },
-  { label: '閿€鍞€€璐?, value: ErpBizType.SALE_RETURN },
-  { label: '濮斿鍔犲伐璐?, value: ErpBizType.OUTSOURCE_FEE },
-  { label: '濮斿鍏ュ簱', value: ErpBizType.OUTSOURCE_INBOUND },
-  { label: '鑷埗鍏ュ簱', value: ErpBizType.PRODUCTION_INBOUND },
-  { label: '璐圭敤鎶ラ攢', value: ErpBizType.FINANCE_EXPENSE }
+  { label: '采购订单', value: ErpBizType.PURCHASE_ORDER },
+  { label: '采购入库', value: ErpBizType.PURCHASE_IN },
+  { label: '采购退货', value: ErpBizType.PURCHASE_RETURN },
+  { label: '销售订单', value: ErpBizType.SALE_ORDER },
+  { label: '销售出库', value: ErpBizType.SALE_OUT },
+  { label: '销售退货', value: ErpBizType.SALE_RETURN },
+  { label: '委外加工费', value: ErpBizType.OUTSOURCE_FEE },
+  { label: '委外入库', value: ErpBizType.OUTSOURCE_INBOUND },
+  { label: '自制入库', value: ErpBizType.PRODUCTION_INBOUND },
+  { label: '费用报销', value: ErpBizType.FINANCE_EXPENSE }
 ] as const
 
 const statusOptions = [
-  { label: '鍚敤', value: CommonStatusEnum.ENABLE },
-  { label: '绂佺敤', value: CommonStatusEnum.DISABLE }
+  { label: '启用', value: CommonStatusEnum.ENABLE },
+  { label: '禁用', value: CommonStatusEnum.DISABLE }
 ]
 
 const researchCategoryOptions = [
-  { label: '璐圭敤鍖?, value: 10 },
-  { label: '璧勬湰鍖?, value: 20 }
+  { label: '费用化', value: 10 },
+  { label: '资本化', value: 20 }
 ]
 
 const directionOptions = [
-  { label: '鍊熸柟', value: 10 },
-  { label: '璐锋柟', value: 20 }
+  { label: '借方', value: 10 },
+  { label: '贷方', value: 20 }
 ]
 
 const amountSourceOptions = [
-  { label: '涓氬姟閲戦', value: 10 },
-  { label: '鍥哄畾閲戦', value: 20 },
-  { label: '涓氬姟閲戦姣斾緥', value: 30 },
-  { label: '鐮斿彂鏀嚭鍒嗙被', value: 40 },
-  { label: '鐮斿彂椤圭洰姹囨€?, value: 50 }
+  { label: '业务金额', value: 10 },
+  { label: '固定金额', value: 20 },
+  { label: '业务金额比例', value: 30 },
+  { label: '研发支出分类', value: 40 },
+  { label: '研发项目汇总', value: 50 }
 ]
 
 const buildEmptyItem = (): ErpFinanceVoucherTemplateItemVO => ({
@@ -530,52 +750,58 @@ const buildEmptyForm = (): ErpFinanceVoucherTemplateSaveReqVO => ({
 const formData = reactive<ErpFinanceVoucherTemplateSaveReqVO>(buildEmptyForm())
 
 const formRules: FormRules = {
-  ledgerId: [{ required: true, message: '璐﹀涓嶈兘涓虹┖', trigger: 'change' }],
-  bizType: [{ required: true, message: '涓氬姟绫诲瀷涓嶈兘涓虹┖', trigger: 'change' }],
-  name: [{ required: true, message: '妯℃澘鍚嶇О涓嶈兘涓虹┖', trigger: 'blur' }],
-  status: [{ required: true, message: '鐘舵€佷笉鑳戒负绌?, trigger: 'change' }]
+  ledgerId: [{ required: true, message: '账套不能为空', trigger: 'change' }],
+  bizType: [{ required: true, message: '业务类型不能为空', trigger: 'change' }],
+  name: [{ required: true, message: '模板名称不能为空', trigger: 'blur' }],
+  status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
 }
 
 const dialogTitle = computed(() => {
-  if (dialogMode.value === 'create') return '鏂板鍑瘉妯℃澘'
-  if (dialogMode.value === 'copy') return '澶嶅埗鍑瘉妯℃澘'
-  return '缂栬緫鍑瘉妯℃澘'
+  if (dialogMode.value === 'create') return '新增凭证模板'
+  if (dialogMode.value === 'copy') return '复制凭证模板'
+  return '编辑凭证模板'
 })
 
-const enabledCount = computed(() => list.value.filter((item) => item.status === CommonStatusEnum.ENABLE).length)
+const enabledCount = computed(
+  () => list.value.filter((item) => item.status === CommonStatusEnum.ENABLE).length
+)
 const autoGenerateCount = computed(() => list.value.filter((item) => item.autoGenerate).length)
-const zeroSegmentCount = computed(() => list.value.filter((item) => !(item.items?.length || 0)).length)
-const enabledPercent = computed(() => (total.value ? Math.round((enabledCount.value / total.value) * 100) : 0))
+const zeroSegmentCount = computed(
+  () => list.value.filter((item) => !(item.items?.length || 0)).length
+)
+const enabledPercent = computed(() =>
+  total.value ? Math.round((enabledCount.value / total.value) * 100) : 0
+)
 
 const summaryCards = computed(() => [
   {
-    label: '鍑瘉妯℃澘鎬绘暟',
+    label: '凭证模板总数',
     value: total.value,
-    suffix: '涓凡瀹氫箟',
+    suffix: '个已定义',
     icon: 'ep:laptop',
     iconClass: 'voucher-template-page__summary-icon--blue',
     valueClass: 'voucher-template-page__summary-value--dark'
   },
   {
-    label: '宸插惎鐢ㄦā鏉?,
+    label: '已启用模板',
     value: enabledCount.value,
-    suffix: `鍗?${enabledPercent.value}%`,
+    suffix: `占 ${enabledPercent.value}%`,
     icon: 'ep:success-filled',
     iconClass: 'voucher-template-page__summary-icon--emerald',
     valueClass: 'voucher-template-page__summary-value--emerald'
   },
   {
-    label: '鑷姩鐢熸垚妯℃澘',
+    label: '自动生成模板',
     value: autoGenerateCount.value,
-    suffix: '涓氬姟瑙﹀彂',
+    suffix: '业务触发',
     icon: 'ep:lightning',
     iconClass: 'voucher-template-page__summary-icon--amber',
     valueClass: 'voucher-template-page__summary-value--amber'
   },
   {
-    label: '鏃犲垎褰曟ā鏉?,
+    label: '无分录模板',
     value: zeroSegmentCount.value,
-    suffix: '闇€灏藉揩琛ュ叏',
+    suffix: '需尽快补全',
     icon: 'ep:warning-filled',
     iconClass: 'voucher-template-page__summary-icon--rose',
     valueClass: 'voucher-template-page__summary-value--rose'
@@ -591,17 +817,27 @@ const hasActiveFilters = computed(
     queryParams.status !== undefined ||
     queryParams.autoGenerate !== undefined
 )
-const canReset = computed(() => (hasActiveFilters.value || queryParams.pageNo !== 1) && canQuery.value)
-const canRefresh = computed(() => !listLoading.value && !refreshing.value && !dialogSubmitting.value)
+const canReset = computed(
+  () => (hasActiveFilters.value || queryParams.pageNo !== 1) && canQuery.value
+)
+const canRefresh = computed(
+  () => !listLoading.value && !refreshing.value && !dialogSubmitting.value
+)
 
 const rowBusy = (id?: number) => id != null && rowActionLoadingId.value === id
-const isAmountSourceValueRequired = (amountSource?: number) => amountSource === 20 || amountSource === 30
+const isAmountSourceValueRequired = (amountSource?: number) =>
+  amountSource === 20 || amountSource === 30
 
-const getBizTypeLabel = (value?: number) => bizTypeOptions.find((item) => item.value === value)?.label || '-'
-const getStatusLabel = (value?: number) => statusOptions.find((item) => item.value === value)?.label || '-'
-const getResearchCategoryLabel = (value?: number) => researchCategoryOptions.find((item) => item.value === value)?.label || ''
-const getDirectionLabel = (value?: number) => directionOptions.find((item) => item.value === value)?.label || '-'
-const getAmountSourceLabel = (value?: number) => amountSourceOptions.find((item) => item.value === value)?.label || '-'
+const getBizTypeLabel = (value?: number) =>
+  bizTypeOptions.find((item) => item.value === value)?.label || '-'
+const getStatusLabel = (value?: number) =>
+  statusOptions.find((item) => item.value === value)?.label || '-'
+const getResearchCategoryLabel = (value?: number) =>
+  researchCategoryOptions.find((item) => item.value === value)?.label || ''
+const getDirectionLabel = (value?: number) =>
+  directionOptions.find((item) => item.value === value)?.label || '-'
+const getAmountSourceLabel = (value?: number) =>
+  amountSourceOptions.find((item) => item.value === value)?.label || '-'
 
 const resolveStatusClass = (status?: number) => {
   if (status === CommonStatusEnum.ENABLE) return 'voucher-template-page__status-badge--success'
@@ -633,8 +869,9 @@ const applyFormData = (data?: ErpFinanceVoucherTemplateVO, mode: DialogMode = 'e
   payload.id = mode === 'edit' ? data?.id : undefined
   payload.ledgerId = (data?.ledgerId ?? undefined) as unknown as number
   payload.bizType = (data?.bizType ?? undefined) as unknown as number
-  payload.name = mode === 'copy' ? `${data?.name || ''}-鍓湰` : data?.name || ''
-  payload.status = mode === 'copy' ? CommonStatusEnum.ENABLE : data?.status ?? CommonStatusEnum.ENABLE
+  payload.name = mode === 'copy' ? `${data?.name || ''}-副本` : data?.name || ''
+  payload.status =
+    mode === 'copy' ? CommonStatusEnum.ENABLE : (data?.status ?? CommonStatusEnum.ENABLE)
   payload.autoGenerate = data?.autoGenerate ?? false
   payload.defaultSummary = data?.defaultSummary || ''
   payload.remark = data?.remark || ''
@@ -673,7 +910,7 @@ const getList = async () => {
     total.value = data?.total || 0
   } catch (error: unknown) {
     if (!list.value.length) {
-      listErrorMessage.value = error instanceof Error ? error.message : '鍑瘉妯℃澘鍒楄〃鍔犺浇澶辫触'
+      listErrorMessage.value = error instanceof Error ? error.message : '凭证模板列表加载失败'
     }
   } finally {
     listLoading.value = false
@@ -718,7 +955,7 @@ const openDetailDrawer = async (id?: number) => {
     detailData.value = await loadTemplateDetail(id)
   } catch (error: unknown) {
     detailData.value = undefined
-    detailErrorMessage.value = error instanceof Error ? error.message : '妯℃澘璇︽儏鍔犺浇澶辫触'
+    detailErrorMessage.value = error instanceof Error ? error.message : '模板详情加载失败'
   } finally {
     detailLoading.value = false
     rowActionLoadingId.value = undefined
@@ -783,7 +1020,7 @@ const addItem = () => {
 
 const removeItem = (index: number) => {
   if (formData.items.length <= 1) {
-    message.warning('妯℃澘鍒嗗綍鑷冲皯淇濈暀涓€鏉?)
+    message.warning('模板分录至少保留一条')
     return
   }
   formData.items.splice(index, 1)
@@ -794,20 +1031,25 @@ const removeItem = (index: number) => {
 
 const validateItems = () => {
   if (!formData.items.length) {
-    message.warning('妯℃澘鍒嗗綍涓嶈兘涓虹┖')
+    message.warning('模板分录不能为空')
     return false
   }
   const invalidItem = formData.items.find((item) => {
     if (!item.entryDirection || !item.subjectCode || !item.subjectName || !item.amountSource) {
       return true
     }
-    if (isAmountSourceValueRequired(item.amountSource) && (item.amountSourceValue === undefined || item.amountSourceValue === null || item.amountSourceValue === '')) {
+    if (
+      isAmountSourceValueRequired(item.amountSource) &&
+      (item.amountSourceValue === undefined ||
+        item.amountSourceValue === null ||
+        item.amountSourceValue === '')
+    ) {
       return true
     }
     return false
   })
   if (invalidItem) {
-    message.warning('璇疯ˉ鍏ㄦā鏉垮垎褰曠殑鏂瑰悜銆佺鐩拰閲戦鏉ユ簮')
+    message.warning('请补全模板分录的方向、科目和金额来源')
     return false
   }
   return true
@@ -834,10 +1076,10 @@ const submitDialog = async () => {
     }
     if (dialogMode.value === 'edit' && payload.id) {
       await FinanceVoucherTemplateApi.updateVoucherTemplate(payload)
-      message.success('鏇存柊鎴愬姛')
+      message.success('更新成功')
     } else {
       await FinanceVoucherTemplateApi.createVoucherTemplate(payload)
-      message.success(dialogMode.value === 'copy' ? '澶嶅埗鎴愬姛' : '鍒涘缓鎴愬姛')
+      message.success(dialogMode.value === 'copy' ? '复制成功' : '创建成功')
     }
     dialogVisible.value = false
     await getList()
@@ -851,12 +1093,12 @@ const submitDialog = async () => {
 
 const handleDelete = async (row: ErpFinanceVoucherTemplateVO) => {
   if (!row.id || deleting.value) return
-  await message.delConfirm(`鏄惁鍒犻櫎妯℃澘鈥?{row.name || '-'}鈥濓紵`)
+  await message.delConfirm(`是否删除模板“${row.name || '-'}”？`)
   deleting.value = true
   rowActionLoadingId.value = row.id
   try {
     await FinanceVoucherTemplateApi.deleteVoucherTemplate(row.id)
-    message.success('鍒犻櫎鎴愬姛')
+    message.success('删除成功')
     if (detailId.value === row.id) {
       detailDrawerOpen.value = false
     }
@@ -920,12 +1162,6 @@ onMounted(async () => {
   font-weight: 800;
   letter-spacing: -0.03em;
   color: rgb(15 23 42 / 1);
-}
-
-.voucher-template-page__subtitle {
-  margin-top: 6px;
-  font-size: 14px;
-  color: rgb(100 116 139 / 1);
 }
 
 .voucher-template-page__header-actions {
@@ -1053,7 +1289,12 @@ onMounted(async () => {
   padding: 18px 18px 20px;
   border: 1px solid rgb(226 232 240 / 1);
   border-radius: 16px;
-  background: linear-gradient(135deg, rgb(236 253 253 / 0.92) 0%, rgb(241 248 255 / 0.92) 45%, rgb(255 255 255 / 0.95) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(236 253 253 / 0.92) 0%,
+    rgb(241 248 255 / 0.92) 45%,
+    rgb(255 255 255 / 0.95) 100%
+  );
   box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
 }
 
@@ -1159,17 +1400,6 @@ onMounted(async () => {
   gap: 14px;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.voucher-template-page__table-note {
-  font-size: 12px;
-  color: rgb(148 163 184 / 1);
-}
-
-.voucher-template-page__section-subtitle {
-  margin-top: 4px;
-  font-size: 12px;
-  color: rgb(100 116 139 / 1);
 }
 
 .voucher-template-page__remark-switch {

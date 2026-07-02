@@ -147,7 +147,7 @@ assert.equal(toolbarInNormalMode.disableBatchEdit, true)
 assert.equal(toolbarInNormalMode.disableBatchDelete, true)
 
 const draftActions = getPurchaseOrderRowActionDescriptor({
-  status: 10,
+  status: 0,
   processInstanceId: '',
   creator: '100',
   currentUserId: '100',
@@ -158,3 +158,22 @@ const draftActions = getPurchaseOrderRowActionDescriptor({
 })
 
 assert.equal(draftActions.canBatchEdit, true)
+assert.equal(draftActions.canEdit, true)
+assert.equal(draftActions.canSubmit, true)
+assert.equal(draftActions.canDelete, true)
+
+const failedActions = getPurchaseOrderRowActionDescriptor({
+  status: 60,
+  processInstanceId: '',
+  creator: '100',
+  currentUserId: '100',
+  isSaleTraceMode: false,
+  totalCount: 10,
+  inCount: 0,
+  hasPendingPurchaseIn: false
+})
+
+assert.equal(failedActions.canBatchEdit, true)
+assert.equal(failedActions.canEdit, true)
+assert.equal(failedActions.canSubmit, true)
+assert.equal(failedActions.canDelete, true)

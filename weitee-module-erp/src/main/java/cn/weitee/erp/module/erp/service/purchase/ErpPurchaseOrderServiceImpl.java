@@ -11,14 +11,12 @@ import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOr
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderBatchUpdateResultVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderAuditLogDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderRejectLogDO;
-import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpPurchaseSuggestMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderAuditLogMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderItemMapper;
@@ -27,7 +25,6 @@ import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderRejectLogMapp
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseOrderAuditActionTypeConstants;
-import cn.weitee.erp.module.erp.enums.mrp.ErpMrpSuggestStatusEnum;
 import cn.weitee.erp.module.erp.framework.event.PurchaseOrderChangedEvent;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
@@ -78,8 +75,6 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     @Resource
     private ErpPurchaseOrderRejectLogMapper erpPurchaseOrderRejectLogMapper;
     @Resource
-    private ErpPurchaseSuggestMapper erpPurchaseSuggestMapper;
-    @Resource
     private ErpPurchaseInMapper erpPurchaseInMapper;
 
     @Resource
@@ -113,7 +108,7 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
 
         // 2.1 插入订单
         ErpPurchaseOrderDO purchaseOrder = BeanUtils.toBean(createReqVO, ErpPurchaseOrderDO.class, in -> in
-                .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus()));
+                .setNo(no).setStatus(ErpAuditStatus.DRAFT.getStatus()));
         calculateTotalPrice(purchaseOrder, purchaseOrderItems);
         erpPurchaseOrderMapper.insert(purchaseOrder);
         // 2.2 插入订单项

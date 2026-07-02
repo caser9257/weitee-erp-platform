@@ -107,7 +107,7 @@
           v-for="(card, index) in stockSummaryCards"
           :key="card.label"
           class="stock-page__overview-card"
-          :class="resolveSummaryCardClass(index)"
+          :class="resolveSummaryToneClass(index)"
         >
           <div class="stock-page__overview-card__icon" :class="card.colorClass">
             <Icon :icon="card.icon" />
@@ -117,8 +117,11 @@
             <div class="stock-page__overview-card__label">{{ card.label }}</div>
           </div>
         </article>
+      </div>
 
-        <article class="stock-page__overview-card stock-page__overview-card--export">
+      <div class="stock-page__list-head">
+        <h3 class="stock-page__list-title">库存明细列表</h3>
+        <div class="stock-page__list-actions">
           <el-button
             class="stock-page__export-btn"
             plain
@@ -129,7 +132,7 @@
           >
             <Icon icon="ep:download" class="mr-5px" /> 导出台账数据
           </el-button>
-        </article>
+        </div>
       </div>
 
       <div class="stock-page__table-shell">
@@ -151,7 +154,12 @@
                   {{ row.productName || '-' }}
                 </div>
                 <div class="ledger-product__meta">
-                  <span :title="row.categoryName || '-'">{{ row.categoryName || '-' }}</span>
+                  <span
+                    :class="['product-category-pill', resolveProductCategoryClass(row.categoryName)]"
+                    :title="row.categoryName || '-'"
+                  >
+                    {{ row.categoryName || '-' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -221,7 +229,7 @@
 
     <el-drawer
       v-model="batchDrawerOpen"
-      size="64%"
+      size="52%"
       destroy-on-close
       :with-header="false"
       custom-class="premium-drawer"
@@ -234,7 +242,7 @@
       <div class="batch-drawer-shell">
         <div class="batch-drawer-head">
           <h2 class="batch-drawer-head__title">
-            <Icon icon="ep:files" class="mr-8px text-blue-600" /> 批次追溯
+            <Icon icon="ep:files" class="mr-8px batch-drawer-head__title-icon" /> 批次追溯
           </h2>
           <button
             type="button"
@@ -250,19 +258,28 @@
           <div class="batch-drawer-summary">
             <div class="batch-drawer-summary__main">
               <div class="batch-drawer-summary__head">
-                <div class="batch-drawer-summary__eyebrow">{{ currentStock?.warehouseName || '-' }}</div>
-                <div
+                <span class="batch-drawer-summary__warehouse">
+                  {{ currentStock?.warehouseName || '-' }}
+                </span>
+                <span
                   :class="['batch-drawer-summary__chip', resolveWarehouseCategoryClass(currentStock)]"
                 >
                   {{ resolveWarehouseCategoryName(currentStock) }}
-                </div>
+                </span>
               </div>
-              <div class="batch-drawer-summary__title">当前库存</div>
+              <div class="batch-drawer-summary__title">
+                {{ currentStock?.productName || '-' }}
+              </div>
               <div class="batch-drawer-summary__meta">
-                <span>{{ currentStock?.productName || '-' }}</span>
-                <span class="batch-drawer-summary__mono"
-                  >库存 {{ formatCount(currentStock?.count) }}</span
+                <span
+                  :class="[
+                    'product-category-pill',
+                    resolveProductCategoryClass(currentStock?.categoryName)
+                  ]"
+                  :title="currentStock?.categoryName || '-'"
                 >
+                  {{ currentStock?.categoryName || '-' }}
+                </span>
               </div>
             </div>
             <div class="batch-drawer-summary__total batch-drawer-summary__total--plain">
@@ -281,7 +298,11 @@
                   clearable
                   placeholder="请输入批次号"
                   @keyup.enter="handleBatchQuery"
-                />
+                >
+                  <template #prefix>
+                    <Icon icon="ep:search" />
+                  </template>
+                </el-input>
               </div>
               <div class="batch-drawer-query-card__actions">
                 <el-button
@@ -344,8 +365,8 @@
               >
                 <el-table-column label="批次号" min-width="180">
                   <template #default="{ row }">
-                    <div class="font-mono text-slate-800">{{ row.batchNo }}</div>
-                    <div class="mt-2px truncate text-12px text-slate-500">{{
+                    <div class="batch-ledger__code">{{ row.batchNo }}</div>
+                    <div class="batch-ledger__meta">{{
                       row.purchaseSourceBatchNo || '-'
                     }}</div>
                   </template>
@@ -370,7 +391,7 @@
                   <template #default="{ row }">
                     <span
                       class="ledger-number"
-                      :class="row.lockedQty > 0 ? 'text-amber-600' : 'text-slate-400'"
+                      :class="row.lockedQty > 0 ? 'batch-qty__locked--active' : 'batch-qty__locked--idle'"
                     >
                       {{ formatCount(row.lockedQty) }}
                     </span>
@@ -395,7 +416,6 @@
                       <Icon icon="ep:box" />
                     </div>
                     <div class="batch-empty__title">该产品暂无批次流水结存</div>
-                    <div class="batch-empty__desc">系统未查询到可用的批次余额记录。</div>
                   </div>
                 </template>
               </el-table>
@@ -462,7 +482,7 @@
                     </el-table-column>
                     <el-table-column label="数量" align="right" min-width="120">
                       <template #default="{ row }">
-                        <span class="ledger-number text-rose-600">{{
+                        <span class="ledger-number batch-qty__out">{{
                           formatCount(row.outQty)
                         }}</span>
                       </template>
@@ -500,7 +520,7 @@
                     </el-table-column>
                     <el-table-column label="数量" align="right" min-width="120">
                       <template #default="{ row }">
-                        <span class="ledger-number text-amber-600">{{
+                        <span class="ledger-number batch-qty__reserved">{{
                           formatCount(row.reservedQty)
                         }}</span>
                       </template>
@@ -597,7 +617,6 @@ import {
   getTonePillClass,
   resolveBizToneClass,
   resolveDictLabel,
-  resolveSummaryCardClass,
   resolveWarehouseTone
 } from '../shared/stockTone'
 import {
@@ -711,6 +730,25 @@ const resolveWarehouseCategoryName = (row?: StockRow) => {
 }
 const resolveWarehouseCategoryClass = (row?: StockRow) =>
   getTonePillClass(resolveWarehouseTone(resolveWarehouseCategoryName(row)))
+const resolveProductCategoryClass = (categoryName?: string | null) => {
+  const normalized = (categoryName || '').trim()
+  if (normalized.includes('半成品')) {
+    return 'product-category-pill--teal'
+  }
+  if (normalized.includes('成品')) {
+    return 'product-category-pill--emerald'
+  }
+  if (normalized.includes('原料')) {
+    return 'product-category-pill--amber'
+  }
+  if (normalized.includes('辅料')) {
+    return 'product-category-pill--blue'
+  }
+  return 'product-category-pill--slate'
+}
+const stockSummaryToneClasses = ['blue', 'emerald', 'amber', 'slate']
+const resolveSummaryToneClass = (index: number) =>
+  `stock-page__overview-card--${stockSummaryToneClasses[index] || 'slate'}`
 const stockSummaryCards = computed(() => [
   { label: '台账记录', value: formatCount(total.value), icon: 'ep:document', colorClass: 'stock-stat-icon--blue' },
   { label: '当前库存', value: formatCount(list.value.reduce((sum, row) => sum + Number(row.count || 0), 0)), icon: 'ep:box', colorClass: 'stock-stat-icon--emerald' },
@@ -1107,7 +1145,7 @@ watch(
 
 .stock-page__title {
   margin-bottom: 0;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-family: 'IBM Plex Sans', Inter, sans-serif;
   font-size: 22px;
   line-height: 30px;
@@ -1163,7 +1201,7 @@ watch(
 
 .stock-page__overview-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 16px;
 }
@@ -1174,26 +1212,67 @@ watch(
   align-items: center;
   gap: 14px;
   padding: 16px 18px;
+  border: 1px solid var(--erp-stat-border-slate);
+  border-top-width: 4px;
+  border-radius: 16px;
+  background: var(--erp-stat-gradient-slate);
+  box-shadow: var(--erp-shadow-sm);
 }
 
 .stock-page__overview-card:hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   transform: translateY(-1px);
+  box-shadow: var(--erp-shadow-md);
 }
 
 .stock-stat-icon--blue {
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 
 .stock-stat-icon--emerald {
-  background: #ecfdf5;
-  color: #059669;
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
 }
 
 .stock-stat-icon--amber {
-  background: #fffbeb;
-  color: #d97706;
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
+}
+
+.stock-stat-icon--slate {
+  background: var(--erp-disabled-50);
+  color: var(--erp-disabled-600);
+}
+
+.stock-page__overview-card--blue {
+  border-color: var(--erp-stat-border-blue);
+  border-top-color: var(--erp-primary-600);
+  background: var(--erp-stat-gradient-blue);
+}
+
+.stock-page__overview-card--emerald {
+  border-color: var(--erp-stat-border-green);
+  border-top-color: var(--erp-success-600);
+  background: var(--erp-stat-gradient-green);
+}
+
+.stock-page__overview-card--amber {
+  border-color: var(--erp-stat-border-amber);
+  border-top-color: var(--erp-warning-600);
+  background: var(--erp-stat-gradient-amber);
+}
+
+.stock-page__overview-card--rose {
+  border-color: var(--erp-stat-border-rose);
+  border-top-color: var(--erp-danger-600);
+  background: var(--erp-stat-gradient-rose);
+}
+
+.stock-page__overview-card--slate {
+  border-color: var(--erp-stat-border-slate);
+  border-top-color: var(--erp-disabled-600);
+  background: var(--erp-stat-gradient-slate);
 }
 
 .stock-page__overview-card__content {
@@ -1206,13 +1285,13 @@ watch(
 }
 
 .stock-page__overview-card__label {
-  color: #64748b;
+  color: var(--erp-slate-600);
   font-size: 13px;
   line-height: 20px;
 }
 
 .stock-page__overview-card__value {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 28px;
   line-height: 34px;
   font-weight: 700;
@@ -1233,19 +1312,43 @@ watch(
   flex-shrink: 0;
 }
 
-.stock-page__overview-card--export {
-  justify-content: center;
-  padding: 16px;
+.stock-page__export-btn {
+  min-height: 40px;
+  border-color: var(--erp-slate-200);
+  background: var(--erp-surface-white);
 }
 
-.stock-page__export-btn {
-  width: 100%;
-  min-height: 40px;
-  border-color: #dbe4f0;
-  background: #fff;
+.stock-page__list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--erp-slate-200);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  background: var(--erp-slate-50);
+}
+
+.stock-page__list-title {
+  margin: 0;
+  color: var(--erp-slate-900);
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 700;
+}
+
+.stock-page__list-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .stock-page__table-shell {
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 0 0 14px 14px;
   overflow-x: auto;
 }
 
@@ -1255,31 +1358,31 @@ watch(
 
 .stock-ledger :deep(.el-table) {
   --el-table-border-color: transparent;
-  --el-table-header-bg-color: #0f4c5c;
-  --el-table-header-text-color: #fff;
+  --el-table-header-bg-color: var(--erp-slate-50);
+  --el-table-header-text-color: var(--erp-slate-600);
 }
 
 .stock-ledger :deep(.el-table th.el-table__cell) {
-  background-color: #0f4c5c;
-  color: #fff;
+  background-color: var(--erp-slate-50);
+  color: var(--erp-slate-600);
   font-weight: 600;
   font-size: 13px;
-  border-bottom: none;
+  border-bottom: 1px solid var(--erp-slate-200);
 }
 
 .stock-ledger :deep(.el-table__header),
 .batch-ledger :deep(.el-table__header) {
-  background: #1f2937;
+  background: var(--erp-slate-50);
 }
 
 .stock-ledger :deep(.el-table__header-wrapper th),
 .batch-ledger :deep(.el-table__header-wrapper th) {
-  background: #1f2937;
+  background: var(--erp-slate-50);
 }
 
 .stock-ledger :deep(.el-table__header th),
 .batch-ledger :deep(.el-table__header th) {
-  color: #fff;
+  color: var(--erp-slate-600);
   font-weight: 600;
 }
 
@@ -1291,7 +1394,7 @@ watch(
 .stock-ledger :deep(.el-table th.el-table__cell.is-leaf),
 .batch-ledger :deep(.el-table td.el-table__cell),
 .batch-ledger :deep(.el-table th.el-table__cell.is-leaf) {
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--erp-slate-100);
 }
 
 .stock-ledger :deep(.el-table__header-wrapper) {
@@ -1313,8 +1416,8 @@ watch(
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--erp-slate-100);
+  color: var(--erp-slate-600);
   font-size: 16px;
   flex-shrink: 0;
 }
@@ -1328,7 +1431,7 @@ watch(
 
 .ledger-product__name,
 .ledger-number {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-weight: 700;
 }
 
@@ -1342,9 +1445,59 @@ watch(
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
-  color: #64748b;
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
+}
+
+.product-category-pill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 180px;
+  min-height: 22px;
+  padding: 1px 8px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.product-category-pill--blue {
+  border-color: var(--erp-primary-100);
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
+}
+
+.product-category-pill--teal {
+  border-color: var(--erp-teal-100);
+  background: var(--erp-teal-50);
+  color: var(--erp-teal-600);
+}
+
+.product-category-pill--emerald {
+  border-color: var(--erp-success-100);
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
+}
+
+.product-category-pill--amber {
+  border-color: var(--erp-warning-100);
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
+}
+
+.product-category-pill--slate {
+  border-color: var(--erp-disabled-100);
+  background: var(--erp-disabled-50);
+  color: var(--erp-disabled-600);
 }
 
 .ledger-warehouse {
@@ -1354,7 +1507,7 @@ watch(
 }
 
 .ledger-warehouse__name {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 13px;
   font-weight: 500;
 }
@@ -1382,78 +1535,78 @@ watch(
   display: inline-flex;
   align-items: center;
   padding: 2px 10px;
-  border: 1px solid #a7f3d0;
+  border: 1px solid var(--erp-success-100);
   border-radius: 8px;
-  background: #ecfdf5;
-  color: #059669;
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
 }
 
 .ledger-warehouse__chip.bg-blue-50 {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #2563eb;
+  border-color: var(--erp-primary-100);
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 
 .ledger-warehouse__chip.bg-emerald-50 {
-  border-color: #bbf7d0;
-  background: #ecfdf5;
-  color: #059669;
+  border-color: var(--erp-success-100);
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
 }
 
 .ledger-warehouse__chip.bg-amber-50 {
-  border-color: #fde68a;
-  background: #fffbeb;
-  color: #d97706;
+  border-color: var(--erp-warning-100);
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
 }
 
 .ledger-warehouse__chip.bg-rose-50 {
-  border-color: #fecdd3;
-  background: #fff1f2;
-  color: #e11d48;
+  border-color: var(--erp-danger-100);
+  background: var(--erp-danger-50);
+  color: var(--erp-danger-600);
 }
 
 .ledger-warehouse__chip.bg-slate-100 {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
+  border-color: var(--erp-disabled-100);
+  background: var(--erp-disabled-50);
+  color: var(--erp-disabled-600);
 }
 
 .batch-drawer-summary__chip.bg-blue-50,
 .record-drawer-summary__chip.bg-blue-50 {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #2563eb;
+  border-color: var(--erp-primary-100);
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 
 .batch-drawer-summary__chip.bg-emerald-50,
 .record-drawer-summary__chip.bg-emerald-50 {
-  border-color: #bbf7d0;
-  background: #ecfdf5;
-  color: #059669;
+  border-color: var(--erp-success-100);
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
 }
 
 .batch-drawer-summary__chip.bg-amber-50,
 .record-drawer-summary__chip.bg-amber-50 {
-  border-color: #fde68a;
-  background: #fffbeb;
-  color: #d97706;
+  border-color: var(--erp-warning-100);
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
 }
 
 .batch-drawer-summary__chip.bg-rose-50,
 .record-drawer-summary__chip.bg-rose-50 {
-  border-color: #fecdd3;
-  background: #fff1f2;
-  color: #e11d48;
+  border-color: var(--erp-danger-100);
+  background: var(--erp-danger-50);
+  color: var(--erp-danger-600);
 }
 
 .batch-drawer-summary__chip.bg-slate-100,
 .record-drawer-summary__chip.bg-slate-100 {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
+  border-color: var(--erp-disabled-100);
+  background: var(--erp-disabled-50);
+  color: var(--erp-disabled-600);
 }
 
 .ledger-number,
@@ -1465,7 +1618,7 @@ watch(
 }
 
 .stock-page__record-count {
-  color: #64748b;
+  color: var(--erp-slate-600);
   font-size: 13px;
   line-height: 20px;
 }
@@ -1478,7 +1631,7 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--erp-slate-600);
 }
 
 .stock-empty__icon,
@@ -1489,14 +1642,14 @@ watch(
   width: 56px;
   height: 56px;
   border-radius: 999px;
-  background: #f8fafc;
-  color: #94a3b8;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-400);
   font-size: 24px;
 }
 
 .stock-empty--error .stock-empty__icon {
-  background: rgba(244, 63, 94, 0.08);
-  color: #e11d48;
+  background: var(--erp-danger-50);
+  color: var(--erp-danger-600);
 }
 
 .stock-empty__title,
@@ -1504,7 +1657,7 @@ watch(
 .batch-drawer-head__title,
 .batch-drawer-summary__title,
 .batch-detail-card__title {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-weight: 700;
 }
 
@@ -1514,12 +1667,6 @@ watch(
   line-height: 22px;
 }
 
-.batch-empty__desc {
-  color: #94a3b8;
-  font-size: 12px;
-  line-height: 18px;
-}
-
 .batch-trace-empty {
   display: flex;
   min-height: 120px;
@@ -1527,7 +1674,7 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--erp-slate-600);
 }
 
 .batch-trace-empty__icon {
@@ -1537,13 +1684,13 @@ watch(
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: #f8fafc;
-  color: #94a3b8;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-400);
   font-size: 18px;
 }
 
 .batch-trace-empty__title {
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 13px;
   line-height: 20px;
   font-weight: 600;
@@ -1556,7 +1703,7 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #64748b;
+  color: var(--erp-slate-600);
 }
 
 .batch-pane-empty__icon {
@@ -1566,13 +1713,13 @@ watch(
   width: 40px;
   height: 40px;
   border-radius: 999px;
-  background: #f8fafc;
-  color: #94a3b8;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-400);
   font-size: 16px;
 }
 
 .batch-pane-empty__title {
-  color: #64748b;
+  color: var(--erp-slate-600);
   font-size: 13px;
   line-height: 20px;
   font-weight: 500;
@@ -1582,7 +1729,7 @@ watch(
   display: flex;
   height: 100%;
   flex-direction: column;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
 }
 
 .batch-drawer-head {
@@ -1591,17 +1738,21 @@ watch(
   justify-content: space-between;
   gap: 16px;
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
-  background: #fff;
+  border-bottom: 1px solid var(--erp-slate-200);
+  background: var(--erp-surface-white);
 }
 
 .batch-drawer-head__title {
   display: inline-flex;
   align-items: center;
   margin: 0;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 18px;
   line-height: 28px;
+}
+
+.batch-drawer-head__title-icon {
+  color: var(--erp-primary-600);
 }
 
 .batch-drawer-head__close {
@@ -1613,15 +1764,15 @@ watch(
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
 }
 
 .batch-drawer-head__close:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #475569;
+  background: var(--erp-slate-100);
+  color: var(--erp-slate-600);
 }
 
 .batch-drawer-head__close:disabled {
@@ -1640,12 +1791,12 @@ watch(
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid #dbe4f0;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--erp-stat-border-blue);
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  background: var(--erp-stat-gradient-blue);
+  box-shadow: var(--erp-shadow-sm);
 }
 
 .batch-drawer-summary__main {
@@ -1653,7 +1804,7 @@ watch(
   min-width: 0;
   flex: 1;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .batch-drawer-summary__head {
@@ -1663,48 +1814,64 @@ watch(
   gap: 8px;
 }
 
-.batch-drawer-summary__eyebrow {
-  color: #64748b;
+.batch-drawer-summary__warehouse {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 10px;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 999px;
+  background: var(--erp-slate-100);
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .batch-drawer-summary__title {
-  color: #0f172a;
-  font-size: 15px;
-  line-height: 22px;
+  color: var(--erp-slate-900);
+  font-size: 16px;
+  line-height: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .batch-drawer-summary__meta {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
-  color: #64748b;
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
 }
 
 .batch-drawer-summary__mono {
-  color: #2563eb;
+  color: var(--erp-primary-600);
   font-weight: 600;
 }
 
 .batch-drawer-summary__total {
+  min-width: 180px;
+  padding-left: 18px;
+  border-left: 1px solid var(--erp-slate-200);
   text-align: right;
   flex-shrink: 0;
 }
 
 .batch-drawer-summary__total-label {
-  color: #64748b;
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
 }
 
 .batch-drawer-summary__total-value {
   margin-top: 4px;
-  color: #2563eb;
-  font-size: 22px;
+  color: var(--erp-primary-600);
+  font-size: 30px;
   line-height: 1;
   font-weight: 700;
 }
@@ -1719,10 +1886,10 @@ watch(
 .batch-drawer-query-card,
 .batch-detail-card,
 .batch-trace-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  background: var(--erp-surface-white);
+  box-shadow: var(--erp-shadow-sm);
 }
 
 .batch-drawer-query-card {
@@ -1730,18 +1897,18 @@ watch(
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 12px 14px;
+  padding: 14px;
 }
 
 .batch-drawer-query-card__field {
   width: 100%;
-  max-width: 360px;
+  max-width: none;
 }
 
 .batch-detail-card__header,
 .batch-detail-card__footer,
 .batch-trace-card__header {
-  padding: 10px 14px;
+  padding: 12px 14px;
 }
 
 .batch-detail-card__header,
@@ -1751,8 +1918,8 @@ watch(
   justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
-  border-bottom: 1px solid #f1f5f9;
-  background: rgba(248, 250, 252, 0.62);
+  border-bottom: 1px solid var(--erp-slate-100);
+  background: var(--erp-slate-50);
 }
 
 .batch-detail-card__title,
@@ -1772,8 +1939,8 @@ watch(
 .batch-detail-card__footer {
   display: flex;
   justify-content: flex-end;
-  border-top: 1px solid #f1f5f9;
-  background: #fff;
+  border-top: 1px solid var(--erp-slate-100);
+  background: var(--erp-surface-white);
 }
 
 .batch-trace-tabs {
@@ -1786,22 +1953,22 @@ watch(
 }
 
 .batch-trace-card :deep(.el-tabs__nav-wrap::after) {
-  background-color: #f1f5f9;
+  background-color: var(--erp-slate-100);
 }
 
 .batch-trace-card :deep(.el-tabs__item) {
   height: 42px;
   line-height: 42px;
-  color: #475569;
+  color: var(--erp-slate-600);
 }
 
 .batch-trace-card :deep(.el-tabs__item.is-active) {
-  color: #2563eb;
+  color: var(--erp-primary-600);
   font-weight: 600;
 }
 
 .batch-trace-card :deep(.el-tabs__active-bar) {
-  background-color: #2563eb;
+  background-color: var(--erp-primary-600);
 }
 
 .batch-trace-card :deep(.el-tabs__content) {
@@ -1821,34 +1988,34 @@ watch(
 }
 
 .batch-pill--primary {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #2563eb;
+  border-color: var(--erp-primary-100);
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 
 .batch-pill--success,
 .batch-qty--success {
-  border-color: #a7f3d0;
-  background: #ecfdf5;
-  color: #059669;
+  border-color: var(--erp-success-100);
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
 }
 
 .batch-pill--warning {
-  border-color: #fde68a;
-  background: #fffbeb;
-  color: #d97706;
+  border-color: var(--erp-warning-100);
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
 }
 
 .batch-pill--danger {
-  border-color: #fecdd3;
-  background: #fff1f2;
-  color: #e11d48;
+  border-color: var(--erp-danger-100);
+  background: var(--erp-danger-50);
+  color: var(--erp-danger-600);
 }
 
 .batch-pill--neutral {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
+  border-color: var(--erp-disabled-100);
+  background: var(--erp-disabled-50);
+  color: var(--erp-disabled-600);
 }
 
 .stock-biz-pill {
@@ -1872,14 +2039,47 @@ watch(
   border-radius: 8px;
 }
 
+.batch-qty__reserved,
+.batch-qty__locked--active {
+  color: var(--erp-warning-600);
+}
+
+.batch-qty__out {
+  color: var(--erp-danger-600);
+}
+
+.batch-qty__locked--idle {
+  color: var(--erp-slate-400);
+}
+
 .batch-ledger {
   min-width: 880px;
 }
 
+.batch-ledger__code {
+  overflow: hidden;
+  color: var(--erp-slate-900);
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-ledger__meta {
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--erp-slate-500);
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .custom-pagination :deep(.el-pager li.is-active) {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
+  border: 1px solid var(--erp-primary-100);
 }
 
 :deep(.premium-drawer .el-drawer__body) {
@@ -1887,9 +2087,14 @@ watch(
   overflow: hidden;
 }
 
+:deep(.premium-drawer) {
+  width: min(52vw, 760px) !important;
+  min-width: 620px;
+}
+
 :deep(.premium-drawer__mask) {
   backdrop-filter: blur(8px);
-  background: rgba(15, 23, 42, 0.34);
+  background: var(--erp-overlay-strong);
 }
 
 @media (max-width: 1439px) {
@@ -1928,6 +2133,9 @@ watch(
   }
 
   .batch-drawer-summary__total {
+    min-width: 0;
+    padding-left: 0;
+    border-left: 0;
     text-align: left;
   }
 
@@ -1961,7 +2169,15 @@ watch(
   }
 
   .batch-drawer-summary__total {
+    min-width: 0;
+    padding-left: 0;
+    border-left: 0;
     text-align: left;
+  }
+
+  :deep(.premium-drawer) {
+    width: 100% !important;
+    min-width: 0;
   }
 }
 
@@ -1978,6 +2194,9 @@ watch(
   }
 
   .batch-drawer-summary__total {
+    min-width: 0;
+    padding-left: 0;
+    border-left: 0;
     text-align: left;
   }
 }

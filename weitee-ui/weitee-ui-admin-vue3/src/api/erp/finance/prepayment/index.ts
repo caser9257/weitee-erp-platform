@@ -23,7 +23,7 @@ export interface ErpFinancePrepaymentPageReqVO {
   pageNo?: number
   pageSize?: number
   no?: string
-  prepaymentTime?: Date[]
+  prepaymentTime?: string[]
   supplierId?: number
   creator?: string
   financeUserId?: number

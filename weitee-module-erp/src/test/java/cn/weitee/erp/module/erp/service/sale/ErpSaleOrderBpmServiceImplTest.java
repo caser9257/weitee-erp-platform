@@ -313,9 +313,17 @@ class ErpSaleOrderBpmServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        Field field = target.getClass().getDeclaredField(mapFieldName(fieldName));
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private String mapFieldName(String fieldName) {
+        return switch (fieldName) {
+            case "saleOrderMapper" -> "erpSaleOrderMapper";
+            case "saleOrderAuditLogMapper" -> "erpSaleOrderAuditLogMapper";
+            default -> fieldName;
+        };
     }
 
     @FunctionalInterface

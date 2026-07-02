@@ -32,6 +32,8 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -72,10 +74,41 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
             return buildBlockedResult("订单不存在");
         }
 
+        // 2. 单条查询合同（批量场景请使用 checkReleaseInternal + 预取的 contractMap/receivedAmountMap）
+        CrmContractDO contract = null;
+        if (order.getContractId() != null) {
+            try {
+                contract = crmContractService.getContract(order.getContractId());
+            } catch (Exception e) {
+                log.warn("[checkRelease] 获取合同信息失败，contractId={}", order.getContractId(), e);
+            }
+        }
+        // 3. 单条查询已收款金额
+        BigDecimal receivedAmount = BigDecimal.ZERO;
+        try {
+            receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(orderId);
+        } catch (Exception e) {
+            log.warn("[checkRelease] 获取收款金额失败，orderId={}", orderId, e);
+        }
+        return checkReleaseInternal(order, contract, receivedAmount);
+    }
+
+    /**
+     * 放行校验的纯内存计算内核，不发起任何数据库/远程查询。
+     *
+     * <p>用于消除分页场景下逐行调用 {@link #checkRelease(Long)} 产生的 N+1 查询：
+     * 调用方需提前批量查出订单关联的合同和已收款金额，再调用本方法完成校验。</p>
+     *
+     * @param order          订单（必须非空）
+     * @param contract       订单关联的合同，可为 null（表示未关联或查询失败）
+     * @param receivedAmount 订单已收款金额（预取，不可为 null，无数据时传 {@link BigDecimal#ZERO}）
+     */
+    private ShipmentReleaseResultVO checkReleaseInternal(ErpSaleOrderDO order, CrmContractDO contract,
+                                                          BigDecimal receivedAmount) {
         List<ShipmentReleaseResultVO.ReleaseCheckDetailVO> details = new ArrayList<>();
         List<String> blockerReasons = new ArrayList<>();
 
-        // 2. 校验订单状态
+        // 1. 校验订单状态
         ShipmentReleaseResultVO.ReleaseCheckDetailVO orderStatusCheck = checkOrderStatus(order);
         details.add(orderStatusCheck);
         if (!orderStatusCheck.isPassed()) {
@@ -83,7 +116,7 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
             return buildResult(false, "BLOCKED", blockerReasons, null, details);
         }
 
-        // 3. 校验合同关联
+        // 2. 校验合同关联
         if (order.getContractId() == null) {
             ShipmentReleaseResultVO.ReleaseCheckDetailVO contractCheck = new ShipmentReleaseResultVO.ReleaseCheckDetailVO();
             contractCheck.setCheckItem("合同关联校验");
@@ -94,32 +127,25 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
             return buildResult(false, "BLOCKED", blockerReasons, null, details);
         }
 
-        // 4. 从合同服务获取放行规则
-        String releaseRule = "SIGN_AND_SHIP"; // 默认签约即发
+        // 3. 解析放行规则（取自合同，缺省为签约即发）
+        String releaseRule = "SIGN_AND_SHIP";
         BigDecimal prepaymentRatio = null;
-        try {
-            CrmContractDO contract = crmContractService.getContract(order.getContractId());
-            if (contract != null) {
-                if (contract.getShipmentReleaseRule() != null) {
-                    releaseRule = contract.getShipmentReleaseRule();
-                }
-                prepaymentRatio = contract.getPrepaymentRatio();
-                log.info("[checkRelease] 订单[{}]关联合同[{}]，放行规则：{}，预付款比例：{}",
-                        orderId, contract.getNo(), releaseRule, prepaymentRatio);
+        if (contract != null) {
+            if (contract.getShipmentReleaseRule() != null) {
+                releaseRule = contract.getShipmentReleaseRule();
             }
-        } catch (Exception e) {
-            log.warn("[checkRelease] 获取合同信息失败，使用默认放行规则，contractId={}", order.getContractId(), e);
+            prepaymentRatio = contract.getPrepaymentRatio();
         }
 
-        // 5. 校验放行规则
-        ShipmentReleaseResultVO.ReleaseCheckDetailVO ruleCheck = checkReleaseRule(order, releaseRule, prepaymentRatio);
+        // 4. 校验放行规则
+        ShipmentReleaseResultVO.ReleaseCheckDetailVO ruleCheck = checkReleaseRule(order, releaseRule, prepaymentRatio, receivedAmount);
         details.add(ruleCheck);
         if (!ruleCheck.isPassed()) {
             blockerReasons.add(ruleCheck.getMessage());
             return buildResult(false, "BLOCKED", blockerReasons, null, details);
         }
 
-        // 6. 通用校验：财务审核
+        // 5. 通用校验：财务审核
         ShipmentReleaseResultVO.ReleaseCheckDetailVO financeCheck = checkFinanceApproval(order);
         details.add(financeCheck);
         if (!financeCheck.isPassed()) {
@@ -127,7 +153,7 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
             return buildResult(false, "FINANCE_REVIEW", blockerReasons, "财务人员", details);
         }
 
-        // 7. 所有校验通过
+        // 6. 所有校验通过
         return buildResult(true, "RELEASED", new ArrayList<>(), null, details);
     }
 
@@ -221,7 +247,8 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     /**
      * 校验收款规则
      */
-    private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkReleaseRule(ErpSaleOrderDO order, String releaseRule, BigDecimal prepaymentRatio) {
+    private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkReleaseRule(ErpSaleOrderDO order, String releaseRule,
+                                                                           BigDecimal prepaymentRatio, BigDecimal receivedAmount) {
         ShipmentReleaseResultVO.ReleaseCheckDetailVO detail = new ShipmentReleaseResultVO.ReleaseCheckDetailVO();
         detail.setCheckItem("放行规则校验");
 
@@ -234,12 +261,12 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
         // 到账后发：检查收款金额
         if ("AFTER_PAYMENT".equals(releaseRule)) {
-            return checkPaymentReceived(order, detail);
+            return checkPaymentReceived(order, detail, receivedAmount);
         }
 
         // 达到预付款比例后发：检查预付款金额
         if ("AFTER_PREPAYMENT".equals(releaseRule)) {
-            return checkPrepaymentReceived(order, detail, prepaymentRatio);
+            return checkPrepaymentReceived(order, detail, prepaymentRatio, receivedAmount);
         }
 
         // 财务审核后发：检查财务审核状态
@@ -256,10 +283,9 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     /**
      * 检查收款金额是否满足
      */
-    private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkPaymentReceived(ErpSaleOrderDO order, 
-                                                                               ShipmentReleaseResultVO.ReleaseCheckDetailVO detail) {
-        // 查询该订单的实际收款金额
-        BigDecimal receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(order.getId());
+    private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkPaymentReceived(ErpSaleOrderDO order,
+                                                                               ShipmentReleaseResultVO.ReleaseCheckDetailVO detail,
+                                                                               BigDecimal receivedAmount) {
         BigDecimal orderAmount = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
 
         if (receivedAmount.compareTo(orderAmount) >= 0) {
@@ -278,9 +304,8 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
      */
     private ShipmentReleaseResultVO.ReleaseCheckDetailVO checkPrepaymentReceived(ErpSaleOrderDO order,
                                                                                    ShipmentReleaseResultVO.ReleaseCheckDetailVO detail,
-                                                                                   BigDecimal prepaymentRatio) {
-        // 查询该订单的实际收款金额
-        BigDecimal receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(order.getId());
+                                                                                   BigDecimal prepaymentRatio,
+                                                                                   BigDecimal receivedAmount) {
         BigDecimal orderAmount = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
 
         // 计算预付款金额：优先使用合同的预付款比例，否则使用订单的定金
@@ -385,10 +410,39 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
         // 2. 执行分页查询
         PageResult<ErpSaleOrderDO> orderPage = erpSaleOrderMapper.selectPage(reqVO, query);
+        List<ErpSaleOrderDO> orders = orderPage.getList();
+        if (CollUtil.isEmpty(orders)) {
+            return PageResult.empty(orderPage.getTotal());
+        }
 
-        // 3. 转换为 VO
-        List<ShipmentReleasePageVO> voList = orderPage.getList().stream()
-                .map(this::convertToReleasePageVO)
+        // 3. 批量预取本页涉及的合同 + 已收款金额，消除逐行查询的 N+1
+        Set<Long> contractIds = orders.stream()
+                .map(ErpSaleOrderDO::getContractId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, CrmContractDO> contractMap;
+        try {
+            contractMap = crmContractService.getContractMap(contractIds);
+        } catch (Exception e) {
+            log.warn("[getReleasePage] 批量获取合同信息失败，contractIds={}", contractIds, e);
+            contractMap = java.util.Collections.emptyMap();
+        }
+        Set<Long> orderIds = orders.stream().map(ErpSaleOrderDO::getId).collect(Collectors.toSet());
+        Map<Long, BigDecimal> receivedAmountMap;
+        try {
+            receivedAmountMap = erpFinanceReceiptService.getReceivedAmountByOrderIds(orderIds);
+        } catch (Exception e) {
+            log.warn("[getReleasePage] 批量获取收款金额失败，orderIds={}", orderIds, e);
+            receivedAmountMap = java.util.Collections.emptyMap();
+        }
+
+        // 4. 转换为 VO（纯内存计算，不再逐行查库）
+        Map<Long, CrmContractDO> finalContractMap = contractMap;
+        Map<Long, BigDecimal> finalReceivedAmountMap = receivedAmountMap;
+        List<ShipmentReleasePageVO> voList = orders.stream()
+                .map(order -> convertToReleasePageVO(order,
+                        order.getContractId() != null ? finalContractMap.get(order.getContractId()) : null,
+                        finalReceivedAmountMap.getOrDefault(order.getId(), BigDecimal.ZERO)))
                 .collect(Collectors.toList());
 
         return new PageResult<>(voList, orderPage.getTotal());
@@ -397,13 +451,12 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     /**
      * 将订单 DO 转换为发货放行分页 VO
      *
-     * TODO: 当前实现对每条订单调用 checkRelease() 和 getReceivedAmountByOrderId()，存在 N+1 查询问题
-     * 优化方案：
-     * 1. 批量查询所有订单的收款金额（使用 getReceivedAmountByOrderIds）
-     * 2. 将放行校验结果缓存或批量预计算
-     * 3. 或在 SQL 层面直接关联查询所需字段
+     * <p>合同与已收款金额均由调用方（{@link #getReleasePage}）批量预取传入，
+     * 本方法内部只做 {@link #checkReleaseInternal} 纯内存计算，不发起任何数据库查询，
+     * 从而消除分页场景下逐行查询产生的 N+1 问题。</p>
      */
-    private ShipmentReleasePageVO convertToReleasePageVO(ErpSaleOrderDO order) {
+    private ShipmentReleasePageVO convertToReleasePageVO(ErpSaleOrderDO order, CrmContractDO contract,
+                                                          BigDecimal receivedAmount) {
         ShipmentReleasePageVO vo = new ShipmentReleasePageVO();
         vo.setOrderId(order.getId());
         vo.setOrderNo(order.getNo());
@@ -419,18 +472,12 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
         // 计算应收金额
         BigDecimal totalPrice = order.getTotalPrice() != null ? order.getTotalPrice() : BigDecimal.ZERO;
-        BigDecimal receivedAmount = BigDecimal.ZERO;
-        try {
-            receivedAmount = erpFinanceReceiptService.getReceivedAmountByOrderId(order.getId());
-        } catch (Exception e) {
-            log.warn("[convertToReleasePageVO] 获取收款金额失败，orderId={}", order.getId(), e);
-        }
         vo.setReceivedAmount(receivedAmount);
         vo.setReceivableAmount(totalPrice.subtract(receivedAmount));
 
-        // 获取放行校验结果
+        // 获取放行校验结果（纯内存计算，不再查库）
         try {
-            ShipmentReleaseResultVO checkResult = checkRelease(order.getId());
+            ShipmentReleaseResultVO checkResult = checkReleaseInternal(order, contract, receivedAmount);
             vo.setBlockerReasons(checkResult.getBlockerReasons());
             vo.setPendingRole(checkResult.getPendingRole());
         } catch (Exception e) {
@@ -443,38 +490,30 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
     @Override
     public ShipmentReleaseStatsVO getReleaseStats() {
-        // TODO: 当前实现每次调用执行4条独立的 COUNT 查询
-        // 优化方案：
-        // 1. 使用 Redis 缓存，设置 TTL 30秒
-        // 2. 或使用单条 SQL 通过 CASE WHEN 一次性查询所有统计值
-        // 3. 或使用定时任务预计算统计值
-        ShipmentReleaseStatsVO stats = new ShipmentReleaseStatsVO();
-
-        // 查询已审批通过的订单总数
-        Long totalCount = erpSaleOrderMapper.selectCount(
+        // 仅查询状态列，单次 SQL 取回全部已审批订单的放行状态，在内存中一次性分组计数，
+        // 避免原先 4 条独立 COUNT 查询对同一张表反复全表/索引扫描。
+        List<ErpSaleOrderDO> orders = erpSaleOrderMapper.selectList(
                 new LambdaQueryWrapper<ErpSaleOrderDO>()
+                        .select(ErpSaleOrderDO::getId, ErpSaleOrderDO::getShipmentReleaseStatus)
                         .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus()));
-        stats.setTotalCount(totalCount);
 
-        // 查询阻塞状态的订单数
-        Long blockedCount = erpSaleOrderMapper.selectCount(
-                new LambdaQueryWrapper<ErpSaleOrderDO>()
-                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
-                        .eq(ErpSaleOrderDO::getShipmentReleaseStatus, "BLOCKED"));
+        ShipmentReleaseStatsVO stats = new ShipmentReleaseStatsVO();
+        stats.setTotalCount((long) orders.size());
+        long blockedCount = 0L;
+        long financeReviewCount = 0L;
+        long releasedCount = 0L;
+        for (ErpSaleOrderDO order : orders) {
+            String releaseStatus = order.getShipmentReleaseStatus();
+            if ("BLOCKED".equals(releaseStatus)) {
+                blockedCount++;
+            } else if ("FINANCE_REVIEW".equals(releaseStatus)) {
+                financeReviewCount++;
+            } else if ("RELEASED".equals(releaseStatus)) {
+                releasedCount++;
+            }
+        }
         stats.setBlockedCount(blockedCount);
-
-        // 查询待财务审核的订单数
-        Long financeReviewCount = erpSaleOrderMapper.selectCount(
-                new LambdaQueryWrapper<ErpSaleOrderDO>()
-                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
-                        .eq(ErpSaleOrderDO::getShipmentReleaseStatus, "FINANCE_REVIEW"));
         stats.setFinanceReviewCount(financeReviewCount);
-
-        // 查询已放行的订单数
-        Long releasedCount = erpSaleOrderMapper.selectCount(
-                new LambdaQueryWrapper<ErpSaleOrderDO>()
-                        .eq(ErpSaleOrderDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
-                        .eq(ErpSaleOrderDO::getShipmentReleaseStatus, "RELEASED"));
         stats.setReleasedCount(releasedCount);
 
         return stats;

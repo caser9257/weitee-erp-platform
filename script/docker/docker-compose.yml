@@ -13,9 +13,11 @@ services:
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-weitee-erp}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      TZ: Asia/Shanghai
     volumes:
       - mysql:/var/lib/mysql/
-      - ../../sql/mysql/weitee-erp.sql:/docker-entrypoint-initdb.d/weitee-erp.sql:ro
+      - ../../sql/mysql/base/quartz.sql:/docker-entrypoint-initdb.d/01-quartz.sql:ro
+      - ../../sql/mysql/base/weitee-erp.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
 
   redis:
     container_name: weitee-redis
@@ -23,27 +25,21 @@ services:
     restart: unless-stopped
     ports:
       - "6379:6379"
-    volumes:
-      - redis:/data
+    command: redis-server --appendonly yes
 
   server:
     container_name: weitee-server
     build:
-      context: ./weitee-server/
+      context: ../../weitee-server
     image: weitee-server
     restart: unless-stopped
     ports:
       - "48080:48080"
     environment:
-      # https://github.com/polovyivan/docker-pass-configs-to-container
       SPRING_PROFILES_ACTIVE: local
-      JAVA_OPTS:
-        ${JAVA_OPTS:-
-          -Xms512m
-          -Xmx512m
-          -Djava.security.egd=file:/dev/./urandom
-        }
-      ARGS:
+      JAVA_OPTS: ${JAVA_OPTS:-"-Xms512m -Xmx512m -Djava.security.egd=file:/dev/./urandom"}
+      TZ: Asia/Shanghai
+      ARGS: |
         --spring.datasource.dynamic.datasource.master.url=${MASTER_DATASOURCE_URL:-jdbc:mysql://weitee-mysql:3306/weitee-erp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true}
         --spring.datasource.dynamic.datasource.master.username=${MASTER_DATASOURCE_USERNAME:-root}
         --spring.datasource.dynamic.datasource.master.password=${MASTER_DATASOURCE_PASSWORD:-123456}
@@ -52,23 +48,17 @@ services:
         --spring.datasource.dynamic.datasource.slave.password=${SLAVE_DATASOURCE_PASSWORD:-123456}
         --spring.redis.host=${REDIS_HOST:-weitee-redis}
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_started
 
   admin:
     container_name: weitee-admin
     build:
-      context: ./weitee-ui-admin
+      context: ../../weitee-ui/weitee-ui-admin-vue3
       args:
-        NODE_ENV:
-          ENV=${NODE_ENV:-production}
-          PUBLIC_PATH=${PUBLIC_PATH:-/}
-          VUE_APP_TITLE=${VUE_APP_TITLE:-微泰ERP管理系统}
-          VUE_APP_BASE_API=${VUE_APP_BASE_API:-/prod-api}
-          VUE_APP_APP_NAME=${VUE_APP_APP_NAME:-/}
-          VUE_APP_CAPTCHA_ENABLE=${VUE_APP_CAPTCHA_ENABLE:-true}
-          VUE_APP_DOC_ENABLE=${VUE_APP_DOC_ENABLE:-true}
-          VUE_APP_BAIDU_CODE=${VUE_APP_BAIDU_CODE:-fadc1bd5db1a1d6f581df60a1807f8ab}
+        NODE_ENV: ${NODE_ENV:-production}
     image: weitee-admin
     restart: unless-stopped
     ports:

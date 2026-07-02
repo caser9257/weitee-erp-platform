@@ -30,9 +30,6 @@ public class ErpPurchaseInBpmServiceImpl implements ErpPurchaseInBpmService {
     @Resource
     private ErpPurchaseInMapper erpPurchaseInMapper;
     @Resource
-    private ErpPurchaseInService purchaseInService;
-
-    @Resource
     private BpmApprovalRuntimeService approvalRuntimeService;
 
     @Override
@@ -42,8 +39,9 @@ public class ErpPurchaseInBpmServiceImpl implements ErpPurchaseInBpmService {
         if (ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
             throw exception(PURCHASE_IN_APPROVE_FAIL);
         }
-        if (ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.PROCESS.getStatus())
-                && StrUtil.isNotBlank(purchaseIn.getProcessInstanceId())) {
+        if (!ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.DRAFT.getStatus())
+                && !ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.REJECT.getStatus())
+                && !ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.FAILED.getStatus())) {
             throw exception(PURCHASE_IN_BPM_SUBMIT_FAIL);
         }
         // 事务内：只写本地状态

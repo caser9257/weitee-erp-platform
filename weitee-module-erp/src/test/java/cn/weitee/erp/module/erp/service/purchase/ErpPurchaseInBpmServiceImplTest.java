@@ -12,13 +12,11 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ErpPurchaseInBpmServiceImplTest {
@@ -30,7 +28,7 @@ class ErpPurchaseInBpmServiceImplTest {
                 new ErpPurchaseInDO()
                         .setId(31L)
                         .setNo("PI-2026-001")
-                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
                         .setSupplierId(301L)
                         .setOrderId(501L)
                         .setTotalPrice(new BigDecimal("1880.66"))
@@ -39,7 +37,7 @@ class ErpPurchaseInBpmServiceImplTest {
         List<ErpPurchaseInDO> updatedPurchaseIns = new ArrayList<>();
         AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
 
-        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseInRef.get();
             }
@@ -62,31 +60,52 @@ class ErpPurchaseInBpmServiceImplTest {
 
         Object result = method.invoke(service, 9527L, reqVO);
 
-        // afterCommit 模式：submit 返回 null
         assertNull(result);
         assertEquals(31L, submitBizIdRef.get());
-        // 第一次 updateById：设置 PROCESS 状态，processInstanceId=null
         assertEquals(31L, updatedPurchaseIns.get(0).getId());
         assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedPurchaseIns.get(0).getStatus());
-        assertNull(invokeGetter(updatedPurchaseIns.get(0), "getProcessInstanceId"));
-        // 第二次 updateById（afterCommit）：设置 processInstanceId
+        assertNull(updatedPurchaseIns.get(0).getProcessInstanceId());
         assertEquals(31L, updatedPurchaseIns.get(1).getId());
-        assertEquals("PI-IN-20260409-001", invokeGetter(updatedPurchaseIns.get(1), "getProcessInstanceId"));
+        assertEquals("PI-IN-20260409-001", updatedPurchaseIns.get(1).getProcessInstanceId());
+    }
+
+    @Test
+    void submitPurchaseIn_shouldRejectProcessStatusWithoutProcessInstance() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpPurchaseInDO> purchaseInRef = new AtomicReference<>(
+                new ErpPurchaseInDO()
+                        .setId(34L)
+                        .setNo("PI-2026-INVALID")
+                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+        );
+        setField(service, "erpPurchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return purchaseInRef.get();
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> null));
+
+        Object reqVO = createSubmitReqVO(34L, Map.of());
+        Method method = service.getClass().getMethod("submitPurchaseIn", Long.class, reqVO.getClass());
+
+        assertSubmitFail(method, service, reqVO);
     }
 
     @Test
     void cancelPurchaseInApproval_shouldCancelProcessAndClearBinding() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpPurchaseInDO> purchaseInRef = new AtomicReference<>(
-                withProcessInstance(new ErpPurchaseInDO()
+                new ErpPurchaseInDO()
                         .setId(32L)
                         .setNo("PI-2026-CANCEL")
-                        .setStatus(ErpAuditStatus.PROCESS.getStatus()), "PI-IN-TO-CANCEL")
+                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                        .setProcessInstanceId("PI-IN-TO-CANCEL")
         );
         AtomicReference<Long> clearedInIdRef = new AtomicReference<>();
         AtomicReference<Long> cancelBizIdRef = new AtomicReference<>();
 
-        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseInRef.get();
             }
@@ -107,7 +126,6 @@ class ErpPurchaseInBpmServiceImplTest {
         Method method = service.getClass().getMethod("cancelPurchaseInApproval", Long.class, reqVO.getClass());
         method.invoke(service, 9527L, reqVO);
 
-        // afterCommit 模式：BPM 撤回在 afterCommit 中执行
         assertEquals(32L, cancelBizIdRef.get());
         assertEquals(32L, clearedInIdRef.get());
     }
@@ -115,12 +133,9 @@ class ErpPurchaseInBpmServiceImplTest {
     @Test
     void handleProcessInstanceResult_shouldDoNothingAsHandledByResultHandler() throws Exception {
         Object service = instantiateService();
-
         Method method = service.getClass().getMethod("handleProcessInstanceResult",
                 Long.class, String.class, Integer.class, String.class);
-        // 结果回写已收敛到 PurchaseInResultHandler，此方法为空实现
-        method.invoke(service, 33L, "PI-MATCH", bpmStatus("APPROVE"), "approved");
-        // 无异常即通过
+        method.invoke(service, 33L, "PI-MATCH", 20, "approved");
     }
 
     private Object instantiateService() throws Exception {
@@ -144,27 +159,18 @@ class ErpPurchaseInBpmServiceImplTest {
         return reqVO;
     }
 
-    private Object createProxyByName(String className, MethodHandler handler) throws Exception {
-        return createProxy(Class.forName(className), handler);
-    }
-
-    private Object readProperty(Object target, String methodName) throws Exception {
-        return target.getClass().getMethod(methodName).invoke(target);
-    }
-
-    private Object invokeGetter(Object target, String methodName) throws Exception {
-        return target.getClass().getMethod(methodName).invoke(target);
-    }
-
-    private ErpPurchaseInDO withProcessInstance(ErpPurchaseInDO purchaseIn, String processInstanceId) throws Exception {
-        purchaseIn.getClass().getMethod("setProcessInstanceId", String.class).invoke(purchaseIn, processInstanceId);
-        return purchaseIn;
-    }
-
-    private Integer bpmStatus(String enumName) throws Exception {
-        Class<?> clazz = Class.forName("cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum");
-        Object enumObj = Enum.valueOf((Class<Enum>) clazz.asSubclass(Enum.class), enumName);
-        return (Integer) clazz.getMethod("getStatus").invoke(enumObj);
+    private void assertSubmitFail(Method method, Object target, Object reqVO) throws Exception {
+        try {
+            method.invoke(target, 9527L, reqVO);
+        } catch (java.lang.reflect.InvocationTargetException ex) {
+            if (ex.getTargetException() instanceof cn.weitee.erp.framework.common.exception.ServiceException serviceException) {
+                assertEquals(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_BPM_SUBMIT_FAIL.getCode(),
+                        serviceException.getCode());
+                return;
+            }
+            throw ex;
+        }
+        throw new AssertionError("Expected ServiceException");
     }
 
     @SuppressWarnings("unchecked")
@@ -196,5 +202,4 @@ class ErpPurchaseInBpmServiceImplTest {
     private interface MethodHandler {
         Object handle(String methodName, Object[] args) throws Exception;
     }
-
 }

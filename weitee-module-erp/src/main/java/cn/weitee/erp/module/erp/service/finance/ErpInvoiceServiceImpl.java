@@ -23,6 +23,7 @@ import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderItemMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -63,6 +64,7 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
     private ErpSaleOrderItemMapper erpSaleOrderItemMapper;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Long createInvoice(ErpInvoiceSaveReqVO createReqVO) {
         // 1. 创建发票
         ErpInvoiceDO invoice = new ErpInvoiceDO();
@@ -126,6 +128,7 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateInvoice(ErpInvoiceSaveReqVO updateReqVO) {
         // 1. 校验发票是否存在
         ErpInvoiceDO invoice = erpInvoiceMapper.selectById(updateReqVO.getId());
@@ -195,6 +198,7 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateInvoiceStatus(Long id, String status) {
         ErpInvoiceDO invoice = erpInvoiceMapper.selectById(id);
         if (invoice == null) {
@@ -226,6 +230,7 @@ public class ErpInvoiceServiceImpl implements ErpInvoiceService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteInvoice(List<Long> ids) {
         // 删除发票明细
         for (Long id : ids) {

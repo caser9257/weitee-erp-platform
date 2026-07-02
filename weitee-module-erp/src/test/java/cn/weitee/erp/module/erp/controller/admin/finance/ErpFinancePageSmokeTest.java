@@ -354,7 +354,8 @@ class ErpFinancePageSmokeTest {
                                 51L, new AdminUserRespDTO().setNickname("制单A"),
                                 52L, new AdminUserRespDTO().setNickname("制单B"),
                                 31L, new AdminUserRespDTO().setNickname("财务A"),
-                                32L, new AdminUserRespDTO().setNickname("财务B"));
+                                32L, new AdminUserRespDTO().setNickname("财务B"),
+                                33L, new AdminUserRespDTO().setNickname("财务C"));
                     }
                     return null;
                 });

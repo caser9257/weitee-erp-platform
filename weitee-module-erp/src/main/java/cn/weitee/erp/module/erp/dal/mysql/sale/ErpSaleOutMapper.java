@@ -12,6 +12,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -68,10 +70,33 @@ public interface ErpSaleOutMapper extends BaseMapperX<ErpSaleOutDO> {
         return selectList(ErpSaleOutDO::getOrderId, orderId);
     }
 
+    default List<ErpSaleOutDO> selectListByOrderIds(Collection<Long> orderIds) {
+        if (orderIds == null || orderIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapper<ErpSaleOutDO>()
+                .in(ErpSaleOutDO::getOrderId, orderIds));
+    }
+
     default List<ErpSaleOutDO> selectListByOrderIdAndStatus(Long orderId, Integer status) {
         return selectList(new LambdaQueryWrapper<ErpSaleOutDO>()
                 .eq(ErpSaleOutDO::getOrderId, orderId)
                 .eq(ErpSaleOutDO::getStatus, status));
+    }
+
+    /**
+     * 汇总所有出库单的已收款金额（DB 层 SUM，避免把全部出库单载入内存）
+     */
+    default java.math.BigDecimal sumTotalReceiptPrice() {
+        java.util.List<java.util.Map<String, Object>> maps = selectMaps(
+                new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<ErpSaleOutDO>()
+                        .select("COALESCE(SUM(receipt_price), 0) AS total"));
+        if (maps == null || maps.isEmpty() || maps.get(0).get("total") == null) {
+            return java.math.BigDecimal.ZERO;
+        }
+        Object total = maps.get(0).get("total");
+        return total instanceof java.math.BigDecimal ? (java.math.BigDecimal) total
+                : new java.math.BigDecimal(total.toString());
     }
 
     default List<ErpSaleOutDO> selectApprovedListForBatchRebuild(Long id, Integer limit) {

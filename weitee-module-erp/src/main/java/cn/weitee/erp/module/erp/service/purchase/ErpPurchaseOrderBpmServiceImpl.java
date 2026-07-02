@@ -4,7 +4,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.module.bpm.service.approval.BpmApprovalRuntimeService;
-import cn.weitee.erp.module.bpm.service.task.BpmProcessInstanceService;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderCancelApprovalReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSubmitReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
@@ -43,8 +42,6 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
     @Resource
     private ErpPurchaseOrderAuditLogMapper erpPurchaseOrderAuditLogMapper;
     @Resource
-    private ErpPurchaseOrderService purchaseOrderService;
-    @Resource
     private ErpPurchaseSuggestMapper erpPurchaseSuggestMapper;
 
     @Resource
@@ -57,8 +54,9 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
         if (ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
             throw exception(PURCHASE_ORDER_APPROVE_FAIL);
         }
-        if (ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.PROCESS.getStatus())
-                && StrUtil.isNotBlank(purchaseOrder.getProcessInstanceId())) {
+        if (!ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.DRAFT.getStatus())
+                && !ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.REJECT.getStatus())
+                && !ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.FAILED.getStatus())) {
             throw exception(PURCHASE_ORDER_BPM_SUBMIT_FAIL);
         }
         // 事务内：只写本地状态
@@ -67,11 +65,12 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
                 .setId(orderId)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId(null));
-        if (ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.REJECT.getStatus())) {
+        if (ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.REJECT.getStatus())
+                || ObjectUtil.equal(purchaseOrder.getStatus(), ErpAuditStatus.FAILED.getStatus())) {
             erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
                     .setOrderId(orderId)
                     .setActionType(ErpPurchaseOrderAuditActionTypeConstants.RESUBMIT)
-                    .setBeforeStatus(ErpAuditStatus.REJECT.getStatus())
+                    .setBeforeStatus(purchaseOrder.getStatus())
                     .setAfterStatus(ErpAuditStatus.PROCESS.getStatus()));
         }
 

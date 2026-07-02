@@ -18,6 +18,8 @@ import cn.weitee.erp.module.erp.service.project.ErpProjectService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.system.api.dept.DeptApi;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
+import cn.weitee.erp.module.system.dal.dataobject.dict.DictDataDO;
+import cn.weitee.erp.module.system.service.dict.DictDataService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -73,6 +75,7 @@ class ErpFinanceExpenseServiceImplTest {
         setField(service, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
         setField(service, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
         setField(service, "apStatementService", createProxy(ErpApStatementService.class, (methodName, args) -> null));
+        setField(service, "financeExpenseTypeService", createExpenseTypeService());
 
         ErpFinanceExpenseSaveReqVO reqVO = new ErpFinanceExpenseSaveReqVO();
         reqVO.setExpenseTime(LocalDateTime.of(2026, 4, 29, 9, 0));
@@ -104,6 +107,7 @@ class ErpFinanceExpenseServiceImplTest {
         setField(service, "supplierService", createProxy(ErpSupplierService.class, (methodName, args) -> null));
         setField(service, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
         setField(service, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
+        setField(service, "financeExpenseTypeService", createExpenseTypeService());
 
         ErpFinanceExpenseSaveReqVO reqVO = new ErpFinanceExpenseSaveReqVO();
         reqVO.setExpenseTime(LocalDateTime.of(2026, 5, 24, 9, 0));
@@ -128,6 +132,7 @@ class ErpFinanceExpenseServiceImplTest {
         setField(service, "supplierService", createProxy(ErpSupplierService.class, (methodName, args) -> null));
         setField(service, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
         setField(service, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
+        setField(service, "financeExpenseTypeService", createExpenseTypeService());
 
         ErpFinanceExpenseSaveReqVO reqVO = new ErpFinanceExpenseSaveReqVO();
         reqVO.setExpenseTime(LocalDateTime.of(2026, 5, 24, 9, 0));
@@ -153,6 +158,7 @@ class ErpFinanceExpenseServiceImplTest {
         setField(service, "supplierService", createProxy(ErpSupplierService.class, (methodName, args) -> null));
         setField(service, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
         setField(service, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
+        setField(service, "financeExpenseTypeService", createExpenseTypeService());
 
         ErpFinanceExpenseSaveReqVO reqVO = new ErpFinanceExpenseSaveReqVO();
         reqVO.setExpenseTime(LocalDateTime.of(2026, 5, 24, 9, 0));
@@ -216,6 +222,7 @@ class ErpFinanceExpenseServiceImplTest {
         setField(service, "supplierService", createProxy(ErpSupplierService.class, (methodName, args) -> null));
         setField(service, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
         setField(service, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
+        setField(service, "financeExpenseTypeService", createExpenseTypeService());
         setField(service, "apStatementService", createProxy(ErpApStatementService.class, (methodName, args) -> {
             if ("createStatementForFinanceExpense".equals(methodName)) {
                 approvedExpenseRef.set((ErpFinanceExpenseDO) args[0]);
@@ -399,6 +406,41 @@ class ErpFinanceExpenseServiceImplTest {
                     }
                     return handler.handle(method.getName(), args);
                 });
+    }
+
+    private ErpFinanceExpenseTypeService createExpenseTypeService() throws Exception {
+        ErpFinanceExpenseTypeService service = new ErpFinanceExpenseTypeService();
+        setField(service, "dictDataService", createProxy(DictDataService.class, (methodName, args) -> {
+            if ("getDictData".equals(methodName)) {
+                return buildExpenseTypeDict((String) args[1]);
+            }
+            if ("getDictDataList".equals(methodName) || "getDictDataListByDictType".equals(methodName)) {
+                return List.of(
+                        buildExpenseTypeDict("10"),
+                        buildExpenseTypeDict("80"));
+            }
+            return null;
+        }));
+        setField(service, "deptApi", createProxy(DeptApi.class, (methodName, args) -> null));
+        return service;
+    }
+
+    private DictDataDO buildExpenseTypeDict(String value) {
+        if ("10".equals(value)) {
+            return new DictDataDO()
+                    .setDictType(ErpFinanceExpenseTypeService.DICT_TYPE)
+                    .setValue("10")
+                    .setLabel("研发费用")
+                    .setBizAttributes("{\"core\":true,\"projectRequired\":false,\"costCenterRequired\":false,\"leaseContractRequired\":false,\"assetCandidateFlag\":false,\"autoGenerateVoucher\":false}");
+        }
+        if ("80".equals(value)) {
+            return new DictDataDO()
+                    .setDictType(ErpFinanceExpenseTypeService.DICT_TYPE)
+                    .setValue("80")
+                    .setLabel("零星采购")
+                    .setBizAttributes("{\"core\":true,\"projectRequired\":false,\"costCenterRequired\":false,\"leaseContractRequired\":false,\"assetCandidateFlag\":false,\"autoGenerateVoucher\":false}");
+        }
+        return null;
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

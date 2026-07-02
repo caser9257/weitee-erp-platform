@@ -484,12 +484,19 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         if (CollUtil.isEmpty(orderIds)) {
             return java.util.Collections.emptyMap();
         }
-        // TODO: 当前实现是伪批量，实际是循环调用单个查询
-        // 优化方案：在 saleOutService 中添加批量查询方法 getSaleOutListByOrderIds(Collection<Long> orderIds)
-        // 然后在内存中按 orderId 分组汇总，减少数据库查询次数
+        // 1. 批量查询所有订单关联的销售出库单（一次查询，替代循环单条查询）
+        List<ErpSaleOutDO> saleOutList = saleOutService.getSaleOutListByOrderIds(orderIds);
+        // 2. 按 orderId 分组汇总已收款金额
         Map<Long, BigDecimal> result = new java.util.HashMap<>();
+        for (ErpSaleOutDO saleOut : saleOutList) {
+            if (saleOut.getReceiptPrice() == null) {
+                continue;
+            }
+            result.merge(saleOut.getOrderId(), saleOut.getReceiptPrice(), BigDecimal::add);
+        }
+        // 3. 确保所有 orderId 都有值（未查到出库单的订单默认 0）
         for (Long orderId : orderIds) {
-            result.put(orderId, getReceivedAmountByOrderId(orderId));
+            result.putIfAbsent(orderId, BigDecimal.ZERO);
         }
         return result;
     }

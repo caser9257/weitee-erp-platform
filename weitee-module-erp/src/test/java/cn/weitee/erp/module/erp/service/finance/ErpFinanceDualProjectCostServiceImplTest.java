@@ -88,6 +88,7 @@ class ErpFinanceDualProjectCostServiceImplTest {
         setField(service, "projectCostResultMapper", createProxy(
                 cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProjectCostResultMapper.class,
                 (methodName, args) -> {
+                    if ("selectList".equals(methodName)) return List.of();
                     if ("delete".equals(methodName)) return 0;
                     if ("insert".equals(methodName)) {
                         ErpFinanceDualProjectCostResultDO r = (ErpFinanceDualProjectCostResultDO) args[0];
@@ -196,6 +197,7 @@ class ErpFinanceDualProjectCostServiceImplTest {
         setField(service, "projectCostResultMapper", createProxy(
                 cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProjectCostResultMapper.class,
                 (methodName, args) -> {
+                    if ("selectList".equals(methodName)) return List.of();
                     if ("delete".equals(methodName)) return 0;
                     if ("insert".equals(methodName)) {
                         ErpFinanceDualProjectCostResultDO r = (ErpFinanceDualProjectCostResultDO) args[0];

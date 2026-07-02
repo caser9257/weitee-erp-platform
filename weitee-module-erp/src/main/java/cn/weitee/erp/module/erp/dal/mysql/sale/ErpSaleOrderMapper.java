@@ -106,4 +106,14 @@ public interface ErpSaleOrderMapper extends BaseMapperX<ErpSaleOrderDO> {
         return selectCount(ErpSaleOrderDO::getProjectId, projectId);
     }
 
+    /**
+     * 查询市场执行台账统计所需的订单精简列（仅状态与金额，避免全列全表加载）
+     */
+    default List<ErpSaleOrderDO> selectListForMarketLedgerStats() {
+        return selectList(new LambdaQueryWrapper<ErpSaleOrderDO>()
+                .select(ErpSaleOrderDO::getId, ErpSaleOrderDO::getTotalPrice,
+                        ErpSaleOrderDO::getShipmentReleaseStatus, ErpSaleOrderDO::getInvoiceStatus,
+                        ErpSaleOrderDO::getAcceptanceStatus));
+    }
+
 }

@@ -90,3 +90,32 @@ const rejectedStockDescriptor = getPurchaseInStockStatusDescriptor({
 
 assert.equal(rejectedStockDescriptor.label, '无需入库')
 assert.equal(rejectedStockDescriptor.tagType, 'info')
+
+const draftActions = getPurchaseInRowActionDescriptor({
+  status: 0,
+  processInstanceId: '',
+  creator: '100',
+  currentUserId: '100',
+  qaStatus: null,
+  stockInStatus: null,
+  remainingStockInCount: 0
+})
+
+assert.equal(draftActions.canEdit, true)
+assert.equal(draftActions.canSubmit, true)
+assert.equal(draftActions.canDelete, true)
+assert.equal(draftActions.canCancelApproval, false)
+
+const failedActions = getPurchaseInRowActionDescriptor({
+  status: 60,
+  processInstanceId: '',
+  creator: '100',
+  currentUserId: '100',
+  qaStatus: null,
+  stockInStatus: null,
+  remainingStockInCount: 0
+})
+
+assert.equal(failedActions.canEdit, true)
+assert.equal(failedActions.canSubmit, true)
+assert.equal(failedActions.canDelete, true)

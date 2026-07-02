@@ -3,16 +3,16 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">棰勪粯娆?</div>
+          <div class="finance-shell__page-title">预付款</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
-              褰撳墠鍒楄〃 {{ total }}
+              当前列表 {{ total }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--success">
-              宸插鏍?{{ approvedCount }}
+              已审核 {{ approvedCount }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--warning">
-              寰呭鐞?{{ pendingCount }}
+              待处理 {{ pendingCount }}
             </span>
           </div>
         </div>
@@ -21,10 +21,10 @@
 
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">鍩虹绛涢�?</div>
+        <div class="finance-shell__section-title">基础筛选</div>
         <el-button link type="primary" @click="advancedExpanded = !advancedExpanded">
           <Icon :icon="advancedExpanded ? 'ep:arrow-up' : 'ep:arrow-down'" class="mr-5px" />
-          {{ advancedExpanded ? '鏀惰捣楂樼骇鎼滅储' : '灞曞紑楂樼骇鎼滅储' }}
+          {{ advancedExpanded ? '收起高级搜索' : '展开高级搜索' }}
         </el-button>
       </div>
       <el-form
@@ -35,32 +35,31 @@
         @submit.prevent
       >
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
-          <el-form-item label="棰勪粯娆惧崟鍙?" prop="no">
+          <el-form-item label="预付款单号" prop="no">
             <el-input
               v-model="queryParams.no"
-              placeholder="璇疯緭鍏ラ浠樻鍗曞彿"
+              placeholder="请输入预付款单号"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
             />
           </el-form-item>
-          <el-form-item label="棰勪粯鏃堕棿" prop="prepaymentTime">
+          <el-form-item label="预付时间" prop="prepaymentTime">
             <el-date-picker
               v-model="queryParams.prepaymentTime"
               value-format="YYYY-MM-DD HH:mm:ss"
               type="daterange"
-              start-placeholder="寮€濮嬫棩鏈?"
-              end-placeholder="缁撴潫鏃ユ湡"
-              :default-time="[new Date('1 00:00:00'), new Date('1 23:59:59')]"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
               class="!w-full"
             />
           </el-form-item>
-          <el-form-item label="渚涘簲鍟?" prop="supplierId">
+          <el-form-item label="供应商" prop="supplierId">
             <el-select
               v-model="queryParams.supplierId"
               clearable
               filterable
-              placeholder="璇烽€夋嫨渚涘簲鍟?"
+              placeholder="请选择供应商"
               class="!w-full"
             >
               <el-option
@@ -72,7 +71,12 @@
             </el-select>
           </el-form-item>
           <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" clearable placeholder="请选择状态" class="!w-full">
+            <el-select
+              v-model="queryParams.status"
+              clearable
+              placeholder="请选择状态"
+              class="!w-full"
+            >
               <el-option
                 v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
                 :key="dict.value"
@@ -99,12 +103,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="璐㈠姟浜哄憳" prop="financeUserId">
+          <el-form-item label="财务人员" prop="financeUserId">
             <el-select
               v-model="queryParams.financeUserId"
               clearable
               filterable
-              placeholder="璇烽€夋嫨璐㈠姟浜哄憳"
+              placeholder="请选择财务人员"
               class="!w-full"
             >
               <el-option
@@ -115,12 +119,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="缁撶畻璐︽埛" prop="accountId">
+          <el-form-item label="结算账户" prop="accountId">
             <el-select
               v-model="queryParams.accountId"
               clearable
               filterable
-              placeholder="璇烽€夋嫨缁撶畻璐︽埛"
+              placeholder="请选择结算账户"
               class="!w-full"
             >
               <el-option
@@ -131,10 +135,10 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="澶囨敞" prop="remark">
+          <el-form-item label="备注" prop="remark">
             <el-input
               v-model="queryParams.remark"
-              placeholder="璇疯緭鍏ュ娉?"
+              placeholder="请输入备注"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
@@ -144,11 +148,11 @@
         <div class="finance-shell__query-actions">
           <el-button type="primary" :loading="loadingList" @click="handleQuery">
             <Icon icon="ep:search" class="mr-5px" />
-            鎼滅储
+            搜索
           </el-button>
           <el-button :disabled="loadingList" @click="resetQuery">
             <Icon icon="ep:refresh" class="mr-5px" />
-            閲嶇疆
+            重置
           </el-button>
         </div>
       </el-form>
@@ -157,9 +161,10 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">棰勪粯娆惧垪琛?</div>
+          <div class="finance-shell__section-title">预付款列表</div>
           <div class="finance-shell__toolbar-count">
-            褰撳墠鍏?<strong>{{ total }}</strong> 鏉?          </div>
+            当前共 <strong>{{ total }}</strong> 条
+          </div>
         </div>
         <div class="finance-shell__toolbar-actions">
           <el-button
@@ -169,7 +174,7 @@
             v-hasPermi="['erp:finance-prepayment:create']"
           >
             <Icon icon="ep:plus" class="mr-5px" />
-            鏂板
+            新增
           </el-button>
           <el-button
             type="danger"
@@ -180,7 +185,7 @@
             v-hasPermi="['erp:finance-prepayment:delete']"
           >
             <Icon icon="ep:delete" class="mr-5px" />
-            鎵归噺鍒犻櫎
+            批量删除
           </el-button>
         </div>
       </div>
@@ -188,7 +193,7 @@
       <div v-if="listErrorMessage && !list.length" class="finance-prepayment-page__state">
         <el-result icon="error" title="预付款加载失败" :sub-title="listErrorMessage">
           <template #extra>
-            <el-button type="primary" @click="getList">閲嶈瘯</el-button>
+            <el-button type="primary" @click="getList">重试</el-button>
           </template>
         </el-result>
       </div>
@@ -206,7 +211,7 @@
             <el-table-column
               width="42"
               type="selection"
-              label="閫夋嫨"
+              label="选择"
               :selectable="canSelectForBatchDelete"
             />
             <el-table-column label="预付款信息" min-width="220">
@@ -219,7 +224,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="渚涘簲鍟嗕笌璐︽埛" min-width="220">
+            <el-table-column label="供应商与账户" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__primary-text">{{ row.supplierName || '-' }}</span>
@@ -227,7 +232,7 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="浜哄憳淇℃伅" min-width="180">
+            <el-table-column label="人员信息" min-width="180">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__muted-text">{{ row.financeUserName || '-' }}</span>
@@ -235,17 +240,17 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="棰勪粯閲戦" min-width="120" align="right">
+            <el-table-column label="预付金额" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount">{{ formatAmount(row.prepaymentPrice) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="宸叉牳閿€閲戦" min-width="120" align="right">
+            <el-table-column label="已核销金额" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount">{{ formatAmount(row.allocatedPrice) }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="鍓╀綑閲戦" min-width="120" align="right">
+            <el-table-column label="剩余金额" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount">{{ formatAmount(row.remainPrice) }}</span>
               </template>
@@ -255,14 +260,14 @@
                 <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
               </template>
             </el-table-column>
-            <el-table-column label="澶囨敞" min-width="180">
+            <el-table-column label="备注" min-width="180">
               <template #default="{ row }">
                 <span class="finance-shell__muted-text" :title="row.remark || '-'">
                   {{ row.remark || '-' }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鎿嶄綔" fixed="right" align="center" width="320">
+            <el-table-column label="操作" fixed="right" align="center" width="320">
               <template #default="{ row }">
                 <div class="finance-prepayment-page__row-actions">
                   <el-button
@@ -271,7 +276,7 @@
                     @click="openForm('detail', row.id)"
                     v-hasPermi="['erp:finance-prepayment:query']"
                   >
-                    璇︽儏
+                    详情
                   </el-button>
                   <el-button
                     link
@@ -280,7 +285,7 @@
                     @click="openForm('update', row.id)"
                     v-hasPermi="['erp:finance-prepayment:update']"
                   >
-                    缂栬緫
+                    编辑
                   </el-button>
                   <el-button
                     v-if="canApprove(row)"
@@ -291,7 +296,7 @@
                     @click="handleUpdateStatus(row.id, 20)"
                     v-hasPermi="['erp:finance-prepayment:update-status']"
                   >
-                    瀹℃牳
+                    审核
                   </el-button>
                   <el-button
                     v-if="canUnapprove(row)"
@@ -302,7 +307,8 @@
                     @click="handleUpdateStatus(row.id, 10)"
                     v-hasPermi="['erp:finance-prepayment:update-status']"
                   >
-                    鍙嶅鏍?                  </el-button>
+                    反审核
+                  </el-button>
                   <el-button
                     link
                     type="success"
@@ -310,7 +316,7 @@
                     @click="openAllocateDialog(row)"
                     v-hasPermi="['erp:finance-prepayment:update']"
                   >
-                    鏍搁攢
+                    核销
                   </el-button>
                   <el-button
                     link
@@ -319,7 +325,7 @@
                     @click="openTraceDrawer(row)"
                     v-hasPermi="['erp:finance-prepayment:query']"
                   >
-                    杩芥函
+                    追踪
                   </el-button>
                   <el-button
                     link
@@ -329,7 +335,7 @@
                     @click="handleDelete([Number(row.id)])"
                     v-hasPermi="['erp:finance-prepayment:delete']"
                   >
-                    鍒犻櫎
+                    删除
                   </el-button>
                 </div>
               </template>
@@ -361,9 +367,12 @@
       <div class="finance-prepayment-page__drawer">
         <div v-if="traceData.prepayment" class="finance-shell__context-card">
           <div class="finance-shell__context-main">
-            <div class="finance-shell__context-title">{{ traceData.prepayment.no || '预付款追踪' }}</div>
+            <div class="finance-shell__context-title">{{
+              traceData.prepayment.no || '预付款追踪'
+            }}</div>
             <div class="finance-shell__context-subtitle">
-              {{ traceData.prepayment.supplierName || '-' }} / {{ traceData.prepayment.accountName || '-' }}
+              {{ traceData.prepayment.supplierName || '-' }} /
+              {{ traceData.prepayment.accountName || '-' }}
             </div>
           </div>
           <div class="finance-shell__context-meta">
@@ -382,18 +391,18 @@
           <el-result
             v-if="traceErrorMessage"
             icon="error"
-            title="棰勪粯娆捐拷婧姞杞藉け璐?"
+            title="预付款追踪加载失败"
             :sub-title="traceErrorMessage"
           >
             <template #extra>
-              <el-button type="primary" @click="retryLoadTrace">閲嶈瘯</el-button>
+              <el-button type="primary" @click="retryLoadTrace">重试</el-button>
             </template>
           </el-result>
 
           <template v-else-if="traceData.prepayment">
             <div class="finance-shell__section">
               <div class="finance-shell__section-head">
-                <div class="finance-shell__section-title">鍏宠仈搴斾粯鍙拌处</div>
+                <div class="finance-shell__section-title">关联应付台账</div>
               </div>
               <div class="finance-prepayment-page__trace-cards">
                 <div
@@ -401,20 +410,27 @@
                   :key="statement.id"
                   class="finance-prepayment-page__trace-card"
                 >
-                  <div class="finance-prepayment-page__trace-card-title">{{ statement.statementNo || '-' }}</div>
-                  <div class="finance-prepayment-page__trace-card-sub">{{ statement.bizNo || '-' }}</div>
+                  <div class="finance-prepayment-page__trace-card-title">{{
+                    statement.statementNo || '-'
+                  }}</div>
+                  <div class="finance-prepayment-page__trace-card-sub">{{
+                    statement.bizNo || '-'
+                  }}</div>
                   <div class="finance-prepayment-page__trace-card-meta">
-                    <span>搴斾粯 {{ formatAmount(statement.amount) }}</span>
-                    <span>鍓╀綑 {{ formatAmount(statement.remainAmount) }}</span>
+                    <span>应付 {{ formatAmount(statement.amount) }}</span>
+                    <span>剩余 {{ formatAmount(statement.remainAmount) }}</span>
                   </div>
                 </div>
               </div>
-              <el-empty v-if="!(traceData.statements || []).length" description="鏆傛棤鍏宠仈搴斾粯鍙拌处" />
+              <el-empty
+                v-if="!(traceData.statements || []).length"
+                description="暂无关联应付台账"
+              />
             </div>
 
             <div class="finance-shell__section">
               <div class="finance-shell__section-head">
-                <div class="finance-shell__section-title">鏍搁攢璁板綍</div>
+                <div class="finance-shell__section-title">核销记录</div>
                 <el-button
                   type="danger"
                   plain
@@ -424,7 +440,7 @@
                   @click="handleRollbackAllocate"
                   v-hasPermi="['erp:finance-prepayment:update']"
                 >
-                  鍥炴粴鏍搁攢
+                  回滚核销
                 </el-button>
               </div>
               <div class="finance-shell__table-wrap">
@@ -436,17 +452,19 @@
                   @selection-change="handleRollbackSelectionChange"
                 >
                   <el-table-column type="selection" width="42" :selectable="canSelectRollbackRow" />
-                  <el-table-column prop="bizNo" label="涓氬姟鍗曞彿" min-width="150" />
-                  <el-table-column prop="statusName" label="鐘舵€?" min-width="110" align="center" />
-                  <el-table-column label="鏍搁攢閲戦" min-width="120" align="right">
+                  <el-table-column prop="bizNo" label="业务单号" min-width="150" />
+                  <el-table-column prop="statusName" label="状态" min-width="110" align="center" />
+                  <el-table-column label="核销金额" min-width="120" align="right">
                     <template #default="{ row }">
-                      <span class="finance-shell__amount">{{ formatAmount(row.allocateAmount) }}</span>
+                      <span class="finance-shell__amount">{{
+                        formatAmount(row.allocateAmount)
+                      }}</span>
                     </template>
                   </el-table-column>
-                  <el-table-column prop="remark" label="澶囨敞" min-width="160" />
+                  <el-table-column prop="remark" label="备注" min-width="160" />
                 </el-table>
               </div>
-              <el-empty v-if="!(traceData.allocates || []).length" description="鏆傛棤鏍搁攢璁板綍" />
+              <el-empty v-if="!(traceData.allocates || []).length" description="暂无核销记录" />
             </div>
           </template>
         </div>
@@ -575,7 +593,7 @@ const getList = async () => {
     )
   } catch (error: any) {
     if (!list.value.length) {
-      listErrorMessage.value = error?.message || '璇锋鏌ョ綉缁滄垨绋嶅悗閲嶈瘯銆?
+      listErrorMessage.value = error?.message || '请检查网络或稍后重试。'
     }
   } finally {
     loadingList.value = false
@@ -683,7 +701,7 @@ const loadTrace = async (id: number) => {
     traceData.allocates = data?.allocates || []
   } catch (error: any) {
     clearTraceData()
-    traceErrorMessage.value = error?.message || '璇锋鏌ョ綉缁滄垨绋嶅悗閲嶈瘯銆?
+    traceErrorMessage.value = error?.message || '请检查网络或稍后重试。'
   } finally {
     loadingTrace.value = false
   }

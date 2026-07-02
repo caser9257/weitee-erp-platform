@@ -44,10 +44,19 @@ export type PurchaseInStockStatusDescriptor = {
 }
 
 const PURCHASE_IN_STATUS = {
+  DRAFT: 0,
   PROCESS: 10,
   APPROVE: 20,
-  REJECT: 30
+  REJECT: 30,
+  CARRY_FORWARD: 40,
+  VOID: 50,
+  FAILED: 60
 } as const
+
+const isEditableStatus = (status?: number | null) =>
+  status === PURCHASE_IN_STATUS.DRAFT ||
+  status === PURCHASE_IN_STATUS.REJECT ||
+  status === PURCHASE_IN_STATUS.FAILED
 
 const PURCHASE_IN_QA_STATUS = {
   TO_INSPECT: 10,
@@ -75,12 +84,8 @@ export function getPurchaseInRowActionDescriptor(
 
   return {
     isApprovalRunning,
-    canEdit:
-      input.status === PURCHASE_IN_STATUS.REJECT ||
-      (input.status === PURCHASE_IN_STATUS.PROCESS && !input.processInstanceId),
-    canSubmit:
-      input.status === PURCHASE_IN_STATUS.REJECT ||
-      (input.status === PURCHASE_IN_STATUS.PROCESS && !input.processInstanceId),
+    canEdit: isEditableStatus(input.status),
+    canSubmit: isEditableStatus(input.status),
     canCancelApproval: isApprovalRunning && isProcessStarter,
     canViewProcess: !!input.processInstanceId,
     canViewQualityDetail:

@@ -11,8 +11,6 @@ import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -26,21 +24,6 @@ import java.util.Objects;
  */
 @Mapper
 public interface ErpPurchaseInMapper extends BaseMapperX<ErpPurchaseInDO> {
-
-    @Select("SELECT * FROM erp_purchase_in WHERE id = #{id} AND deleted = 0")
-    ErpPurchaseInDO selectByIdCompatible(@Param("id") Long id);
-
-    @Select({
-            "<script>",
-            "SELECT * FROM erp_purchase_in",
-            "WHERE deleted = 0",
-            "AND id IN",
-            "<foreach collection='ids' item='id' open='(' separator=',' close=')'>",
-            "#{id}",
-            "</foreach>",
-            "</script>"
-    })
-    List<ErpPurchaseInDO> selectListByIdsCompatible(@Param("ids") Collection<Long> ids);
 
     default PageResult<ErpPurchaseInDO> selectPage(ErpPurchaseInPageReqVO reqVO) {
         if (reqVO.getWarehouseId() == null && reqVO.getProductId() == null) {

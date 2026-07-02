@@ -3,20 +3,19 @@ package cn.weitee.erp.module.erp.service.purchase;
 import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderBatchUpdateReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderBatchUpdateResultVO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderAuditLogDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderRejectLogDO;
-import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpPurchaseSuggestMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderAuditLogMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderRejectLogMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseOrderAuditActionTypeConstants;
-import cn.weitee.erp.module.erp.enums.mrp.ErpMrpSuggestStatusEnum;
+import cn.weitee.erp.module.erp.framework.event.PurchaseOrderChangedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
@@ -46,8 +45,9 @@ class ErpPurchaseOrderServiceImplTest {
     private final AtomicReference<ErpPurchaseOrderDO> lastUpdateObjRef = new AtomicReference<>();
     private final List<ErpPurchaseOrderRejectLogDO> rejectLogs = new ArrayList<>();
     private final List<ErpPurchaseOrderAuditLogDO> auditLogs = new ArrayList<>();
-    private final List<ErpPurchaseSuggestDO> purchaseSuggests = new ArrayList<>();
-    private final List<ErpPurchaseSuggestDO> updatedSuggests = new ArrayList<>();
+    private final List<PurchaseOrderChangedEvent> publishedEvents = new ArrayList<>();
+    private final List<Long> deletedOrderIds = new ArrayList<>();
+    private final List<Long> deletedOrderItemIds = new ArrayList<>();
 
     private ErpPurchaseOrderServiceImpl purchaseOrderService;
 
@@ -59,13 +59,25 @@ class ErpPurchaseOrderServiceImplTest {
         lastUpdateObjRef.set(null);
         rejectLogs.clear();
         auditLogs.clear();
-        purchaseSuggests.clear();
-        updatedSuggests.clear();
-        setField(purchaseOrderService, "purchaseOrderMapper", createPurchaseOrderMapperProxy());
-        setField(purchaseOrderService, "purchaseOrderRejectLogMapper", createRejectLogMapperProxy());
-        setField(purchaseOrderService, "purchaseOrderAuditLogMapper", createAuditLogMapperProxy());
-        setField(purchaseOrderService, "purchaseOrderItemMapper", createProxy(ErpPurchaseOrderItemMapper.class, (methodName, args) -> 1));
-        setField(purchaseOrderService, "purchaseSuggestMapper", createPurchaseSuggestMapperProxy());
+        publishedEvents.clear();
+        deletedOrderIds.clear();
+        deletedOrderItemIds.clear();
+        setField(purchaseOrderService, "erpPurchaseOrderMapper", createPurchaseOrderMapperProxy());
+        setField(purchaseOrderService, "erpPurchaseOrderRejectLogMapper", createRejectLogMapperProxy());
+        setField(purchaseOrderService, "erpPurchaseOrderAuditLogMapper", createAuditLogMapperProxy());
+        setField(purchaseOrderService, "erpPurchaseOrderItemMapper", createProxy(ErpPurchaseOrderItemMapper.class, (methodName, args) -> {
+            if ("deleteByOrderId".equals(methodName)) {
+                deletedOrderItemIds.add((Long) args[0]);
+                return 1;
+            }
+            return 1;
+        }));
+        setField(purchaseOrderService, "eventPublisher", createProxy(ApplicationEventPublisher.class, (methodName, args) -> {
+            if ("publishEvent".equals(methodName)) {
+                publishedEvents.add((PurchaseOrderChangedEvent) args[0]);
+            }
+            return null;
+        }));
     }
 
     @Test
@@ -95,20 +107,22 @@ class ErpPurchaseOrderServiceImplTest {
     }
 
     @Test
-    void deletePurchaseOrder_shouldRollbackMrpSuggestWhenNonApprovedOrderDeleted() {
+    void deletePurchaseOrder_shouldDeleteOrderAndPublishCancelledEvent() {
+        // MRP 建议回退已迁移到事件驱动模型：PurchaseOrderServiceImpl 只负责删除单据并发布
+        // PurchaseOrderChangedEvent(ORDER_CANCELLED)，具体的 MRP 建议状态回退由
+        // PurchaseOrderChangeListener 异步订阅处理（见该类的独立测试）。
         purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(1L).setNo("PO-001")
                 .setStatus(ErpAuditStatus.REJECT.getStatus())
                 .setInCount(BigDecimal.ZERO)
                 .setReturnCount(BigDecimal.ZERO));
-        purchaseSuggests.add(new ErpPurchaseSuggestDO().setId(9001L)
-                .setConvertPurchaseOrderId(1L)
-                .setStatus(ErpMrpSuggestStatusEnum.CONVERTED.getStatus()));
 
         purchaseOrderService.deletePurchaseOrder(Collections.singletonList(1L));
 
-        assertEquals(1, updatedSuggests.size());
-        assertEquals(ErpMrpSuggestStatusEnum.TO_CONFIRM.getStatus(), updatedSuggests.get(0).getStatus());
-        assertEquals(null, updatedSuggests.get(0).getConvertPurchaseOrderId());
+        assertEquals(Collections.singletonList(1L), deletedOrderIds);
+        assertEquals(Collections.singletonList(1L), deletedOrderItemIds);
+        assertEquals(1, publishedEvents.size());
+        assertEquals(1L, publishedEvents.get(0).getPurchaseOrderId());
+        assertEquals(PurchaseOrderChangedEvent.ChangeType.ORDER_CANCELLED, publishedEvents.get(0).getChangeType());
     }
 
     @Test
@@ -194,6 +208,10 @@ class ErpPurchaseOrderServiceImplTest {
                 lastUpdateObjRef.set((ErpPurchaseOrderDO) ("updateById".equals(methodName) ? args[0] : args[2]));
                 return updateCountRef.get();
             }
+            if ("deleteById".equals(methodName)) {
+                deletedOrderIds.add((Long) args[0]);
+                return 1;
+            }
             return 1;
         });
     }
@@ -219,19 +237,6 @@ class ErpPurchaseOrderServiceImplTest {
             }
             if ("selectListByOrderId".equals(methodName)) {
                 return auditLogs;
-            }
-            return null;
-        });
-    }
-
-    private ErpPurchaseSuggestMapper createPurchaseSuggestMapperProxy() {
-        return createProxy(ErpPurchaseSuggestMapper.class, (methodName, args) -> {
-            if ("selectListByConvertPurchaseOrderIds".equals(methodName)) {
-                return purchaseSuggests;
-            }
-            if ("updateById".equals(methodName)) {
-                updatedSuggests.add((ErpPurchaseSuggestDO) args[0]);
-                return 1;
             }
             return null;
         });

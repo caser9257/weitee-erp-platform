@@ -389,6 +389,16 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         return erpSaleOutMapper.selectListByOrderId(orderId);
     }
 
+    @Override
+    public List<ErpSaleOutDO> getSaleOutListByOrderIds(Collection<Long> orderIds) {
+        return erpSaleOutMapper.selectListByOrderIds(orderIds);
+    }
+
+    @Override
+    public BigDecimal getTotalReceivedAmount() {
+        return erpSaleOutMapper.sumTotalReceiptPrice();
+    }
+
     // ==================== 销售出库项 ====================
 
     @Override

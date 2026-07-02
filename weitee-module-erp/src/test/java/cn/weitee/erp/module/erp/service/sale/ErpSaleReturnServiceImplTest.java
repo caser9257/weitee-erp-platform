@@ -2,12 +2,15 @@ package cn.weitee.erp.module.erp.service.sale;
 
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleReturnItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleReturnMapper;
+import cn.weitee.erp.module.erp.service.finance.ErpArStatementService;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -48,6 +51,12 @@ class ErpSaleReturnServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("getStock".equals(methodName)) {
+                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            return null;
+        }));
         setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> {
             if ("handleApprovedBiz".equals(methodName)) {
                 hookBizTypeRef.set((Integer) args[0]);
@@ -57,6 +66,7 @@ class ErpSaleReturnServiceImplTest {
             }
             return null;
         }));
+        setField(service, "arStatementService", createProxy(ErpArStatementService.class, (methodName, args) -> null));
 
         service.updateSaleReturnStatus(200L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -91,6 +101,12 @@ class ErpSaleReturnServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("getStock".equals(methodName)) {
+                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            return null;
+        }));
         setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> {
             if ("handleApprovedBiz".equals(methodName)) {
                 hookBizDateRef.set((LocalDate) args[2]);
@@ -98,6 +114,7 @@ class ErpSaleReturnServiceImplTest {
             }
             return null;
         }));
+        setField(service, "arStatementService", createProxy(ErpArStatementService.class, (methodName, args) -> null));
 
         service.updateSaleReturnStatus(200L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -124,9 +141,26 @@ class ErpSaleReturnServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        Field field = findField(target.getClass(), fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
+        for (String candidate : resolveFieldCandidates(fieldName)) {
+            try {
+                return type.getDeclaredField(candidate);
+            } catch (NoSuchFieldException ignored) {
+                // try next candidate
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    private String[] resolveFieldCandidates(String fieldName) {
+        return fieldName.startsWith("erp")
+                ? new String[]{fieldName}
+                : new String[]{fieldName, "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1)};
     }
 
     @FunctionalInterface
