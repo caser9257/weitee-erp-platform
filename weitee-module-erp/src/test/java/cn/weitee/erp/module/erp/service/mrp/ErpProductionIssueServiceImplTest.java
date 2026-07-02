@@ -6,6 +6,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionIssueItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionMaterialDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionIssueBatchMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionIssueItemMapper;
@@ -15,6 +16,7 @@ import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.service.stock.ErpStockBatchService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -104,6 +106,12 @@ class ErpProductionIssueServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("getStock".equals(methodName)) {
+                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            return null;
+        }));
         setField(service, "productService", createProxyByName(
                 "cn.weitee.erp.module.erp.service.product.ErpProductService", (methodName, args) -> null));
         setField(service, "warehouseService", createProxyByName(
@@ -181,9 +189,24 @@ class ErpProductionIssueServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        Field field = getDeclaredField(target, fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private Field getDeclaredField(Object target, String fieldName) throws NoSuchFieldException {
+        try {
+            return target.getClass().getDeclaredField(fieldName);
+        } catch (NoSuchFieldException ex) {
+            return target.getClass().getDeclaredField(mapFieldName(fieldName));
+        }
+    }
+
+    private String mapFieldName(String fieldName) {
+        if (fieldName.endsWith("Mapper")) {
+            return "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        }
+        return fieldName;
     }
 
     @FunctionalInterface
