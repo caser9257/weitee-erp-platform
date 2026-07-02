@@ -2,12 +2,15 @@ package cn.weitee.erp.module.erp.service.sale;
 
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOutItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOutMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.ErpArStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockBatchAllocationService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
@@ -55,12 +58,14 @@ class ErpSaleOutServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setDefaultStockService(service);
         setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> {
             if ("handleApprovedBiz".equals(methodName)) {
                 return 1L;
             }
             return null;
         }));
+        setDefaultArStatementService(service);
 
         service.updateSaleOutStatus(100L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -99,6 +104,9 @@ class ErpSaleOutServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setDefaultStockService(service);
+        setDefaultArStatementService(service);
+        setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> null));
 
         service.updateSaleOutStatus(100L, ErpAuditStatus.PROCESS.getStatus());
 
@@ -139,6 +147,7 @@ class ErpSaleOutServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setDefaultStockService(service);
         setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> {
             if ("handleApprovedBiz".equals(methodName)) {
                 hookBizTypeRef.set((Integer) args[0]);
@@ -148,6 +157,7 @@ class ErpSaleOutServiceImplTest {
             }
             return null;
         }));
+        setDefaultArStatementService(service);
 
         service.updateSaleOutStatus(100L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -188,6 +198,7 @@ class ErpSaleOutServiceImplTest {
             return null;
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
+        setDefaultStockService(service);
         setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> {
             if ("handleApprovedBiz".equals(methodName)) {
                 hookBizDateRef.set((LocalDate) args[2]);
@@ -195,6 +206,7 @@ class ErpSaleOutServiceImplTest {
             }
             return null;
         }));
+        setDefaultArStatementService(service);
 
         service.updateSaleOutStatus(100L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -224,6 +236,19 @@ class ErpSaleOutServiceImplTest {
         Field field = target.getClass().getDeclaredField(mapFieldName(fieldName));
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private void setDefaultStockService(ErpSaleOutServiceImpl service) throws Exception {
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("getStock".equals(methodName)) {
+                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            return null;
+        }));
+    }
+
+    private void setDefaultArStatementService(ErpSaleOutServiceImpl service) throws Exception {
+        setField(service, "arStatementService", createProxy(ErpArStatementService.class, (methodName, args) -> null));
     }
 
     private String mapFieldName(String fieldName) {
