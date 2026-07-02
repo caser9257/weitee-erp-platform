@@ -93,23 +93,53 @@ class ErpPurchaseInQualityServiceImplTest {
         stockInRoleIdsRef.set(Set.of(901L));
         stockInUserIdsRef.set(Set.of(188L, 199L));
 
-        setField(service, "purchaseInMapper", createPurchaseInMapperProxy());
-        setField(service, "purchaseInItemMapper", createPurchaseInItemMapperProxy());
-        setField(service, "purchaseInQualityMapper", createPurchaseInQualityMapperProxy());
-        setField(service, "purchaseInQualityItemMapper", createPurchaseInQualityItemMapperProxy());
-        setField(service, "purchaseInQualityRoundMapper", createPurchaseInQualityRoundMapperProxy());
-        setField(service, "purchaseInQualityDefectMapper", createPurchaseInQualityDefectMapperProxy());
-        setField(service, "adminUserApi", createAdminUserApiProxy());
-        setField(service, "permissionApi", createPermissionApiProxy());
-        setField(service, "menuService", createMenuServiceProxy());
-        setField(service, "permissionService", createPermissionServiceProxy());
-        setField(service, "notifyMessageSendApi", createNotifyMessageSendApiProxy());
+        ErpPurchaseInMapper purchaseInMapper = createPurchaseInMapperProxy();
+        ErpPurchaseInItemMapper purchaseInItemMapper = createPurchaseInItemMapperProxy();
+        ErpPurchaseInQualityMapper purchaseInQualityMapper = createPurchaseInQualityMapperProxy();
+        ErpPurchaseInQualityItemMapper purchaseInQualityItemMapper = createPurchaseInQualityItemMapperProxy();
+        ErpPurchaseInQualityRoundMapper purchaseInQualityRoundMapper = createPurchaseInQualityRoundMapperProxy();
+        ErpPurchaseInQualityDefectMapper purchaseInQualityDefectMapper = createPurchaseInQualityDefectMapperProxy();
+        AdminUserApi adminUserApi = createAdminUserApiProxy();
+        PermissionApi permissionApi = createPermissionApiProxy();
+        MenuService menuService = createMenuServiceProxy();
+        PermissionService permissionService = createPermissionServiceProxy();
+        NotifyMessageSendApi notifyMessageSendApi = createNotifyMessageSendApiProxy();
+
+        setField(service, "erpPurchaseInMapper", purchaseInMapper);
+        setField(service, "erpPurchaseInItemMapper", purchaseInItemMapper);
+        setField(service, "erpPurchaseInQualityMapper", purchaseInQualityMapper);
+        setField(service, "erpPurchaseInQualityItemMapper", purchaseInQualityItemMapper);
+        setField(service, "erpPurchaseInQualityRoundMapper", purchaseInQualityRoundMapper);
+        setField(service, "adminUserApi", adminUserApi);
+        setField(service, "permissionApi", permissionApi);
         setField(service, "noRedisDAO", new ErpNoRedisDAO() {
             @Override
             public String generate(String prefix) {
                 return "CGZJ20260410000001";
             }
         });
+
+        ErpPurchaseInQualityValidationHelper validationHelper = new ErpPurchaseInQualityValidationHelper();
+
+        ErpPurchaseInQualityDefectHelper defectHelper = new ErpPurchaseInQualityDefectHelper();
+        setField(defectHelper, "erpPurchaseInQualityDefectMapper", purchaseInQualityDefectMapper);
+
+        ErpPurchaseInQualityQueryHelper queryHelper = new ErpPurchaseInQualityQueryHelper();
+        setField(queryHelper, "erpPurchaseInMapper", purchaseInMapper);
+        setField(queryHelper, "erpPurchaseInQualityMapper", purchaseInQualityMapper);
+        setField(queryHelper, "erpPurchaseInQualityItemMapper", purchaseInQualityItemMapper);
+        setField(queryHelper, "erpPurchaseInQualityRoundMapper", purchaseInQualityRoundMapper);
+        setField(queryHelper, "erpPurchaseInQualityDefectMapper", purchaseInQualityDefectMapper);
+
+        ErpPurchaseInQualityNotificationHelper notificationHelper = new ErpPurchaseInQualityNotificationHelper();
+        setField(notificationHelper, "notifyMessageSendApi", notifyMessageSendApi);
+        setField(notificationHelper, "menuService", menuService);
+        setField(notificationHelper, "permissionService", permissionService);
+
+        setField(service, "validationHelper", validationHelper);
+        setField(service, "defectHelper", defectHelper);
+        setField(service, "queryHelper", queryHelper);
+        setField(service, "notificationHelper", notificationHelper);
     }
 
     @Test
@@ -131,6 +161,7 @@ class ErpPurchaseInQualityServiceImplTest {
     @Test
     void assignChecker_shouldUpdateAssignedChecker() {
         qualityRef.set(quality(66L, 1L, ErpPurchaseInQualityStatusEnum.FIRST_CHECKING.getStatus()));
+        purchaseInRef.set(purchaseIn(1L, ErpAuditStatus.APPROVE.getStatus(), ErpQaStatusEnum.TO_INSPECT.getStatus()));
 
         service.assignChecker(1L, assignCheckerReq(66L, 188L));
 
