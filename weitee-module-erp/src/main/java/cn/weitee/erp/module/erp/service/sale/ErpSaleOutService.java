@@ -88,6 +88,21 @@ public interface ErpSaleOutService {
      */
     List<ErpSaleOutDO> getSaleOutListByOrderId(Long orderId);
 
+    /**
+     * 批量获得多个销售订单关联的出库单列表
+     *
+     * @param orderIds 销售订单编号集合
+     * @return 出库单列表（未按订单分组，调用方自行按 orderId 分组）
+     */
+    List<ErpSaleOutDO> getSaleOutListByOrderIds(Collection<Long> orderIds);
+
+    /**
+     * 汇总所有出库单的已收款金额（用于全局统计，DB 层 SUM）
+     *
+     * @return 已收款金额合计
+     */
+    BigDecimal getTotalReceivedAmount();
+
     // ==================== 销售出库项 ====================
 
     /**

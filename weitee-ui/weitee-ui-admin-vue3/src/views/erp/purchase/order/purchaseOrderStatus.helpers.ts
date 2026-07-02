@@ -68,8 +68,16 @@ const PURCHASE_ORDER_STATUS = {
   PROCESS: 10,
   APPROVE: 20,
   REJECT: 30,
+  CARRY_FORWARD: 40,
+  VOID: 50,
   FAILED: 60
 } as const
+
+const isEditableStatus = (status?: number | null, processInstanceId?: string | null) =>
+  status === PURCHASE_ORDER_STATUS.DRAFT ||
+  status === PURCHASE_ORDER_STATUS.REJECT ||
+  status === PURCHASE_ORDER_STATUS.FAILED ||
+  (status === PURCHASE_ORDER_STATUS.PROCESS && !processInstanceId)
 
 const isInboundCompleted = (totalCount: number, inCount: number) => totalCount > 0 && inCount >= totalCount
 
@@ -132,17 +140,9 @@ export function getPurchaseOrderRowActionDescriptor(
     input.status !== PURCHASE_ORDER_STATUS.APPROVE &&
     !isApprovalRunning
   const canEdit =
-    !isSaleTraceMode &&
-    (input.status === PURCHASE_ORDER_STATUS.DRAFT ||
-      input.status === PURCHASE_ORDER_STATUS.REJECT ||
-      input.status === PURCHASE_ORDER_STATUS.FAILED ||
-      (input.status === PURCHASE_ORDER_STATUS.PROCESS && !input.processInstanceId))
+    !isSaleTraceMode && isEditableStatus(input.status, input.processInstanceId)
   const canSubmit =
-    !isSaleTraceMode &&
-    (input.status === PURCHASE_ORDER_STATUS.DRAFT ||
-      input.status === PURCHASE_ORDER_STATUS.REJECT ||
-      input.status === PURCHASE_ORDER_STATUS.FAILED ||
-      (input.status === PURCHASE_ORDER_STATUS.PROCESS && !input.processInstanceId))
+    !isSaleTraceMode && isEditableStatus(input.status, input.processInstanceId)
   const canCancelApproval = !isSaleTraceMode && isApprovalRunning && isProcessStarter
   const canViewProcess = !!input.processInstanceId
   const canDelete = !isSaleTraceMode && input.status !== PURCHASE_ORDER_STATUS.APPROVE && !isApprovalRunning

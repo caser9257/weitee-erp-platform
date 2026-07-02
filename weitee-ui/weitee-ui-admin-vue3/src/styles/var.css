@@ -143,6 +143,12 @@
   --erp-disabled-50: var(--erp-slate-50);
   --erp-disabled-100: var(--erp-slate-100);
   --erp-disabled-600: var(--erp-slate-600);
+
+  /* 表面、阴影与浮层 */
+  --erp-surface-white: #fff;
+  --erp-shadow-sm: 0 1px 2px rgb(15 23 42 / 0.04);
+  --erp-shadow-md: 0 4px 10px rgb(15 23 42 / 0.08);
+  --erp-overlay-strong: rgb(15 23 42 / 0.34);
 }
 
 .dark {

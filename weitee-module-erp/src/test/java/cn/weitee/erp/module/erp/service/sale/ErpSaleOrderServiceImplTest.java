@@ -281,10 +281,10 @@ class ErpSaleOrderServiceImplTest {
                 .setProcessInstanceId("PI-OLD")
                 .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
 
-        invokeUpdateSaleOrderStatusByBpm(1L, "PI-NEW", ErpAuditStatus.REJECT.getStatus(), REJECT_REASON);
+        invokeUpdateSaleOrderStatusByBpm(1L, "PI-OLD", ErpAuditStatus.REJECT.getStatus(), REJECT_REASON);
 
         assertEquals(ErpAuditStatus.REJECT.getStatus(), lastUpdateObjRef.get().getStatus());
-        assertEquals("PI-NEW", lastUpdateObjRef.get().getProcessInstanceId());
+        assertEquals("PI-OLD", lastUpdateObjRef.get().getProcessInstanceId());
         assertEquals(REJECT_REASON, lastUpdateObjRef.get().getLastRejectReason());
         assertTrue(lastUpdateObjRef.get().getLastRejectTime() != null);
         assertEquals(1, rejectLogs.size());

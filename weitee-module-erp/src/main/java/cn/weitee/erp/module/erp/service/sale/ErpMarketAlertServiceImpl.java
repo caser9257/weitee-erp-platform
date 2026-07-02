@@ -182,6 +182,12 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
         Set<Long> orderIds = orders.stream().map(ErpSaleOrderDO::getId).collect(Collectors.toSet());
         Map<Long, BigDecimal> receivedAmountMap = erpFinanceReceiptService.getReceivedAmountByOrderIds(orderIds);
 
+        // 批量查询当天已存在的预警记录，构建 "ruleCode:orderId" 去重集合，避免循环内逐条 count（N+1）
+        Set<String> existingAlertKeys = erpMarketAlertRecordMapper
+                .selectListByTriggerDateAndOrderIds(today, orderIds).stream()
+                .map(r -> r.getRuleCode() + ":" + r.getOrderId())
+                .collect(Collectors.toSet());
+
         for (ErpSaleOrderDO order : orders) {
             // 2.1 检查收款逾期
             if (order.getDeliveryDate() != null && order.getDeliveryDate().isBefore(today)) {
@@ -192,7 +198,7 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
                     long daysOverdue = ChronoUnit.DAYS.between(order.getDeliveryDate(), today);
                     if (daysOverdue >= receiptThresholdDays) {
                         ErpMarketAlertRecordDO record = saveAlertRecord("RECEIPT_OVERDUE", "收款逾期预警", "WARNING",
-                                order, "订单交期已过" + daysOverdue + "天，仍未收到货款");
+                                order, "订单交期已过" + daysOverdue + "天，仍未收到货款", existingAlertKeys);
                         if (record != null) {
                             newAlertCount++;
                             pendingNotifications.add(record);
@@ -207,7 +213,7 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
                     long daysOverdue = ChronoUnit.DAYS.between(order.getDeliveryDate(), today);
                     if (daysOverdue >= deliveryThresholdDays) {
                         ErpMarketAlertRecordDO record = saveAlertRecord("DELIVERY_OVERDUE", "交期逾期预警", "DANGER",
-                                order, "订单交期已过" + daysOverdue + "天，但未出库");
+                                order, "订单交期已过" + daysOverdue + "天，但未出库", existingAlertKeys);
                         if (record != null) {
                             newAlertCount++;
                             pendingNotifications.add(record);
@@ -220,7 +226,7 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
             if ("BLOCKED".equals(order.getShipmentReleaseStatus())) {
                 String reason = order.getShipmentReleaseReason() != null ? order.getShipmentReleaseReason() : "未知原因";
                 ErpMarketAlertRecordDO record = saveAlertRecord("RELEASE_BLOCKED", "放行阻塞预警", "WARNING",
-                        order, "订单放行状态为阻塞：" + reason);
+                        order, "订单放行状态为阻塞：" + reason, existingAlertKeys);
                 if (record != null) {
                     newAlertCount++;
                     pendingNotifications.add(record);
@@ -235,7 +241,7 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
                             order.getUpdateTime().toLocalDate(), today);
                     if (daysSinceOutbound >= invoiceThresholdDays) {
                         ErpMarketAlertRecordDO record = saveAlertRecord("INVOICE_OVERDUE", "开票逾期预警", "WARNING",
-                                order, "出库后已过" + daysSinceOutbound + "天，仍未开票");
+                                order, "出库后已过" + daysSinceOutbound + "天，仍未开票", existingAlertKeys);
                         if (record != null) {
                             newAlertCount++;
                             pendingNotifications.add(record);
@@ -286,23 +292,23 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
     /**
      * 保存预警记录（去重：同一订单同一规则同一天只记录一次）
      *
+     * <p>去重改为基于调用方预取的内存集合 {@code existingAlertKeys}（key 形如 "ruleCode:orderId"），
+     * 避免在循环中对每个订单逐条 {@code selectCount} 造成的 N+1 查询；新增成功后同步写回集合，
+     * 保证同一批次内多规则命中同一订单也能正确去重。</p>
+     *
      * @return 新增的记录，如果已存在则返回 null
      */
     private ErpMarketAlertRecordDO saveAlertRecord(String ruleCode, String ruleName, String level,
-                                                    ErpSaleOrderDO order, String content) {
-        // 检查是否已存在同一天的同类型预警（使用 trigger_date 字段去重）
-        LocalDate today = LocalDate.now();
-        long existingCount = erpMarketAlertRecordMapper.selectCount(
-                new LambdaQueryWrapperX<ErpMarketAlertRecordDO>()
-                        .eq(ErpMarketAlertRecordDO::getRuleCode, ruleCode)
-                        .eq(ErpMarketAlertRecordDO::getOrderId, order.getId())
-                        .eq(ErpMarketAlertRecordDO::getTriggerDate, today)
-        );
-        if (existingCount > 0) {
+                                                    ErpSaleOrderDO order, String content,
+                                                    Set<String> existingAlertKeys) {
+        // 内存判重：同一天同一订单同一规则只记录一次
+        String dedupKey = ruleCode + ":" + order.getId();
+        if (existingAlertKeys.contains(dedupKey)) {
             return null; // 已存在，不重复记录
         }
 
         // 保存新记录
+        LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
         ErpMarketAlertRecordDO record = ErpMarketAlertRecordDO.builder()
                 .ruleCode(ruleCode)
@@ -317,6 +323,7 @@ public class ErpMarketAlertServiceImpl implements ErpMarketAlertService {
                 .handled(false)
                 .build();
         erpMarketAlertRecordMapper.insert(record);
+        existingAlertKeys.add(dedupKey); // 写回集合，保证同批次后续判重
 
         return record;
     }

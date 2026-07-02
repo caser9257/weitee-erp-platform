@@ -62,6 +62,7 @@ export const getRawRoute = (route: RouteLocationNormalized): RouteLocationNormal
 export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecordRaw[] => {
   const res: AppRouteRecordRaw[] = []
   for (const route of routes) {
+    const routeChildren = (route.children || []).filter(isRoutableMenu)
     // 1. 鐢熸垚 meta 鑿滃崟鍏冩暟鎹?
     const meta = {
       ...(route.meta || {}),
@@ -70,8 +71,7 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       hidden: !route.visible,
       noCache: !route.keepAlive,
       alwaysShow:
-        route.children &&
-        route.children.length > 0 &&
+        routeChildren.length > 0 &&
         (route.alwaysShow !== undefined ? route.alwaysShow : true)
     } as any
     // 鐗规畩閫昏緫锛氬鏋滃悗绔厤缃殑 MenuDO.component 鍖呭惈 ?锛屽垯琛ㄧず闇€瑕佷紶閫掑弬鏁?
@@ -98,7 +98,7 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       meta: meta
     }
     //澶勭悊椤剁骇闈炵洰褰曡矾鐢?
-    if (!route.children && route.parentId == 0 && route.component) {
+    if (!routeChildren.length && route.parentId == 0 && route.component) {
       data.component = Layout
       data.meta = {
         hidden: meta.hidden
@@ -120,9 +120,9 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
       data.children = [childrenData]
     } else {
       // 鐩綍
-      if (route.children?.length) {
+      if (routeChildren.length) {
         data.component = Layout
-        data.redirect = getRedirect(routePath, route.children)
+        data.redirect = getRedirect(routePath, routeChildren)
         // 澶栭摼
       } else if (isUrl(routePath)) {
         data = {
@@ -139,8 +139,8 @@ export const generateRoute = (routes: AppCustomRouteRecordRaw[]): AppRouteRecord
         const componentPath = resolveRouteComponentPath(route)
         data.component = resolveViewModule(componentPath, routePath)
       }
-      if (route.children) {
-        data.children = generateRoute(route.children)
+      if (routeChildren.length) {
+        data.children = generateRoute(routeChildren)
       }
     }
     res.push(data as AppRouteRecordRaw)
@@ -182,6 +182,10 @@ const resolveRouteComponentPath = (route: AppCustomRouteRecordRaw) => {
   }
 
   return 'common/menu-placeholder/index'
+}
+
+const isRoutableMenu = (route: AppCustomRouteRecordRaw) => {
+  return Boolean(route.path || route.component || route.children?.some(isRoutableMenu))
 }
 
 // 璺敱闄嶇骇

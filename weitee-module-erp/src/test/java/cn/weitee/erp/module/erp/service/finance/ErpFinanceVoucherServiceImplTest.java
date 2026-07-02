@@ -42,16 +42,12 @@ import org.springframework.context.ApplicationContext;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.sql.DataSource;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceVoucher.FINANCE_VOUCHER_SOURCE_TIME_REQUIRED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,9 +90,8 @@ class ErpFinanceVoucherServiceImplTest {
     }
 
     @Test
-    void generateVoucher_shouldRetryWhenVoucherNoDuplicate() throws Exception {
+    void generateVoucher_shouldPropagateDuplicateVoucherNoConflict() throws Exception {
         ErpFinanceVoucherServiceImpl service = newService();
-        AtomicReference<ErpFinanceVoucherDO> insertedVoucherRef = new AtomicReference<>();
         AtomicInteger insertCount = new AtomicInteger();
 
         mockValidatedLedger(service, 1L);
@@ -112,12 +107,9 @@ class ErpFinanceVoucherServiceImplTest {
                 return null;
             }
             if ("insert".equals(methodName)) {
-                ErpFinanceVoucherDO voucher = (ErpFinanceVoucherDO) args[0];
                 if (insertCount.incrementAndGet() == 1) {
                     throw new DuplicateKeyException("Duplicate entry '0-CWPZ20260526000001-\\x00' for key 'erp_finance_voucher.uk_finance_voucher_no'");
                 }
-                voucher.setId(88L);
-                insertedVoucherRef.set(voucher);
                 return 1;
             }
             return null;
@@ -137,15 +129,13 @@ class ErpFinanceVoucherServiceImplTest {
             }
         });
 
-        Long id = service.generateVoucher(new ErpFinanceVoucherGenerateReqVO()
+        assertThrows(DuplicateKeyException.class, () -> service.generateVoucher(new ErpFinanceVoucherGenerateReqVO()
                 .setLedgerId(1L)
                 .setBizType(ErpBizTypeEnum.FINANCE_EXPENSE.getType())
                 .setBizId(100L)
-                .setTemplateId(10L));
+                .setTemplateId(10L)));
 
-        assertEquals(88L, id);
-        assertEquals(2, insertCount.get());
-        assertEquals("CWPZ20260526000002", insertedVoucherRef.get().getVoucherNo());
+        assertEquals(1, insertCount.get());
     }
 
     @Test
@@ -1105,15 +1095,7 @@ class ErpFinanceVoucherServiceImplTest {
         AtomicReference<List<ErpFinanceVoucherDO>> updatedVoucherListRef = new AtomicReference<>(new ArrayList<>());
         AtomicReference<Boolean> entryDeletedRef = new AtomicReference<>(false);
         AtomicReference<ErpFinanceVoucherDO> insertedVoucherRef = new AtomicReference<>();
-        AtomicReference<String> queriedVoucherNoRef = new AtomicReference<>();
 
-        setField(service, "dualLedgerConfigService", createProxy(ErpFinanceDualLedgerConfigService.class, (methodName, args) -> {
-            if ("getEnabledDualLedgerConfig".equals(methodName)) {
-                return new ErpFinanceDualLedgerConfigDO().setBizType(11)
-                        .setExternalLedgerId(1L).setInternalLedgerId(2L);
-            }
-            return null;
-        }));
         mockLedgerWithDefault(service, 1L);
         setField(service, "voucherTemplateService", createProxy(ErpFinanceVoucherTemplateService.class, (methodName, args) -> {
             if ("validateVoucherTemplate".equals(methodName)) {
@@ -1167,37 +1149,8 @@ class ErpFinanceVoucherServiceImplTest {
             }
             return null;
         }));
-        setField(service, "dataSource", createProxy(DataSource.class, (methodName, args) -> {
-            if ("getConnection".equals(methodName)) {
-                return createProxy(Connection.class, (connectionMethod, connectionArgs) -> {
-                    if ("prepareStatement".equals(connectionMethod)) {
-                        return createProxy(PreparedStatement.class, (statementMethod, statementArgs) -> {
-                            if ("setString".equals(statementMethod)) {
-                                queriedVoucherNoRef.set((String) statementArgs[1]);
-                                return null;
-                            }
-                            if ("executeQuery".equals(statementMethod)) {
-                                int count = "CWPZ20260526000001".equals(queriedVoucherNoRef.get()) ? 1 : 0;
-                                return createProxy(ResultSet.class, (resultSetMethod, resultSetArgs) -> {
-                                    if ("next".equals(resultSetMethod)) {
-                                        return true;
-                                    }
-                                    if ("getLong".equals(resultSetMethod)) {
-                                        return (long) count;
-                                    }
-                                    return null;
-                                });
-                            }
-                            return null;
-                        });
-                    }
-                    return null;
-                });
-            }
-            return null;
-        }));
         setField(service, "noRedisDAO", new ErpNoRedisDAO() {
-            private int seq;
+            private int seq = 1;
 
             @Override
             public String generate(String prefix) {
@@ -1521,14 +1474,26 @@ class ErpFinanceVoucherServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        String actualFieldName = switch (fieldName) {
-            case "financeVoucherMapper" -> "erpFinanceVoucherMapper";
-            case "financeVoucherEntryMapper" -> "erpFinanceVoucherEntryMapper";
-            default -> fieldName;
-        };
-        Field field = target.getClass().getDeclaredField(actualFieldName);
+        Field field = findField(target.getClass(), fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
+        for (String candidate : resolveFieldCandidates(fieldName)) {
+            try {
+                return type.getDeclaredField(candidate);
+            } catch (NoSuchFieldException ignored) {
+                // try next candidate
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    private String[] resolveFieldCandidates(String fieldName) {
+        return fieldName.startsWith("erp")
+                ? new String[]{fieldName}
+                : new String[]{fieldName, "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1)};
     }
 
     @FunctionalInterface

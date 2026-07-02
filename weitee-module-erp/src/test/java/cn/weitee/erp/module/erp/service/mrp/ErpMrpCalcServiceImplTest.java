@@ -767,9 +767,32 @@ class ErpMrpCalcServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        Field field = findField(target.getClass(), fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
+        for (String candidate : resolveFieldCandidates(fieldName)) {
+            try {
+                return type.getDeclaredField(candidate);
+            } catch (NoSuchFieldException ignored) {
+                // try next candidate
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    private String[] resolveFieldCandidates(String fieldName) {
+        return switch (fieldName) {
+            case "demandMapper" -> new String[]{fieldName, "erpMrpDemandMapper"};
+            case "resultMapper" -> new String[]{fieldName, "erpMrpResultMapper"};
+            case "shortageMapper" -> new String[]{fieldName, "erpMrpShortageMapper"};
+            case "stockReservationMapper" -> new String[]{fieldName, "erpMrpStockReservationMapper"};
+            default -> fieldName.startsWith("erp")
+                    ? new String[]{fieldName}
+                    : new String[]{fieldName, "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1)};
+        };
     }
 
     private ErpBomItemDO buildBomItem(Long bomId, Long materialId, String usageQty, String supplyOwner, Boolean mrpEnableFlag) {

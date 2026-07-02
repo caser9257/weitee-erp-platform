@@ -7,17 +7,22 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpApStatementItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentAllocateDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpApStatementItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentMapper;
+import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.weitee.erp.module.erp.enums.ErpApStatementItemTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpApStatementStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErrorCodeConstants;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseOrderService;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -109,6 +114,14 @@ class ErpFinancePaymentServiceImplTest {
             }
             return null;
         }));
+        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(110L);
+            }
+            return null;
+        }));
+        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
+        setField(service, "redissonClient", createRedissonClientProxy());
 
         service.updateFinancePaymentStatus(3L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -188,6 +201,14 @@ class ErpFinancePaymentServiceImplTest {
             }
             return null;
         }));
+        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(120L);
+            }
+            return null;
+        }));
+        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
+        setField(service, "redissonClient", createRedissonClientProxy());
 
         service.updateFinancePaymentStatus(4L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -271,6 +292,13 @@ class ErpFinancePaymentServiceImplTest {
             }
             return null;
         }));
+        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(130L);
+            }
+            return null;
+        }));
+        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
 
         service.updateFinancePaymentStatus(5L, ErpAuditStatus.PROCESS.getStatus());
 
@@ -358,6 +386,13 @@ class ErpFinancePaymentServiceImplTest {
             }
             return null;
         }));
+        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(140L);
+            }
+            return null;
+        }));
+        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
 
         service.voidFinancePayment(6L, "业务取消，需要作废");
 
@@ -483,6 +518,20 @@ class ErpFinancePaymentServiceImplTest {
                     }
                     return handler.handle(method.getName(), args);
                 });
+    }
+
+    private RedissonClient createRedissonClientProxy() {
+        return createProxy(RedissonClient.class, (methodName, args) -> {
+            if ("getLock".equals(methodName)) {
+                return createProxy(RLock.class, (lockMethodName, lockArgs) -> switch (lockMethodName) {
+                    case "tryLock" -> true;
+                    case "isHeldByCurrentThread" -> true;
+                    case "unlock" -> null;
+                    default -> null;
+                });
+            }
+            return null;
+        });
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {

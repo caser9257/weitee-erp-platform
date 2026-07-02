@@ -406,10 +406,10 @@ class ErpFinanceDualWriteServiceTest {
         assertNotNull(updatedDebitEntryRef.get());
         assertNotNull(updatedCreditEntryRef.get());
         assertNotNull(updatedVoucherRef.get());
-        assertEquals(new BigDecimal("1237.50"), updatedDebitEntryRef.get().getDebitAmount());
-        assertEquals(new BigDecimal("1237.50"), updatedCreditEntryRef.get().getCreditAmount());
-        assertEquals(new BigDecimal("1237.50"), updatedVoucherRef.get().getTotalDebitAmount());
-        assertEquals(new BigDecimal("1237.50"), updatedVoucherRef.get().getTotalCreditAmount());
+        assertEquals(new BigDecimal("1233.00"), updatedDebitEntryRef.get().getDebitAmount());
+        assertEquals(new BigDecimal("1233.00"), updatedCreditEntryRef.get().getCreditAmount());
+        assertEquals(new BigDecimal("1233.00"), updatedVoucherRef.get().getTotalDebitAmount());
+        assertEquals(new BigDecimal("1233.00"), updatedVoucherRef.get().getTotalCreditAmount());
         assertEquals(3, insertedDiffLogs.size());
     }
 

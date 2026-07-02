@@ -23,7 +23,7 @@ class ErpPurchaseOrderRespVOTest {
     @Test
     @SuppressWarnings("unchecked")
     void exportItems_shouldRepeatSourceForEveryOrderItemRow() throws Exception {
-        ErpPurchaseOrderController controller = new ErpPurchaseOrderController();
+        ErpPurchaseOrderDisplayService displayService = new ErpPurchaseOrderDisplayService();
         ErpPurchaseOrderRespVO order = new ErpPurchaseOrderRespVO()
                 .setNo("PO20260515001")
                 .setSupplierName("华东紧固件供应商")
@@ -31,11 +31,11 @@ class ErpPurchaseOrderRespVOTest {
                 .setItems(List.of(
                         new ErpPurchaseOrderRespVO.Item().setProductName("六角螺丝 M6x20").setCount(new BigDecimal("1000")),
                         new ErpPurchaseOrderRespVO.Item().setProductName("平垫 6mm").setCount(new BigDecimal("1000"))));
-        Method method = ErpPurchaseOrderController.class.getDeclaredMethod("buildPurchaseOrderExportItemList", List.class);
+        Method method = ErpPurchaseOrderDisplayService.class.getDeclaredMethod("buildExportItemList", List.class);
         method.setAccessible(true);
 
         List<ErpPurchaseOrderExportItemRespVO> result =
-                (List<ErpPurchaseOrderExportItemRespVO>) method.invoke(controller, List.of(order));
+                (List<ErpPurchaseOrderExportItemRespVO>) method.invoke(displayService, List.of(order));
 
         assertEquals(2, result.size());
         assertEquals("SO20260501001", result.get(0).getSourceOrderNos());

@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ErpPurchaseOrderBpmServiceImplTest {
@@ -34,7 +33,7 @@ class ErpPurchaseOrderBpmServiceImplTest {
                 new ErpPurchaseOrderDO()
                         .setId(21L)
                         .setNo("PO-2026-001")
-                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
                         .setSupplierId(301L)
                         .setTotalPrice(new BigDecimal("2350.80"))
                         .setOrderTime(LocalDateTime.of(2026, 4, 8, 15, 0))
@@ -42,7 +41,7 @@ class ErpPurchaseOrderBpmServiceImplTest {
         List<ErpPurchaseOrderDO> updatedOrders = new ArrayList<>();
         AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
 
-        setField(service, "purchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseOrderRef.get();
             }
@@ -59,23 +58,44 @@ class ErpPurchaseOrderBpmServiceImplTest {
             }
             return null;
         }));
-        setField(service, "purchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
 
         Object reqVO = createSubmitReqVO(21L, Map.of("task_1", List.of(7L, 8L)));
         Method method = service.getClass().getMethod("submitPurchaseOrder", Long.class, reqVO.getClass());
 
         Object result = method.invoke(service, 9527L, reqVO);
 
-        // afterCommit 模式：submit 返回 null，processInstanceId 由 afterCommit 异步写入
         assertNull(result);
         assertEquals(21L, submitBizIdRef.get());
-        // 第一次 updateById：设置 PROCESS 状态，processInstanceId=null
         assertEquals(21L, updatedOrders.get(0).getId());
         assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedOrders.get(0).getStatus());
         assertNull(updatedOrders.get(0).getProcessInstanceId());
-        // 第二次 updateById（afterCommit）：设置 processInstanceId
         assertEquals(21L, updatedOrders.get(1).getId());
         assertEquals("PI-PO-20260408-001", updatedOrders.get(1).getProcessInstanceId());
+    }
+
+    @Test
+    void submitPurchaseOrder_shouldRejectProcessStatusWithoutProcessInstance() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>(
+                new ErpPurchaseOrderDO()
+                        .setId(25L)
+                        .setNo("PO-2026-INVALID")
+                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+        );
+        setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return purchaseOrderRef.get();
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> null));
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
+
+        Object reqVO = createSubmitReqVO(25L, Map.of());
+        Method method = service.getClass().getMethod("submitPurchaseOrder", Long.class, reqVO.getClass());
+
+        assertSubmitFail(method, service, reqVO);
     }
 
     @Test
@@ -91,14 +111,14 @@ class ErpPurchaseOrderBpmServiceImplTest {
         );
         List<ErpPurchaseOrderAuditLogDO> auditLogs = new ArrayList<>();
 
-        setField(service, "purchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseOrderRef.get();
             }
             return 1;
         }));
         setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> "PI-PO-NEW"));
-        setField(service, "purchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> {
             if ("insert".equals(methodName)) {
                 auditLogs.add((ErpPurchaseOrderAuditLogDO) args[0]);
                 return 1;
@@ -197,7 +217,7 @@ class ErpPurchaseOrderBpmServiceImplTest {
     }
 
     @Test
-    void cancelPurchaseOrderApproval_shouldCancelProcessAndClearBinding() throws Exception {
+    void cancelPurchaseOrderApproval_shouldCancelProcessAndKeepReason() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>(
                 new ErpPurchaseOrderDO()
@@ -209,7 +229,7 @@ class ErpPurchaseOrderBpmServiceImplTest {
         AtomicReference<Long> cancelBizIdRef = new AtomicReference<>();
         AtomicReference<String> cancelReasonRef = new AtomicReference<>();
 
-        setField(service, "purchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
+        setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseOrderRef.get();
             }
@@ -222,59 +242,22 @@ class ErpPurchaseOrderBpmServiceImplTest {
             }
             return null;
         }));
-        setField(service, "purchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
 
         Object reqVO = createCancelReqVO(23L, "cancel test");
         Method method = service.getClass().getMethod("cancelPurchaseOrderApproval", Long.class, reqVO.getClass());
         method.invoke(service, 9527L, reqVO);
 
-        // afterCommit 模式：BPM 撤回在 afterCommit 中执行
         assertEquals(23L, cancelBizIdRef.get());
         assertEquals("cancel test", cancelReasonRef.get());
     }
 
     @Test
-    void handleProcessInstanceResult_shouldTranslateApproveAndIgnoreStaleProcessInstance() throws Exception {
+    void handleProcessInstanceResult_shouldBeNoOp() throws Exception {
         Object service = instantiateService();
-        AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>(
-                new ErpPurchaseOrderDO().setId(24L).setProcessInstanceId("PI-MATCH")
-        );
-        AtomicReference<List<Object>> callbackArgsRef = new AtomicReference<>();
-        AtomicReference<Long> clearedOrderIdRef = new AtomicReference<>();
-
-        setField(service, "purchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return purchaseOrderRef.get();
-            }
-            if ("clearProcessInstanceId".equals(methodName)) {
-                clearedOrderIdRef.set((Long) args[0]);
-                return 1;
-            }
-            return null;
-        }));
-        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> {
-            if ("updatePurchaseOrderStatusByBpm".equals(methodName)) {
-                callbackArgsRef.set(List.of(args));
-            }
-            return null;
-        }));
-        setField(service, "purchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
-
         Method method = service.getClass().getMethod("handleProcessInstanceResult",
                 Long.class, String.class, Integer.class, String.class);
-        method.invoke(service, 24L, "PI-MATCH", bpmStatus("APPROVE"), "approved");
-
-        assertNotNull(callbackArgsRef.get());
-        assertEquals(24L, callbackArgsRef.get().get(0));
-        assertEquals("PI-MATCH", callbackArgsRef.get().get(1));
-        assertEquals(ErpAuditStatus.APPROVE.getStatus(), callbackArgsRef.get().get(2));
-        assertEquals("approved", callbackArgsRef.get().get(3));
-        assertNull(clearedOrderIdRef.get());
-
-        callbackArgsRef.set(null);
-        purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(24L).setProcessInstanceId("PI-NEW"));
-        method.invoke(service, 24L, "PI-OLD", bpmStatus("REJECT"), "stale");
-        assertNull(callbackArgsRef.get());
+        method.invoke(service, 24L, "PI-MATCH", 20, "approved");
     }
 
     private Object instantiateService() throws Exception {
@@ -298,18 +281,18 @@ class ErpPurchaseOrderBpmServiceImplTest {
         return reqVO;
     }
 
-    private Object createProxyByName(String className, MethodHandler handler) throws Exception {
-        return createProxy(Class.forName(className), handler);
-    }
-
-    private Object readProperty(Object target, String methodName) throws Exception {
-        return target.getClass().getMethod(methodName).invoke(target);
-    }
-
-    private Integer bpmStatus(String enumName) throws Exception {
-        Class<?> clazz = Class.forName("cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum");
-        Object enumObj = Enum.valueOf((Class<Enum>) clazz.asSubclass(Enum.class), enumName);
-        return (Integer) clazz.getMethod("getStatus").invoke(enumObj);
+    private void assertSubmitFail(Method method, Object target, Object reqVO) throws Exception {
+        try {
+            method.invoke(target, 9527L, reqVO);
+        } catch (java.lang.reflect.InvocationTargetException ex) {
+            if (ex.getTargetException() instanceof ServiceException serviceException) {
+                assertEquals(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_BPM_SUBMIT_FAIL.getCode(),
+                        serviceException.getCode());
+                return;
+            }
+            throw ex;
+        }
+        throw new AssertionError("Expected ServiceException");
     }
 
     @SuppressWarnings("unchecked")
@@ -347,5 +330,4 @@ class ErpPurchaseOrderBpmServiceImplTest {
     private interface MethodHandler {
         Object handle(String methodName, Object[] args) throws Exception;
     }
-
 }

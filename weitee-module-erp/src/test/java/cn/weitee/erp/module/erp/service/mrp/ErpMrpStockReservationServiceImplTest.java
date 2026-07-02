@@ -269,9 +269,31 @@ class ErpMrpStockReservationServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        Field field = findField(target.getClass(), fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
+        for (String candidate : resolveFieldCandidates(fieldName)) {
+            try {
+                return type.getDeclaredField(candidate);
+            } catch (NoSuchFieldException ignored) {
+                // try next candidate
+            }
+        }
+        throw new NoSuchFieldException(fieldName);
+    }
+
+    private String[] resolveFieldCandidates(String fieldName) {
+        return switch (fieldName) {
+            case "stockReservationMapper" -> new String[]{fieldName, "erpMrpStockReservationMapper"};
+            case "stockReservationSummaryMapper" -> new String[]{fieldName, "erpMrpStockReservationSummaryMapper"};
+            case "planMapper" -> new String[]{fieldName, "erpMrpPlanMapper"};
+            default -> fieldName.startsWith("erp")
+                    ? new String[]{fieldName}
+                    : new String[]{fieldName, "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1)};
+        };
     }
 
     @FunctionalInterface

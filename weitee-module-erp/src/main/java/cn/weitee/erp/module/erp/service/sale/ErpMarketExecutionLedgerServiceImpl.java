@@ -52,6 +52,9 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
     @Resource
     private ErpInvoiceService erpInvoiceService;
 
+    @Resource
+    private ErpSaleOutService erpSaleOutService;
+
     @Override
     public PageResult<MarketLedgerVO> getLedgerPage(MarketLedgerPageReqVO reqVO) {
         // 1. 查询销售订单
@@ -122,8 +125,8 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
     public MarketLedgerStatsVO getLedgerStats() {
         MarketLedgerStatsVO stats = new MarketLedgerStatsVO();
 
-        // 1. 查询总订单数和总金额
-        List<ErpSaleOrderDO> allOrders = erpSaleOrderMapper.selectList();
+        // 1. 查询总订单数和总金额（仅加载统计所需的精简列，避免全列全表扫描）
+        List<ErpSaleOrderDO> allOrders = erpSaleOrderMapper.selectListForMarketLedgerStats();
         stats.setTotalOrderCount(allOrders.size());
         BigDecimal totalAmount = allOrders.stream()
                 .map(ErpSaleOrderDO::getTotalPrice)
@@ -162,14 +165,8 @@ public class ErpMarketExecutionLedgerServiceImpl implements ErpMarketExecutionLe
                 .count();
         stats.setAbnormalOrderCount((int) abnormalCount);
 
-        // 7. 批量计算已收款金额（避免 N+1 查询）
-        Set<Long> orderIds = allOrders.stream()
-                .map(ErpSaleOrderDO::getId)
-                .filter(id -> id != null)
-                .collect(Collectors.toSet());
-        Map<Long, BigDecimal> receivedAmountMap = erpFinanceReceiptService.getReceivedAmountByOrderIds(orderIds);
-        BigDecimal totalReceivedAmount = receivedAmountMap.values().stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 7. 汇总已收款金额（DB 层 SUM，避免把所有订单的出库单载入内存）
+        BigDecimal totalReceivedAmount = erpSaleOutService.getTotalReceivedAmount();
         stats.setTotalReceivedAmount(totalReceivedAmount);
 
         return stats;

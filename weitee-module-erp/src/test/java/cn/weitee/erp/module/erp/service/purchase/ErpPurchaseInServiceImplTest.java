@@ -18,6 +18,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseSourceBatchDO;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
+import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteItemBatchMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
@@ -28,7 +29,9 @@ import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockInStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpQaStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
+import cn.weitee.erp.module.erp.service.finance.ErpFinanceAssetCandidateService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockBatchService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,10 +138,40 @@ class ErpPurchaseInServiceImplTest {
         closedStatementBizIdRef.set(null);
         approvedAllocateCountRef.set(0L);
         stockRecords.clear();
-        setField(service, "purchaseInMapper", createPurchaseInMapperProxy());
-        setField(service, "purchaseInItemMapper", createPurchaseInItemMapperProxy());
-        setField(service, "purchaseInStockExecuteMapper", createPurchaseInStockExecuteMapperProxy());
-        setField(service, "purchaseInStockExecuteItemMapper", createPurchaseInStockExecuteItemMapperProxy());
+
+        ErpPurchaseInMapper purchaseInMapper = createPurchaseInMapperProxy();
+        ErpPurchaseInItemMapper purchaseInItemMapper = createPurchaseInItemMapperProxy();
+        ErpPurchaseInStockExecuteMapper purchaseInStockExecuteMapper = createPurchaseInStockExecuteMapperProxy();
+        ErpPurchaseInStockExecuteItemMapper purchaseInStockExecuteItemMapper = createPurchaseInStockExecuteItemMapperProxy();
+        ErpPurchaseInStockExecuteItemBatchMapper purchaseInStockExecuteItemBatchMapper = createPurchaseInStockExecuteItemBatchMapperProxy();
+        ErpFinancePaymentAllocateMapper paymentAllocateMapper = createPaymentAllocateMapperProxy();
+        ErpStockRecordService stockRecordService = createStockRecordServiceProxy();
+        ErpStockBatchService stockBatchService = createStockBatchServiceProxy();
+        ErpPurchaseSourceBatchService purchaseSourceBatchService = createPurchaseSourceBatchServiceProxy();
+
+        ErpPurchaseInQueryHelper queryHelper = new ErpPurchaseInQueryHelper();
+        setField(queryHelper, "erpPurchaseInMapper", purchaseInMapper);
+        setField(queryHelper, "erpPurchaseInItemMapper", purchaseInItemMapper);
+        setField(queryHelper, "erpPurchaseInStockExecuteMapper", purchaseInStockExecuteMapper);
+        setField(queryHelper, "erpPurchaseInStockExecuteItemMapper", purchaseInStockExecuteItemMapper);
+        setField(queryHelper, "erpPurchaseInStockExecuteItemBatchMapper", purchaseInStockExecuteItemBatchMapper);
+        setField(queryHelper, "erpFinancePaymentAllocateMapper", paymentAllocateMapper);
+
+        ErpPurchaseInStockExecuteHelper stockExecuteHelper = new ErpPurchaseInStockExecuteHelper();
+        setField(stockExecuteHelper, "erpPurchaseInMapper", purchaseInMapper);
+        setField(stockExecuteHelper, "erpPurchaseInItemMapper", purchaseInItemMapper);
+        setField(stockExecuteHelper, "erpPurchaseInStockExecuteMapper", purchaseInStockExecuteMapper);
+        setField(stockExecuteHelper, "erpPurchaseInStockExecuteItemMapper", purchaseInStockExecuteItemMapper);
+        setField(stockExecuteHelper, "erpPurchaseInStockExecuteItemBatchMapper", purchaseInStockExecuteItemBatchMapper);
+        setField(stockExecuteHelper, "stockRecordService", stockRecordService);
+        setField(stockExecuteHelper, "stockBatchService", stockBatchService);
+        setField(stockExecuteHelper, "purchaseSourceBatchService", purchaseSourceBatchService);
+
+        setField(service, "erpPurchaseInMapper", purchaseInMapper);
+        setField(service, "erpPurchaseInItemMapper", purchaseInItemMapper);
+        setField(service, "erpPurchaseInStockExecuteMapper", purchaseInStockExecuteMapper);
+        setField(service, "erpPurchaseInStockExecuteItemMapper", purchaseInStockExecuteItemMapper);
+        setField(service, "erpPurchaseInStockExecuteItemBatchMapper", purchaseInStockExecuteItemBatchMapper);
         setField(service, "purchaseOrderService", createPurchaseOrderServiceProxy());
         setField(service, "productService", createProductServiceProxy());
         setField(service, "accountService", createAccountServiceProxy());
@@ -148,12 +181,13 @@ class ErpPurchaseInServiceImplTest {
                 return generatedNoRef.get();
             }
         });
-        setField(service, "stockRecordService", createStockRecordServiceProxy());
         setField(service, "purchaseInQualityService", createPurchaseInQualityServiceProxy());
-        setField(service, "purchaseSourceBatchService", createPurchaseSourceBatchServiceProxy());
+        setField(service, "purchaseSourceBatchService", purchaseSourceBatchService);
         setField(service, "apStatementService", createApStatementServiceProxy());
         setField(service, "financeBizHookService", createFinanceBizHookServiceProxy());
-        setField(service, "paymentAllocateMapper", createPaymentAllocateMapperProxy());
+        setField(service, "financeAssetCandidateService", createFinanceAssetCandidateServiceProxy());
+        setField(service, "queryHelper", queryHelper);
+        setField(service, "stockExecuteHelper", stockExecuteHelper);
     }
 
     @Test
@@ -194,6 +228,7 @@ class ErpPurchaseInServiceImplTest {
         assertEquals("CGRK20260409000001", insertedPurchaseInRef.get().getNo());
         assertEquals("CGDD-001", insertedPurchaseInRef.get().getOrderNo());
         assertEquals(201L, insertedPurchaseInRef.get().getSupplierId());
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), insertedPurchaseInRef.get().getStatus());
         assertEquals(1, insertedPurchaseInItemsRef.get().size());
         assertEquals(new BigDecimal("3"), insertedPurchaseInItemsRef.get().get(0).getCount());
     }
@@ -446,6 +481,9 @@ class ErpPurchaseInServiceImplTest {
             if ("selectById".equals(methodName)) {
                 return purchaseInRef.get();
             }
+            if ("selectByIds".equals(methodName)) {
+                return purchaseInRef.get() == null ? List.of() : List.of(purchaseInRef.get());
+            }
             if ("selectByNo".equals(methodName)) {
                 return null;
             }
@@ -542,6 +580,36 @@ class ErpPurchaseInServiceImplTest {
             }
             if ("selectListByExecuteIds".equals(methodName)) {
                 return purchaseInStockExecuteItemsRef.get();
+            }
+            return null;
+        });
+    }
+
+    private ErpPurchaseInStockExecuteItemBatchMapper createPurchaseInStockExecuteItemBatchMapperProxy() {
+        return createProxy(ErpPurchaseInStockExecuteItemBatchMapper.class, (methodName, args) -> {
+            if ("insert".equals(methodName)) {
+                return 1;
+            }
+            if ("selectListByExecuteItemIds".equals(methodName)) {
+                return List.of();
+            }
+            return null;
+        });
+    }
+
+    private ErpStockBatchService createStockBatchServiceProxy() {
+        return createProxy(ErpStockBatchService.class, (methodName, args) -> {
+            if ("createOrIncreaseBatch".equals(methodName)) {
+                cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchInboundReqBO reqBO =
+                        (cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchInboundReqBO) args[0];
+                return new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO()
+                        .setId(1001L)
+                        .setProductId(reqBO.getProductId())
+                        .setWarehouseId(reqBO.getWarehouseId())
+                        .setBatchNo(reqBO.getBatchNo());
+            }
+            if ("decreaseBatch".equals(methodName)) {
+                return null;
             }
             return null;
         });
@@ -656,6 +724,10 @@ class ErpPurchaseInServiceImplTest {
             }
             return null;
         });
+    }
+
+    private ErpFinanceAssetCandidateService createFinanceAssetCandidateServiceProxy() {
+        return createProxy(ErpFinanceAssetCandidateService.class, (methodName, args) -> null);
     }
 
     private ErpFinancePaymentAllocateMapper createPaymentAllocateMapperProxy() {

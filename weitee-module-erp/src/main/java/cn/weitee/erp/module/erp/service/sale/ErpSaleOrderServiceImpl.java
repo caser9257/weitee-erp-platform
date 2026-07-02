@@ -326,6 +326,9 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void updateSaleOrderStatusByBpm(Long orderId, String processInstanceId, Integer status, String reason) {
         ErpSaleOrderDO saleOrder = validateSaleOrderExists(orderId);
+        if (!StrUtil.equals(processInstanceId, saleOrder.getProcessInstanceId())) {
+            throw exception(SALE_ORDER_STATUS_UPDATE_ILLEGAL);
+        }
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         boolean reject = ErpAuditStatus.REJECT.getStatus().equals(status);
         String actionType = resolveAuditActionType(saleOrder.getStatus(), status);

@@ -1,27 +1,18 @@
 package cn.weitee.erp.module.erp.service.purchase;
 
 import cn.weitee.erp.framework.common.exception.ServiceException;
-import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderBatchUpdateReqVO;
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.order.ErpPurchaseOrderBatchUpdateResultVO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpPurchaseSuggestDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderAuditLogDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderDO;
-import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseOrderRejectLogDO;
-import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpPurchaseSuggestMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderAuditLogMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderRejectLogMapper;
-import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseOrderAuditActionTypeConstants;
-import cn.weitee.erp.module.erp.enums.mrp.ErpMrpSuggestStatusEnum;
 import cn.weitee.erp.module.erp.framework.event.PurchaseOrderChangedEvent;
-import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
-import cn.weitee.erp.module.erp.service.product.ErpProductService;
-import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
@@ -31,16 +22,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_DELETE_FAIL_APPROVE;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_NOT_APPROVE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_UPDATE_FAIL_APPROVE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_UPDATE_FAIL_PROCESSING;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_NOT_APPROVE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -48,18 +38,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ErpPurchaseOrderServiceImplTest {
 
-    private static final String REJECT_REASON = "供应商信息不完整";
+    private static final String REJECT_REASON = "supplier info missing";
 
     private final AtomicReference<ErpPurchaseOrderDO> purchaseOrderRef = new AtomicReference<>();
     private final AtomicReference<Integer> updateCountRef = new AtomicReference<>(1);
     private final AtomicReference<ErpPurchaseOrderDO> lastUpdateObjRef = new AtomicReference<>();
-    private final AtomicReference<ErpPurchaseOrderDO> insertedPurchaseOrderRef = new AtomicReference<>();
-    private final List<ErpPurchaseOrderItemDO> insertedPurchaseOrderItems = new ArrayList<>();
     private final List<ErpPurchaseOrderRejectLogDO> rejectLogs = new ArrayList<>();
     private final List<ErpPurchaseOrderAuditLogDO> auditLogs = new ArrayList<>();
-    private final List<ErpPurchaseSuggestDO> purchaseSuggests = new ArrayList<>();
-    private final List<ErpPurchaseSuggestDO> updatedSuggests = new ArrayList<>();
-    private final List<Object> publishedEvents = new ArrayList<>();
+    private final List<PurchaseOrderChangedEvent> publishedEvents = new ArrayList<>();
+    private final List<Long> deletedOrderIds = new ArrayList<>();
+    private final List<Long> deletedOrderItemIds = new ArrayList<>();
 
     private ErpPurchaseOrderServiceImpl purchaseOrderService;
 
@@ -69,35 +57,28 @@ class ErpPurchaseOrderServiceImplTest {
         purchaseOrderRef.set(null);
         updateCountRef.set(1);
         lastUpdateObjRef.set(null);
-        insertedPurchaseOrderRef.set(null);
-        insertedPurchaseOrderItems.clear();
         rejectLogs.clear();
         auditLogs.clear();
-        purchaseSuggests.clear();
-        updatedSuggests.clear();
         publishedEvents.clear();
-        setField(purchaseOrderService, "purchaseOrderMapper", createPurchaseOrderMapperProxy());
-        setField(purchaseOrderService, "purchaseOrderRejectLogMapper", createRejectLogMapperProxy());
-        setField(purchaseOrderService, "purchaseOrderAuditLogMapper", createAuditLogMapperProxy());
-        setField(purchaseOrderService, "purchaseOrderItemMapper", createPurchaseOrderItemMapperProxy());
-        setField(purchaseOrderService, "purchaseSuggestMapper", createPurchaseSuggestMapperProxy());
-        setField(purchaseOrderService, "noRedisDAO", new ErpNoRedisDAO() {
-            @Override
-            public String generate(String prefix) {
-                return "PO-TEST-001";
+        deletedOrderIds.clear();
+        deletedOrderItemIds.clear();
+
+        setField(purchaseOrderService, "erpPurchaseOrderMapper", createPurchaseOrderMapperProxy());
+        setField(purchaseOrderService, "erpPurchaseOrderRejectLogMapper", createRejectLogMapperProxy());
+        setField(purchaseOrderService, "erpPurchaseOrderAuditLogMapper", createAuditLogMapperProxy());
+        setField(purchaseOrderService, "erpPurchaseOrderItemMapper", createProxy(ErpPurchaseOrderItemMapper.class, (methodName, args) -> {
+            if ("deleteByOrderId".equals(methodName)) {
+                deletedOrderItemIds.add((Long) args[0]);
+                return 1;
             }
-        });
-        setField(purchaseOrderService, "productService", createProxy(ErpProductService.class, (methodName, args) -> {
-            if ("validProductList".equals(methodName)) {
-                return List.of(new cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO()
-                        .setId(201L)
-                        .setUnitId(2001L));
+            return 1;
+        }));
+        setField(purchaseOrderService, "eventPublisher", createProxy(ApplicationEventPublisher.class, (methodName, args) -> {
+            if ("publishEvent".equals(methodName)) {
+                publishedEvents.add((PurchaseOrderChangedEvent) args[0]);
             }
             return null;
         }));
-        setField(purchaseOrderService, "supplierService", createProxy(ErpSupplierService.class, (methodName, args) -> null));
-        setField(purchaseOrderService, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
-        setField(purchaseOrderService, "eventPublisher", createEventPublisherProxy());
     }
 
     @Test
@@ -127,21 +108,19 @@ class ErpPurchaseOrderServiceImplTest {
     }
 
     @Test
-    void deletePurchaseOrder_shouldPublishCancelEventWhenNonApprovedOrderDeleted() {
+    void deletePurchaseOrder_shouldDeleteOrderAndPublishCancelledEvent() {
         purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(1L).setNo("PO-001")
                 .setStatus(ErpAuditStatus.REJECT.getStatus())
                 .setInCount(BigDecimal.ZERO)
                 .setReturnCount(BigDecimal.ZERO));
-        purchaseSuggests.add(new ErpPurchaseSuggestDO().setId(9001L)
-                .setConvertPurchaseOrderId(1L)
-                .setStatus(ErpMrpSuggestStatusEnum.CONVERTED.getStatus()));
 
         purchaseOrderService.deletePurchaseOrder(Collections.singletonList(1L));
 
+        assertEquals(Collections.singletonList(1L), deletedOrderIds);
+        assertEquals(Collections.singletonList(1L), deletedOrderItemIds);
         assertEquals(1, publishedEvents.size());
-        PurchaseOrderChangedEvent event = assertInstanceOf(PurchaseOrderChangedEvent.class, publishedEvents.get(0));
-        assertEquals(1L, event.getPurchaseOrderId());
-        assertEquals(PurchaseOrderChangedEvent.ChangeType.ORDER_CANCELLED, event.getChangeType());
+        assertEquals(1L, publishedEvents.get(0).getPurchaseOrderId());
+        assertEquals(PurchaseOrderChangedEvent.ChangeType.ORDER_CANCELLED, publishedEvents.get(0).getChangeType());
     }
 
     @Test
@@ -165,12 +144,12 @@ class ErpPurchaseOrderServiceImplTest {
                 .setReturnCount(BigDecimal.ZERO));
 
         ErpPurchaseOrderBatchUpdateResultVO result = purchaseOrderService.updatePurchaseOrderBatch(
-                createBatchReqVO("remark", "补充备注"));
+                createBatchReqVO("remark", "extra remark"));
 
         assertEquals(1, result.getSuccessCount());
         assertEquals(0, result.getFailureCount());
         assertEquals(Collections.singletonList(1L), result.getUpdatedIds());
-        assertEquals("补充备注", lastUpdateObjRef.get().getRemark());
+        assertEquals("extra remark", lastUpdateObjRef.get().getRemark());
     }
 
     @Test
@@ -181,7 +160,7 @@ class ErpPurchaseOrderServiceImplTest {
                 .setReturnCount(BigDecimal.ZERO));
 
         ServiceException ex = assertThrows(ServiceException.class,
-                () -> purchaseOrderService.updatePurchaseOrderBatch(createBatchReqVO("remark", "补充备注")));
+                () -> purchaseOrderService.updatePurchaseOrderBatch(createBatchReqVO("remark", "extra remark")));
 
         assertEquals(PURCHASE_ORDER_UPDATE_FAIL_APPROVE.getCode(), ex.getCode());
     }
@@ -195,7 +174,7 @@ class ErpPurchaseOrderServiceImplTest {
                 .setReturnCount(BigDecimal.ZERO));
 
         ServiceException ex = assertThrows(ServiceException.class,
-                () -> purchaseOrderService.updatePurchaseOrderBatch(createBatchReqVO("remark", "补充备注")));
+                () -> purchaseOrderService.updatePurchaseOrderBatch(createBatchReqVO("remark", "extra remark")));
 
         assertEquals(PURCHASE_ORDER_UPDATE_FAIL_PROCESSING.getCode(), ex.getCode());
     }
@@ -205,14 +184,14 @@ class ErpPurchaseOrderServiceImplTest {
         purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(2L).setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId("PI-CANCEL"));
 
-        invokeRollbackPurchaseOrderStatusToDraftByBpm(2L, "PI-CANCEL", "撤回审批");
+        invokeRollbackPurchaseOrderStatusToDraftByBpm(2L, "PI-CANCEL", "cancel approval");
 
         assertEquals(ErpAuditStatus.DRAFT.getStatus(), lastUpdateObjRef.get().getStatus());
         assertEquals(null, lastUpdateObjRef.get().getProcessInstanceId());
         assertEquals(1, auditLogs.size());
         assertEquals(ErpAuditStatus.PROCESS.getStatus(), auditLogs.get(0).getBeforeStatus());
         assertEquals(ErpAuditStatus.DRAFT.getStatus(), auditLogs.get(0).getAfterStatus());
-        assertEquals("撤回审批", auditLogs.get(0).getReason());
+        assertEquals("cancel approval", auditLogs.get(0).getReason());
     }
 
     @Test
@@ -224,7 +203,7 @@ class ErpPurchaseOrderServiceImplTest {
         RuntimeException ex = assertThrows(RuntimeException.class,
                 () -> {
                     try {
-                        invokeRollbackPurchaseOrderStatusToDraftByBpm(3L, "PI-DRAFT", "撤回失败");
+                        invokeRollbackPurchaseOrderStatusToDraftByBpm(3L, "PI-DRAFT", "cancel failed");
                     } catch (Exception e) {
                         throw unwrap(e);
                     }
@@ -254,21 +233,16 @@ class ErpPurchaseOrderServiceImplTest {
             if ("selectById".equals(methodName)) {
                 return purchaseOrderRef.get();
             }
-            if ("selectByNo".equals(methodName)) {
-                return null;
-            }
             if ("selectByIds".equals(methodName)) {
                 return purchaseOrderRef.get() == null ? Collections.emptyList() : Collections.singletonList(purchaseOrderRef.get());
-            }
-            if ("insert".equals(methodName)) {
-                ErpPurchaseOrderDO purchaseOrder = (ErpPurchaseOrderDO) args[0];
-                purchaseOrder.setId(88L);
-                insertedPurchaseOrderRef.set(purchaseOrder);
-                return 1;
             }
             if ("updateById".equals(methodName) || "updateByIdAndStatus".equals(methodName)) {
                 lastUpdateObjRef.set((ErpPurchaseOrderDO) ("updateById".equals(methodName) ? args[0] : args[2]));
                 return updateCountRef.get();
+            }
+            if ("deleteById".equals(methodName)) {
+                deletedOrderIds.add((Long) args[0]);
+                return 1;
             }
             if ("resetStatusToDraftByBpm".equals(methodName)) {
                 lastUpdateObjRef.set(new ErpPurchaseOrderDO()
@@ -276,20 +250,6 @@ class ErpPurchaseOrderServiceImplTest {
                         .setStatus(ErpAuditStatus.DRAFT.getStatus())
                         .setProcessInstanceId(null));
                 return updateCountRef.get();
-            }
-            return 1;
-        });
-    }
-
-    private ErpPurchaseOrderItemMapper createPurchaseOrderItemMapperProxy() {
-        return createProxy(ErpPurchaseOrderItemMapper.class, (methodName, args) -> {
-            if ("insertBatch".equals(methodName)) {
-                insertedPurchaseOrderItems.clear();
-                insertedPurchaseOrderItems.addAll((List<ErpPurchaseOrderItemDO>) args[0]);
-                return 1;
-            }
-            if ("selectListByOrderId".equals(methodName)) {
-                return Collections.emptyList();
             }
             return 1;
         });
@@ -321,28 +281,6 @@ class ErpPurchaseOrderServiceImplTest {
         });
     }
 
-    private ErpPurchaseSuggestMapper createPurchaseSuggestMapperProxy() {
-        return createProxy(ErpPurchaseSuggestMapper.class, (methodName, args) -> {
-            if ("selectListByConvertPurchaseOrderIds".equals(methodName)) {
-                return purchaseSuggests;
-            }
-            if ("updateById".equals(methodName)) {
-                updatedSuggests.add((ErpPurchaseSuggestDO) args[0]);
-                return 1;
-            }
-            return null;
-        });
-    }
-
-    private ApplicationEventPublisher createEventPublisherProxy() {
-        return createProxy(ApplicationEventPublisher.class, (methodName, args) -> {
-            if ("publishEvent".equals(methodName)) {
-                publishedEvents.add(args[0]);
-            }
-            return null;
-        });
-    }
-
     @SuppressWarnings("unchecked")
     private <T> T createProxy(Class<T> type, MethodHandler handler) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},
@@ -363,30 +301,9 @@ class ErpPurchaseOrderServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        String actualFieldName = switch (fieldName) {
-            case "purchaseOrderMapper" -> "erpPurchaseOrderMapper";
-            case "purchaseOrderRejectLogMapper" -> "erpPurchaseOrderRejectLogMapper";
-            case "purchaseOrderAuditLogMapper" -> "erpPurchaseOrderAuditLogMapper";
-            case "purchaseOrderItemMapper" -> "erpPurchaseOrderItemMapper";
-            case "purchaseSuggestMapper" -> "erpPurchaseSuggestMapper";
-            default -> fieldName;
-        };
-        Field field = target.getClass().getDeclaredField(actualFieldName);
+        Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
-    }
-
-    private ErpPurchaseOrderSaveReqVO buildCreateReqVO() {
-        ErpPurchaseOrderSaveReqVO reqVO = new ErpPurchaseOrderSaveReqVO();
-        reqVO.setSupplierId(2L);
-        reqVO.setOrderTime(LocalDateTime.of(2026, 7, 1, 12, 30));
-        ErpPurchaseOrderSaveReqVO.Item item = new ErpPurchaseOrderSaveReqVO.Item();
-        item.setProductId(201L);
-        item.setProductUnitId(2001L);
-        item.setCount(BigDecimal.ONE);
-        item.setProductPrice(new BigDecimal("20.00"));
-        reqVO.setItems(List.of(item));
-        return reqVO;
     }
 
     private void invokeUpdatePurchaseOrderStatusByBpm(Long id, String processInstanceId, Integer status, String reason)

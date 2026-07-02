@@ -71,6 +71,8 @@ export interface PurchaseOrderVO {
   discountPercent?: number
   discountPrice?: number
   depositPrice?: number
+  paymentPrice?: number
+  paymentStatus?: number
   fileUrl?: string
   remark?: string
   creator?: string
