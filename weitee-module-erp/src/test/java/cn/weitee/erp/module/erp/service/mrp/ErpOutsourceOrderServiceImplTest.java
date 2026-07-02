@@ -23,6 +23,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceReturnBatchDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpOutsourceFeeMapper;
@@ -42,6 +43,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockBatchService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -586,6 +588,7 @@ class ErpOutsourceOrderServiceImplTest {
             }
             return null;
         }));
+        setDefaultStockService(service);
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
         setField(service, "noRedisDAO", new ErpNoRedisDAO() {
             @Override
@@ -1269,6 +1272,15 @@ class ErpOutsourceOrderServiceImplTest {
             return "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
         }
         return fieldName;
+    }
+
+    private void setDefaultStockService(ErpOutsourceOrderServiceImpl service) throws Exception {
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("getStock".equals(methodName)) {
+                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            return null;
+        }));
     }
 
     @FunctionalInterface

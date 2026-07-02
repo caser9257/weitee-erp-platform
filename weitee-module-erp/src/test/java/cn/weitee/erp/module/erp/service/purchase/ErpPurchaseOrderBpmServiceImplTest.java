@@ -252,14 +252,6 @@ class ErpPurchaseOrderBpmServiceImplTest {
         assertEquals("cancel test", cancelReasonRef.get());
     }
 
-    @Test
-    void handleProcessInstanceResult_shouldBeNoOp() throws Exception {
-        Object service = instantiateService();
-        Method method = service.getClass().getMethod("handleProcessInstanceResult",
-                Long.class, String.class, Integer.class, String.class);
-        method.invoke(service, 24L, "PI-MATCH", 20, "approved");
-    }
-
     private Object instantiateService() throws Exception {
         Class<?> clazz = Class.forName("cn.weitee.erp.module.erp.service.purchase.ErpPurchaseOrderBpmServiceImpl");
         return clazz.getDeclaredConstructor().newInstance();

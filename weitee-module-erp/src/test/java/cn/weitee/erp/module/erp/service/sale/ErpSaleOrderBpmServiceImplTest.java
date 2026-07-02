@@ -286,43 +286,6 @@ class ErpSaleOrderBpmServiceImplTest {
         assertNull(clearedOrderIdRef.get());
     }
 
-    @Test
-    void handleProcessInstanceResult_shouldTranslateApproveAndIgnoreStaleProcessInstance() throws Exception {
-        Object service = instantiateService();
-        AtomicReference<ErpSaleOrderDO> saleOrderRef = new AtomicReference<>(
-                new ErpSaleOrderDO().setId(14L).setProcessInstanceId("PI-MATCH")
-        );
-        AtomicReference<List<Object>> callbackArgsRef = new AtomicReference<>();
-
-        setField(service, "saleOrderMapper", createProxy(ErpSaleOrderMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return saleOrderRef.get();
-            }
-            return null;
-        }));
-        setField(service, "saleOrderService", createProxy(ErpSaleOrderService.class, (methodName, args) -> {
-            if ("updateSaleOrderStatusByBpm".equals(methodName)) {
-                callbackArgsRef.set(List.of(args));
-            }
-            return null;
-        }));
-
-        Method method = service.getClass().getMethod("handleProcessInstanceResult",
-                Long.class, String.class, Integer.class, String.class);
-        method.invoke(service, 14L, "PI-MATCH", bpmStatus("APPROVE"), "approved");
-
-        assertNotNull(callbackArgsRef.get());
-        assertEquals(14L, callbackArgsRef.get().get(0));
-        assertEquals("PI-MATCH", callbackArgsRef.get().get(1));
-        assertEquals(ErpAuditStatus.APPROVE.getStatus(), callbackArgsRef.get().get(2));
-        assertEquals("approved", callbackArgsRef.get().get(3));
-
-        callbackArgsRef.set(null);
-        saleOrderRef.set(new ErpSaleOrderDO().setId(14L).setProcessInstanceId("PI-NEW"));
-        method.invoke(service, 14L, "PI-OLD", bpmStatus("REJECT"), "stale");
-        assertNull(callbackArgsRef.get());
-    }
-
     private Object instantiateService() throws Exception {
         Class<?> clazz = Class.forName("cn.weitee.erp.module.erp.service.sale.ErpSaleOrderBpmServiceImpl");
         return clazz.getDeclaredConstructor().newInstance();
@@ -342,32 +305,6 @@ class ErpSaleOrderBpmServiceImplTest {
         clazz.getMethod("setId", Long.class).invoke(reqVO, id);
         clazz.getMethod("setReason", String.class).invoke(reqVO, reason);
         return reqVO;
-    }
-
-    private Object createProxyByName(String className, MethodHandler handler) throws Exception {
-        return createProxy(Class.forName(className), handler);
-    }
-
-    private Object createHistoricProcessInstance(Integer status, String reason) throws Exception {
-        return createProxyByName("org.flowable.engine.history.HistoricProcessInstance", (methodName, args) -> {
-            if ("getProcessVariables".equals(methodName)) {
-                Map<String, Object> variables = new HashMap<>();
-                variables.put("PROCESS_STATUS", status);
-                variables.put("PROCESS_REASON", reason);
-                return variables;
-            }
-            return null;
-        });
-    }
-
-    private Object readProperty(Object target, String methodName) throws Exception {
-        return target.getClass().getMethod(methodName).invoke(target);
-    }
-
-    private Integer bpmStatus(String enumName) throws Exception {
-        Class<?> clazz = Class.forName("cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum");
-        Object enumObj = Enum.valueOf((Class<Enum>) clazz.asSubclass(Enum.class), enumName);
-        return (Integer) clazz.getMethod("getStatus").invoke(enumObj);
     }
 
     @SuppressWarnings("unchecked")

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ErpMrpSuggestServiceImplTest {
 
@@ -30,6 +31,9 @@ class ErpMrpSuggestServiceImplTest {
     private final AtomicReference<ErpPurchaseOrderSaveReqVO> createdPurchaseOrderRef = new AtomicReference<>();
     private final AtomicReference<Long> completedMcTaskProjectIdRef = new AtomicReference<>();
     private final AtomicReference<String> completedMcTaskRemarkRef = new AtomicReference<>();
+    private final AtomicReference<List<Long>> convertedPurchaseSuggestIdsRef = new AtomicReference<>(List.of());
+    private final AtomicReference<Integer> convertedPurchaseSuggestOldStatusRef = new AtomicReference<>();
+    private final AtomicReference<ErpPurchaseSuggestDO> convertedPurchaseSuggestUpdateRef = new AtomicReference<>();
     private final List<ErpPurchaseSuggestDO> updatedSuggests = new ArrayList<>();
 
     private ErpMrpSuggestServiceImpl suggestService;
@@ -41,6 +45,9 @@ class ErpMrpSuggestServiceImplTest {
         createdPurchaseOrderRef.set(null);
         completedMcTaskProjectIdRef.set(null);
         completedMcTaskRemarkRef.set(null);
+        convertedPurchaseSuggestIdsRef.set(List.of());
+        convertedPurchaseSuggestOldStatusRef.set(null);
+        convertedPurchaseSuggestUpdateRef.set(null);
         updatedSuggests.clear();
 
         setField(suggestService, "purchaseSuggestMapper", createProxy(ErpPurchaseSuggestMapper.class, (methodName, args) -> {
@@ -50,6 +57,12 @@ class ErpMrpSuggestServiceImplTest {
             if ("updateById".equals(methodName)) {
                 updatedSuggests.add((ErpPurchaseSuggestDO) args[0]);
                 return 1;
+            }
+            if ("updateStatusByIdsAndStatus".equals(methodName)) {
+                convertedPurchaseSuggestIdsRef.set((List<Long>) args[0]);
+                convertedPurchaseSuggestOldStatusRef.set((Integer) args[1]);
+                convertedPurchaseSuggestUpdateRef.set((ErpPurchaseSuggestDO) args[2]);
+                return ((List<?>) args[0]).size();
             }
             if ("selectCountByProjectIdAndStatus".equals(methodName)) {
                 return 0L;
@@ -110,7 +123,10 @@ class ErpMrpSuggestServiceImplTest {
         assertEquals(1002L, createdPurchaseOrderRef.get().getItems().get(1).getProjectId());
         assertEquals(new BigDecimal("3"), createdPurchaseOrderRef.get().getItems().get(1).getCount());
         assertEquals(2, updatedSuggests.size());
-        assertEquals(ErpMrpSuggestStatusEnum.CONVERTED.getStatus(), updatedSuggests.get(0).getStatus());
+        assertEquals(List.of(1L, 2L), convertedPurchaseSuggestIdsRef.get());
+        assertEquals(ErpMrpSuggestStatusEnum.CONFIRMED.getStatus(), convertedPurchaseSuggestOldStatusRef.get());
+        assertNotNull(convertedPurchaseSuggestUpdateRef.get());
+        assertEquals(ErpMrpSuggestStatusEnum.CONVERTED.getStatus(), convertedPurchaseSuggestUpdateRef.get().getStatus());
         assertEquals(8001L, updatedSuggests.get(0).getConvertPurchaseOrderId());
     }
 

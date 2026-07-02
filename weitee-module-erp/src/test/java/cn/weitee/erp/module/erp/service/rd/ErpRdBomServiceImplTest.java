@@ -416,9 +416,24 @@ class ErpRdBomServiceImplTest {
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
-        Field field = target.getClass().getDeclaredField(fieldName);
+        Field field = getDeclaredField(target, fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private Field getDeclaredField(Object target, String fieldName) throws NoSuchFieldException {
+        try {
+            return target.getClass().getDeclaredField(fieldName);
+        } catch (NoSuchFieldException ex) {
+            return target.getClass().getDeclaredField(mapFieldName(fieldName));
+        }
+    }
+
+    private String mapFieldName(String fieldName) {
+        if (fieldName.endsWith("Mapper")) {
+            return "erp" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        }
+        return fieldName;
     }
 
 }
