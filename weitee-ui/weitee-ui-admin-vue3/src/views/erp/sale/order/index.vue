@@ -1,6 +1,5 @@
 <template>
   <div class="sale-order-page">
-    <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
 
     <ContentWrap class="sale-order-page__filter-card">
       <div class="sale-order-page__title">销售订单管理</div>
@@ -307,7 +306,7 @@
                     :stroke-width="6"
                     :show-text="false"
                     :percentage="getProgressPercent(row.returnCount, row.totalCount)"
-                    color="#f59e0b"
+                    color="var(--erp-warning-600)"
                   />
                 </div>
               </div>
@@ -547,7 +546,7 @@
                   :stroke-width="6"
                   :show-text="false"
                   :percentage="getProgressPercent(row.returnCount, row.totalCount)"
-                  color="#f59e0b"
+                  color="var(--erp-warning-600)"
                 />
               </div>
             </div>
@@ -706,6 +705,7 @@ import { resolveErpAuditStatusLabel, resolveErpAuditStatusTagType } from '@/util
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
 import { ProjectApi, ProjectVO } from '@/api/erp/project'
 import { useUserStoreWithOut } from '@/store/modules/user'
+import { checkPermi } from '@/utils/permission'
 import {
   getSaleOrderRowActionDescriptor,
   getSaleOrderToolbarDescriptor
@@ -743,6 +743,10 @@ const { t } = useI18n()
 const { push, replace } = router
 const userStore = useUserStoreWithOut()
 const { width } = useWindowSize()
+const canQuerySaleOrder = checkPermi(['erp:sale-order:query'])
+const canQueryPurchaseOrder = checkPermi(['erp:purchase-order:query'])
+const canQueryMrpSuggest = checkPermi(['erp:mrp-suggest:query'])
+const canQueryBpmTask = checkPermi(['bpm:task:query'])
 
 const loading = ref(true)
 const listLoadFailed = ref(false)
@@ -868,13 +872,16 @@ const getProgressPercent = (
 const resolveOutProgressColor = (row: SaleOrderListRow) => {
   const percent = getProgressPercent(row.outCount, row.totalCount)
   if (percent >= 100) {
-    return '#10b981'
+    return 'var(--erp-success-600)'
   }
   if (percent > 0) {
-    return '#3b82f6'
+    return 'var(--erp-primary-600)'
   }
-  return '#cbd5e1'
+  return 'var(--erp-slate-400)'
 }
+
+const isActionCancelled = (error: unknown) =>
+  error === 'cancel' || error === 'close' || (error as { type?: string })?.type === 'cancel'
 
 const resolveDeliveryReadyLabel = (status?: string) => {
   if (status === DELIVERY_READY_STATUS.PART_READY) {
@@ -974,6 +981,10 @@ const openFormByRouteQuery = async () => {
 }
 
 const openSaleOrderTodoTask = () => {
+  if (!canQueryBpmTask) {
+    message.warning('当前账号没有审批待办查看权限')
+    return
+  }
   push({
     path: '/bpm/task/todo',
     query: {
@@ -983,6 +994,10 @@ const openSaleOrderTodoTask = () => {
 }
 
 const openClosureWorkbench = async () => {
+  if (!canQuerySaleOrder) {
+    message.warning('当前账号没有销售订单查看权限')
+    return
+  }
   if (closureWorkbenchNavigating.value || loading.value || exportLoading.value) {
     return
   }
@@ -1007,6 +1022,10 @@ const buildTraceQuery = (row: SaleOrderListRow, extraQuery?: Record<string, stri
 }
 
 const openPurchaseSuggestTrace = (row: SaleOrderListRow) => {
+  if (!canQueryMrpSuggest) {
+    message.warning('当前账号没有 MRP 建议查看权限')
+    return
+  }
   push({
     name: 'ErpSaleOrderMrpTracePage',
     query: buildTraceQuery(row, { tab: 'purchase' })
@@ -1014,6 +1033,10 @@ const openPurchaseSuggestTrace = (row: SaleOrderListRow) => {
 }
 
 const openPurchaseOrderTrace = (row: SaleOrderListRow) => {
+  if (!canQueryPurchaseOrder) {
+    message.warning('当前账号没有采购订单查看权限')
+    return
+  }
   push({
     name: 'ErpSaleOrderPurchaseOrderTracePage',
     query: buildTraceQuery(row)
@@ -1030,7 +1053,12 @@ const handleDelete = async (ids: number[]) => {
     message.success(t('common.delSuccess'))
     await getList()
     selectionList.value = selectionList.value.filter((item) => !ids.includes(item.id))
-  } catch {}
+  } catch (error) {
+    if (isActionCancelled(error)) {
+      return
+    }
+    message.error('删除销售订单失败')
+  }
 }
 
 const openSubmitDialog = (row: SaleOrderListRow) => {
@@ -1051,7 +1079,12 @@ const handleCancelApproval = async (row: SaleOrderListRow) => {
     })
     message.success('撤回审批成功')
     await getList()
-  } catch {}
+  } catch (error) {
+    if (isActionCancelled(error)) {
+      return
+    }
+    message.error('撤回审批失败')
+  }
 }
 
 const handleProcessDetail = (row: SaleOrderListRow) => {
@@ -1073,7 +1106,10 @@ const handleExport = async () => {
     exportLoading.value = true
     const data = await SaleOrderApi.exportSaleOrder(queryParams)
     download.excel(data, '销售订单.xls')
-  } catch {
+  } catch (error) {
+    if (!isActionCancelled(error)) {
+      message.error('导出销售订单失败')
+    }
   } finally {
     exportLoading.value = false
   }
@@ -1126,12 +1162,12 @@ watch(
 
 <style scoped lang="scss">
 .sale-order-page {
-  --sale-primary: #2563eb;
-  --sale-primary-soft: #eff6ff;
-  --sale-primary-border: #bfdbfe;
-  --sale-success: #059669;
-  --sale-warning: #d97706;
-  --sale-danger: #e11d48;
+  --sale-primary: var(--erp-primary-600);
+  --sale-primary-soft: var(--erp-primary-50);
+  --sale-primary-border: var(--erp-blue-200);
+  --sale-success: var(--erp-success-600);
+  --sale-warning: var(--erp-warning-600);
+  --sale-danger: var(--erp-danger-600);
 
   display: flex;
   flex-direction: column;
@@ -1141,12 +1177,12 @@ watch(
 }
 
 :global(html.dark) .sale-order-page {
-  --sale-primary: #60a5fa;
+  --sale-primary: var(--erp-primary-600);
   --sale-primary-soft: rgb(37 99 235 / 16%);
   --sale-primary-border: rgb(96 165 250 / 34%);
-  --sale-success: #34d399;
-  --sale-warning: #fbbf24;
-  --sale-danger: #fb7185;
+  --sale-success: var(--erp-success-600);
+  --sale-warning: var(--erp-warning-600);
+  --sale-danger: var(--erp-danger-600);
 }
 
 .sale-order-page__filter-card,

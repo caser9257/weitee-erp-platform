@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【库存】其他入库、其他出库" url="https://doc.iocoder.cn/erp/stock-in-out/" />
 
   <ContentWrap class="stock-out-page__filter-card">
     <div class="stock-out-page__title">其他出库台账</div>
@@ -144,7 +143,7 @@
           plain
           type="danger"
           :disabled="disableBatchDelete"
-          @click="handleDelete(selectedIds)"
+          @click="handleDelete(deletableSelectionIds)"
           v-hasPermi="['erp:stock-out:delete']"
         >
           <Icon icon="ep:delete" class="mr-5px" /> 批量删除
@@ -293,7 +292,8 @@ const STOCK_OUT_STATUS = {
   DRAFT: 0,
   PROCESS: 10,
   APPROVE: 20,
-  REJECT: 30
+  REJECT: 30,
+  FAILED: 60
 } as const
 
 type StockOutListRow = StockOutVO & {
@@ -356,14 +356,22 @@ const userList = ref<UserVO[]>([])
 const selectionList = ref<StockOutListRow[]>([])
 const formRef = ref()
 
-const selectedIds = computed(() => selectionList.value.map((item) => item.id))
+const isApprovalRunning = (row: StockOutListRow) =>
+  row.status === STOCK_OUT_STATUS.PROCESS && !!row.processInstanceId
+const canEdit = (row: StockOutListRow) =>
+  row.status !== STOCK_OUT_STATUS.APPROVE && !isApprovalRunning(row)
+const canDeleteRow = (row: StockOutListRow) =>
+  row.status !== STOCK_OUT_STATUS.APPROVE && !isApprovalRunning(row)
+const deletableSelectionIds = computed(() =>
+  selectionList.value.filter(canDeleteRow).map((item) => item.id)
+)
 const canRetryList = computed(() => listLoadFailed.value && !loading.value)
 const advancedFilterCount = computed(() => {
   const fields = [queryParams.warehouseId, queryParams.creator, queryParams.status, queryParams.remark]
   return fields.filter((item) => item !== undefined && item !== null && item !== '').length
 })
 const disableBatchDelete = computed(
-  () => selectedIds.value.length === 0 || deletingIds.value.length > 0
+  () => deletableSelectionIds.value.length === 0 || deletingIds.value.length > 0
 )
 
 const formatDateValue = (value?: Date | string | number) =>
@@ -385,7 +393,6 @@ const formatCurrency = (value?: number | string | null) =>
     maximumFractionDigits: 2
   }).format(Number(value || 0))
 
-const canEdit = (row: StockOutListRow) => row.status !== 20
 const canApprove = (row: StockOutListRow) => row.status === 10
 const isDeletingRow = (id?: number) => !!id && deletingIds.value.includes(id)
 const isCancelingApproval = (id?: number) => !!id && cancelApprovalIds.value.includes(id)
@@ -394,6 +401,7 @@ const isUpdatingStatus = (id?: number) => !!id && statusUpdatingIds.value.includ
 const getCanSubmit = (row: StockOutListRow) => {
   return (
     row.status === STOCK_OUT_STATUS.REJECT ||
+    row.status === STOCK_OUT_STATUS.FAILED ||
     (row.status === STOCK_OUT_STATUS.DRAFT && !row.processInstanceId) ||
     (row.status === STOCK_OUT_STATUS.PROCESS && !row.processInstanceId)
   )
@@ -419,7 +427,10 @@ const getAllActionDescriptors = (row: StockOutListRow): StockOutActionDescriptor
   if (canSubmitStockOut && getCanSubmit(row)) {
     actions.push({
       key: 'submit',
-      label: row.status === STOCK_OUT_STATUS.REJECT ? '重新提交审批' : '提交审批'
+      label:
+        row.status === STOCK_OUT_STATUS.REJECT || row.status === STOCK_OUT_STATUS.FAILED
+          ? '重新提交审批'
+          : '提交审批'
     })
   }
   if (canCancelStockOutApproval && getCanCancelApproval(row)) {
@@ -430,7 +441,7 @@ const getAllActionDescriptors = (row: StockOutListRow): StockOutActionDescriptor
       loading: isCancelingApproval(row.id)
     })
   }
-  if (canDeleteStockOut) {
+  if (canDeleteStockOut && canDeleteRow(row)) {
     actions.push({
       key: 'delete',
       label: '删除',
@@ -549,8 +560,17 @@ const handleSubmit = async (row: StockOutListRow) => {
   try {
     await message.confirm(`确定提交审批该出库单吗？`)
     await StockOutApi.submitStockOut({ id: row.id })
-    message.success('提交审批成功')
     await getList()
+    const latestRow = list.value.find((item) => item.id === row.id)
+    if (latestRow?.status === STOCK_OUT_STATUS.FAILED) {
+      message.warning('提交已受理，但流程创建失败')
+      return
+    }
+    if (latestRow && isApprovalRunning(latestRow)) {
+      message.success('已提交审批，等待流程受理')
+      return
+    }
+    message.warning('提交请求已发送，请刷新后确认状态')
   } catch {}
 }
 

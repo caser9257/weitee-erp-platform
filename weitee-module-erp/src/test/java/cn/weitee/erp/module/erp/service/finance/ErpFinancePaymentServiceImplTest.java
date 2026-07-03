@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_ALLOCATE_AMOUNT_EXCEED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_ALLOCATE_AMOUNT_INVALID;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -310,6 +311,174 @@ class ErpFinancePaymentServiceImplTest {
         assertEquals(new BigDecimal("-66.00"), insertedStatementItems.get(0).getAmount());
         assertEquals(List.of(15L), refreshedStatementIdsRef.get());
         assertEquals(List.of(15L), refreshedBizStatementIdsRef.get());
+    }
+
+    @Test
+    void updateFinancePaymentStatusByBpm_shouldRejectMismatchedProcessInstanceId() throws Exception {
+        ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        ErpFinancePaymentDO payment = new ErpFinancePaymentDO()
+                .setId(5L)
+                .setNo("FP-003")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-BOUND")
+                .setSupplierId(201L);
+
+        setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return payment;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentItemMapper", createProxy(ErpFinancePaymentItemMapper.class, (methodName, args) -> List.of()));
+        setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> null));
+        setField(service, "erpApStatementItemMapper", createProxy(ErpApStatementItemMapper.class, (methodName, args) -> null));
+        setField(service, "apStatementService", createProxy(ErpApStatementService.class, (methodName, args) -> null));
+        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> null));
+        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
+        setField(service, "redissonClient", createRedissonClientProxy());
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.updateFinancePaymentStatusByBpm(5L, "PI-OTHER", ErpAuditStatus.APPROVE.getStatus(), "approved"));
+
+        assertEquals(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+    }
+
+    @Test
+    void updateFinancePaymentStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        ErpFinancePaymentDO payment = new ErpFinancePaymentDO()
+                .setId(5L)
+                .setNo("FP-003")
+                .setStatus(ErpAuditStatus.APPROVE.getStatus())
+                .setProcessInstanceId("PI-BOUND")
+                .setSupplierId(201L);
+        AtomicReference<Boolean> updateCalledRef = new AtomicReference<>(false);
+        AtomicReference<Boolean> itemQueryCalledRef = new AtomicReference<>(false);
+
+        setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return payment;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updateCalledRef.set(true);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentItemMapper", createProxy(ErpFinancePaymentItemMapper.class, (methodName, args) -> {
+            if ("selectListByPaymentId".equals(methodName)) {
+                itemQueryCalledRef.set(true);
+                return List.of();
+            }
+            return null;
+        }));
+
+        service.updateFinancePaymentStatusByBpm(5L, "PI-BOUND", ErpAuditStatus.REJECT.getStatus(), "approved");
+
+        assertEquals(Boolean.FALSE, updateCalledRef.get());
+        assertEquals(Boolean.FALSE, itemQueryCalledRef.get());
+    }
+
+    @Test
+    void rollbackFinancePaymentStatusToDraftByBpm_shouldResetStatusToDraftAndClearBinding() throws Exception {
+        ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        ErpFinancePaymentDO payment = new ErpFinancePaymentDO()
+                .setId(5L)
+                .setNo("FP-003")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-ROLLBACK")
+                .setSupplierId(201L);
+        AtomicReference<ErpFinancePaymentDO> updatedPaymentRef = new AtomicReference<>();
+        AtomicReference<Boolean> itemQueryCalledRef = new AtomicReference<>(false);
+
+        setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return payment;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedPaymentRef.set((ErpFinancePaymentDO) args[2]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentItemMapper", createProxy(ErpFinancePaymentItemMapper.class, (methodName, args) -> {
+            if ("selectListByPaymentId".equals(methodName)) {
+                itemQueryCalledRef.set(true);
+            }
+            return List.of();
+        }));
+
+        service.rollbackFinancePaymentStatusToDraftByBpm(5L, "PI-ROLLBACK", "cancel");
+
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedPaymentRef.get().getStatus());
+        assertEquals(null, updatedPaymentRef.get().getProcessInstanceId());
+        assertEquals(Boolean.FALSE, itemQueryCalledRef.get());
+    }
+
+    @Test
+    void rollbackFinancePaymentStatusToDraftByBpm_shouldRejectMismatchedProcessInstanceId() throws Exception {
+        ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        ErpFinancePaymentDO payment = new ErpFinancePaymentDO()
+                .setId(5L)
+                .setNo("FP-003")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-BOUND")
+                .setSupplierId(201L);
+        AtomicReference<Boolean> itemQueryCalledRef = new AtomicReference<>(false);
+
+        setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return payment;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentItemMapper", createProxy(ErpFinancePaymentItemMapper.class, (methodName, args) -> {
+            if ("selectListByPaymentId".equals(methodName)) {
+                itemQueryCalledRef.set(true);
+            }
+            return List.of();
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.rollbackFinancePaymentStatusToDraftByBpm(5L, "PI-OTHER", "cancel"));
+
+        assertEquals(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+        assertEquals(Boolean.FALSE, itemQueryCalledRef.get());
+    }
+
+    @Test
+    void rollbackFinancePaymentStatusToDraftByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        ErpFinancePaymentDO payment = new ErpFinancePaymentDO()
+                .setId(5L)
+                .setNo("FP-003")
+                .setStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setProcessInstanceId("PI-LATE")
+                .setSupplierId(201L);
+        AtomicReference<Boolean> updateCalledRef = new AtomicReference<>(false);
+        AtomicReference<Boolean> itemQueryCalledRef = new AtomicReference<>(false);
+
+        setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return payment;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updateCalledRef.set(true);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentItemMapper", createProxy(ErpFinancePaymentItemMapper.class, (methodName, args) -> {
+            if ("selectListByPaymentId".equals(methodName)) {
+                itemQueryCalledRef.set(true);
+            }
+            return List.of();
+        }));
+
+        service.rollbackFinancePaymentStatusToDraftByBpm(5L, "PI-LATE", "cancel");
+
+        assertEquals(Boolean.FALSE, updateCalledRef.get());
+        assertEquals(Boolean.FALSE, itemQueryCalledRef.get());
     }
 
     @Test

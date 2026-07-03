@@ -34,6 +34,8 @@ public interface ErpPurchaseInService {
 
     void updatePurchaseInStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
 
+    void rollbackPurchaseInStatusToDraftByBpm(Long id, String processInstanceId, String reason);
+
     void qualityCheckPurchaseIn(Long userId, @Valid ErpPurchaseInQualityCheckReqVO reqVO);
 
     void confirmPurchaseInStockIn(Long userId, @Valid ErpPurchaseInConfirmStockInReqVO reqVO);

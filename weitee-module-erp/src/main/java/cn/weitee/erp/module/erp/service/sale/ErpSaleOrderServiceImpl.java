@@ -329,6 +329,11 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         if (!StrUtil.equals(processInstanceId, saleOrder.getProcessInstanceId())) {
             throw exception(SALE_ORDER_STATUS_UPDATE_ILLEGAL);
         }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(saleOrder.getStatus())) {
+            log.warn("[updateSaleOrderStatusByBpm] 忽略非处理中销售单回调，id={}, currentStatus={}, callbackStatus={}",
+                    orderId, saleOrder.getStatus(), status);
+            return;
+        }
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         boolean reject = ErpAuditStatus.REJECT.getStatus().equals(status);
         String actionType = resolveAuditActionType(saleOrder.getStatus(), status);
@@ -366,7 +371,12 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rollbackSaleOrderStatusToDraftByBpm(Long orderId, String processInstanceId, String reason) {
-        validateSaleOrderExists(orderId);
+        ErpSaleOrderDO saleOrder = validateSaleOrderExists(orderId);
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(saleOrder.getStatus())) {
+            log.warn("[rollbackSaleOrderStatusToDraftByBpm] 忽略非处理中销售单回退回调，id={}, currentStatus={}",
+                    orderId, saleOrder.getStatus());
+            return;
+        }
         int updateCount = erpSaleOrderMapper.resetStatusToDraftByBpm(orderId, processInstanceId);
         if (updateCount == 0) {
             throw exception(SALE_ORDER_STATUS_UPDATE_ILLEGAL);

@@ -1,15 +1,12 @@
 <template>
-  <doc-alert title="【库存】库存组装、库存拆卸" url="https://doc.iocoder.cn/erp/stock/" />
-
   <ContentWrap class="stock-assemble-page__hero-card">
     <div class="stock-assemble-page__hero">
       <div class="stock-assemble-page__hero-main">
-        <div class="stock-assemble-page__title">组装与拆卸作业台</div>
+        <div class="stock-assemble-page__title">组装与拆卸作业</div>
         <div class="stock-assemble-page__badge-row">
-          <span class="stock-assemble-page__badge stock-assemble-page__badge--warning">功能待接入</span>
-          <span class="stock-assemble-page__badge stock-assemble-page__badge--neutral">
-            当前未发现已落地的组装拆卸单据流
-          </span>
+          <span class="stock-assemble-page__badge stock-assemble-page__badge--neutral"
+            >库存协同入口</span
+          >
         </div>
       </div>
       <div class="stock-assemble-page__hero-actions">
@@ -35,7 +32,6 @@
   <ContentWrap class="stock-assemble-page__entry-card">
     <div class="stock-assemble-page__section-head">
       <div class="stock-assemble-page__section-title">相关库存入口</div>
-      <div class="stock-assemble-page__section-tag">当前可先从以下页面完成库存追踪</div>
     </div>
 
     <div class="stock-assemble-entry-grid">
@@ -161,7 +157,10 @@ const handleNavigate = async (action: NavigationAction) => {
 <style scoped>
 .stock-assemble-page__hero-card,
 .stock-assemble-page__entry-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 12px;
+  background: var(--erp-surface-white);
+  box-shadow: var(--erp-shadow-sm);
 }
 
 .stock-assemble-page__hero {
@@ -183,7 +182,7 @@ const handleNavigate = async (action: NavigationAction) => {
 .stock-assemble-page__title,
 .stock-assemble-page__section-title,
 .stock-assemble-entry-card__title {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-weight: 700;
 }
 
@@ -211,9 +210,8 @@ const handleNavigate = async (action: NavigationAction) => {
   line-height: 28px;
 }
 
-.stock-assemble-page__section-tag,
 .stock-assemble-entry-card__meta {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 13px;
   line-height: 20px;
 }
@@ -231,15 +229,15 @@ const handleNavigate = async (action: NavigationAction) => {
 }
 
 .stock-assemble-page__badge--warning {
-  border-color: #fde68a;
-  background: #fffbeb;
-  color: #d97706;
+  border-color: var(--erp-warning-100);
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
 }
 
 .stock-assemble-page__badge--neutral {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  color: #475569;
+  border-color: var(--erp-slate-200);
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-600);
 }
 
 .stock-assemble-entry-grid {
@@ -254,15 +252,18 @@ const handleNavigate = async (action: NavigationAction) => {
   gap: 16px;
   min-width: 0;
   padding: 20px;
-  border: 1px solid #e2e8f0;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.88);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 12px;
+  background: var(--erp-surface-white);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .stock-assemble-entry-card:hover {
-  border-color: #bfdbfe;
-  box-shadow: 0 14px 30px rgba(148, 163, 184, 0.12);
+  border-color: var(--erp-primary-100);
+  box-shadow: var(--erp-shadow-md);
   transform: translateY(-1px);
 }
 
@@ -278,23 +279,23 @@ const handleNavigate = async (action: NavigationAction) => {
 }
 
 .stock-assemble-entry-card__icon--primary {
-  background: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 
 .stock-assemble-entry-card__icon--info {
-  background: rgba(14, 165, 233, 0.1);
-  color: #0284c7;
+  background: var(--erp-stat-gradient-teal);
+  color: var(--erp-teal-600);
 }
 
 .stock-assemble-entry-card__icon--success {
-  background: rgba(16, 185, 129, 0.1);
-  color: #059669;
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
 }
 
 .stock-assemble-entry-card__icon--warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #d97706;
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
 }
 
 .stock-assemble-entry-card__content {

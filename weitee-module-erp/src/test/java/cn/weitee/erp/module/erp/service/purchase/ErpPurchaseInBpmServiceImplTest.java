@@ -93,7 +93,7 @@ class ErpPurchaseInBpmServiceImplTest {
     }
 
     @Test
-    void cancelPurchaseInApproval_shouldCancelProcessAndClearBinding() throws Exception {
+    void cancelPurchaseInApproval_shouldCancelProcessWithoutClearingBindingLocally() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpPurchaseInDO> purchaseInRef = new AtomicReference<>(
                 new ErpPurchaseInDO()
@@ -102,16 +102,11 @@ class ErpPurchaseInBpmServiceImplTest {
                         .setStatus(ErpAuditStatus.PROCESS.getStatus())
                         .setProcessInstanceId("PI-IN-TO-CANCEL")
         );
-        AtomicReference<Long> clearedInIdRef = new AtomicReference<>();
         AtomicReference<Long> cancelBizIdRef = new AtomicReference<>();
 
         setField(service, "erpPurchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return purchaseInRef.get();
-            }
-            if ("clearProcessInstanceId".equals(methodName)) {
-                clearedInIdRef.set((Long) args[0]);
-                return 1;
             }
             return null;
         }));
@@ -127,7 +122,6 @@ class ErpPurchaseInBpmServiceImplTest {
         method.invoke(service, 9527L, reqVO);
 
         assertEquals(32L, cancelBizIdRef.get());
-        assertEquals(32L, clearedInIdRef.get());
     }
 
     @Test

@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【MRP】计划参数" url="https://doc.iocoder.cn/erp/mrp/" />
 
   <ContentWrap>
     <el-form

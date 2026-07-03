@@ -166,14 +166,22 @@ public class ErpStockInServiceImpl implements ErpStockInService {
     @Transactional(rollbackFor = Exception.class)
     public void updateStockInStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpStockInDO stockIn = validateStockInExists(id);
+        if (!ObjectUtil.equal(processInstanceId, stockIn.getProcessInstanceId())) {
+            throw exception(STOCK_IN_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(stockIn.getStatus())) {
+            log.warn("[updateStockInStatusByBpm] 忽略非处理中其它入库单回调，id={}, currentStatus={}, callbackStatus={}",
+                    id, stockIn.getStatus(), status);
+            return;
+        }
         if (!ErpAuditStatus.APPROVE.getStatus().equals(status)) {
-            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+            throw exception(STOCK_IN_STATUS_UPDATE_ILLEGAL);
         }
         int updateCount = erpStockInMapper.updateByIdStatusAndProcessInstanceId(id,
                 ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
                 new ErpStockInDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
         if (updateCount == 0) {
-            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+            throw exception(STOCK_IN_STATUS_UPDATE_ILLEGAL);
         }
         List<ErpStockInItemDO> stockInItems = erpStockInItemMapper.selectListByInId(id);
         Set<Long> inProductIds = convertSet(stockInItems, ErpStockInItemDO::getProductId);
@@ -195,10 +203,15 @@ public class ErpStockInServiceImpl implements ErpStockInService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rollbackStockInStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
-        validateStockInExists(id);
+        ErpStockInDO stockIn = validateStockInExists(id);
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(stockIn.getStatus())) {
+            log.warn("[rollbackStockInStatusToDraftByBpm] 忽略非处理中其它入库单回退回调，id={}, currentStatus={}",
+                    id, stockIn.getStatus());
+            return;
+        }
         int updateCount = erpStockInMapper.resetStatusToDraftByBpm(id, processInstanceId);
         if (updateCount == 0) {
-            throw exception(STOCK_IN_UPDATE_FAIL_PROCESSING, id);
+            throw exception(STOCK_IN_STATUS_UPDATE_ILLEGAL);
         }
     }
 

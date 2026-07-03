@@ -240,14 +240,22 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseReturnStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpPurchaseReturnDO purchaseReturn = validatePurchaseReturnExists(id);
+        if (!ObjectUtil.equal(processInstanceId, purchaseReturn.getProcessInstanceId())) {
+            throw exception(PURCHASE_RETURN_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(purchaseReturn.getStatus())) {
+            log.warn("[updatePurchaseReturnStatusByBpm] 忽略非处理中采购退货单回调，id={}, currentStatus={}, callbackStatus={}",
+                    id, purchaseReturn.getStatus(), status);
+            return;
+        }
         if (!ErpAuditStatus.APPROVE.getStatus().equals(status)) {
-            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+            throw exception(PURCHASE_RETURN_STATUS_UPDATE_ILLEGAL);
         }
         int updateCount = erpPurchaseReturnMapper.updateByIdStatusAndProcessInstanceId(id,
                 ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
                 new ErpPurchaseReturnDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
         if (updateCount == 0) {
-            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+            throw exception(PURCHASE_RETURN_STATUS_UPDATE_ILLEGAL);
         }
 
         apStatementService.createStatementForPurchaseReturn(purchaseReturn);
@@ -274,10 +282,15 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rollbackPurchaseReturnStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
-        validatePurchaseReturnExists(id);
+        ErpPurchaseReturnDO purchaseReturn = validatePurchaseReturnExists(id);
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(purchaseReturn.getStatus())) {
+            log.warn("[rollbackPurchaseReturnStatusToDraftByBpm] 忽略非处理中采购退货单回退回调，id={}, currentStatus={}",
+                    id, purchaseReturn.getStatus());
+            return;
+        }
         int updateCount = erpPurchaseReturnMapper.resetStatusToDraftByBpm(id, processInstanceId);
         if (updateCount == 0) {
-            throw exception(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING, id);
+            throw exception(PURCHASE_RETURN_STATUS_UPDATE_ILLEGAL);
         }
     }
 

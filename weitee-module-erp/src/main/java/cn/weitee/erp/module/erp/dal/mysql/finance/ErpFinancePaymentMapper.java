@@ -41,9 +41,10 @@ public interface ErpFinancePaymentMapper extends BaseMapperX<ErpFinancePaymentDO
                 .eq(ErpFinancePaymentDO::getId, id).eq(ErpFinancePaymentDO::getStatus, status));
     }
 
-    default int clearProcessInstanceId(Long id) {
+    default int clearProcessInstanceId(Long id, String processInstanceId) {
         return update(null, new LambdaUpdateWrapper<ErpFinancePaymentDO>()
                 .eq(ErpFinancePaymentDO::getId, id)
+                .eq(ErpFinancePaymentDO::getProcessInstanceId, processInstanceId)
                 .set(ErpFinancePaymentDO::getProcessInstanceId, null));
     }
 

@@ -201,7 +201,7 @@ const submit = async () => {
       id: currentOrder.value.id,
       startUserSelectAssignees: startUserSelectAssignees.value
     })
-    message.success('提交审批成功')
+    message.warning('提交请求已发送，列表将刷新校验状态')
     dialogVisible.value = false
     emit('success')
   } finally {

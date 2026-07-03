@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.*;
@@ -299,18 +300,16 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
      * @return 命中的规则，无匹配时返回 null
      */
     private BpmApprovalRuleDO matchRule(List<BpmApprovalRuleDO> rules, ApprovalContext context) {
-        // 1. 过滤启用的规则
+        // 1. 过滤启用的规则，按优先级排序（priority 越小越优先）
         List<BpmApprovalRuleDO> enabledRules = rules.stream()
                 .filter(rule -> Boolean.TRUE.equals(rule.getEnabled()))
-                .toList();
+                .sorted(Comparator.comparingInt(rule -> rule.getPriority() != null ? rule.getPriority() : Integer.MAX_VALUE))
+                .collect(Collectors.toList());
         if (enabledRules.isEmpty()) {
             return null;
         }
 
-        // 2. 按优先级排序（priority 越小越优先）
-        enabledRules.sort(Comparator.comparingInt(rule -> rule.getPriority() != null ? rule.getPriority() : Integer.MAX_VALUE));
-
-        // 3. 优先匹配条件规则
+        // 2. 优先匹配条件规则
         for (BpmApprovalRuleDO rule : enabledRules) {
             if (Boolean.TRUE.equals(rule.getDefaultRule())) {
                 continue; // 默认规则稍后处理

@@ -106,15 +106,6 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
         ErpTransactionUtils.afterCommit(() -> {
             try {
                 approvalRuntimeService.cancel("erp.purchase.order.submit", orderId, userId, reqVO.getReason());
-                // 注意：approvalRuntimeService.cancel() 内部会自行注册 afterCommit 调 BPM
-                // 若 BPM 撤回失败，cancel() 内部会标记 snapshot 为 FAILED，但此处无法感知
-                // 审计日志在此写入表示"已发起撤回请求"，实际撤回结果由 BPM 回调确认
-                erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
-                        .setOrderId(orderId)
-                        .setActionType(ErpPurchaseOrderAuditActionTypeConstants.CANCEL)
-                        .setBeforeStatus(ErpAuditStatus.PROCESS.getStatus())
-                        .setAfterStatus(ErpAuditStatus.PROCESS.getStatus())
-                        .setReason(reqVO.getReason()));
             } catch (Exception e) {
                 log.warn("[cancelPurchaseOrderApproval] BPM 撤回失败，orderId={}", orderId, e);
             }

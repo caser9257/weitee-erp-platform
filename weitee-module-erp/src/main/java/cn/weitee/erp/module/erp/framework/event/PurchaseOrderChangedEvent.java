@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * 采购订单变更事件
  *
- * 当采购订单数量变更或取消时触发
+ * 当采购订单数量变更、审批通过、取消或反审核时触发
  */
 @Getter
 @AllArgsConstructor
@@ -34,6 +34,10 @@ public class PurchaseOrderChangedEvent {
          * 订单取消
          */
         ORDER_CANCELLED,
+        /**
+         * 审批通过
+         */
+        ORDER_APPROVED,
         /**
          * 订单反审核
          */

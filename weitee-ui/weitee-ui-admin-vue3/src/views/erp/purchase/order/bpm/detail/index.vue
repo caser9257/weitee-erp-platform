@@ -85,7 +85,7 @@
               </div>
               <div
                 class="summary-card__ring summary-card__ring--cyan"
-                :style="getProgressRingStyle(inboundPercent, '#06b6d4')"
+                :style="getProgressRingStyle(inboundPercent, 'var(--erp-teal-600)')"
               >
                 <span>{{ inboundPercent }}%</span>
               </div>
@@ -110,7 +110,7 @@
               </div>
               <div
                 class="summary-card__ring summary-card__ring--amber"
-                :style="getProgressRingStyle(returnPercent, '#f59e0b')"
+                :style="getProgressRingStyle(returnPercent, 'var(--erp-warning-600)')"
               >
                 <span>{{ returnPercent }}%</span>
               </div>
@@ -644,7 +644,7 @@ const getProgressPercent = (
 }
 
 const getProgressRingStyle = (percent: number, color: string) => ({
-  background: `conic-gradient(${color} 0deg, ${color} ${percent * 3.6}deg, #e8eef5 ${percent * 3.6}deg, #e8eef5 360deg)`
+  background: `conic-gradient(${color} 0deg, ${color} ${percent * 3.6}deg, var(--erp-slate-100) ${percent * 3.6}deg, var(--erp-slate-100) 360deg)`
 })
 
 const resolveItemStatusLabel = (item: PurchaseOrderItemVO) => {
@@ -697,7 +697,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .purchase-order-detail-page {
   min-height: calc(100vh - 132px);
-  background: #f5f7fa;
+  background: var(--erp-slate-50);
   padding: 16px;
 }
 
@@ -710,7 +710,7 @@ onMounted(() => {
 .detail-empty-card,
 .detail-card,
 .summary-card {
-  border: 1px solid #e6edf5;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 12px;
   background: #fff;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
@@ -752,7 +752,7 @@ onMounted(() => {
 
 .detail-heading__title {
   margin: 0;
-  color: #1e293b;
+  color: var(--erp-slate-800);
   font-size: 24px;
   line-height: 1.25;
   font-weight: 700;
@@ -768,7 +768,7 @@ onMounted(() => {
   padding: 0 18px;
   border: none;
   border-radius: 10px;
-  background: #14b8c4;
+  background: var(--erp-teal-500);
   box-shadow: none;
 }
 
@@ -776,8 +776,8 @@ onMounted(() => {
 .detail-icon-button {
   height: 36px;
   border-radius: 10px;
-  border-color: #dbe4ee;
-  color: #475569;
+  border-color: var(--erp-slate-200);
+  color: var(--erp-slate-600);
   box-shadow: none;
 }
 
@@ -799,9 +799,9 @@ onMounted(() => {
 }
 
 .status-chip--success {
-  background: #ecfdf3;
-  color: #1f8f5f;
-  border-color: #cdeedc;
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
+  border-color: var(--erp-success-100);
 }
 
 .summary-grid {
@@ -836,23 +836,23 @@ onMounted(() => {
 }
 
 .summary-card__icon--cyan {
-  background: #eefbfd;
-  color: #0891b2;
+  background: var(--erp-success-50);
+  color: var(--erp-teal-600);
 }
 
 .summary-card__icon--amber {
-  background: #fff7e9;
-  color: #d97706;
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
 }
 
 .summary-card__icon--blue {
-  background: #eef5ff;
-  color: #2563eb;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
 }
 
 .summary-card__icon--slate {
-  background: #f8fafc;
-  color: #475569;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-600);
 }
 
 .summary-card__label-group {
@@ -861,14 +861,14 @@ onMounted(() => {
 }
 
 .summary-card__label {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 13px;
   font-weight: 600;
 }
 
 .summary-card__hint,
 .summary-card__foot {
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -896,7 +896,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 10px;
   font-weight: 700;
 }
@@ -906,19 +906,19 @@ onMounted(() => {
   align-items: baseline;
   gap: 6px;
   min-width: 0;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 13px;
 }
 
 .summary-card__value-line strong {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 24px;
   line-height: 1;
   font-weight: 700;
 }
 
 .summary-card__value-line--single strong {
-  color: #0f7490;
+  color: var(--erp-teal-600);
   font-size: 22px;
   font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
@@ -944,7 +944,7 @@ onMounted(() => {
 
 .section-title {
   gap: 8px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 16px;
   font-weight: 700;
 }
@@ -963,12 +963,12 @@ onMounted(() => {
 .info-item label {
   display: block;
   margin-bottom: 8px;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 12px;
 }
 
 .info-item__value {
-  color: #1e293b;
+  color: var(--erp-slate-800);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
@@ -980,26 +980,26 @@ onMounted(() => {
 }
 
 .info-item__value--accent {
-  color: #0891b2;
+  color: var(--erp-teal-600);
 }
 
 .detail-card__remark {
-  border-top: 1px solid #edf2f7;
+  border-top: 1px solid var(--erp-slate-100);
   padding: 16px 20px 18px;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 14px;
   line-height: 1.7;
 }
 
 .detail-card__remark-label {
   margin-right: 8px;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
 }
 
 .detail-tabs {
   display: flex;
   gap: 20px;
-  border-bottom: 1px solid #e8eef5;
+  border-bottom: 1px solid var(--erp-slate-100);
   padding: 0 20px;
 }
 
@@ -1007,7 +1007,7 @@ onMounted(() => {
   position: relative;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--erp-slate-500);
   height: 50px;
   padding: 0;
   font-size: 14px;
@@ -1029,11 +1029,11 @@ onMounted(() => {
 }
 
 .detail-tab--active {
-  color: #14b8c4;
+  color: var(--erp-teal-500);
 }
 
 .detail-tab--active::after {
-  background: #14b8c4;
+  background: var(--erp-teal-500);
 }
 
 .detail-table-wrap {
@@ -1042,15 +1042,15 @@ onMounted(() => {
 }
 
 .detail-table {
-  --el-table-border-color: #eef2f7;
-  --el-table-row-hover-bg-color: #f8fbfd;
-  --el-table-header-bg-color: #fbfcfe;
-  --el-table-current-row-bg-color: #f8fbfd;
+  --el-table-border-color: var(--erp-slate-100);
+  --el-table-row-hover-bg-color: var(--erp-slate-50);
+  --el-table-header-bg-color: var(--erp-slate-50);
+  --el-table-current-row-bg-color: var(--erp-slate-50);
 }
 
 .detail-table :deep(.el-table__header-wrapper th) {
-  background: #fbfcfe;
-  color: #94a3b8;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-400);
   font-weight: 600;
   height: 46px;
 }
@@ -1061,7 +1061,7 @@ onMounted(() => {
 
 .detail-table :deep(.el-table td),
 .detail-table :deep(.el-table th) {
-  border-bottom-color: #eef2f7;
+  border-bottom-color: var(--erp-slate-100);
 }
 
 .detail-table :deep(.el-table__row td) {
@@ -1079,7 +1079,7 @@ onMounted(() => {
 }
 
 .product-cell__name {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
@@ -1088,7 +1088,7 @@ onMounted(() => {
 .product-cell__code,
 .spec-cell__sub {
   margin-top: 4px;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 12px;
 }
 
@@ -1098,12 +1098,12 @@ onMounted(() => {
 
 .numeric-cell {
   font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  color: #334155;
+  color: var(--erp-slate-600);
   font-size: 13px;
 }
 
 .numeric-cell--accent {
-  color: #0f7490;
+  color: var(--erp-teal-600);
   font-weight: 700;
 }
 
@@ -1121,21 +1121,21 @@ onMounted(() => {
 }
 
 .status-pill--primary {
-  background: #eef6ff;
-  color: #2563eb;
-  border-color: #d8e7ff;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
+  border-color: var(--erp-primary-100);
 }
 
 .status-pill--warning {
-  background: #fff8e8;
-  color: #d97706;
-  border-color: #f9e5b5;
+  background: var(--erp-warning-50);
+  color: var(--erp-warning-600);
+  border-color: var(--erp-warning-100);
 }
 
 .status-pill--success {
-  background: #ecfdf3;
-  color: #059669;
-  border-color: #caeedf;
+  background: var(--erp-success-50);
+  color: var(--erp-success-600);
+  border-color: var(--erp-success-100);
 }
 
 .timeline-list {
@@ -1155,7 +1155,7 @@ onMounted(() => {
   height: 10px;
   margin-top: 8px;
   border-radius: 999px;
-  background: #0ea5c6;
+  background: var(--erp-teal-600);
   flex-shrink: 0;
   box-shadow: 0 0 0 6px rgba(14, 165, 198, 0.12);
 }
@@ -1164,7 +1164,7 @@ onMounted(() => {
   flex: 1;
   min-width: 0;
   padding-bottom: 18px;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom: 1px solid var(--erp-slate-100);
 }
 
 .timeline-item:last-child .timeline-item__content {
@@ -1181,7 +1181,7 @@ onMounted(() => {
 }
 
 .timeline-item__action {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 15px;
   font-weight: 700;
 }
@@ -1189,7 +1189,7 @@ onMounted(() => {
 .timeline-item__time,
 .timeline-item__meta,
 .timeline-item__desc {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 13px;
 }
 
@@ -1209,7 +1209,7 @@ onMounted(() => {
   gap: 16px;
   flex-wrap: wrap;
   padding: 16px 20px 18px;
-  border-top: 1px solid #eef2f7;
+  border-top: 1px solid var(--erp-slate-100);
 }
 
 .detail-summary-bar__meta {
@@ -1217,7 +1217,7 @@ onMounted(() => {
   align-items: center;
   gap: 18px;
   flex-wrap: wrap;
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 13px;
 }
 
@@ -1225,12 +1225,12 @@ onMounted(() => {
   display: flex;
   align-items: baseline;
   gap: 8px;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 14px;
 }
 
 .detail-summary-bar__total strong {
-  color: #0f7490;
+  color: var(--erp-teal-600);
   font-size: 24px;
   font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
@@ -1253,8 +1253,8 @@ onMounted(() => {
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: #eff6ff;
-  color: #2563eb;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1262,18 +1262,18 @@ onMounted(() => {
 }
 
 .detail-empty--error .detail-empty__icon {
-  background: #fff1f2;
-  color: #e11d48;
+  background: var(--erp-danger-50);
+  color: var(--erp-danger-600);
 }
 
 .detail-empty__title {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 16px;
   font-weight: 700;
 }
 
 .detail-empty__desc {
-  color: #94a3b8;
+  color: var(--erp-slate-400);
   font-size: 13px;
 }
 

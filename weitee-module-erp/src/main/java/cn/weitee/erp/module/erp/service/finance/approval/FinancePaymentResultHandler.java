@@ -1,11 +1,10 @@
 package cn.weitee.erp.module.erp.service.finance.approval;
 
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
-import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
-import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.finance.ErpFinancePaymentService;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.Resource;
 
@@ -19,8 +18,6 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_
 public class FinancePaymentResultHandler implements ApprovalResultHandler {
 
     @Resource
-    private ErpFinancePaymentMapper financePaymentMapper;
-    @Resource
     private ErpFinancePaymentService financePaymentService;
 
     @Override
@@ -30,19 +27,29 @@ public class FinancePaymentResultHandler implements ApprovalResultHandler {
 
     @Override
     public void onApprove(Long bizId, String processInstanceId, String reason) {
+        validateExists(bizId);
         financePaymentService.updateFinancePaymentStatusByBpm(bizId, processInstanceId,
                 ErpAuditStatus.APPROVE.getStatus(), reason);
     }
 
     @Override
     public void onReject(Long bizId, String processInstanceId, String reason) {
+        validateExists(bizId);
         financePaymentService.updateFinancePaymentStatusByBpm(bizId, processInstanceId,
                 ErpAuditStatus.REJECT.getStatus(), reason);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void onCancel(Long bizId, String processInstanceId, String reason) {
-        financePaymentMapper.clearProcessInstanceId(bizId);
+        validateExists(bizId);
+        financePaymentService.rollbackFinancePaymentStatusToDraftByBpm(bizId, processInstanceId, reason);
+    }
+
+    private void validateExists(Long paymentId) {
+        if (financePaymentService.getFinancePayment(paymentId) == null) {
+            throw exception(FINANCE_PAYMENT_NOT_EXISTS);
+        }
     }
 
 }

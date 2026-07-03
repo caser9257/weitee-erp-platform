@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【ERP】净需求策略" url="https://doc.iocoder.cn/erp/mrp/" />
 
   <ContentWrap class="netting-policy-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="netting-policy-page__header">

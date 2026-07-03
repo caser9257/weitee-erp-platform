@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_MANUAL_STATUS_UPDATE_FORBIDDEN;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -113,22 +114,63 @@ class ErpStockOutServiceImplTest {
     }
 
     @Test
-    void rollbackStockOutStatusToDraftByBpm_shouldThrowWhenNotProcessing() throws Exception {
+    void updateStockOutStatusByBpm_shouldRejectMismatchedProcessInstanceId() throws Exception {
         ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
         setField(service, "erpStockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
-                return new ErpStockOutDO().setId(10L).setStatus(ErpAuditStatus.DRAFT.getStatus());
-            }
-            if ("resetStatusToDraftByBpm".equals(methodName)) {
-                return 0;
+                return new ErpStockOutDO().setId(10L)
+                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                        .setProcessInstanceId("PI-BOUND");
             }
             return null;
         }));
 
         ServiceException ex = assertThrows(ServiceException.class, () ->
-                service.rollbackStockOutStatusToDraftByBpm(10L, "PI-010", "cancel"));
+                service.updateStockOutStatusByBpm(10L, "PI-OTHER", ErpAuditStatus.APPROVE.getStatus(), "approved"));
 
-        assertEquals(STOCK_OUT_UPDATE_FAIL_PROCESSING.getCode(), ex.getCode());
+        assertEquals(STOCK_OUT_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+    }
+
+    @Test
+    void updateStockOutStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
+        AtomicReference<Boolean> updateCalledRef = new AtomicReference<>(false);
+        setField(service, "erpStockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockOutDO().setId(10L)
+                        .setStatus(ErpAuditStatus.APPROVE.getStatus())
+                        .setProcessInstanceId("PI-BOUND");
+            }
+            if ("updateByIdStatusAndProcessInstanceId".equals(methodName)) {
+                updateCalledRef.set(true);
+                return 1;
+            }
+            return null;
+        }));
+
+        service.updateStockOutStatusByBpm(10L, "PI-BOUND", ErpAuditStatus.APPROVE.getStatus(), "approved");
+
+        assertEquals(Boolean.FALSE, updateCalledRef.get());
+    }
+
+    @Test
+    void rollbackStockOutStatusToDraftByBpm_shouldIgnoreLateCallbackWhenNotProcessing() throws Exception {
+        ErpStockOutServiceImpl service = new ErpStockOutServiceImpl();
+        AtomicReference<Boolean> rollbackCalledRef = new AtomicReference<>(false);
+        setField(service, "erpStockOutMapper", createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockOutDO().setId(10L).setStatus(ErpAuditStatus.DRAFT.getStatus());
+            }
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                rollbackCalledRef.set(true);
+                return 0;
+            }
+            return null;
+        }));
+
+        service.rollbackStockOutStatusToDraftByBpm(10L, "PI-010", "cancel");
+
+        assertEquals(Boolean.FALSE, rollbackCalledRef.get());
     }
 
     @SuppressWarnings("unchecked")

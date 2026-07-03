@@ -55,19 +55,7 @@ import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.con
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.diffList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.getSumValue;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_ALLOCATE_AMOUNT_EXCEED;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_ALLOCATE_AMOUNT_INVALID;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_CLOSED;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_SUPPLIER_NOT_MATCH;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_APPROVE_FAIL;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_DELETE_FAIL_APPROVE;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_DELETE_FAIL_PROCESSING;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_NOT_EXISTS;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_NO_EXISTS;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_PROCESS_FAIL;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_UPDATE_FAIL_APPROVE;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_UPDATE_FAIL_PROCESSING;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_VOID_FAIL;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 
 /**
  * ERP 付款单 Service 实现类
@@ -246,7 +234,7 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             throw exception(FINANCE_PAYMENT_PROCESS_FAIL);
         }
         if (!StrUtil.equals(processInstanceId, payment.getProcessInstanceId())) {
-            return;
+            throw exception(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL);
         }
         if (!ErpAuditStatus.PROCESS.getStatus().equals(payment.getStatus())) {
             // 非处理中状态：已审批/已驳回/已作废，忽略迟到的 BPM 回调
@@ -287,6 +275,28 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         }
         } finally {
             unlockAfterTransaction(locks);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackFinancePaymentStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        ErpFinancePaymentDO payment = validateFinancePaymentExists(id);
+        if (!StrUtil.equals(processInstanceId, payment.getProcessInstanceId())) {
+            throw exception(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(payment.getStatus())) {
+            log.warn("[rollbackFinancePaymentStatusToDraftByBpm] 忽略非处理中付款单回退回调，id={}, currentStatus={}",
+                    id, payment.getStatus());
+            return;
+        }
+        int updateCount = erpFinancePaymentMapper.updateByIdAndStatus(id, payment.getStatus(),
+                new ErpFinancePaymentDO()
+                        .setId(id)
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
+                        .setProcessInstanceId(null));
+        if (updateCount == 0) {
+            throw exception(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL);
         }
     }
 

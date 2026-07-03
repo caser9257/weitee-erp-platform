@@ -1,6 +1,5 @@
 <template>
   <div class="customer-page-shell">
-    <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
 
     <ContentWrap class="customer-page-shell__hero">
       <div class="page-hero page-hero--compact">

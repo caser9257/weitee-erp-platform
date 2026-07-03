@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【ERP】替代料台账" url="https://doc.iocoder.cn/erp/mrp/" />
 
   <ContentWrap class="substitute-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="substitute-page__header">

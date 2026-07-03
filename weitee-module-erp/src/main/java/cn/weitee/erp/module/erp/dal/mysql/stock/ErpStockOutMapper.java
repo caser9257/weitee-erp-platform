@@ -63,9 +63,10 @@ public interface ErpStockOutMapper extends BaseMapperX<ErpStockOutDO> {
                 .last("LIMIT " + limit));
     }
 
-    default void clearProcessInstanceId(Long id) {
+    default void clearProcessInstanceId(Long id, String processInstanceId) {
         update(new LambdaUpdateWrapper<ErpStockOutDO>()
                 .eq(ErpStockOutDO::getId, id)
+                .eq(ErpStockOutDO::getProcessInstanceId, processInstanceId)
                 .set(ErpStockOutDO::getProcessInstanceId, null));
     }
 

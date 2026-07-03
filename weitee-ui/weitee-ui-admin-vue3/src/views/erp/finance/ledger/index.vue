@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【财务】账簿管理" url="https://doc.iocoder.cn/erp/" />
 
   <ContentWrap>
     <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="finance-ledger-page__query-form">

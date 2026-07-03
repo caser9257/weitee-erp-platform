@@ -96,9 +96,10 @@ public interface ErpPurchaseInMapper extends BaseMapperX<ErpPurchaseInDO> {
                 .eq(ErpPurchaseInDO::getId, id).eq(ErpPurchaseInDO::getStatus, status));
     }
 
-    default int clearProcessInstanceId(Long id) {
+    default int clearProcessInstanceId(Long id, String processInstanceId) {
         return update(null, new LambdaUpdateWrapper<ErpPurchaseInDO>()
                 .eq(ErpPurchaseInDO::getId, id)
+                .eq(ErpPurchaseInDO::getProcessInstanceId, processInstanceId)
                 .set(ErpPurchaseInDO::getProcessInstanceId, null));
     }
 

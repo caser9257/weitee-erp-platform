@@ -228,6 +228,7 @@ class ErpPurchaseOrderBpmServiceImplTest {
         );
         AtomicReference<Long> cancelBizIdRef = new AtomicReference<>();
         AtomicReference<String> cancelReasonRef = new AtomicReference<>();
+        List<ErpPurchaseOrderAuditLogDO> auditLogs = new ArrayList<>();
 
         setField(service, "erpPurchaseOrderMapper", createProxy(ErpPurchaseOrderMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
@@ -242,7 +243,13 @@ class ErpPurchaseOrderBpmServiceImplTest {
             }
             return null;
         }));
-        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> 1));
+        setField(service, "erpPurchaseOrderAuditLogMapper", createProxy(ErpPurchaseOrderAuditLogMapper.class, (methodName, args) -> {
+            if ("insert".equals(methodName)) {
+                auditLogs.add((ErpPurchaseOrderAuditLogDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
 
         Object reqVO = createCancelReqVO(23L, "cancel test");
         Method method = service.getClass().getMethod("cancelPurchaseOrderApproval", Long.class, reqVO.getClass());
@@ -250,6 +257,7 @@ class ErpPurchaseOrderBpmServiceImplTest {
 
         assertEquals(23L, cancelBizIdRef.get());
         assertEquals("cancel test", cancelReasonRef.get());
+        assertEquals(0, auditLogs.size());
     }
 
     private Object instantiateService() throws Exception {

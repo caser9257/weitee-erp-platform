@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="制造BOM" url="https://doc.iocoder.cn/erp/bom/" />
 
   <ContentWrap class="bom-page__hero-card" :body-style="{ padding: '24px' }" :class="getToneCardClass('blue')">
     <div class="bom-page__header">

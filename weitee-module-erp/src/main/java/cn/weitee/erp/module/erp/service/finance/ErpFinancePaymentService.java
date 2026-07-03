@@ -59,6 +59,8 @@ public interface ErpFinancePaymentService {
      */
     void updateFinancePaymentStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
 
+    void rollbackFinancePaymentStatusToDraftByBpm(Long id, String processInstanceId, String reason);
+
     /**
      * 删除付款单
      *

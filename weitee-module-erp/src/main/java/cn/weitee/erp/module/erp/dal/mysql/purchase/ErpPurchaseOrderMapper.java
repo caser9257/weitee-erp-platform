@@ -83,9 +83,10 @@ public interface ErpPurchaseOrderMapper extends BaseMapperX<ErpPurchaseOrderDO> 
                 .eq(ErpPurchaseOrderDO::getId, id).eq(ErpPurchaseOrderDO::getStatus, status));
     }
 
-    default int clearProcessInstanceId(Long id) {
+    default int clearProcessInstanceId(Long id, String processInstanceId) {
         return update(null, new LambdaUpdateWrapper<ErpPurchaseOrderDO>()
                 .eq(ErpPurchaseOrderDO::getId, id)
+                .eq(ErpPurchaseOrderDO::getProcessInstanceId, processInstanceId)
                 .set(ErpPurchaseOrderDO::getProcessInstanceId, null));
     }
 

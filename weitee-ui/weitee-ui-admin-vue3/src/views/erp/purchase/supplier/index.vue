@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【采购】供应商" url="https://doc.iocoder.cn/erp/purchase/" />
 
   <ContentWrap>
     <el-form ref="queryFormRef" :model="queryParams" label-position="top" class="supplier-query">

@@ -213,8 +213,8 @@ defineExpose({ open: openDrawer })
   gap: 16px;
   padding: 18px 20px;
   border-radius: 18px;
-  background: #0f172a;
-  color: #fff;
+  background: var(--erp-slate-900);
+  color: var(--erp-surface-white);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
 }
 
@@ -225,7 +225,7 @@ defineExpose({ open: openDrawer })
 }
 
 .purchase-order-batch-edit__context-count {
-  color: #bfdbfe;
+  color: var(--erp-blue-200);
   font-size: 12px;
   line-height: 18px;
   font-weight: 600;

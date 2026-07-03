@@ -54,6 +54,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_PROC
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_BATCH_UPDATE_FIELD_NOT_SUPPORT;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_BATCH_UPDATE_FIELD_VALUE_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_CHECK_FAIL_STATUS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_UPDATE_FAIL_APPROVE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -337,6 +338,7 @@ class ErpPurchaseInServiceImplTest {
     @Test
     void updatePurchaseInStatusByBpm_shouldApproveWithoutWritingStockAndKeepInboundCountAtZeroBeforeQualityCheck() {
         purchaseInRef.set(purchaseIn(1L, 9L, "PI-001", ErpAuditStatus.PROCESS.getStatus(), null)
+                .setProcessInstanceId("PI-APPROVE")
                 .setInTime(LocalDateTime.of(2026, 4, 30, 9, 15)));
         purchaseInItemsRef.set(List.of(purchaseInItem(11L, 1L, 101L, 1001L, 2001L, "6")));
         approvedPurchaseInsRef.set(List.of(
@@ -357,6 +359,79 @@ class ErpPurchaseInServiceImplTest {
         assertEquals(ErpBizTypeEnum.PURCHASE_IN.getType(), autoGenerateVoucherBizTypeRef.get());
         assertEquals(1L, autoGenerateVoucherBizIdRef.get());
         assertEquals(LocalDate.of(2026, 4, 30), financeHookBizDateRef.get());
+    }
+
+    @Test
+    void updatePurchaseInStatusByBpm_shouldRejectMismatchedProcessInstanceId() {
+        purchaseInRef.set(purchaseIn(1L, 9L, "PI-BOUND", ErpAuditStatus.PROCESS.getStatus(), null)
+                .setInTime(LocalDateTime.of(2026, 4, 30, 9, 15)));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.updatePurchaseInStatusByBpm(1L, "PI-OTHER", ErpAuditStatus.APPROVE.getStatus(), null));
+
+        assertEquals(PURCHASE_IN_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(null, createdQualityPurchaseInIdRef.get());
+        assertEquals(null, createdApStatementPurchaseInIdRef.get());
+        assertEquals(null, autoGenerateVoucherBizTypeRef.get());
+    }
+
+    @Test
+    void updatePurchaseInStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() {
+        purchaseInRef.set(purchaseIn(1L, 9L, "PI-LATE", ErpAuditStatus.APPROVE.getStatus(), null)
+                .setProcessInstanceId("PI-LATE")
+                .setInTime(LocalDateTime.of(2026, 4, 30, 9, 15)));
+
+        service.updatePurchaseInStatusByBpm(1L, "PI-LATE", ErpAuditStatus.REJECT.getStatus(), null);
+
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(null, createdQualityPurchaseInIdRef.get());
+        assertEquals(null, createdApStatementPurchaseInIdRef.get());
+        assertEquals(null, autoGenerateVoucherBizTypeRef.get());
+        assertTrue(stockRecords.isEmpty());
+    }
+
+    @Test
+    void rollbackPurchaseInStatusToDraftByBpm_shouldResetStatusToDraftAndClearBinding() {
+        purchaseInRef.set(purchaseIn(1L, 9L, "PI-ROLLBACK", ErpAuditStatus.PROCESS.getStatus(), null)
+                .setProcessInstanceId("PI-ROLLBACK")
+                .setInTime(LocalDateTime.of(2026, 4, 30, 9, 15)));
+
+        service.rollbackPurchaseInStatusToDraftByBpm(1L, "PI-ROLLBACK", "cancel");
+
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), lastUpdateObjRef.get().getStatus());
+        assertEquals(null, lastUpdateObjRef.get().getProcessInstanceId());
+        assertEquals(null, createdQualityPurchaseInIdRef.get());
+        assertEquals(null, createdApStatementPurchaseInIdRef.get());
+        assertEquals(null, autoGenerateVoucherBizTypeRef.get());
+        assertTrue(stockRecords.isEmpty());
+    }
+
+    @Test
+    void rollbackPurchaseInStatusToDraftByBpm_shouldRejectMismatchedProcessInstanceId() {
+        purchaseInRef.set(purchaseIn(1L, 9L, "PI-BOUND", ErpAuditStatus.PROCESS.getStatus(), null)
+                .setInTime(LocalDateTime.of(2026, 4, 30, 9, 15)));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.rollbackPurchaseInStatusToDraftByBpm(1L, "PI-OTHER", "cancel"));
+
+        assertEquals(PURCHASE_IN_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+        assertEquals(null, lastUpdateObjRef.get());
+    }
+
+    @Test
+    void rollbackPurchaseInStatusToDraftByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() {
+        purchaseInRef.set(purchaseIn(1L, 9L, "PI-LATE", ErpAuditStatus.DRAFT.getStatus(), null)
+                .setProcessInstanceId("PI-LATE")
+                .setInTime(LocalDateTime.of(2026, 4, 30, 9, 15)));
+
+        service.rollbackPurchaseInStatusToDraftByBpm(1L, "PI-LATE", "cancel");
+
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(null, createdQualityPurchaseInIdRef.get());
+        assertEquals(null, createdApStatementPurchaseInIdRef.get());
+        assertEquals(null, autoGenerateVoucherBizTypeRef.get());
+        assertTrue(stockRecords.isEmpty());
     }
 
     @Test
@@ -454,6 +529,13 @@ class ErpPurchaseInServiceImplTest {
     void updatePurchaseInStatusByBpm_shouldDeclareTransactionalBoundary() throws Exception {
         Method method = ErpPurchaseInServiceImpl.class.getMethod("updatePurchaseInStatusByBpm",
                 Long.class, String.class, Integer.class, String.class);
+        assertTrue(method.isAnnotationPresent(Transactional.class));
+    }
+
+    @Test
+    void rollbackPurchaseInStatusToDraftByBpm_shouldDeclareTransactionalBoundary() throws Exception {
+        Method method = ErpPurchaseInServiceImpl.class.getMethod("rollbackPurchaseInStatusToDraftByBpm",
+                Long.class, String.class, String.class);
         assertTrue(method.isAnnotationPresent(Transactional.class));
     }
 

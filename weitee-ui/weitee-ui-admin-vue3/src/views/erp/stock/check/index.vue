@@ -1,8 +1,4 @@
 <template>
-  <doc-alert
-    title="【库存】库存调拨、库存盘点"
-    url="https://doc.iocoder.cn/erp/stock-move-check/"
-  />
 
   <ContentWrap class="stock-check-page__filter-card">
     <div class="stock-check-page__title">库存盘点台账</div>

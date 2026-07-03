@@ -26,6 +26,8 @@ public interface ErpFinanceExpenseService {
 
     void updateFinanceExpenseStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
 
+    void rollbackFinanceExpenseStatusToDraftByBpm(Long id, String processInstanceId, String reason);
+
     void deleteFinanceExpense(List<Long> ids);
 
     ErpFinanceExpenseDO getFinanceExpense(Long id);

@@ -28,6 +28,7 @@ import cn.weitee.erp.module.erp.enums.ErpPurchaseOrderAuditActionTypeConstants;
 import cn.weitee.erp.module.erp.framework.event.PurchaseOrderChangedEvent;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -236,6 +237,14 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseOrderStatusByBpm(Long orderId, String processInstanceId, Integer status, String reason) {
         ErpPurchaseOrderDO purchaseOrder = validatePurchaseOrderExists(orderId);
+        if (!StrUtil.equals(processInstanceId, purchaseOrder.getProcessInstanceId())) {
+            throw exception(PURCHASE_ORDER_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(purchaseOrder.getStatus())) {
+            log.warn("[updatePurchaseOrderStatusByBpm] 忽略非处理中采购单回调，id={}, currentStatus={}, callbackStatus={}",
+                    orderId, purchaseOrder.getStatus(), status);
+            return;
+        }
         boolean reject = ErpAuditStatus.REJECT.getStatus().equals(status);
         ErpPurchaseOrderDO updateObj = new ErpPurchaseOrderDO()
                 .setId(orderId)
@@ -248,7 +257,7 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         }
         int updateCount = erpPurchaseOrderMapper.updateByIdAndStatus(orderId, purchaseOrder.getStatus(), updateObj);
         if (updateCount == 0) {
-            throw exception(PURCHASE_ORDER_PROCESS_FAIL);
+            throw exception(PURCHASE_ORDER_STATUS_UPDATE_ILLEGAL);
         }
         erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
                 .setOrderId(orderId)
@@ -256,6 +265,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
                 .setBeforeStatus(purchaseOrder.getStatus())
                 .setAfterStatus(status)
                 .setReason(reason));
+        if (ErpAuditStatus.APPROVE.getStatus().equals(status)) {
+            ErpTransactionUtils.afterCommit(() ->
+                    eventPublisher.publishEvent(new PurchaseOrderChangedEvent(
+                            orderId, PurchaseOrderChangedEvent.ChangeType.ORDER_APPROVED)));
+        }
         if (reject) {
             erpPurchaseOrderRejectLogMapper.insert(new ErpPurchaseOrderRejectLogDO()
                     .setOrderId(orderId)
@@ -266,10 +280,15 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rollbackPurchaseOrderStatusToDraftByBpm(Long orderId, String processInstanceId, String reason) {
-        validatePurchaseOrderExists(orderId);
+        ErpPurchaseOrderDO purchaseOrder = validatePurchaseOrderExists(orderId);
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(purchaseOrder.getStatus())) {
+            log.warn("[rollbackPurchaseOrderStatusToDraftByBpm] 忽略非处理中采购单回退回调，id={}, currentStatus={}",
+                    orderId, purchaseOrder.getStatus());
+            return;
+        }
         int updateCount = erpPurchaseOrderMapper.resetStatusToDraftByBpm(orderId, processInstanceId);
         if (updateCount == 0) {
-            throw exception(PURCHASE_ORDER_UPDATE_FAIL_PROCESSING);
+            throw exception(PURCHASE_ORDER_STATUS_UPDATE_ILLEGAL);
         }
         erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
                 .setOrderId(orderId)

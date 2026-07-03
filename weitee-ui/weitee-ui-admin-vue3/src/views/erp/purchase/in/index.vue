@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="【采购】采购订单、入库、退货" url="https://doc.iocoder.cn/erp/purchase/" />
-
   <ContentWrap class="purchase-in-page__filter-card">
     <div class="purchase-in-page__title">采购入库台账</div>
     <div class="purchase-in-main-control">
@@ -140,11 +138,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="付款状态" prop="paymentStatus">
-            <el-select
-              v-model="queryParams.paymentStatus"
-              placeholder="请选择付款状态"
-              clearable
-            >
+            <el-select v-model="queryParams.paymentStatus" placeholder="请选择付款状态" clearable>
               <el-option label="未付款" value="0" />
               <el-option label="部分付款" value="1" />
               <el-option label="全部付款" value="2" />
@@ -332,7 +326,9 @@
             <div class="ledger-progress__section">
               <div class="ledger-progress__top">
                 <span>质检合格</span>
-                <strong>{{ formatCount(row.qaPassCount) }} / {{ formatCount(row.totalCount) }}</strong>
+                <strong
+                  >{{ formatCount(row.qaPassCount) }} / {{ formatCount(row.totalCount) }}</strong
+                >
               </div>
               <el-progress
                 :stroke-width="6"
@@ -393,7 +389,10 @@
       <el-table-column label="操作" width="220" align="left">
         <template #default="{ row }">
           <div class="ledger-actions">
-            <template v-for="action in getInlineActionDescriptors(row)" :key="`desktop-${row.id}-${action.key}`">
+            <template
+              v-for="action in getInlineActionDescriptors(row)"
+              :key="`desktop-${row.id}-${action.key}`"
+            >
               <el-button
                 link
                 :type="action.type"
@@ -503,7 +502,9 @@
             <div class="purchase-in-mobile-card__metric">
               <div class="purchase-in-mobile-card__metric-top">
                 <span>质检合格</span>
-                <strong>{{ formatCount(row.qaPassCount) }} / {{ formatCount(row.totalCount) }}</strong>
+                <strong
+                  >{{ formatCount(row.qaPassCount) }} / {{ formatCount(row.totalCount) }}</strong
+                >
               </div>
               <el-progress
                 :stroke-width="6"
@@ -538,7 +539,10 @@
           </div>
 
           <div class="purchase-in-mobile-card__actions">
-            <template v-for="action in getInlineActionDescriptors(row)" :key="`mobile-${row.id}-${action.key}`">
+            <template
+              v-for="action in getInlineActionDescriptors(row)"
+              :key="`mobile-${row.id}-${action.key}`"
+            >
               <el-button
                 link
                 :type="action.type"
@@ -1071,7 +1075,11 @@ const getOverflowActionDescriptors = (row: PurchaseInVO): PurchaseInActionDescri
   ) {
     actions.push({ key: 'stockExecute', label: '执行入库' })
   }
-  if (canQueryPurchaseIn && rowActionState.canViewProcess && !inlineActionKeys.has('processDetail')) {
+  if (
+    canQueryPurchaseIn &&
+    rowActionState.canViewProcess &&
+    !inlineActionKeys.has('processDetail')
+  ) {
     actions.push({ key: 'processDetail', label: '查看审批' })
   }
   if (canQueryPurchaseIn && row.id && !inlineActionKeys.has('print')) {
@@ -1469,7 +1477,12 @@ onMounted(async () => {
 })
 
 watch(
-  () => [route.query.openId, route.query.openType, route.query.openAction, route.query.purchaseOrderId],
+  () => [
+    route.query.openId,
+    route.query.openType,
+    route.query.openAction,
+    route.query.purchaseOrderId
+  ],
   async () => {
     await openFormByRouteQuery()
   }
@@ -1932,8 +1945,7 @@ watch(
   border: 1px solid rgba(226, 232, 240, 0.92);
   border-radius: 20px;
   padding: 16px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
     linear-gradient(135deg, rgba(37, 99, 235, 0.03), rgba(20, 184, 166, 0.04));
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
 }

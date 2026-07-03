@@ -25,6 +25,7 @@ import cn.weitee.erp.module.erp.service.project.ErpProjectService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.system.api.dept.DeptApi;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,7 @@ import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.get
  */
 @Service
 @Validated
+@Slf4j
 public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
 
     @Resource
@@ -160,6 +162,14 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
         if (!approve && !reject) {
             throw exception(ErrorCodeConstantsExpense.EXPENSE_PROCESS_FAIL);
         }
+        if (!StrUtil.equals(processInstanceId, expense.getProcessInstanceId())) {
+            throw exception(ErrorCodeConstantsExpense.EXPENSE_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(expense.getStatus())) {
+            log.warn("[updateFinanceExpenseStatusByBpm] 忽略非处理中费用单回调，id={}, currentStatus={}, callbackStatus={}",
+                    id, expense.getStatus(), status);
+            return;
+        }
         if (approve) {
             validateExpenseBeforeApprove(expense);
             ensureExpenseItems(expense);
@@ -170,14 +180,34 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
                 .setStatus(status);
         int updateCount = erpFinanceExpenseMapper.updateByIdAndStatus(id, expense.getStatus(), updateObj);
         if (updateCount == 0) {
-            throw exception(approve ? ErrorCodeConstantsExpense.EXPENSE_APPROVE_FAIL
-                    : ErrorCodeConstantsExpense.EXPENSE_PROCESS_FAIL);
+            throw exception(ErrorCodeConstantsExpense.EXPENSE_STATUS_UPDATE_ILLEGAL);
         }
         if (approve) {
             apStatementService.createStatementForFinanceExpense(expense);
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), expense.getId(),
                     defaultTime(expense.getExpenseTime(), expense.getCreateTime(), expense.getUpdateTime()).toLocalDate());
             financeAssetCandidateService.createCandidateFromExpense(expense.getId());
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackFinanceExpenseStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        ErpFinanceExpenseDO expense = validateExpenseExists(id);
+        if (!StrUtil.equals(processInstanceId, expense.getProcessInstanceId())) {
+            throw exception(ErrorCodeConstantsExpense.EXPENSE_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(expense.getStatus())) {
+            log.warn("[rollbackFinanceExpenseStatusToDraftByBpm] 忽略非处理中费用单回退回调，id={}, currentStatus={}",
+                    id, expense.getStatus());
+            return;
+        }
+        int updateCount = erpFinanceExpenseMapper.updateByIdAndStatus(id, expense.getStatus(),
+                new ErpFinanceExpenseDO().setId(id)
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
+                        .setProcessInstanceId(null));
+        if (updateCount == 0) {
+            throw exception(ErrorCodeConstantsExpense.EXPENSE_STATUS_UPDATE_ILLEGAL);
         }
     }
 

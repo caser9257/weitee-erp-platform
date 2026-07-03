@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_MANUAL_STATUS_UPDATE_FORBIDDEN;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_PROCESS_FAIL_EXISTS_REFUND;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_RETURN_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -220,22 +221,63 @@ class ErpPurchaseReturnServiceImplTest {
     }
 
     @Test
-    void rollbackPurchaseReturnStatusToDraftByBpm_shouldThrowWhenNotProcessing() throws Exception {
+    void updatePurchaseReturnStatusByBpm_shouldRejectMismatchedProcessInstanceId() throws Exception {
         ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
         setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
-                return new ErpPurchaseReturnDO().setId(10L).setStatus(ErpAuditStatus.DRAFT.getStatus());
-            }
-            if ("resetStatusToDraftByBpm".equals(methodName)) {
-                return 0;
+                return new ErpPurchaseReturnDO().setId(10L)
+                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                        .setProcessInstanceId("PI-BOUND");
             }
             return null;
         }));
 
         ServiceException ex = assertThrows(ServiceException.class, () ->
-                service.rollbackPurchaseReturnStatusToDraftByBpm(10L, "PI-010", "reject"));
+                service.updatePurchaseReturnStatusByBpm(10L, "PI-OTHER", ErpAuditStatus.APPROVE.getStatus(), "approved"));
 
-        assertEquals(PURCHASE_RETURN_UPDATE_FAIL_PROCESSING.getCode(), ex.getCode());
+        assertEquals(PURCHASE_RETURN_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+    }
+
+    @Test
+    void updatePurchaseReturnStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
+        AtomicReference<Boolean> updateCalledRef = new AtomicReference<>(false);
+        setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseReturnDO().setId(10L)
+                        .setStatus(ErpAuditStatus.APPROVE.getStatus())
+                        .setProcessInstanceId("PI-BOUND");
+            }
+            if ("updateByIdStatusAndProcessInstanceId".equals(methodName)) {
+                updateCalledRef.set(true);
+                return 1;
+            }
+            return null;
+        }));
+
+        service.updatePurchaseReturnStatusByBpm(10L, "PI-BOUND", ErpAuditStatus.APPROVE.getStatus(), "approved");
+
+        assertEquals(Boolean.FALSE, updateCalledRef.get());
+    }
+
+    @Test
+    void rollbackPurchaseReturnStatusToDraftByBpm_shouldIgnoreLateCallbackWhenNotProcessing() throws Exception {
+        ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
+        AtomicReference<Boolean> rollbackCalledRef = new AtomicReference<>(false);
+        setField(service, "erpPurchaseReturnMapper", createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseReturnDO().setId(10L).setStatus(ErpAuditStatus.DRAFT.getStatus());
+            }
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                rollbackCalledRef.set(true);
+                return 0;
+            }
+            return null;
+        }));
+
+        service.rollbackPurchaseReturnStatusToDraftByBpm(10L, "PI-010", "reject");
+
+        assertEquals(Boolean.FALSE, rollbackCalledRef.get());
     }
 
     @SuppressWarnings("unchecked")

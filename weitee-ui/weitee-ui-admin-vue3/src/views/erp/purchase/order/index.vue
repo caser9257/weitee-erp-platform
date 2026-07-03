@@ -1,6 +1,4 @@
 <template>
-  <doc-alert title="【采购】采购订单、入库、退货" url="https://doc.iocoder.cn/erp/purchase/" />
-
   <ContentWrap v-if="traceActive" class="purchase-order-page__trace-card">
     <div class="purchase-order-trace">
       <div class="purchase-order-trace__text">
@@ -12,18 +10,12 @@
     </div>
   </ContentWrap>
 
-  <ContentWrap
-    v-if="shouldBlockSaleTraceByPermission"
-    class="purchase-order-page__permission-card"
-  >
+  <ContentWrap v-if="shouldBlockSaleTraceByPermission" class="purchase-order-page__permission-card">
     <div class="purchase-order-empty purchase-order-empty--permission">
       <div class="purchase-order-empty__icon">
         <Icon icon="ep:lock" />
       </div>
       <div class="purchase-order-empty__title">当前账号没有采购订单查看权限</div>
-      <div class="purchase-order-empty__desc">
-        销售追踪入口已阻止采购订单查询，请联系管理员分配采购订单查看权限。
-      </div>
       <div class="purchase-order-empty__actions">
         <el-button type="primary" @click="goBackFromUnauthorizedState">
           {{ unauthorizedBackLabel }}
@@ -93,7 +85,12 @@
           class="purchase-order-query__grid purchase-order-query__grid--advanced"
         >
           <el-form-item label="产品" prop="productId">
-            <el-select v-model="queryParams.productId" placeholder="请选择产品" clearable filterable>
+            <el-select
+              v-model="queryParams.productId"
+              placeholder="请选择产品"
+              clearable
+              filterable
+            >
               <el-option
                 v-for="item in productList"
                 :key="item.id"
@@ -103,7 +100,12 @@
             </el-select>
           </el-form-item>
           <el-form-item label="创建人" prop="creator">
-            <el-select v-model="queryParams.creator" placeholder="请选择创建人" clearable filterable>
+            <el-select
+              v-model="queryParams.creator"
+              placeholder="请选择创建人"
+              clearable
+              filterable
+            >
               <el-option
                 v-for="item in userList"
                 :key="item.id"
@@ -153,10 +155,7 @@
           <span v-if="advancedFilterCount" class="purchase-order-query__filter-count">
             {{ advancedFilterCount }}
           </span>
-          <Icon
-            :icon="advancedSearchVisible ? 'ep:arrow-up' : 'ep:arrow-down'"
-            class="ml-4px"
-          />
+          <Icon :icon="advancedSearchVisible ? 'ep:arrow-up' : 'ep:arrow-down'" class="ml-4px" />
         </el-button>
         <div class="purchase-order-query__actions">
           <el-button @click="resetQuery" :disabled="loading">
@@ -314,7 +313,7 @@
                 :stroke-width="6"
                 :show-text="false"
                 :percentage="getReturnPercent(row.returnCount, row.inCount, row.totalCount)"
-                color="#f59e0b"
+                color="var(--erp-warning-600)"
               />
             </div>
           </div>
@@ -327,7 +326,11 @@
             <div class="ledger-finance__meta">货款 {{ formatCurrency(row.totalProductPrice) }}</div>
             <div class="ledger-finance__sub">税额 {{ formatCurrency(row.totalTaxPrice) }}</div>
             <div class="ledger-finance__sub">
-              {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订金' }}
+              {{
+                normalizeNumber(row.depositPrice) > 0
+                  ? `订金 ${formatCurrency(row.depositPrice)}`
+                  : '无订金'
+              }}
             </div>
           </div>
         </template>
@@ -371,7 +374,10 @@
       <el-table-column label="操作" width="220" align="left">
         <template #default="{ row }">
           <div class="ledger-actions">
-            <template v-for="action in getInlineActionDescriptors(row)" :key="`desktop-${row.id}-${action.key}`">
+            <template
+              v-for="action in getInlineActionDescriptors(row)"
+              :key="`desktop-${row.id}-${action.key}`"
+            >
               <el-button
                 link
                 :type="action.type"
@@ -481,7 +487,11 @@
               <span>货款 {{ formatCurrency(row.totalProductPrice) }}</span>
               <span>税额 {{ formatCurrency(row.totalTaxPrice) }}</span>
               <span>
-                {{ normalizeNumber(row.depositPrice) > 0 ? `订金 ${formatCurrency(row.depositPrice)}` : '无订金' }}
+                {{
+                  normalizeNumber(row.depositPrice) > 0
+                    ? `订金 ${formatCurrency(row.depositPrice)}`
+                    : '无订金'
+                }}
               </span>
             </div>
           </div>
@@ -513,7 +523,7 @@
                 :stroke-width="6"
                 :show-text="false"
                 :percentage="getReturnPercent(row.returnCount, row.inCount, row.totalCount)"
-                color="#f59e0b"
+                color="var(--erp-warning-600)"
               />
             </div>
           </div>
@@ -523,7 +533,10 @@
           </div>
 
           <div class="purchase-order-mobile-card__actions">
-            <template v-for="action in getInlineActionDescriptors(row)" :key="`mobile-${row.id}-${action.key}`">
+            <template
+              v-for="action in getInlineActionDescriptors(row)"
+              :key="`mobile-${row.id}-${action.key}`"
+            >
               <el-button
                 link
                 :type="action.type"
@@ -831,13 +844,16 @@ const getReturnPercent = (
 const resolveInboundProgressColor = (row: PurchaseOrderVO) => {
   const percent = getProgressPercent(row.inCount, row.totalCount)
   if (percent >= 100) {
-    return '#10b981'
+    return 'var(--erp-success-600)'
   }
   if (percent > 0) {
-    return '#3b82f6'
+    return 'var(--erp-primary-600)'
   }
-  return '#cbd5e1'
+  return 'var(--erp-slate-400)'
 }
+
+const isActionCancelled = (error: unknown) =>
+  error === 'cancel' || error === 'close' || (error as { type?: string })?.type === 'cancel'
 
 const resolveInboundStatus = (row: PurchaseOrderVO) => {
   return getInboundStatusDescriptor({
@@ -903,7 +919,8 @@ const canBatchEditRow = (row: PurchaseOrderVO) => resolveRowActionState(row).can
 const canSubmit = (row: PurchaseOrderVO) => resolveRowActionState(row).canSubmit
 const canCancelApproval = (row: PurchaseOrderVO) => resolveRowActionState(row).canCancelApproval
 const canViewProcess = (row: PurchaseOrderVO) => resolveRowActionState(row).canViewProcess
-const resolvePurchaseInAction = (row: PurchaseOrderVO) => resolveRowActionState(row).purchaseInAction
+const resolvePurchaseInAction = (row: PurchaseOrderVO) =>
+  resolveRowActionState(row).purchaseInAction
 const canDelete = (row: PurchaseOrderVO) => resolveRowActionState(row).canDelete
 const canSelectRow = (row: PurchaseOrderVO) => canBatchEditRow(row)
 
@@ -1023,7 +1040,11 @@ const getOverflowActionDescriptors = (row: PurchaseOrderVO): PurchaseOrderAction
   if (canQueryPurchaseOrder && canViewProcess(row) && !inlineActionKeys.has('processDetail')) {
     actions.push({ key: 'processDetail', label: '查看审批' })
   }
-  if (canAccessPurchaseIn && resolvePurchaseInAction(row).visible && !inlineActionKeys.has('purchaseIn')) {
+  if (
+    canAccessPurchaseIn &&
+    resolvePurchaseInAction(row).visible &&
+    !inlineActionKeys.has('purchaseIn')
+  ) {
     actions.push({
       key: 'purchaseIn',
       label: resolvePurchaseInAction(row).label
@@ -1284,7 +1305,11 @@ const handleDelete = async (ids: number[]) => {
     message.success(t('common.delSuccess'))
     await getList()
     selectionList.value = selectionList.value.filter((item) => !executableIds.includes(item.id))
-  } catch {
+  } catch (error) {
+    if (isActionCancelled(error)) {
+      return
+    }
+    message.error('删除采购订单失败')
   } finally {
     setIdsLoading(deletingIds, executableIds, false)
   }
@@ -1308,7 +1333,11 @@ const handleCancelApproval = async (row: PurchaseOrderVO) => {
     })
     message.success('撤回审批成功')
     await getList()
-  } catch {
+  } catch (error) {
+    if (isActionCancelled(error)) {
+      return
+    }
+    message.error('撤回审批失败')
   } finally {
     setIdsLoading(cancelApprovalIds, [row.id], false)
   }
@@ -1371,7 +1400,10 @@ const handleExport = async () => {
     exportLoading.value = true
     const data = await PurchaseOrderApi.exportPurchaseOrder(queryParams)
     download.excel(data, '采购订单.xls')
-  } catch {
+  } catch (error) {
+    if (!isActionCancelled(error)) {
+      message.error('导出采购订单失败')
+    }
   } finally {
     exportLoading.value = false
   }
@@ -1427,9 +1459,9 @@ watch(
 .purchase-order-page__permission-card,
 .purchase-order-page__filter-card,
 .purchase-order-page__list-card {
-  border: 1px solid rgba(226, 232, 240, 0.92);
+  border: 1px solid var(--erp-slate-200);
   border-radius: 20px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--erp-shadow-md);
 }
 
 .purchase-order-trace {
@@ -1440,14 +1472,14 @@ watch(
 }
 
 .purchase-order-trace__text {
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 14px;
   line-height: 22px;
 }
 
 .purchase-order-page__title {
   margin-bottom: 18px;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 28px;
   font-weight: 800;
   letter-spacing: 0.01em;
@@ -1460,7 +1492,7 @@ watch(
 
   :deep(.el-form-item__label) {
     padding-bottom: 8px;
-    color: #475569;
+    color: var(--erp-slate-600);
     font-size: 13px;
     font-weight: 600;
     line-height: 20px;
@@ -1483,8 +1515,8 @@ watch(
   :deep(.el-input-number .el-input__wrapper) {
     border-radius: 12px;
     box-shadow: none;
-    border: 1px solid rgba(203, 213, 225, 0.9);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+    border: 1px solid var(--erp-slate-200);
+  background: linear-gradient(180deg, var(--erp-surface-white), rgba(248, 250, 252, 0.98));
   }
 }
 
@@ -1527,8 +1559,8 @@ watch(
   margin-left: 6px;
   padding: 0 5px;
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
   font-size: 11px;
   font-weight: 700;
 }
@@ -1540,7 +1572,7 @@ watch(
   gap: 16px;
   margin-bottom: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.82);
+  border-bottom: 1px solid var(--erp-slate-200);
 }
 
 .purchase-order-toolbar__actions,
@@ -1553,8 +1585,8 @@ watch(
 
 .purchase-order-ledger {
   :deep(.el-table__header-wrapper th) {
-    background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 0.98));
-    color: #64748b;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), var(--erp-surface-white));
+    color: var(--erp-slate-500);
     font-size: 11px;
     font-weight: 700;
   }
@@ -1575,7 +1607,7 @@ watch(
   }
 
   :deep(.el-progress-bar__outer) {
-    background: rgba(226, 232, 240, 0.92);
+    background: var(--erp-slate-200);
   }
 }
 
@@ -1599,7 +1631,7 @@ watch(
 }
 
 .ledger-order__no {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 15px;
   font-weight: 800;
   line-height: 22px;
@@ -1612,7 +1644,7 @@ watch(
 .ledger-finance__meta,
 .ledger-finance__sub,
 .ledger-status__reject {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 11px;
   line-height: 17px;
 }
@@ -1622,7 +1654,7 @@ watch(
 }
 
 .ledger-party__supplier {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;
@@ -1640,8 +1672,8 @@ watch(
   align-items: center;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(226, 232, 240, 0.9);
-  color: #475569;
+  background: var(--erp-slate-200);
+  color: var(--erp-slate-600);
   font-size: 11px;
   font-weight: 700;
 }
@@ -1657,7 +1689,7 @@ watch(
 
 .ledger-product {
   display: -webkit-box;
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
@@ -1683,13 +1715,13 @@ watch(
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 11px;
   line-height: 17px;
 }
 
 .ledger-progress__top strong {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -1702,7 +1734,7 @@ watch(
 }
 
 .ledger-finance__amount {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 20px;
   font-weight: 800;
   line-height: 1;
@@ -1711,7 +1743,7 @@ watch(
 }
 
 .ledger-finance__meta {
-  color: #059669;
+  color: var(--erp-success-600);
   font-weight: 600;
   text-align: right;
 }
@@ -1732,7 +1764,7 @@ watch(
 
 .ledger-status__reject {
   max-width: 100%;
-  color: #dc2626;
+  color: var(--erp-danger-600);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1761,7 +1793,7 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #64748b;
+  color: var(--erp-slate-500);
 }
 
 .purchase-order-empty__icon {
@@ -1771,8 +1803,8 @@ watch(
   width: 48px;
   height: 48px;
   border-radius: 16px;
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.08), rgba(20, 184, 166, 0.08));
-  color: #2563eb;
+  background: var(--erp-primary-50);
+  color: var(--erp-primary-600);
   font-size: 22px;
 }
 
@@ -1784,7 +1816,7 @@ watch(
 
 .purchase-order-empty__desc {
   max-width: 420px;
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 13px;
   line-height: 22px;
   text-align: center;
@@ -1798,12 +1830,12 @@ watch(
 
 .purchase-order-empty--error .purchase-order-empty__icon {
   background: linear-gradient(180deg, rgba(248, 113, 113, 0.12), rgba(251, 191, 36, 0.08));
-  color: #ef4444;
+  color: var(--erp-danger-600);
 }
 
 .purchase-order-empty--permission .purchase-order-empty__icon {
   background: linear-gradient(180deg, rgba(251, 191, 36, 0.14), rgba(59, 130, 246, 0.1));
-  color: #d97706;
+  color: var(--erp-warning-600);
 }
 
 .purchase-order-mobile-list {
@@ -1813,13 +1845,12 @@ watch(
 }
 
 .purchase-order-mobile-card {
-  border: 1px solid rgba(226, 232, 240, 0.92);
+  border: 1px solid var(--erp-slate-200);
   border-radius: 20px;
   padding: 16px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)),
     linear-gradient(135deg, rgba(37, 99, 235, 0.03), rgba(20, 184, 166, 0.04));
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+  box-shadow: var(--erp-shadow-md);
 }
 
 .purchase-order-mobile-card__head,
@@ -1844,7 +1875,7 @@ watch(
 }
 
 .purchase-order-mobile-card__no {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 17px;
   font-weight: 800;
   line-height: 24px;
@@ -1853,7 +1884,7 @@ watch(
 
 .purchase-order-mobile-card__meta,
 .purchase-order-mobile-card__finance {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
   line-height: 18px;
 }
@@ -1874,7 +1905,7 @@ watch(
 
 .purchase-order-mobile-card__supplier,
 .purchase-order-mobile-card__product {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 15px;
   font-weight: 700;
   line-height: 22px;
@@ -1882,7 +1913,7 @@ watch(
 
 .purchase-order-mobile-card__detail {
   margin-top: 8px;
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
 }
@@ -1892,8 +1923,8 @@ watch(
   align-items: center;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(226, 232, 240, 0.9);
-  color: #475569;
+  background: var(--erp-slate-200);
+  color: var(--erp-slate-600);
   font-size: 11px;
   font-weight: 700;
 }
@@ -1904,11 +1935,11 @@ watch(
 }
 
 .purchase-order-mobile-card__finance-label {
-  color: #64748b;
+  color: var(--erp-slate-500);
 }
 
 .purchase-order-mobile-card__finance-value {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 24px;
   line-height: 1.05;
   font-weight: 800;
@@ -1939,13 +1970,13 @@ watch(
 
 .purchase-order-mobile-card__metric-top {
   justify-content: space-between;
-  color: #475569;
+  color: var(--erp-slate-600);
   font-size: 12px;
   line-height: 18px;
 }
 
 .purchase-order-mobile-card__metric-top strong {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1953,7 +1984,7 @@ watch(
 
 .purchase-order-mobile-card__reject {
   margin-top: 12px;
-  color: #dc2626;
+  color: var(--erp-danger-600);
   font-size: 12px;
   line-height: 18px;
 }
@@ -1981,7 +2012,7 @@ watch(
 }
 
 .purchase-order-page__record-count {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 13px;
   line-height: 20px;
 }

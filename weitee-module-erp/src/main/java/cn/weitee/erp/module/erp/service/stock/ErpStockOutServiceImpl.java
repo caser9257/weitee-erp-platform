@@ -258,14 +258,22 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
     @Transactional(rollbackFor = Exception.class)
     public void updateStockOutStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpStockOutDO stockOut = validateStockOutExists(id);
+        if (!ObjectUtil.equal(processInstanceId, stockOut.getProcessInstanceId())) {
+            throw exception(STOCK_OUT_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(stockOut.getStatus())) {
+            log.warn("[updateStockOutStatusByBpm] 忽略非处理中其它出库单回调，id={}, currentStatus={}, callbackStatus={}",
+                    id, stockOut.getStatus(), status);
+            return;
+        }
         if (!ErpAuditStatus.APPROVE.getStatus().equals(status)) {
-            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
+            throw exception(STOCK_OUT_STATUS_UPDATE_ILLEGAL);
         }
         int updateCount = erpStockOutMapper.updateByIdStatusAndProcessInstanceId(id,
                 ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
                 new ErpStockOutDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
         if (updateCount == 0) {
-            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
+            throw exception(STOCK_OUT_STATUS_UPDATE_ILLEGAL);
         }
         List<ErpStockOutItemDO> stockOutItems = erpStockOutItemMapper.selectListByOutId(id);
         allocateStockOutBatches(stockOut, stockOutItems);
@@ -288,10 +296,15 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rollbackStockOutStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
-        validateStockOutExists(id);
+        ErpStockOutDO stockOut = validateStockOutExists(id);
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(stockOut.getStatus())) {
+            log.warn("[rollbackStockOutStatusToDraftByBpm] 忽略非处理中其它出库单回退回调，id={}, currentStatus={}",
+                    id, stockOut.getStatus());
+            return;
+        }
         int updateCount = erpStockOutMapper.resetStatusToDraftByBpm(id, processInstanceId);
         if (updateCount == 0) {
-            throw exception(STOCK_OUT_UPDATE_FAIL_PROCESSING, id);
+            throw exception(STOCK_OUT_STATUS_UPDATE_ILLEGAL);
         }
     }
 

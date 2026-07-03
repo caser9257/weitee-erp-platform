@@ -27,6 +27,9 @@ public class ErpPurchaseReturnRespVO {
     @ExcelProperty("退货状态")
     private Integer status;
 
+    @Schema(description = "审批流程实例编号", example = "PI-20260703-001")
+    private String processInstanceId;
+
     @Schema(description = "供应商编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1724")
     private Long supplierId;
     @Schema(description = "供应商名称", example = "芋道")

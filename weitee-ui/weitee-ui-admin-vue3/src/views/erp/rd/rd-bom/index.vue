@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="研发BOM" url="https://doc.iocoder.cn/erp/bom/" />
 
   <ContentWrap>
     <el-form

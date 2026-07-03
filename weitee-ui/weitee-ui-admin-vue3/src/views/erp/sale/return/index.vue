@@ -1,6 +1,5 @@
 <template>
   <div class="sales-ledger-page">
-    <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
 
     <ContentWrap class="sales-ledger-page__hero">
       <div class="ledger-hero ledger-hero--compact">

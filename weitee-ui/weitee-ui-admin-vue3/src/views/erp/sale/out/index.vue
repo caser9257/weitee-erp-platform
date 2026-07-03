@@ -1,5 +1,4 @@
 <template>
-  <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
 
   <ContentWrap class="sale-out-page__filter-card">
     <div class="sale-out-page__title">销售出库台账</div>

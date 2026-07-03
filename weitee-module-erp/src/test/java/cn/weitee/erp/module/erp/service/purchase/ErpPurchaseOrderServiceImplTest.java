@@ -29,8 +29,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_DELETE_FAIL_APPROVE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_NOT_APPROVE;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_UPDATE_FAIL_APPROVE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_ORDER_UPDATE_FAIL_PROCESSING;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -84,7 +86,7 @@ class ErpPurchaseOrderServiceImplTest {
     @Test
     void updatePurchaseOrderStatusByBpm_shouldWriteRejectSummaryAndRejectLog() throws Exception {
         purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(1L).setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId("PI-OLD"));
+                .setProcessInstanceId("PI-NEW"));
 
         invokeUpdatePurchaseOrderStatusByBpm(1L, "PI-NEW", ErpAuditStatus.REJECT.getStatus(), REJECT_REASON);
 
@@ -96,6 +98,39 @@ class ErpPurchaseOrderServiceImplTest {
         assertEquals(REJECT_REASON, rejectLogs.get(0).getReason());
         assertEquals(1, auditLogs.size());
         assertEquals(ErpPurchaseOrderAuditActionTypeConstants.REJECT, auditLogs.get(0).getActionType());
+    }
+
+    @Test
+    void updatePurchaseOrderStatusByBpm_shouldRejectMismatchedProcessInstanceId() {
+        purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(1L).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-BOUND"));
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> {
+                    try {
+                        invokeUpdatePurchaseOrderStatusByBpm(1L, "PI-OTHER", ErpAuditStatus.APPROVE.getStatus(), "approved");
+                    } catch (Exception e) {
+                        throw unwrap(e);
+                    }
+                });
+
+        ServiceException serviceException = assertInstanceOf(ServiceException.class, ex);
+        assertEquals(PURCHASE_ORDER_STATUS_UPDATE_ILLEGAL.getCode(), serviceException.getCode());
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(0, auditLogs.size());
+        assertEquals(0, rejectLogs.size());
+    }
+
+    @Test
+    void updatePurchaseOrderStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(1L).setStatus(ErpAuditStatus.APPROVE.getStatus())
+                .setProcessInstanceId("PI-LATE"));
+
+        invokeUpdatePurchaseOrderStatusByBpm(1L, "PI-LATE", ErpAuditStatus.REJECT.getStatus(), REJECT_REASON);
+
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(0, auditLogs.size());
+        assertEquals(0, rejectLogs.size());
     }
 
     @Test
@@ -195,22 +230,13 @@ class ErpPurchaseOrderServiceImplTest {
     }
 
     @Test
-    void rollbackPurchaseOrderStatusToDraftByBpm_shouldThrowWhenNotProcessing() {
+    void rollbackPurchaseOrderStatusToDraftByBpm_shouldIgnoreLateCallbackWhenNotProcessing() {
         purchaseOrderRef.set(new ErpPurchaseOrderDO().setId(3L).setStatus(ErpAuditStatus.DRAFT.getStatus())
                 .setProcessInstanceId("PI-DRAFT"));
-        updateCountRef.set(0);
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> {
-                    try {
-                        invokeRollbackPurchaseOrderStatusToDraftByBpm(3L, "PI-DRAFT", "cancel failed");
-                    } catch (Exception e) {
-                        throw unwrap(e);
-                    }
-                });
-
-        ServiceException serviceException = assertInstanceOf(ServiceException.class, ex);
-        assertEquals(PURCHASE_ORDER_UPDATE_FAIL_PROCESSING.getCode(), serviceException.getCode());
+        assertDoesNotThrow(() -> invokeRollbackPurchaseOrderStatusToDraftByBpm(3L, "PI-DRAFT", "cancel failed"));
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(0, auditLogs.size());
     }
 
     @Test

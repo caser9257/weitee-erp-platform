@@ -83,7 +83,6 @@ public class ErpPurchaseInBpmServiceImpl implements ErpPurchaseInBpmService {
         ErpTransactionUtils.afterCommit(() -> {
             try {
                 approvalRuntimeService.cancel("erp.purchase.in.submit", purchaseInId, userId, reqVO.getReason());
-                erpPurchaseInMapper.clearProcessInstanceId(purchaseInId);
             } catch (Exception e) {
                 log.warn("[cancelPurchaseInApproval] BPM 撤回失败，purchaseInId={}", purchaseInId, e);
             }

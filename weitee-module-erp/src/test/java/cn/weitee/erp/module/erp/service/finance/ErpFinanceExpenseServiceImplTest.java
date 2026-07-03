@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsExpense.EXPENSE_RD_ACCOUNTING_TYPE_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsExpense.EXPENSE_RD_ACCOUNTING_TYPE_REQUIRED;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsExpense.EXPENSE_STATUS_UPDATE_ILLEGAL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -249,6 +250,165 @@ class ErpFinanceExpenseServiceImplTest {
         assertEquals(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), autoGenerateBizTypeRef.get());
         assertEquals(11L, autoGenerateBizIdRef.get());
         assertEquals(LocalDate.of(2026, 4, 29), financeHookBizDateRef.get());
+    }
+
+    @Test
+    void updateFinanceExpenseStatusByBpm_shouldRejectMismatchedProcessInstanceId() throws Exception {
+        ErpFinanceExpenseServiceImpl service = new ErpFinanceExpenseServiceImpl();
+        ErpFinanceExpenseDO expense = new ErpFinanceExpenseDO()
+                .setId(11L)
+                .setNo("LSBX20260429000001")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-BOUND")
+                .setExpenseTime(LocalDateTime.of(2026, 4, 29, 9, 0))
+                .setExpenseType(80)
+                .setDeptId(1L)
+                .setSupplierId(2L)
+                .setAccountId(3L)
+                .setExpensePrice(new BigDecimal("300.00"));
+        AtomicReference<ErpFinanceExpenseDO> updatedExpenseRef = new AtomicReference<>();
+        AtomicReference<ErpFinanceExpenseDO> approvedExpenseRef = new AtomicReference<>();
+        AtomicReference<Integer> autoGenerateBizTypeRef = new AtomicReference<>();
+
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expense;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedExpenseRef.set((ErpFinanceExpenseDO) args[2]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpFinanceExpenseItemMapper", createProxy(ErpFinanceExpenseItemMapper.class, (methodName, args) -> List.of()));
+        setField(service, "deptApi", createProxy(DeptApi.class, (methodName, args) -> null));
+        setField(service, "projectService", createProxy(ErpProjectService.class, (methodName, args) -> null));
+        setField(service, "supplierService", createProxy(ErpSupplierService.class, (methodName, args) -> null));
+        setField(service, "accountService", createProxy(ErpAccountService.class, (methodName, args) -> null));
+        setField(service, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
+        setField(service, "financeExpenseTypeService", createExpenseTypeService());
+        setField(service, "apStatementService", createProxy(ErpApStatementService.class, (methodName, args) -> {
+            if ("createStatementForFinanceExpense".equals(methodName)) {
+                approvedExpenseRef.set((ErpFinanceExpenseDO) args[0]);
+            }
+            return null;
+        }));
+        setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> {
+            if ("handleApprovedBiz".equals(methodName)) {
+                autoGenerateBizTypeRef.set((Integer) args[0]);
+            }
+            return null;
+        }));
+        setField(service, "financeAssetCandidateService", createProxy(ErpFinanceAssetCandidateService.class, (methodName, args) -> null));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.updateFinanceExpenseStatusByBpm(11L, "PI-OTHER", ErpAuditStatus.APPROVE.getStatus(), "approved"));
+
+        assertEquals(EXPENSE_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+        assertEquals(null, updatedExpenseRef.get());
+        assertEquals(null, approvedExpenseRef.get());
+        assertEquals(null, autoGenerateBizTypeRef.get());
+    }
+
+    @Test
+    void updateFinanceExpenseStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        ErpFinanceExpenseServiceImpl service = new ErpFinanceExpenseServiceImpl();
+        ErpFinanceExpenseDO expense = new ErpFinanceExpenseDO()
+                .setId(11L)
+                .setNo("LSBX20260429000001")
+                .setStatus(ErpAuditStatus.APPROVE.getStatus())
+                .setProcessInstanceId("PI-BOUND");
+        AtomicReference<ErpFinanceExpenseDO> updatedExpenseRef = new AtomicReference<>();
+
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expense;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedExpenseRef.set((ErpFinanceExpenseDO) args[2]);
+                return 1;
+            }
+            return null;
+        }));
+
+        service.updateFinanceExpenseStatusByBpm(11L, "PI-BOUND", ErpAuditStatus.REJECT.getStatus(), "approved");
+
+        assertEquals(null, updatedExpenseRef.get());
+    }
+
+    @Test
+    void rollbackFinanceExpenseStatusToDraftByBpm_shouldResetStatusToDraftAndClearBinding() throws Exception {
+        ErpFinanceExpenseServiceImpl service = new ErpFinanceExpenseServiceImpl();
+        ErpFinanceExpenseDO expense = new ErpFinanceExpenseDO()
+                .setId(11L)
+                .setNo("LSBX20260429000001")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-ROLLBACK");
+        AtomicReference<ErpFinanceExpenseDO> updatedExpenseRef = new AtomicReference<>();
+
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expense;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedExpenseRef.set((ErpFinanceExpenseDO) args[2]);
+                return 1;
+            }
+            return null;
+        }));
+
+        service.rollbackFinanceExpenseStatusToDraftByBpm(11L, "PI-ROLLBACK", "cancel");
+
+        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedExpenseRef.get().getStatus());
+        assertEquals(null, updatedExpenseRef.get().getProcessInstanceId());
+    }
+
+    @Test
+    void rollbackFinanceExpenseStatusToDraftByBpm_shouldRejectMismatchedProcessInstanceId() throws Exception {
+        ErpFinanceExpenseServiceImpl service = new ErpFinanceExpenseServiceImpl();
+        ErpFinanceExpenseDO expense = new ErpFinanceExpenseDO()
+                .setId(11L)
+                .setNo("LSBX20260429000001")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId("PI-BOUND");
+
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expense;
+            }
+            return null;
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.rollbackFinanceExpenseStatusToDraftByBpm(11L, "PI-OTHER", "cancel"));
+
+        assertEquals(EXPENSE_STATUS_UPDATE_ILLEGAL.getCode(), ex.getCode());
+    }
+
+    @Test
+    void rollbackFinanceExpenseStatusToDraftByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        ErpFinanceExpenseServiceImpl service = new ErpFinanceExpenseServiceImpl();
+        ErpFinanceExpenseDO expense = new ErpFinanceExpenseDO()
+                .setId(11L)
+                .setNo("LSBX20260429000001")
+                .setStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setProcessInstanceId("PI-LATE");
+        AtomicReference<ErpFinanceExpenseDO> updatedExpenseRef = new AtomicReference<>();
+
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expense;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedExpenseRef.set((ErpFinanceExpenseDO) args[2]);
+                return 1;
+            }
+            return null;
+        }));
+
+        service.rollbackFinanceExpenseStatusToDraftByBpm(11L, "PI-LATE", "cancel");
+
+        assertEquals(null, updatedExpenseRef.get());
     }
 
     @Test

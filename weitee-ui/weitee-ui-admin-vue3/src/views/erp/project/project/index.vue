@@ -1,6 +1,5 @@
 <template>
   <div class="project-page-shell">
-    <doc-alert :title="pageDocTitle" url="https://doc.iocoder.cn/erp/project/" />
 
     <ContentWrap class="project-page-shell__hero">
       <div class="page-hero page-hero--compact">

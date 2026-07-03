@@ -824,13 +824,13 @@ watch(dialogVisible, (visible) => {
 .summary-card {
   display: grid;
   gap: 12px;
-  border: 1px solid #0f172a;
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
-  color: #e2e8f0;
+  border: 1px solid var(--erp-slate-900);
+  background: linear-gradient(180deg, var(--erp-slate-900) 0%, var(--erp-slate-800) 100%);
+  color: var(--erp-slate-200);
 }
 
 .summary-title {
-  color: #cbd5e1;
+  color: var(--erp-slate-400);
   font-size: 13px;
   font-weight: 600;
   line-height: 20px;
@@ -841,14 +841,14 @@ watch(dialogVisible, (visible) => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  color: #cbd5e1;
+  color: var(--erp-slate-400);
   font-size: 14px;
   line-height: 22px;
   font-variant-numeric: tabular-nums;
 }
 
 .summary-row strong {
-  color: #f8fafc;
+  color: var(--erp-surface-white);
   font-size: 16px;
   font-weight: 600;
 }
@@ -860,7 +860,7 @@ watch(dialogVisible, (visible) => {
 }
 
 .summary-row.is-total strong {
-  color: #fda4af;
+  color: var(--erp-rose-400);
   font-size: 28px;
 }
 

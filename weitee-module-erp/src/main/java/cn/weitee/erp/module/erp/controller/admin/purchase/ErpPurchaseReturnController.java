@@ -104,14 +104,14 @@ public class ErpPurchaseReturnController {
 
     @PostMapping("/submit")
     @Operation(summary = "提交采购退货审批")
-    @PreAuthorize("@ss.hasPermission('erp:purchase-return:submit')")
+    @PreAuthorize("@ss.hasAnyPermissions('erp:purchase-return:submit', 'erp:purchase-return:update-status')")
     public CommonResult<String> submitPurchaseReturn(@Valid @RequestBody ErpPurchaseReturnSubmitReqVO reqVO) {
         return success(purchaseReturnBpmService.submitPurchaseReturn(getLoginUserId(), reqVO));
     }
 
     @DeleteMapping("/cancel-approval")
     @Operation(summary = "撤回采购退货审批")
-    @PreAuthorize("@ss.hasPermission('erp:purchase-return:cancel-approval')")
+    @PreAuthorize("@ss.hasAnyPermissions('erp:purchase-return:cancel-approval', 'erp:purchase-return:update-status')")
     public CommonResult<Boolean> cancelPurchaseReturnApproval(@Valid @RequestBody ErpPurchaseReturnCancelApprovalReqVO reqVO) {
         purchaseReturnBpmService.cancelPurchaseReturnApproval(getLoginUserId(), reqVO);
         return success(true);

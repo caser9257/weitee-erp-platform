@@ -39,6 +39,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpFinanceAssetCandidateService;
 import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +60,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 
 @Service
 @Validated
+@Slf4j
 public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
 
     private static final String BATCH_EDIT_MODE_OVERWRITE = "overwrite";
@@ -304,6 +306,14 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
     @Transactional(rollbackFor = Exception.class)
     public void updatePurchaseInStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         ErpPurchaseInDO purchaseIn = queryHelper.validatePurchaseInExists(id);
+        if (!StrUtil.equals(processInstanceId, purchaseIn.getProcessInstanceId())) {
+            throw exception(PURCHASE_IN_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(purchaseIn.getStatus())) {
+            log.warn("[updatePurchaseInStatusByBpm] 忽略非处理中采购入库单回调，id={}, currentStatus={}, callbackStatus={}",
+                    id, purchaseIn.getStatus(), status);
+            return;
+        }
         boolean reject = ErpAuditStatus.REJECT.getStatus().equals(status);
         ErpPurchaseInDO updateObj = new ErpPurchaseInDO()
                 .setId(id)
@@ -323,7 +333,7 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
         }
         int updateCount = erpPurchaseInMapper.updateByIdAndStatus(id, purchaseIn.getStatus(), updateObj);
         if (updateCount == 0) {
-            throw exception(PURCHASE_IN_PROCESS_FAIL);
+            throw exception(PURCHASE_IN_STATUS_UPDATE_ILLEGAL);
         }
         if (ErpAuditStatus.APPROVE.getStatus().equals(status)) {
             purchaseInQualityService.createQualityOrderIfAbsent(id);
@@ -332,6 +342,28 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
             financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.PURCHASE_IN.getType(), id,
                     defaultTime(purchaseIn.getInTime(), purchaseIn.getCreateTime(), purchaseIn.getUpdateTime()).toLocalDate());
             financeAssetCandidateService.createCandidateFromPurchaseIn(id);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackPurchaseInStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        ErpPurchaseInDO purchaseIn = queryHelper.validatePurchaseInExists(id);
+        if (!StrUtil.equals(processInstanceId, purchaseIn.getProcessInstanceId())) {
+            throw exception(PURCHASE_IN_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(purchaseIn.getStatus())) {
+            log.warn("[rollbackPurchaseInStatusToDraftByBpm] 忽略非处理中采购入库单回退回调，id={}, currentStatus={}",
+                    id, purchaseIn.getStatus());
+            return;
+        }
+        ErpPurchaseInDO updateObj = new ErpPurchaseInDO()
+                .setId(id)
+                .setStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setProcessInstanceId(null);
+        int updateCount = erpPurchaseInMapper.updateByIdAndStatus(id, purchaseIn.getStatus(), updateObj);
+        if (updateCount == 0) {
+            throw exception(PURCHASE_IN_STATUS_UPDATE_ILLEGAL);
         }
     }
 

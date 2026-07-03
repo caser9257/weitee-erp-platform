@@ -41,6 +41,9 @@ public class PurchaseOrderChangeListener {
                 case QUANTITY_CHANGED:
                     handleQuantityChanged(event.getPurchaseOrderId());
                     break;
+                case ORDER_APPROVED:
+                    handleOrderApproved(event.getPurchaseOrderId());
+                    break;
                 case ORDER_CANCELLED:
                 case ORDER_REJECTED:
                     handleOrderCancelled(event.getPurchaseOrderId());
@@ -51,6 +54,20 @@ public class PurchaseOrderChangeListener {
         } catch (Exception e) {
             log.error("[onPurchaseOrderChanged] 处理失败，purchaseOrderId={}", event.getPurchaseOrderId(), e);
         }
+    }
+
+    /**
+     * 处理订单审批通过：释放关联销售单的 MRP 锁定，允许下游继续流转。
+     */
+    private void handleOrderApproved(Long purchaseOrderId) {
+        List<ErpPurchaseSuggestDO> suggests = getConvertedSuggestsByOrderId(purchaseOrderId);
+        if (CollUtil.isEmpty(suggests)) {
+            log.info("[handleOrderApproved] 无关联建议，purchaseOrderId={}", purchaseOrderId);
+            return;
+        }
+
+        // 审批通过后，建议维持 CONVERTED 状态，不回退；此处仅保留监听入口，便于后续补链路。
+        log.info("[handleOrderApproved] 采购订单审批通过，保留 {} 条已转单建议，purchaseOrderId={}", suggests.size(), purchaseOrderId);
     }
 
     /**

@@ -48,6 +48,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.SALE_ORDER_DELET
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.SALE_ORDER_REJECT_REASON_REQUIRED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.SALE_ORDER_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.SALE_ORDER_UPDATE_FAIL_PROCESSING;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -357,6 +358,20 @@ class ErpSaleOrderServiceImplTest {
     }
 
     @Test
+    void updateSaleOrderStatusByBpm_shouldIgnoreLateCallbackWhenOrderAlreadyHandled() throws Exception {
+        saleOrderRef.set(new ErpSaleOrderDO().setId(4L).setStatus(ErpAuditStatus.APPROVE.getStatus())
+                .setProcessInstanceId("PI-LATE")
+                .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
+
+        invokeUpdateSaleOrderStatusByBpm(4L, "PI-LATE", ErpAuditStatus.REJECT.getStatus(), REJECT_REASON);
+
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(0, auditLogs.size());
+        assertEquals(0, rejectLogs.size());
+        assertEquals(0, publishedEvents.size());
+    }
+
+    @Test
     void rollbackSaleOrderStatusToDraftByBpm_shouldWriteDraftAuditLog() throws Exception {
         saleOrderRef.set(new ErpSaleOrderDO().setId(4L).setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId("PI-CANCEL")
@@ -373,23 +388,14 @@ class ErpSaleOrderServiceImplTest {
     }
 
     @Test
-    void rollbackSaleOrderStatusToDraftByBpm_shouldThrowWhenNotProcessing() {
+    void rollbackSaleOrderStatusToDraftByBpm_shouldIgnoreLateCallbackWhenNotProcessing() {
         saleOrderRef.set(new ErpSaleOrderDO().setId(5L).setStatus(ErpAuditStatus.DRAFT.getStatus())
                 .setProcessInstanceId("PI-DRAFT")
                 .setOutCount(BigDecimal.ZERO).setReturnCount(BigDecimal.ZERO));
-        updateCountRef.set(0);
 
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> {
-                    try {
-                        invokeRollbackSaleOrderStatusToDraftByBpm(5L, "PI-DRAFT", "撤回失败");
-                    } catch (Exception e) {
-                        throw unwrap(e);
-                    }
-                });
-
-        ServiceException serviceException = assertInstanceOf(ServiceException.class, ex);
-        assertEquals(SALE_ORDER_STATUS_UPDATE_ILLEGAL.getCode(), serviceException.getCode());
+        assertDoesNotThrow(() -> invokeRollbackSaleOrderStatusToDraftByBpm(5L, "PI-DRAFT", "撤回失败"));
+        assertEquals(null, lastUpdateObjRef.get());
+        assertEquals(0, auditLogs.size());
     }
 
     private ErpSaleOrderMapper createSaleOrderMapperProxy() {
