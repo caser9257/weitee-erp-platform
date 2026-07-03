@@ -41,6 +41,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.validation.annotation.Validated;
@@ -202,8 +203,8 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
                 ErpPurchaseInQualityCheckReqVO.Item::getId, item -> item));
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void submitPurchaseInQualityInTransaction(Long userId, ErpPurchaseInQualityDO quality, String remark,
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    void submitPurchaseInQualityInTransaction(Long userId, ErpPurchaseInQualityDO quality, String remark,
                                                       Map<Long, ?> requestItemMap) {
         submitPurchaseInQuality(userId, quality, remark, requestItemMap);
     }
@@ -274,7 +275,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void assignCheckerInTransaction(Long userId, ErpPurchaseInQualityAssignCheckerReqVO reqVO) {
+    void assignCheckerInTransaction(Long userId, ErpPurchaseInQualityAssignCheckerReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
         if (!validationHelper.canAssignChecker(quality.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_ASSIGN_CHECKER_FAIL_STATUS);
@@ -305,7 +306,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void submitFirstCheckInTransaction(Long userId, ErpPurchaseInQualitySubmitFirstCheckReqVO reqVO) {
+    void submitFirstCheckInTransaction(Long userId, ErpPurchaseInQualitySubmitFirstCheckReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
         if (!ObjectUtil.equal(quality.getStatus(), ErpPurchaseInQualityStatusEnum.FIRST_CHECKING.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_FIRST_CHECK_FAIL_STATUS_LOCAL);
@@ -418,7 +419,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void submitRecheckInTransaction(Long userId, ErpPurchaseInQualitySubmitRecheckReqVO reqVO) {
+    void submitRecheckInTransaction(Long userId, ErpPurchaseInQualitySubmitRecheckReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
         if (!ObjectUtil.equal(quality.getStatus(), ErpPurchaseInQualityStatusEnum.RECHECKING.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_RECHECK_SUBMIT_FAIL_STATUS_LOCAL);
@@ -545,7 +546,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public Long createReturnFromQualityInTransaction(Long qualityId) {
+    Long createReturnFromQualityInTransaction(Long qualityId) {
         return doCreateReturnFromQuality(qualityId);
     }
 
