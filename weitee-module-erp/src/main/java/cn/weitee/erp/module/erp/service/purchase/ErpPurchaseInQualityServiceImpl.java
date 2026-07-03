@@ -186,20 +186,26 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     // region 兼容旧页面的直提交流程
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void submitPurchaseInQuality(Long userId, ErpPurchaseInQualitySubmitReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
-        submitPurchaseInQuality(userId, quality, reqVO.getRemark(), convertMap(reqVO.getItems(),
+        checkSubmitPermission(userId, quality);
+        submitPurchaseInQualityInTransaction(userId, quality, reqVO.getRemark(), convertMap(reqVO.getItems(),
                 ErpPurchaseInQualitySubmitReqVO.Item::getId, item -> item));
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void submitPurchaseInQualityByPurchaseIn(Long userId, ErpPurchaseInQualityCheckReqVO reqVO) {
         Long qualityId = createQualityOrderIfAbsent(reqVO.getId());
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(qualityId);
-        submitPurchaseInQuality(userId, quality, reqVO.getRemark(), convertMap(reqVO.getItems(),
+        checkSubmitPermission(userId, quality);
+        submitPurchaseInQualityInTransaction(userId, quality, reqVO.getRemark(), convertMap(reqVO.getItems(),
                 ErpPurchaseInQualityCheckReqVO.Item::getId, item -> item));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void submitPurchaseInQualityInTransaction(Long userId, ErpPurchaseInQualityDO quality, String remark,
+                                                      Map<Long, ?> requestItemMap) {
+        submitPurchaseInQuality(userId, quality, remark, requestItemMap);
     }
 
     private void submitPurchaseInQuality(Long userId, ErpPurchaseInQualityDO quality, String remark,
@@ -262,13 +268,17 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     // region 指派质检人
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void assignChecker(Long userId, ErpPurchaseInQualityAssignCheckerReqVO reqVO) {
+        adminUserApi.validateUser(reqVO.getAssignedCheckerUserId());
+        assignCheckerInTransaction(userId, reqVO);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void assignCheckerInTransaction(Long userId, ErpPurchaseInQualityAssignCheckerReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
         if (!validationHelper.canAssignChecker(quality.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_ASSIGN_CHECKER_FAIL_STATUS);
         }
-        adminUserApi.validateUser(reqVO.getAssignedCheckerUserId());
         if (ObjectUtil.equal(quality.getAssignedCheckerUserId(), reqVO.getAssignedCheckerUserId())) {
             return;
         }
@@ -288,8 +298,14 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     // region 首检提交
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void submitFirstCheck(Long userId, ErpPurchaseInQualitySubmitFirstCheckReqVO reqVO) {
+        ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
+        checkSubmitPermission(userId, quality);
+        submitFirstCheckInTransaction(userId, reqVO);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void submitFirstCheckInTransaction(Long userId, ErpPurchaseInQualitySubmitFirstCheckReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
         if (!ObjectUtil.equal(quality.getStatus(), ErpPurchaseInQualityStatusEnum.FIRST_CHECKING.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_FIRST_CHECK_FAIL_STATUS_LOCAL);
@@ -395,8 +411,14 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void submitRecheck(Long userId, ErpPurchaseInQualitySubmitRecheckReqVO reqVO) {
+        ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
+        checkSubmitPermission(userId, quality);
+        submitRecheckInTransaction(userId, reqVO);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void submitRecheckInTransaction(Long userId, ErpPurchaseInQualitySubmitRecheckReqVO reqVO) {
         ErpPurchaseInQualityDO quality = queryHelper.getRequiredPurchaseInQuality(reqVO.getId());
         if (!ObjectUtil.equal(quality.getStatus(), ErpPurchaseInQualityStatusEnum.RECHECKING.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_RECHECK_SUBMIT_FAIL_STATUS_LOCAL);
@@ -510,17 +532,21 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     // region 从质检创建退货单
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createReturnFromQuality(Long qualityId, Long userId) {
         RLock lock = redissonClient.getLock("erp:purchase-in-quality:create-return:" + qualityId);
         if (!lock.tryLock()) {
             throw exception(PURCHASE_IN_QUALITY_NO_REJECT_ITEMS);
         }
         try {
-            return doCreateReturnFromQuality(qualityId);
+            return createReturnFromQualityInTransaction(qualityId);
         } finally {
             unlockAfterTransaction(lock);
         }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public Long createReturnFromQualityInTransaction(Long qualityId) {
+        return doCreateReturnFromQuality(qualityId);
     }
 
     private void unlockAfterTransaction(RLock lock) {
@@ -682,11 +708,9 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     }
 
     /**
-     * 校验当前用户是否可以提交首检/复检。
-     * 被指派质检人可提交，超级管理员可兜底。
+     * 事务外检查用户权限：被指派质检人可提交，超级管理员可兜底。
      */
-    private void validateSubmitChecker(Long userId, ErpPurchaseInQualityDO quality) {
-        validateAssignedCheckerExists(quality);
+    private void checkSubmitPermission(Long userId, ErpPurchaseInQualityDO quality) {
         if (ObjectUtil.equal(userId, quality.getAssignedCheckerUserId())) {
             return;
         }
@@ -694,6 +718,14 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
             return;
         }
         throw exception(PURCHASE_IN_QUALITY_ASSIGNED_CHECKER_FORBIDDEN);
+    }
+
+    /**
+     * 校验当前用户是否可以提交首检/复检（本地校验，事务内调用）。
+     * 权限检查已由事务外的 checkSubmitPermission 完成。
+     */
+    private void validateSubmitChecker(Long userId, ErpPurchaseInQualityDO quality) {
+        validateAssignedCheckerExists(quality);
     }
 
     /**
