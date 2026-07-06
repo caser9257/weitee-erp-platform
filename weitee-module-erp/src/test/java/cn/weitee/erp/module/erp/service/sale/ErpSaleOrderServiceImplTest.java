@@ -29,7 +29,9 @@ import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -111,6 +113,7 @@ class ErpSaleOrderServiceImplTest {
                 createProxy(ErpSaleOrderDeliveryReadyService.class, (methodName, args) -> null));
         setField(saleOrderService, "adminUserApi", createProxy(AdminUserApi.class, (methodName, args) -> null));
         setField(saleOrderService, "eventPublisher", createEventPublisherProxy());
+        setField(saleOrderService, "transactionManager", createTransactionManagerProxy());
     }
 
     @Test
@@ -251,6 +254,12 @@ class ErpSaleOrderServiceImplTest {
     void countUpdateMethods_shouldDeclareTransactionalBoundary() throws Exception {
         assertTransactional("updateSaleOrderOutCount", Long.class, java.util.Map.class);
         assertTransactional("updateSaleOrderReturnCount", Long.class, java.util.Map.class);
+    }
+
+    @Test
+    void createAndUpdateEntryMethods_shouldNotDeclareTransactionalBoundary() throws Exception {
+        assertNotTransactional("createSaleOrder", ErpSaleOrderSaveReqVO.class);
+        assertNotTransactional("updateSaleOrder", ErpSaleOrderSaveReqVO.class);
     }
 
     @Test
@@ -479,6 +488,18 @@ class ErpSaleOrderServiceImplTest {
         });
     }
 
+    private PlatformTransactionManager createTransactionManagerProxy() {
+        return createProxy(PlatformTransactionManager.class, (methodName, args) -> {
+            if ("getTransaction".equals(methodName)) {
+                return new SimpleTransactionStatus();
+            }
+            if ("commit".equals(methodName) || "rollback".equals(methodName)) {
+                return null;
+            }
+            return null;
+        });
+    }
+
     @SuppressWarnings("unchecked")
     private <T> T createProxy(Class<T> type, MethodHandler handler) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},
@@ -572,6 +593,12 @@ class ErpSaleOrderServiceImplTest {
         Method method = saleOrderService.getClass().getMethod(methodName, parameterTypes);
         assertTrue(method.isAnnotationPresent(Transactional.class),
                 () -> methodName + " should declare @Transactional");
+    }
+
+    private void assertNotTransactional(String methodName, Class<?>... parameterTypes) throws Exception {
+        Method method = saleOrderService.getClass().getMethod(methodName, parameterTypes);
+        assertTrue(!method.isAnnotationPresent(Transactional.class),
+                () -> methodName + " should not declare @Transactional");
     }
 
     @FunctionalInterface

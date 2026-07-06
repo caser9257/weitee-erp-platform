@@ -23,8 +23,12 @@ import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseOrderService;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -620,6 +624,7 @@ class ErpFinancePaymentServiceImplTest {
     @Test
     void createFinancePayment_shouldRejectWhenAllocateAmountExceedStatementRemain() throws Exception {
         ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        setField(service, "transactionManager", createTransactionManagerProxy());
         ErpApStatementDO statement = new ErpApStatementDO()
                 .setId(20L)
                 .setBizType(ErpBizTypeEnum.PURCHASE_IN.getType())
@@ -646,6 +651,7 @@ class ErpFinancePaymentServiceImplTest {
     @Test
     void createFinancePayment_shouldRejectWhenPaymentPriceIsNotPositive() throws Exception {
         ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        setField(service, "transactionManager", createTransactionManagerProxy());
         ErpApStatementDO statement = new ErpApStatementDO()
                 .setId(21L)
                 .setBizType(ErpBizTypeEnum.PURCHASE_RETURN.getType())
@@ -668,6 +674,12 @@ class ErpFinancePaymentServiceImplTest {
                         new BigDecimal("-1.00"))));
 
         assertEquals(AP_STATEMENT_ALLOCATE_AMOUNT_INVALID.getCode(), ex.getCode());
+    }
+
+    @Test
+    void createAndUpdateEntryMethods_shouldNotDeclareTransactionalBoundary() throws Exception {
+        assertNotTransactional("createFinancePayment", ErpFinancePaymentSaveReqVO.class);
+        assertNotTransactional("updateFinancePayment", ErpFinancePaymentSaveReqVO.class);
     }
 
     @SuppressWarnings("unchecked")
@@ -703,10 +715,28 @@ class ErpFinancePaymentServiceImplTest {
         });
     }
 
+    private PlatformTransactionManager createTransactionManagerProxy() {
+        return createProxy(PlatformTransactionManager.class, (methodName, args) -> {
+            if ("getTransaction".equals(methodName)) {
+                return new SimpleTransactionStatus();
+            }
+            if ("commit".equals(methodName) || "rollback".equals(methodName)) {
+                return null;
+            }
+            return null;
+        });
+    }
+
     private void setField(Object target, String fieldName, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private void assertNotTransactional(String methodName, Class<?>... parameterTypes) throws Exception {
+        Method method = ErpFinancePaymentServiceImpl.class.getMethod(methodName, parameterTypes);
+        assertEquals(false, method.isAnnotationPresent(Transactional.class),
+                methodName + " should not declare @Transactional");
     }
 
     private ErpFinancePaymentSaveReqVO buildSaveReqVO(Long apStatementId, Integer bizType, Long bizId,

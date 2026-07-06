@@ -32,9 +32,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -92,18 +95,21 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     private AdminUserApi adminUserApi;
     @Resource
     private RedissonClient redissonClient;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createFinancePayment(ErpFinancePaymentSaveReqVO createReqVO) {
+        validateFinanceUser(createReqVO.getFinanceUserId());
+        return executeInRequiredTransaction(() -> createFinancePaymentInTransaction(createReqVO));
+    }
+
+    Long createFinancePaymentInTransaction(ErpFinancePaymentSaveReqVO createReqVO) {
         List<ErpFinancePaymentItemDO> paymentItems = validateFinancePaymentItems(
                 createReqVO.getSupplierId(), createReqVO.getItems());
         supplierService.validateSupplier(createReqVO.getSupplierId());
         if (createReqVO.getAccountId() != null) {
             accountService.validateAccount(createReqVO.getAccountId());
-        }
-        if (createReqVO.getFinanceUserId() != null) {
-            adminUserApi.validateUser(createReqVO.getFinanceUserId());
         }
         String no = noRedisDAO.generate(ErpNoRedisDAO.FINANCE_PAYMENT_NO_PREFIX);
         if (erpFinancePaymentMapper.selectByNo(no) != null) {
@@ -120,8 +126,12 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateFinancePayment(ErpFinancePaymentSaveReqVO updateReqVO) {
+        validateFinanceUser(updateReqVO.getFinanceUserId());
+        executeInRequiredTransaction(() -> updateFinancePaymentInTransaction(updateReqVO));
+    }
+
+    void updateFinancePaymentInTransaction(ErpFinancePaymentSaveReqVO updateReqVO) {
         ErpFinancePaymentDO payment = validateFinancePaymentExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(payment.getStatus())) {
             throw exception(FINANCE_PAYMENT_UPDATE_FAIL_APPROVE, payment.getNo());
@@ -134,9 +144,6 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         if (updateReqVO.getAccountId() != null) {
             accountService.validateAccount(updateReqVO.getAccountId());
         }
-        if (updateReqVO.getFinanceUserId() != null) {
-            adminUserApi.validateUser(updateReqVO.getFinanceUserId());
-        }
         List<ErpFinancePaymentItemDO> paymentItems = validateFinancePaymentItems(
                 updateReqVO.getSupplierId(), updateReqVO.getItems());
 
@@ -144,6 +151,25 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         calculateTotalPrice(updateObj, paymentItems);
         erpFinancePaymentMapper.updateById(updateObj);
         updateFinancePaymentItemList(updateReqVO.getId(), paymentItems);
+    }
+
+    private void validateFinanceUser(Long financeUserId) {
+        if (financeUserId != null) {
+            adminUserApi.validateUser(financeUserId);
+        }
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     private void calculateTotalPrice(ErpFinancePaymentDO payment, List<ErpFinancePaymentItemDO> paymentItems) {

@@ -43,7 +43,10 @@ import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -113,10 +116,16 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     private AdminUserApi adminUserApi;
     @Resource
     private ApplicationEventPublisher eventPublisher;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createSaleOrder(ErpSaleOrderSaveReqVO createReqVO) {
+        validateSaleUser(createReqVO.getSaleUserId());
+        return executeInRequiredTransaction(() -> createSaleOrderInTransaction(createReqVO));
+    }
+
+    Long createSaleOrderInTransaction(ErpSaleOrderSaveReqVO createReqVO) {
         // 1.1 校验订单项的有效性
         List<ErpSaleOrderItemDO> saleOrderItems = validateSaleOrderItems(createReqVO.getItems());
         validateSaleOrderBusiness(createReqVO);
@@ -133,10 +142,6 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         // 1.3 校验结算账户
         if (createReqVO.getAccountId() != null) {
             accountService.validateAccount(createReqVO.getAccountId());
-        }
-        // 1.4 校验销售人员
-        if (createReqVO.getSaleUserId() != null) {
-            adminUserApi.validateUser(createReqVO.getSaleUserId());
         }
         // 1.5 生成订单号，并校验唯一性
         String no = noRedisDAO.generate(ErpNoRedisDAO.SALE_ORDER_NO_PREFIX);
@@ -162,8 +167,12 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateSaleOrder(ErpSaleOrderSaveReqVO updateReqVO) {
+        validateSaleUser(updateReqVO.getSaleUserId());
+        executeInRequiredTransaction(() -> updateSaleOrderInTransaction(updateReqVO));
+    }
+
+    void updateSaleOrderInTransaction(ErpSaleOrderSaveReqVO updateReqVO) {
         // 1.1 校验存在
         ErpSaleOrderDO saleOrder = validateSaleOrderExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(saleOrder.getStatus())) {
@@ -187,10 +196,6 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         if (updateReqVO.getAccountId() != null) {
             accountService.validateAccount(updateReqVO.getAccountId());
         }
-        // 1.4 校验销售人员
-        if (updateReqVO.getSaleUserId() != null) {
-            adminUserApi.validateUser(updateReqVO.getSaleUserId());
-        }
         // 1.5 校验订单项的有效性
         List<ErpSaleOrderItemDO> saleOrderItems = validateSaleOrderItems(updateReqVO.getItems());
 
@@ -204,6 +209,25 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         }
         // 2.2 更新订单项
         updateSaleOrderItemList(updateReqVO.getId(), saleOrderItems);
+    }
+
+    private void validateSaleUser(Long saleUserId) {
+        if (saleUserId != null) {
+            adminUserApi.validateUser(saleUserId);
+        }
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     @Override
