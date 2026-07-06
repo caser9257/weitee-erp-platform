@@ -36,6 +36,7 @@ public class ApiAccessLogServiceImpl implements ApiAccessLogService {
         ApiAccessLogDO apiAccessLog = BeanUtils.toBean(createDTO, ApiAccessLogDO.class);
         apiAccessLog.setRequestParams(StrUtils.maxLength(apiAccessLog.getRequestParams(), REQUEST_PARAMS_MAX_LENGTH));
         apiAccessLog.setResultMsg(StrUtils.maxLength(apiAccessLog.getResultMsg(), RESULT_MSG_MAX_LENGTH));
+        apiAccessLogMapper.insert(apiAccessLog);
     }
 
     @Override

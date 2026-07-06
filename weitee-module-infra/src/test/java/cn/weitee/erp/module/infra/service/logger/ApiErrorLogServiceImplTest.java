@@ -21,6 +21,7 @@ import static cn.weitee.erp.framework.common.util.object.ObjectUtils.cloneIgnore
 import static cn.weitee.erp.framework.test.core.util.AssertUtils.assertPojoEquals;
 import static cn.weitee.erp.framework.test.core.util.AssertUtils.assertServiceException;
 import static cn.weitee.erp.framework.test.core.util.RandomUtils.randomLongId;
+import static cn.weitee.erp.framework.test.core.util.RandomUtils.randomString;
 import static cn.weitee.erp.framework.test.core.util.RandomUtils.randomPojo;
 import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.API_ERROR_LOG_NOT_FOUND;
 import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.API_ERROR_LOG_PROCESSED;
@@ -80,12 +81,29 @@ public class ApiErrorLogServiceImplTest extends BaseDbUnitTest {
     @Test
     public void testCreateApiErrorLog() {
         // 准备参数
-        ApiErrorLogCreateReqDTO createDTO = randomPojo(ApiErrorLogCreateReqDTO.class);
+        ApiErrorLogCreateReqDTO createDTO = randomPojo(ApiErrorLogCreateReqDTO.class, o -> {
+            o.setTraceId(randomString());
+            o.setApplicationName("weitee-test");
+            o.setRequestMethod("GET");
+            o.setRequestUrl("/api/error-test");
+            o.setRequestParams("{}");
+            o.setUserIp("127.0.0.1");
+            o.setUserAgent("JUnit");
+            o.setExceptionTime(buildTime(2024, 1, 1));
+            o.setExceptionName("RuntimeException");
+            o.setExceptionClassName("java.lang.RuntimeException");
+            o.setExceptionFileName("ApiErrorLogServiceImplTest.java");
+            o.setExceptionMethodName("testCreateApiErrorLog");
+            o.setExceptionLineNumber(1);
+            o.setExceptionStackTrace("stack");
+            o.setExceptionRootCauseMessage("root");
+            o.setExceptionMessage("message");
+        });
 
         // 调用
         apiErrorLogService.createApiErrorLog(createDTO);
         // 断言
-        ApiErrorLogDO apiErrorLogDO = apiErrorLogMapper.selectOne(null);
+        ApiErrorLogDO apiErrorLogDO = apiErrorLogMapper.selectOne(ApiErrorLogDO::getTraceId, createDTO.getTraceId());
         assertPojoEquals(createDTO, apiErrorLogDO);
         assertEquals(ApiErrorLogProcessStatusEnum.INIT.getStatus(), apiErrorLogDO.getProcessStatus());
     }

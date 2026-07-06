@@ -18,6 +18,7 @@ import java.util.List;
 import static cn.weitee.erp.framework.common.util.date.LocalDateTimeUtils.*;
 import static cn.weitee.erp.framework.common.util.object.ObjectUtils.cloneIgnoreId;
 import static cn.weitee.erp.framework.test.core.util.AssertUtils.assertPojoEquals;
+import static cn.weitee.erp.framework.test.core.util.RandomUtils.randomString;
 import static cn.weitee.erp.framework.test.core.util.RandomUtils.randomPojo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -98,12 +99,24 @@ public class ApiAccessLogServiceImplTest extends BaseDbUnitTest {
     @Test
     public void testCreateApiAccessLog() {
         // 准备参数
-        ApiAccessLogCreateReqDTO createDTO = randomPojo(ApiAccessLogCreateReqDTO.class);
+        ApiAccessLogCreateReqDTO createDTO = randomPojo(ApiAccessLogCreateReqDTO.class, o -> {
+            o.setTraceId(randomString());
+            o.setApplicationName("weitee-test");
+            o.setRequestMethod("GET");
+            o.setRequestUrl("/api/test");
+            o.setUserIp("127.0.0.1");
+            o.setUserAgent("JUnit");
+            o.setBeginTime(buildTime(2024, 1, 1));
+            o.setEndTime(buildTime(2024, 1, 1));
+            o.setDuration(100);
+            o.setResultCode(GlobalErrorCodeConstants.SUCCESS.getCode());
+        });
 
         // 调用
         apiAccessLogService.createApiAccessLog(createDTO);
         // 断言
-        ApiAccessLogDO apiAccessLogDO = apiAccessLogMapper.selectOne(null);
+        assertEquals(1, apiAccessLogMapper.selectList().size());
+        ApiAccessLogDO apiAccessLogDO = apiAccessLogMapper.selectList().get(0);
         assertPojoEquals(createDTO, apiAccessLogDO);
     }
 

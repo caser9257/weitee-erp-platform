@@ -24,6 +24,7 @@ import static cn.weitee.erp.framework.test.core.util.RandomUtils.*;
 import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.FILE_NOT_EXISTS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.*;
 
 @Import({FileServiceImpl.class})
@@ -38,6 +39,9 @@ public class FileServiceImplTest extends BaseDbUnitTest {
     @MockBean
     private FileConfigService fileConfigService;
 
+    @MockBean
+    private FileOperationLogService fileOperationLogService;
+
     @BeforeEach
     public void setUp() {
         FileServiceImpl.PATH_PREFIX_DATE_ENABLE = true;
@@ -51,6 +55,7 @@ public class FileServiceImplTest extends BaseDbUnitTest {
             o.setPath("yunai");
             o.setType("image/jpg");
             o.setCreateTime(buildTime(2021, 1, 15));
+            o.setDeleteTime(null);
         });
         fileMapper.insert(dbFile);
         // 测试 path 不匹配
@@ -146,20 +151,29 @@ public class FileServiceImplTest extends BaseDbUnitTest {
     @Test
     public void testDeleteFile_success() throws Exception {
         // mock 数据
-        FileDO dbFile = randomPojo(FileDO.class, o -> o.setConfigId(10L).setPath("tudou.jpg"));
+        FileDO dbFile = randomPojo(FileDO.class, o -> o.setConfigId(10L).setPath("tudou.jpg").setDeleteTime(null));
         fileMapper.insert(dbFile);// @Sql: 先插入出一条存在的数据
-        // mock Master 文件客户端
-        FileClient client = mock(FileClient.class);
-        when(fileConfigService.getFileClient(eq(10L))).thenReturn(client);
         // 准备参数
         Long id = dbFile.getId();
 
-        // 调用
-        fileService.deleteFile(id);
-        // 校验数据不存在了
-        assertNull(fileMapper.selectById(id));
-        // 校验调用
-        verify(client).delete(eq("tudou.jpg"));
+        try (org.mockito.MockedStatic<cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils> mockedStatic =
+                     mockStatic(cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.class)) {
+            mockedStatic.when(cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils::getLoginUserId).thenReturn(100L);
+            mockedStatic.when(cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils::getLoginUserNickname).thenReturn("测试用户");
+
+            // 调用
+            fileService.deleteFile(id);
+        }
+
+        // 校验数据已软删除
+        FileDO deletedFile = fileMapper.selectById(id);
+        assertNotNull(deletedFile);
+        assertNotNull(deletedFile.getDeleteTime());
+        assertEquals(100L, deletedFile.getDeleteUserId());
+        assertEquals("测试用户", deletedFile.getDeleteUserName());
+        assertEquals("用户删除", deletedFile.getDeleteReason());
+        // 校验日志
+        verify(fileOperationLogService).logSuccess(eq(id), eq(dbFile.getName()), eq("DELETE"), eq("移入回收站，原因：用户删除"));
     }
 
     @Test

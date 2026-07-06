@@ -39,7 +39,7 @@ public class ApiErrorLogServiceImpl implements ApiErrorLogService {
                 .setProcessStatus(ApiErrorLogProcessStatusEnum.INIT.getStatus());
         apiErrorLog.setRequestParams(StrUtils.maxLength(apiErrorLog.getRequestParams(), REQUEST_PARAMS_MAX_LENGTH));
         try {
-
+            apiErrorLogMapper.insert(apiErrorLog);
         } catch (Exception ex) {
             // 兜底处理，目前只有 weitee-cloud 会发生：https://gitee.com/weiteecode/weitee-cloud-mini/issues/IC1O0A
             log.error("[createApiErrorLog][记录时({}) 发生异常]", createDTO, ex);
