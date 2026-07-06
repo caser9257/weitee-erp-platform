@@ -18,6 +18,7 @@ export interface FinancePaymentItemVO {
 export interface FinancePaymentVO {
   id?: number
   no?: string
+  processInstanceId?: string
   supplierId?: number
   supplierName?: string
   paymentTime?: Date | string | number
@@ -69,6 +70,16 @@ export interface FinancePaymentSaveReqVO {
   }>
 }
 
+export interface FinancePaymentSubmitReqVO {
+  id: number
+  startUserSelectAssignees?: Record<string, number[]>
+}
+
+export interface FinancePaymentCancelApprovalReqVO {
+  id: number
+  reason: string
+}
+
 export const FinancePaymentApi = {
   getFinancePaymentPage: async (params: FinancePaymentPageReqVO) => {
     return await request.get({ url: '/erp/finance-payment/page', params })
@@ -90,6 +101,20 @@ export const FinancePaymentApi = {
     return await request.put({
       url: '/erp/finance-payment/update-status',
       params: { id, status }
+    })
+  },
+
+  submitFinancePayment: async (data: FinancePaymentSubmitReqVO) => {
+    return await request.post({
+      url: '/erp/finance-payment/submit',
+      data
+    })
+  },
+
+  cancelFinancePaymentApproval: async (data: FinancePaymentCancelApprovalReqVO) => {
+    return await request.delete({
+      url: '/erp/finance-payment/cancel-approval',
+      data
     })
   },
 

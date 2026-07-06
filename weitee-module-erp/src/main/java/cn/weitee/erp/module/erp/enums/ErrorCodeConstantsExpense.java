@@ -24,6 +24,7 @@ public interface ErrorCodeConstantsExpense {
     ErrorCode EXPENSE_RD_ACCOUNTING_TYPE_REQUIRED = new ErrorCode(1_030_607_014, "研发费用必须选择费用化或资本化口径");
     ErrorCode EXPENSE_RD_ACCOUNTING_TYPE_INVALID = new ErrorCode(1_030_607_015, "当前费用类型不允许设置研发费用化/资本化口径");
     ErrorCode EXPENSE_STATUS_UPDATE_ILLEGAL = new ErrorCode(1_030_607_019, "当前费用单状态不允许执行该操作");
+    ErrorCode EXPENSE_MANUAL_STATUS_DISABLED = new ErrorCode(1_030_607_020, "费用单已接入审批流，禁止手工变更审核状态");
 
     // 费用类型混合方案相关错误码
     ErrorCode EXPENSE_TYPE_NOT_EXISTS = new ErrorCode(1_030_607_016, "费用类型不存在");

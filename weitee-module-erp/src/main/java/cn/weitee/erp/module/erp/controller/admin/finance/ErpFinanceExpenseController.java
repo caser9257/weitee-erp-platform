@@ -68,12 +68,14 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertListByFlatMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsExpense.EXPENSE_MANUAL_STATUS_DISABLED;
 import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 
 @Tag(name = "管理后台 - ERP 研发报销 / 零星采购")
@@ -123,8 +125,7 @@ public class ErpFinanceExpenseController {
     @PreAuthorize("@ss.hasPermission('erp:finance-expense:update-status')")
     public CommonResult<Boolean> updateFinanceExpenseStatus(@RequestParam("id") Long id,
                                                             @RequestParam("status") Integer status) {
-        financeExpenseService.updateFinanceExpenseStatus(id, status);
-        return success(true);
+        throw exception(EXPENSE_MANUAL_STATUS_DISABLED);
     }
 
     @PostMapping("/submit")

@@ -25,7 +25,6 @@ import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseOrderService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
-import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -209,14 +208,11 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         }
         if (approve) {
             createApprovedAllocateFacts(payment, paymentItems, statementMap);
-            // 新增：审批通过后更新采购订单付款状态
-            ErpTransactionUtils.afterCommit(() -> {
-                updateRelatedPurchaseOrderPayment(paymentItems);
-            });
         } else {
             cancelApprovedAllocateFacts(approvedAllocates);
         }
         refreshApStatementAndBizSummary(paymentItems);
+        updateRelatedPurchaseOrderPayment(paymentItems);
         createApStatementItemLogs(payment.getId(), payment.getNo(),
                 approve ? buildAllocateAmountMap(paymentItems, statementMap) : buildRollbackAmountMap(approvedAllocates),
                 approve ? ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus()
@@ -230,23 +226,21 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
      * 更新关联采购订单的付款状态
      */
     private void updateRelatedPurchaseOrderPayment(List<ErpFinancePaymentItemDO> paymentItems) {
-        try {
-            // 收集关联的采购订单ID
-            java.util.Set<Long> orderIds = new java.util.HashSet<>();
-            for (ErpFinancePaymentItemDO item : paymentItems) {
-                if (item.getBizType() == cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum.PURCHASE_IN.getType()) {
-                    ErpPurchaseInDO purchaseIn = purchaseInMapper.selectById(item.getBizId());
-                    if (purchaseIn != null && purchaseIn.getOrderId() != null) {
-                        orderIds.add(purchaseIn.getOrderId());
-                    }
-                }
+        if (CollUtil.isEmpty(paymentItems)) {
+            return;
+        }
+        java.util.Set<Long> orderIds = new java.util.LinkedHashSet<>();
+        for (ErpFinancePaymentItemDO item : paymentItems) {
+            if (!Objects.equals(item.getBizType(), cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum.PURCHASE_IN.getType())) {
+                continue;
             }
-            // 更新每个订单的付款状态
-            for (Long orderId : orderIds) {
-                purchaseOrderService.updatePurchaseOrderPaymentPrice(orderId);
+            ErpPurchaseInDO purchaseIn = purchaseInMapper.selectById(item.getBizId());
+            if (purchaseIn != null && purchaseIn.getOrderId() != null) {
+                orderIds.add(purchaseIn.getOrderId());
             }
-        } catch (Exception e) {
-            log.error("[updateRelatedPurchaseOrderPayment] 更新采购订单付款状态失败，需人工介入", e);
+        }
+        for (Long orderId : orderIds) {
+            purchaseOrderService.updatePurchaseOrderPaymentPrice(orderId);
         }
     }
 
@@ -289,16 +283,8 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             createApStatementItemLogs(payment.getId(), payment.getNo(),
                     buildAllocateAmountMap(paymentItems, statementMap),
                     ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus());
-            // 审批通过后更新采购订单付款状态
-            ErpTransactionUtils.afterCommit(() -> {
-                updateRelatedPurchaseOrderPayment(paymentItems);
-            });
-        } else {
-            // 驳回后也需要更新采购订单付款状态
-            ErpTransactionUtils.afterCommit(() -> {
-                updateRelatedPurchaseOrderPayment(paymentItems);
-            });
         }
+        updateRelatedPurchaseOrderPayment(paymentItems);
         } finally {
             unlockAfterTransaction(locks);
         }
@@ -411,10 +397,7 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             createApStatementItemLogs(payment.getId(), payment.getNo(),
                     buildRollbackAmountMap(approvedAllocates),
                     ErpApStatementItemTypeEnum.PAYMENT_ALLOCATE_ROLLBACK.getStatus());
-            // 作废后更新采购订单付款状态
-            ErpTransactionUtils.afterCommit(() -> {
-                updateRelatedPurchaseOrderPayment(paymentItems);
-            });
+            updateRelatedPurchaseOrderPayment(paymentItems);
         }
     }
 

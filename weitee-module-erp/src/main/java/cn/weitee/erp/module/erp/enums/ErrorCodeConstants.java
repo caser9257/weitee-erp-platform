@@ -264,6 +264,7 @@ public interface ErrorCodeConstants {
     ErrorCode FINANCE_PAYMENT_BPM_CANCEL_FAIL = new ErrorCode(1_030_601_009, "当前付款单不存在可撤回的审批流程");
     ErrorCode FINANCE_PAYMENT_VOID_FAIL = new ErrorCode(1_030_601_010, "作废失败，只有已审核的付款单才能作废");
     ErrorCode FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL = new ErrorCode(1_030_601_011, "当前付款单状态不允许执行该操作");
+    ErrorCode FINANCE_PAYMENT_MANUAL_STATUS_DISABLED = new ErrorCode(1_030_601_012, "付款单已接入审批流，禁止手工变更审核状态");
 
     // ========== ERP 预付款单 1-030-605-000 ==========
     ErrorCode PREPAYMENT_NOT_EXISTS = new ErrorCode(1_030_605_000, "预付款单不存在");

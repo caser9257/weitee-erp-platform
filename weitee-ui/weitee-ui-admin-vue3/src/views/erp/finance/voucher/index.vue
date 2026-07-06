@@ -98,23 +98,62 @@
           <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
-          <el-button size="small" type="primary" plain :disabled="listLoading || voucherBusy" @click="openGenerateDialog">
+          <el-button
+            size="small"
+            type="primary"
+            plain
+            :disabled="listLoading || voucherBusy"
+            @click="openGenerateDialog"
+            v-hasPermi="['erp:finance-voucher:create']"
+          >
             <Icon icon="ep:plus" class="mr-5px" />
             生成凭证
           </el-button>
-          <el-button size="small" type="success" plain :disabled="!canBatchApprove" :loading="batchAction === 'approve'" @click="handleBatchAction('approve')">
+          <el-button
+            size="small"
+            type="success"
+            plain
+            :disabled="!canBatchApprove"
+            :loading="batchAction === 'approve'"
+            @click="handleBatchAction('approve')"
+            v-hasPermi="['erp:finance-voucher:update']"
+          >
             <Icon icon="ep:select" class="mr-5px" />
             审核
           </el-button>
-          <el-button size="small" type="warning" plain :disabled="!canBatchCancelApprove" :loading="batchAction === 'cancelApprove'" @click="handleBatchAction('cancelApprove')">
+          <el-button
+            size="small"
+            type="warning"
+            plain
+            :disabled="!canBatchCancelApprove"
+            :loading="batchAction === 'cancelApprove'"
+            @click="handleBatchAction('cancelApprove')"
+            v-hasPermi="['erp:finance-voucher:update']"
+          >
             <Icon icon="ep:refresh-left" class="mr-5px" />
             反审核
           </el-button>
-          <el-button size="small" type="success" plain :disabled="!canBatchPost" :loading="batchAction === 'post'" @click="handleBatchAction('post')">
+          <el-button
+            size="small"
+            type="success"
+            plain
+            :disabled="!canBatchPost"
+            :loading="batchAction === 'post'"
+            @click="handleBatchAction('post')"
+            v-hasPermi="['erp:finance-voucher:update']"
+          >
             <Icon icon="ep:finished" class="mr-5px" />
             过账
           </el-button>
-          <el-button size="small" type="warning" plain :disabled="!canBatchCancelPost" :loading="batchAction === 'cancelPost'" @click="handleBatchAction('cancelPost')">
+          <el-button
+            size="small"
+            type="warning"
+            plain
+            :disabled="!canBatchCancelPost"
+            :loading="batchAction === 'cancelPost'"
+            @click="handleBatchAction('cancelPost')"
+            v-hasPermi="['erp:finance-voucher:update']"
+          >
             <Icon icon="ep:refresh-right" class="mr-5px" />
             反过账
           </el-button>
@@ -211,7 +250,13 @@
             <el-table-column label="操作" fixed="right" align="center" width="220">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
-                  <el-button link type="primary" :disabled="detailLoading || rowBusy(row.id)" @click="openDetailDrawer(row.id)">
+                  <el-button
+                    link
+                    type="primary"
+                    :disabled="detailLoading || rowBusy(row.id)"
+                    @click="openDetailDrawer(row.id)"
+                    v-hasPermi="['erp:finance-voucher:query']"
+                  >
                     查看
                   </el-button>
                   <el-button
@@ -221,6 +266,7 @@
                     :disabled="rowBusy(row.id)"
                     :loading="rowActionLoadingId === row.id"
                     @click="handleReverse(row)"
+                    v-hasPermi="['erp:finance-voucher:update']"
                   >
                     冲销
                   </el-button>
@@ -250,11 +296,17 @@
       <Pagination v-if="total > 0" v-model:limit="queryParams.pageSize" v-model:page="queryParams.pageNo" :total="total" @pagination="getList" />
     </ContentWrap>
 
-    <Dialog v-model="generateDialogVisible" title="生成凭证" width="720px" scroll maxHeight="76vh" @closed="clearGenerateDialog">
+    <Dialog
+      v-model="generateDialogVisible"
+      title="生成凭证"
+      :width="dialogWidth.generate"
+      scroll
+      maxHeight="76vh"
+      @closed="clearGenerateDialog"
+    >
       <div class="finance-shell__context-card finance-shell__dialog-card">
         <div class="finance-shell__context-main">
           <div class="finance-shell__context-title">生成凭证</div>
-          <div class="finance-shell__context-subtitle">选择账簿、业务类型和模板后生成凭证</div>
         </div>
         <div class="finance-shell__page-chip">生成 / 审核 / 过账 / 冲销</div>
       </div>
@@ -292,8 +344,15 @@
       </template>
     </Dialog>
 
-    <Dialog v-model="reverseDialogVisible" title="冲销凭证" width="560px" scroll maxHeight="72vh" @closed="clearReverseDialog">
-      <el-form ref="reverseFormRef" :model="reverseForm" :rules="reverseFormRules" label-width="88px" v-loading="reverseLoading" :disabled="reverseSubmitting">
+    <Dialog
+      v-model="reverseDialogVisible"
+      title="冲销凭证"
+      :width="dialogWidth.reverse"
+      scroll
+      maxHeight="72vh"
+      @closed="clearReverseDialog"
+    >
+      <el-form ref="reverseFormRef" :model="reverseForm" :rules="reverseFormRules" label-width="88px" v-loading="reverseSubmitting" :disabled="reverseSubmitting">
         <el-form-item label="凭证时间" prop="voucherTime">
           <el-date-picker v-model="reverseForm.voucherTime" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="不填则使用当前时间" class="!w-full" />
         </el-form-item>
@@ -442,6 +501,7 @@ const currentVoucherId = ref<number>()
 const selectedIds = ref<number[]>([])
 const rowActionLoadingId = ref<number>()
 const batchAction = ref<'approve' | 'cancelApprove' | 'post' | 'cancelPost' | ''>('')
+const viewportWidth = ref(typeof window === 'undefined' ? 1440 : window.innerWidth)
 const queryForm = reactive<ErpFinanceVoucherPageReqVO>({
   pageNo: 1,
   pageSize: 10,
@@ -500,6 +560,12 @@ const canRefresh = computed(
 )
 const hasActiveFilters = computed(() => !!queryParams.ledgerId || !!queryParams.periodId || !!queryParams.voucherNo || !!queryParams.bizNo || queryParams.status !== undefined || !!queryParams.voucherTime)
 const canReset = computed(() => (hasActiveFilters.value || queryParams.pageNo !== 1) && canQuery.value)
+const dialogWidth = computed(() => ({
+  generate:
+    viewportWidth.value <= 480 ? 'calc(100vw - 24px)' : viewportWidth.value <= 768 ? 'min(680px, calc(100vw - 32px))' : '720px',
+  reverse:
+    viewportWidth.value <= 480 ? 'calc(100vw - 24px)' : viewportWidth.value <= 768 ? 'min(520px, calc(100vw - 32px))' : '560px'
+}))
 
 const resolveVoucherStatusClass = (status?: number) => {
   if (status === 30) return 'finance-shell__status-badge--success'
@@ -774,8 +840,18 @@ const handleRefresh = async () => {
   }
 }
 
+const syncViewportWidth = () => {
+  viewportWidth.value = window.innerWidth
+}
+
 onMounted(async () => {
+  syncViewportWidth()
+  window.addEventListener('resize', syncViewportWidth)
   await Promise.allSettled([loadLedgers(), getList()])
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportWidth)
 })
 </script>
 

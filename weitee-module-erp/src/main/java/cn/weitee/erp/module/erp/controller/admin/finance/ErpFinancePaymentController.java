@@ -23,7 +23,6 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentAllocate
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpSupplierDO;
-import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpFinancePaymentBpmService;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
@@ -52,7 +51,9 @@ import java.util.stream.Stream;
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.FINANCE_PAYMENT_MANUAL_STATUS_DISABLED;
 
 @Tag(name = "管理后台 - ERP 付款单")
 @RestController
@@ -94,24 +95,21 @@ public class ErpFinancePaymentController {
     @PreAuthorize("@ss.hasPermission('erp:finance-payment:update-status')")
     public CommonResult<Boolean> updateFinancePaymentStatus(@RequestParam("id") Long id,
                                                            @RequestParam("status") Integer status) {
-        financePaymentService.updateFinancePaymentStatus(id, status);
-        return success(true);
+        throw exception(FINANCE_PAYMENT_MANUAL_STATUS_DISABLED);
     }
 
     @PutMapping("/approve")
     @Operation(summary = "审核付款单")
     @PreAuthorize("@ss.hasPermission('erp:finance-payment:update-status')")
     public CommonResult<Boolean> approveFinancePayment(@RequestParam("id") Long id) {
-        financePaymentService.updateFinancePaymentStatus(id, ErpAuditStatus.APPROVE.getStatus());
-        return success(true);
+        throw exception(FINANCE_PAYMENT_MANUAL_STATUS_DISABLED);
     }
 
     @PutMapping("/unapprove")
     @Operation(summary = "反审核付款单")
     @PreAuthorize("@ss.hasPermission('erp:finance-payment:update-status')")
     public CommonResult<Boolean> unapproveFinancePayment(@RequestParam("id") Long id) {
-        financePaymentService.updateFinancePaymentStatus(id, ErpAuditStatus.PROCESS.getStatus());
-        return success(true);
+        throw exception(FINANCE_PAYMENT_MANUAL_STATUS_DISABLED);
     }
 
     @PutMapping("/void")

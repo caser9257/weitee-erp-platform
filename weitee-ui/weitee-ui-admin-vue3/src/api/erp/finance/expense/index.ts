@@ -12,6 +12,7 @@ export interface ErpFinanceExpenseVO {
   id?: number
   no?: string
   status?: number
+  processInstanceId?: string
   expenseTime?: string
   expenseType?: number
   expenseTypeName?: string
@@ -68,6 +69,16 @@ export interface ErpFinanceExpenseSaveReqVO {
     remark?: string
     assetCandidateFlag?: boolean
   }>
+}
+
+export interface ErpFinanceExpenseSubmitReqVO {
+  id: number
+  startUserSelectAssignees?: Record<string, number[]>
+}
+
+export interface ErpFinanceExpenseCancelApprovalReqVO {
+  id: number
+  reason: string
 }
 
 export interface ErpFinanceExpenseProjectSummaryReqVO {
@@ -147,7 +158,8 @@ export interface ErpFinanceExpenseTypeVO {
 export const ERP_FINANCE_EXPENSE_STATUS_OPTIONS = [
   { label: '未审核', value: 10 },
   { label: '已审核', value: 20 },
-  { label: '已驳回', value: 30 }
+  { label: '已驳回', value: 30 },
+  { label: '处理失败', value: 60 }
 ]
 
 export const FinanceExpenseApi = {
@@ -175,6 +187,20 @@ export const FinanceExpenseApi = {
     return await request.put({
       url: '/erp/finance-expense/update-status',
       params: { id, status }
+    })
+  },
+
+  submitFinanceExpense: async (data: ErpFinanceExpenseSubmitReqVO) => {
+    return await request.post({
+      url: '/erp/finance-expense/submit',
+      data
+    })
+  },
+
+  cancelFinanceExpenseApproval: async (data: ErpFinanceExpenseCancelApprovalReqVO) => {
+    return await request.delete({
+      url: '/erp/finance-expense/cancel-approval',
+      data
     })
   },
 

@@ -141,6 +141,101 @@ class ErpFinancePaymentServiceImplTest {
     }
 
     @Test
+    void updateFinancePaymentStatus_shouldRollbackWhenPurchaseOrderPaymentRefreshFails() throws Exception {
+        ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
+        ErpFinancePaymentDO payment = new ErpFinancePaymentDO()
+                .setId(6L)
+                .setNo("FP-ROLLBACK")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setSupplierId(301L);
+        ErpFinancePaymentItemDO paymentItem = new ErpFinancePaymentItemDO()
+                .setId(61L)
+                .setPaymentId(6L)
+                .setApStatementId(16L)
+                .setBizId(16L)
+                .setBizNo("PI-ROLLBACK")
+                .setBizType(ErpBizTypeEnum.PURCHASE_IN.getType())
+                .setPaymentPrice(new BigDecimal("50.00"));
+        ErpApStatementDO statement = new ErpApStatementDO()
+                .setId(16L)
+                .setBizType(ErpBizTypeEnum.PURCHASE_IN.getType())
+                .setBizId(16L)
+                .setBizNo("PI-ROLLBACK")
+                .setSupplierId(301L)
+                .setAmount(new BigDecimal("100.00"))
+                .setRemainAmount(new BigDecimal("100.00"))
+                .setStatus(ErpApStatementStatusEnum.UNPAID.getStatus());
+
+        AtomicReference<Boolean> updateStatusCalledRef = new AtomicReference<>(false);
+        AtomicReference<Integer> allocateInsertCountRef = new AtomicReference<>(0);
+        AtomicReference<Integer> statementLogInsertCountRef = new AtomicReference<>(0);
+
+        setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return payment;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updateStatusCalledRef.set(true);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentItemMapper", createProxy(ErpFinancePaymentItemMapper.class, (methodName, args) -> {
+            if ("selectListByPaymentId".equals(methodName)) {
+                return List.of(paymentItem);
+            }
+            return null;
+        }));
+        setField(service, "apStatementService", createProxy(ErpApStatementService.class, (methodName, args) -> {
+            if ("validateApStatement".equals(methodName)) {
+                return statement;
+            }
+            if ("refreshStatementAmountByIds".equals(methodName) || "refreshBizSummaryByStatementIds".equals(methodName)) {
+                return null;
+            }
+            if ("getApStatementListByIds".equals(methodName)) {
+                return List.of(statement);
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> {
+            if ("insert".equals(methodName)) {
+                allocateInsertCountRef.set(allocateInsertCountRef.get() + 1);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpApStatementItemMapper", createProxy(ErpApStatementItemMapper.class, (methodName, args) -> {
+            if ("insert".equals(methodName)) {
+                statementLogInsertCountRef.set(statementLogInsertCountRef.get() + 1);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(160L);
+            }
+            return null;
+        }));
+        setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> {
+            if ("updatePurchaseOrderPaymentPrice".equals(methodName)) {
+                throw new IllegalStateException("purchase order payment refresh failed");
+            }
+            return null;
+        }));
+        setField(service, "redissonClient", createRedissonClientProxy());
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+                service.updateFinancePaymentStatus(6L, ErpAuditStatus.APPROVE.getStatus()));
+
+        assertEquals("purchase order payment refresh failed", ex.getMessage());
+        assertEquals(Boolean.TRUE, updateStatusCalledRef.get());
+        assertEquals(1, allocateInsertCountRef.get());
+        assertEquals(0, statementLogInsertCountRef.get());
+    }
+
+    @Test
     void updateFinancePaymentStatus_shouldCreateNegativeAllocateForReturnStatement() throws Exception {
         ErpFinancePaymentServiceImpl service = new ErpFinancePaymentServiceImpl();
         ErpFinancePaymentDO payment = new ErpFinancePaymentDO()

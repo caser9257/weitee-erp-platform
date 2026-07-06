@@ -7,7 +7,14 @@
       label-width="76px"
       class="finance-payment-page__query-form"
     >
-      <div class="finance-payment-page__query-grid">
+      <div class="finance-payment-page__query-head">
+        <div class="finance-payment-page__query-title">基础筛选</div>
+        <el-button link type="primary" @click="toggleAdvancedSearch">
+          <Icon :icon="advancedSearchVisible ? 'ep:arrow-up' : 'ep:arrow-down'" class="mr-5px" />
+          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+        </el-button>
+      </div>
+      <div class="finance-payment-page__query-grid finance-payment-page__query-grid--basic">
         <el-form-item label="付款单号" prop="no">
           <el-input
             v-model="queryParams.no"
@@ -44,6 +51,18 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
+            <el-option
+              v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+      </div>
+      <div v-if="advancedSearchVisible" class="finance-payment-page__query-grid finance-payment-page__query-grid--advanced">
         <el-form-item label="创建人" prop="creator">
           <el-select
             v-model="queryParams.creator"
@@ -89,16 +108,6 @@
               :key="item.id"
               :label="item.name"
               :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
-            <el-option
-              v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
             />
           </el-select>
         </el-form-item>
@@ -193,7 +202,7 @@
               <div class="finance-payment-page__primary-cell">
                 <span class="finance-payment-page__primary-text">{{ row.no || '-' }}</span>
                 <span class="finance-payment-page__mono-tag">
-                  {{ dateFormatter2(row, undefined, row.paymentTime, undefined) || '-' }}
+                  {{ dateFormatter2(row, undefined, row.paymentTime) || '-' }}
                 </span>
               </div>
             </template>
@@ -341,6 +350,7 @@ const exportLoading = ref(false)
 const listErrorMessage = ref('')
 const deleteLoadingIds = ref<number[]>([])
 const statusLoadingId = ref<number>()
+const advancedSearchVisible = ref(false)
 
 const list = ref<FinancePaymentVO[]>([])
 const total = ref(0)
@@ -408,8 +418,13 @@ const handleQuery = async () => {
 
 const resetQuery = async () => {
   queryFormRef.value?.resetFields()
+  advancedSearchVisible.value = false
   queryParams.pageNo = 1
   await getList()
+}
+
+const toggleAdvancedSearch = () => {
+  advancedSearchVisible.value = !advancedSearchVisible.value
 }
 
 const openForm = (type: 'create' | 'update' | 'detail', id?: number) => {
@@ -493,10 +508,29 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.finance-payment-page__query-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.finance-payment-page__query-title {
+  color: var(--erp-slate-700);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .finance-payment-page__query-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0 16px;
+}
+
+.finance-payment-page__query-grid--advanced {
+  padding-top: 4px;
+  border-top: 1px solid var(--erp-slate-100);
 }
 
 .finance-payment-page__query-actions {
@@ -534,13 +568,13 @@ onMounted(async () => {
 }
 
 .finance-payment-page__primary-text {
-  color: #0f172a;
+  color: var(--erp-slate-900);
   font-weight: 600;
   line-height: 1.4;
 }
 
 .finance-payment-page__muted-text {
-  color: #64748b;
+  color: var(--erp-slate-500);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -548,10 +582,10 @@ onMounted(async () => {
 .finance-payment-page__mono-tag {
   width: fit-content;
   padding: 2px 8px;
-  border: 1px solid #dbe4f0;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 999px;
-  background: #f8fafc;
-  color: #334155;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-700);
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, 'SFMono-Regular', Consolas, 'Liberation Mono',
     Menlo, monospace;
