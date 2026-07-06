@@ -1,4 +1,4 @@
-﻿-- 项目双账成本 & 产品双账成本菜单与权限
+-- 项目双账成本 & 产品双账成本菜单与权限
 -- 参照 123-erp-finance-dual-ledger-result-menu.sql 的模式
 
 SET NAMES utf8mb4;

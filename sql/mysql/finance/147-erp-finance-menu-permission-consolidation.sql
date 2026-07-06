@@ -1,4 +1,4 @@
-﻿-- 财务菜单与权限整合脚本
+-- 财务菜单与权限整合脚本
 -- 统一承接并替代以下分片：
 -- 96-erp-finance-secondary-menu-restore.sql
 -- 102-erp-finance-role-readonly-permission-fix.sql

@@ -1,4 +1,4 @@
-﻿/*
+/*
   仓库分类管理基础表与菜单
   1. 新增仓库分类表
   2. 为 erp_warehouse 增加 category_id

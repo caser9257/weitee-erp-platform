@@ -1,4 +1,4 @@
-﻿/*
+/*
  Navicat / MySQL Init Script
  Target: Manufacturing Execution
  Schema: ruoyi-vue-pro

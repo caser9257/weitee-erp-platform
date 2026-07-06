@@ -1,4 +1,4 @@
-﻿/*
+/*
  Target: ERP MRP traceable shortage notification
  Schema: ruoyi-vue-pro
  Date: 2026-05-20

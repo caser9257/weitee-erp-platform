@@ -1,4 +1,4 @@
-﻿-- Light IQC incremental upgrade
+-- Light IQC incremental upgrade
 -- Switch to your target database before running:
 -- USE `ruoyi-vue-pro`;
 

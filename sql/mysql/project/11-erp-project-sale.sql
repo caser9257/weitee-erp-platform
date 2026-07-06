@@ -1,4 +1,4 @@
-﻿/*
+/*
  Navicat / MySQL Init Script
  Target: ERP Project + Sale Order Projectization
  Schema: ruoyi-vue-pro

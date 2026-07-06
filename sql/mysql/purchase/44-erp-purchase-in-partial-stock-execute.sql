@@ -1,4 +1,4 @@
-﻿ALTER TABLE `erp_purchase_in`
+ALTER TABLE `erp_purchase_in`
     ADD COLUMN `stock_in_count` DECIMAL(24, 6) NOT NULL DEFAULT 0 COMMENT '累计已入库数量' AFTER `qa_reject_count`;
 
 ALTER TABLE `erp_purchase_in_items`

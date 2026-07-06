@@ -1,4 +1,4 @@
-﻿CREATE TABLE IF NOT EXISTS `erp_purchase_source_batch`
+CREATE TABLE IF NOT EXISTS `erp_purchase_source_batch`
 (
     `id`                     BIGINT       NOT NULL AUTO_INCREMENT COMMENT '编号',
     `batch_no`               VARCHAR(64)  NOT NULL COMMENT '来源批次号',

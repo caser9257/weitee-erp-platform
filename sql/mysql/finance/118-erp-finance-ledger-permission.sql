@@ -1,4 +1,4 @@
-﻿-- =====================================================
+-- =====================================================
 -- ERP finance ledger role permission
 -- 1. add ledger-role association table
 -- 2. add audit operation log table

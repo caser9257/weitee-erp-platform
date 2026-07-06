@@ -1,4 +1,4 @@
-﻿-- post level finalization for existing data
+-- post level finalization for existing data
 -- purpose:
 -- 1. backfill known post levels in system_post
 -- 2. remove current unclassified dirty values for imported post codes

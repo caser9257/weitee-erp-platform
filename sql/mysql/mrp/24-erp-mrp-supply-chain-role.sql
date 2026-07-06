@@ -1,4 +1,4 @@
-﻿/*
+/*
  Target: ERP MRP supply-chain role compatibility
  Schema: ruoyi-vue-pro
  Date: 2026-04-13
