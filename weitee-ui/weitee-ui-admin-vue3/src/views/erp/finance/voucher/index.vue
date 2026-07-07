@@ -308,7 +308,6 @@
         <div class="finance-shell__context-main">
           <div class="finance-shell__context-title">生成凭证</div>
         </div>
-        <div class="finance-shell__page-chip">生成 / 审核 / 过账 / 冲销</div>
       </div>
       <el-form ref="generateFormRef" :model="generateForm" :rules="generateFormRules" label-width="88px" v-loading="generateLoading" :disabled="generateSubmitting">
         <div class="finance-shell__dialog-grid">
@@ -383,7 +382,7 @@
         <div v-if="detailData" class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ detailData.voucherNo || '-' }}</div>
-            <div class="finance-shell__context-subtitle">{{ detailData.bizTypeName || '-' }} {{ detailData.bizNo || '-' }}</div>
+            <div class="finance-shell__context-meta-line">{{ detailData.bizTypeName || '-' }} {{ detailData.bizNo || '-' }}</div>
           </div>
           <div class="finance-shell__context-meta">
             <div class="finance-shell__context-meta-item">
@@ -1037,11 +1036,16 @@ onUnmounted(() => {
   padding: 9px 11px;
 }
 
-@media (max-width: 768px) {
-  .finance-voucher-page .finance-shell__page-chip {
-    white-space: normal;
-  }
+.finance-voucher-page .finance-shell__context-meta-line {
+  overflow: hidden;
+  margin-top: 4px;
+  color: var(--erp-slate-300);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
+@media (max-width: 768px) {
   .finance-voucher-page :deep(.finance-shell__header-card .el-card__body),
   .finance-voucher-page :deep(.finance-shell__filter-card .el-card__body),
   .finance-voucher-page :deep(.finance-shell__table-card .el-card__body) {
