@@ -40,8 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
@@ -282,12 +280,12 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         });
 
         // 3. 生成凭证
-        Long voucherId = null;
+        Long voucherId;
         try {
             voucherId = voucherService.autoGenerateVoucher(ErpBizTypeEnum.STOCK_CHECK.getType(), checkId);
         } catch (Exception e) {
             log.error("[approveAndClose] 盘点凭证生成失败，checkId={}", checkId, e);
-            // 凭证生成失败不影响主流程，记录日志即可
+            throw exception(STOCK_CHECK_VOUCHER_GENERATE_FAIL);
         }
 
         // 4. 更新状态为 CLOSED
