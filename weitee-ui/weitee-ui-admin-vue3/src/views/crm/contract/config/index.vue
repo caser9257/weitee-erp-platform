@@ -49,6 +49,8 @@ defineOptions({ name: 'CrmContractConfig' })
 const message = useMessage() // 消息弹窗
 const { t } = useI18n() // 国际化
 
+const { validateForm } = useFormValidation(formRef)
+
 const formLoading = ref(false)
 const formData = ref({
   notifyEnabled: false,
@@ -74,9 +76,7 @@ const getConfig = async () => {
 /** 提交配置 */
 const onSubmit = async () => {
   // 校验表单
-  if (!formRef) return
-  const valid = await formRef.value.validate()
-  if (!valid) return
+  if (!await validateForm()) return
   // 提交请求
   formLoading.value = true
   try {

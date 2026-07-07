@@ -38,11 +38,25 @@ public class BpmApprovalStatisticsController {
         return success(approvalStatisticsService.getApprovalStatistics());
     }
 
+    @GetMapping("/current-summary")
+    @Operation(summary = "获取当前有效审批统计概览")
+    @PreAuthorize("@ss.hasPermission('bpm:approval:query')")
+    public CommonResult<ApprovalStatisticsRespVO> getCurrentApprovalStatistics() {
+        return success(approvalStatisticsService.getCurrentApprovalStatistics());
+    }
+
     @GetMapping("/user-list")
     @Operation(summary = "获取所有用户的审批统计")
     @PreAuthorize("@ss.hasPermission('bpm:approval:query')")
     public CommonResult<List<UserApprovalStatisticsRespVO>> getAllUserApprovalStatistics() {
         return success(approvalStatisticsService.getAllUserApprovalStatistics());
+    }
+
+    @GetMapping("/current-user-list")
+    @Operation(summary = "获取所有用户的当前有效审批统计")
+    @PreAuthorize("@ss.hasPermission('bpm:approval:query')")
+    public CommonResult<List<UserApprovalStatisticsRespVO>> getAllCurrentUserApprovalStatistics() {
+        return success(approvalStatisticsService.getAllCurrentUserApprovalStatistics());
     }
 
 }

@@ -19,12 +19,163 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ErpStockBatchRebuildServiceImplTest {
+
+    @Test
+    void previewOutbound_shouldBatchLoadStockOutItemsWithoutCallingSingleQuery() throws Exception {
+        ErpStockBatchRebuildServiceImpl service = new ErpStockBatchRebuildServiceImpl();
+        AtomicReference<Collection<Long>> queriedOutIdsRef = new AtomicReference<>();
+        AtomicReference<Boolean> singleQueryCalledRef = new AtomicReference<>(false);
+
+        setField(service, "erpStockOutMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockOutMapper.class,
+                (methodName, args) -> {
+                    if ("selectApprovedListForBatchRebuild".equals(methodName)) {
+                        return List.of(
+                                new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutDO()
+                                        .setId(201L).setNo("QTCK202607060001")
+                                        .setStatus(ErpAuditStatus.APPROVE.getStatus()),
+                                new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutDO()
+                                        .setId(202L).setNo("QTCK202607060002")
+                                        .setStatus(ErpAuditStatus.APPROVE.getStatus()));
+                    }
+                    return null;
+                }));
+        setField(service, "erpStockOutItemMapper",
+                createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockOutItemMapper.class, (methodName, args) -> {
+                    if ("selectListByOutId".equals(methodName)) {
+                        singleQueryCalledRef.set(true);
+                        return List.of();
+                    }
+                    if ("selectListByOutIds".equals(methodName)) {
+                        @SuppressWarnings("unchecked")
+                        Collection<Long> outIds = (Collection<Long>) args[0];
+                        queriedOutIdsRef.set(outIds);
+                        return List.of(
+                                new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutItemDO()
+                                        .setId(301L).setOutId(201L).setProductId(1L).setWarehouseId(11L)
+                                        .setCount(new BigDecimal("3.000")),
+                                new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockOutItemDO()
+                                        .setId(302L).setOutId(202L).setProductId(2L).setWarehouseId(12L)
+                                        .setCount(new BigDecimal("5.000")));
+                    }
+                    return null;
+                }));
+        setField(service, "erpStockBatchAllocationMapper", createProxy(ErpStockBatchAllocationMapper.class, (methodName, args) -> {
+            if ("selectListByBizItem".equals(methodName)) {
+                return new ArrayList<>();
+            }
+            return null;
+        }));
+        setField(service, "productService", createProxy(ErpProductService.class, (methodName, args) -> {
+            if ("getProduct".equals(methodName)) {
+                Long productId = (Long) args[0];
+                return new ErpProductDO().setId(productId).setBatchControlFlag(true);
+            }
+            return null;
+        }));
+        setField(service, "stockBatchService", createProxy(ErpStockBatchService.class, (methodName, args) -> {
+            if ("getAvailableStockBatchList".equals(methodName)) {
+                return List.of(new ErpStockBatchDO().setId(21L).setProductId(1L).setWarehouseId(11L)
+                                .setBatchNo("B201").setAvailableQty(new BigDecimal("9.000")),
+                        new ErpStockBatchDO().setId(22L).setProductId(2L).setWarehouseId(12L)
+                                .setBatchNo("B202").setAvailableQty(new BigDecimal("9.000")));
+            }
+            return null;
+        }));
+        setField(service, "stockBatchAllocationService", createProxy(ErpStockBatchAllocationService.class,
+                (methodName, args) -> new ArrayList<>()));
+
+        ErpStockBatchRebuildOutboundReqVO reqVO = new ErpStockBatchRebuildOutboundReqVO();
+        reqVO.setBizType(ErpStockRecordBizTypeEnum.OTHER_OUT.getType());
+        reqVO.setLimit(20);
+
+        ErpStockBatchRebuildOutboundRespVO preview = service.previewOutbound(reqVO);
+
+        assertThat(singleQueryCalledRef.get()).isFalse();
+        assertThat(queriedOutIdsRef.get()).containsExactly(201L, 202L);
+        assertThat(preview.getDetails()).hasSize(2);
+        assertThat(preview.getDetails())
+                .extracting(ErpStockBatchRebuildOutboundRespVO.Detail::getBizItemId)
+                .containsExactly(301L, 302L);
+    }
+
+    @Test
+    void previewOutbound_shouldBatchLoadSaleOutItemsWithoutCallingSingleQuery() throws Exception {
+        ErpStockBatchRebuildServiceImpl service = new ErpStockBatchRebuildServiceImpl();
+        AtomicReference<Collection<Long>> queriedOutIdsRef = new AtomicReference<>();
+        AtomicReference<Boolean> singleQueryCalledRef = new AtomicReference<>(false);
+
+        setField(service, "saleOutMapper", createProxy(ErpSaleOutMapper.class, (methodName, args) -> {
+            if ("selectApprovedListForBatchRebuild".equals(methodName)) {
+                return List.of(
+                        new ErpSaleOutDO().setId(101L).setNo("XSCK202607060001")
+                                .setStatus(ErpAuditStatus.APPROVE.getStatus()),
+                        new ErpSaleOutDO().setId(102L).setNo("XSCK202607060002")
+                                .setStatus(ErpAuditStatus.APPROVE.getStatus()));
+            }
+            return null;
+        }));
+        setField(service, "saleOutItemMapper", createProxy(ErpSaleOutItemMapper.class, (methodName, args) -> {
+            if ("selectListByOutId".equals(methodName)) {
+                singleQueryCalledRef.set(true);
+                return List.of();
+            }
+            if ("selectListByOutIds".equals(methodName)) {
+                @SuppressWarnings("unchecked")
+                Collection<Long> outIds = (Collection<Long>) args[0];
+                queriedOutIdsRef.set(outIds);
+                return List.of(
+                        new ErpSaleOutItemDO().setId(111L).setOutId(101L)
+                                .setProductId(1L).setWarehouseId(11L).setCount(new BigDecimal("3.000")),
+                        new ErpSaleOutItemDO().setId(112L).setOutId(102L)
+                                .setProductId(2L).setWarehouseId(12L).setCount(new BigDecimal("5.000")));
+            }
+            return null;
+        }));
+        setField(service, "stockBatchAllocationMapper", createProxy(ErpStockBatchAllocationMapper.class, (methodName, args) -> {
+            if ("selectListByBizItem".equals(methodName)) {
+                return new ArrayList<>();
+            }
+            return null;
+        }));
+        setField(service, "productService", createProxy(ErpProductService.class, (methodName, args) -> {
+            if ("getProduct".equals(methodName)) {
+                Long productId = (Long) args[0];
+                return new ErpProductDO().setId(productId).setBatchControlFlag(true);
+            }
+            return null;
+        }));
+        setField(service, "stockBatchService", createProxy(ErpStockBatchService.class, (methodName, args) -> {
+            if ("getAvailableStockBatchList".equals(methodName)) {
+                return List.of(new ErpStockBatchDO().setId(31L).setProductId(1L).setWarehouseId(11L)
+                                .setBatchNo("B101").setAvailableQty(new BigDecimal("9.000")),
+                        new ErpStockBatchDO().setId(32L).setProductId(2L).setWarehouseId(12L)
+                                .setBatchNo("B102").setAvailableQty(new BigDecimal("9.000")));
+            }
+            return null;
+        }));
+        setField(service, "stockBatchAllocationService", createProxy(ErpStockBatchAllocationService.class,
+                (methodName, args) -> new ArrayList<>()));
+
+        ErpStockBatchRebuildOutboundReqVO reqVO = new ErpStockBatchRebuildOutboundReqVO();
+        reqVO.setBizType(ErpStockRecordBizTypeEnum.SALE_OUT.getType());
+        reqVO.setLimit(20);
+
+        ErpStockBatchRebuildOutboundRespVO preview = service.previewOutbound(reqVO);
+
+        assertThat(singleQueryCalledRef.get()).isFalse();
+        assertThat(queriedOutIdsRef.get()).containsExactly(101L, 102L);
+        assertThat(preview.getDetails()).hasSize(2);
+        assertThat(preview.getDetails())
+                .extracting(ErpStockBatchRebuildOutboundRespVO.Detail::getBizItemId)
+                .containsExactly(111L, 112L);
+    }
 
     @Test
     void rebuildOutbound_shouldPreviewAndExecuteMissingApprovedSaleOutAllocation() throws Exception {
@@ -39,7 +190,7 @@ class ErpStockBatchRebuildServiceImplTest {
             return null;
         }));
         setField(service, "saleOutItemMapper", createProxy(ErpSaleOutItemMapper.class, (methodName, args) -> {
-            if ("selectListByOutId".equals(methodName)) {
+            if ("selectListByOutIds".equals(methodName)) {
                 return List.of(new ErpSaleOutItemDO().setId(101L).setOutId(100L)
                         .setProductId(1L).setWarehouseId(2L).setCount(new BigDecimal("7.000")));
             }

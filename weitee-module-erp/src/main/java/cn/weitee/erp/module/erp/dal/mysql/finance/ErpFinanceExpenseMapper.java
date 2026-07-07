@@ -44,6 +44,15 @@ public interface ErpFinanceExpenseMapper extends BaseMapperX<ErpFinanceExpenseDO
                 .set(ErpFinanceExpenseDO::getProcessInstanceId, null));
     }
 
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(new LambdaUpdateWrapper<ErpFinanceExpenseDO>()
+                .eq(ErpFinanceExpenseDO::getId, id)
+                .eq(ErpFinanceExpenseDO::getStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpFinanceExpenseDO::getProcessInstanceId, processInstanceId)
+                .set(ErpFinanceExpenseDO::getStatus, ErpAuditStatus.DRAFT.getStatus())
+                .set(ErpFinanceExpenseDO::getProcessInstanceId, null));
+    }
+
     default ErpFinanceExpenseDO selectByNo(String no) {
         return selectOne(ErpFinanceExpenseDO::getNo, no);
     }

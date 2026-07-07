@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="http://www.flowable.org/processdef"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             expressionLanguage="http://www.w3.org/1999/XPath">
+
+  <process id="erp_finance_payment" name="付款单审批" isExecutable="true">
+    <documentation>付款单 BPM 审批流程（2级审批）</documentation>
+
+    <startEvent id="start" name="开始"
+                flowable:formFieldValidation="true">
+    </startEvent>
+
+    <userTask id="task_approve_level1" name="部门经理审批"
+              flowable:assignee="${#task.getAssignee()}"
+              flowable:skipExpression="${startUserId == '0'}">
+      <extensionElements>
+        <flowable:candidateStrategy>37</flowable:candidateStrategy>
+        <flowable:candidateParam>1</flowable:candidateParam>
+        <flowable:assignStartUserHandlerType>3</flowable:assignStartUserHandlerType>
+        <flowable:assignEmptyHandlerType>4</flowable:assignEmptyHandlerType>
+      </extensionElements>
+    </userTask>
+
+    <userTask id="task_approve_level2" name="财务负责人审批"
+              flowable:assignee="${#task.getAssignee()}"
+              flowable:skipExpression="${startUserId == '0'}">
+      <extensionElements>
+        <flowable:candidateStrategy>38</flowable:candidateStrategy>
+        <flowable:candidateParam>2</flowable:candidateParam>
+        <flowable:assignStartUserHandlerType>3</flowable:assignStartUserHandlerType>
+        <flowable:assignEmptyHandlerType>4</flowable:assignEmptyHandlerType>
+      </extensionElements>
+    </userTask>
+
+    <endEvent id="end" name="结束">
+    </endEvent>
+
+    <sequenceFlow id="flow_start_to_level1" sourceRef="start" targetRef="task_approve_level1"/>
+    <sequenceFlow id="flow_level1_to_level2" sourceRef="task_approve_level1" targetRef="task_approve_level2"/>
+    <sequenceFlow id="flow_level2_to_end" sourceRef="task_approve_level2" targetRef="end"/>
+
+  </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_erp_finance_payment">
+    <bpmndi:BPMNShape bpmnElement="start" id="BPMNShape_start">
+      <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNShape bpmnElement="task_approve_level1" id="BPMNShape_task_approve_level1">
+      <omgdc:Bounds height="80.0" width="100.0" x="200.0" y="138.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNShape bpmnElement="task_approve_level2" id="BPMNShape_task_approve_level2">
+      <omgdc:Bounds height="80.0" width="100.0" x="380.0" y="138.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNShape bpmnElement="end" id="BPMNShape_end">
+      <omgdc:Bounds height="28.0" width="28.0" x="550.0" y="164.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge bpmnElement="flow_start_to_level1" id="BPMNEdge_flow_start_to_level1">
+      <omgdi:waypoint x="130.0" y="178.0"/>
+      <omgdi:waypoint x="200.0" y="178.0"/>
+    </bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge bpmnElement="flow_level1_to_level2" id="BPMNEdge_flow_level1_to_level2">
+      <omgdi:waypoint x="300.0" y="178.0"/>
+      <omgdi:waypoint x="380.0" y="178.0"/>
+    </bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge bpmnElement="flow_level2_to_end" id="BPMNEdge_flow_level2_to_end">
+      <omgdi:waypoint x="480.0" y="178.0"/>
+      <omgdi:waypoint x="550.0" y="178.0"/>
+    </bpmndi:BPMNEdge>
+  </bpmndi:BPMNDiagram>
+
+</definitions>

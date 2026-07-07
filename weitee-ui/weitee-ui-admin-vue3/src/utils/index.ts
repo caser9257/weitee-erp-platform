@@ -418,6 +418,25 @@ export const erpNumberFormatter = (num: number | string | undefined, digit: numb
   return num.toFixed(digit)
 }
 
+const trimTrailingZeros = (value: string) => {
+  return value.replace(/(\.\d*?[1-9])0+$/u, '$1').replace(/\.0+$/u, '')
+}
+
+const formatLocalizedFixed = (num: number | string | undefined, digit: number, trimZeros = false) => {
+  if (num == null) {
+    return ''
+  }
+  const numericValue = typeof num === 'string' ? parseFloat(num) : num
+  if (isNaN(numericValue)) {
+    return ''
+  }
+  const formatted = Number(numericValue).toLocaleString('zh-CN', {
+    minimumFractionDigits: digit,
+    maximumFractionDigits: digit
+  })
+  return trimZeros ? trimTrailingZeros(formatted) : formatted
+}
+
 /**
  * 【ERP】格式化数量，保留三位小数
  *
@@ -427,7 +446,7 @@ export const erpNumberFormatter = (num: number | string | undefined, digit: numb
  * @return 格式化后的数量
  */
 export const erpCountInputFormatter = (num: number | string | undefined) => {
-  return erpNumberFormatter(num, ERP_COUNT_DIGIT)
+  return trimTrailingZeros(erpNumberFormatter(num, ERP_COUNT_DIGIT))
 }
 
 // noinspection JSCommentMatchesSignature
@@ -438,7 +457,7 @@ export const erpCountInputFormatter = (num: number | string | undefined) => {
  * @return 格式化后的数量
  */
 export const erpCountTableColumnFormatter = (_, __, cellValue: any, ___) => {
-  return erpNumberFormatter(cellValue, ERP_COUNT_DIGIT)
+  return formatLocalizedFixed(cellValue, ERP_COUNT_DIGIT, true)
 }
 
 /**
@@ -461,7 +480,7 @@ export const erpPriceInputFormatter = (num: number | string | undefined) => {
  * @return 格式化后的数量
  */
 export const erpPriceTableColumnFormatter = (_, __, cellValue: any, ___) => {
-  return erpNumberFormatter(cellValue, ERP_PRICE_DIGIT)
+  return formatLocalizedFixed(cellValue, ERP_PRICE_DIGIT)
 }
 
 /**

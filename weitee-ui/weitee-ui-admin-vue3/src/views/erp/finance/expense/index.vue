@@ -107,7 +107,13 @@
           <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
-          <el-button type="primary" plain v-hasPermi="['erp:finance-expense:create']" :disabled="actionBusy" @click="openFormDialog()">
+          <el-button
+            type="primary"
+            plain
+            v-hasPermi="['erp:finance-expense:create']"
+            :disabled="saveSubmitting"
+            @click="openFormDialog()"
+          >
             <Icon icon="ep:plus" class="mr-5px" />
             新建
           </el-button>
@@ -141,7 +147,12 @@
                   <span class="finance-shell__muted-text">{{ formatDateValue(row.expenseTime) }}</span>
                   <div class="finance-shell__row-tags">
                     <span class="finance-shell__metric-pill finance-shell__metric-pill--primary">{{ row.expenseTypeName || getExpenseTypeLabel(row.expenseType) }}</span>
-                    <span class="finance-shell__metric-pill" :class="resolveStatusClass(row.status)">{{ getStatusLabel(row.status) }}</span>
+                    <span
+                      class="finance-shell__metric-pill"
+                      :class="resolveStatusClass(row.status, row.processInstanceId)"
+                    >
+                      {{ getStatusLabel(row.status, row.processInstanceId) }}
+                    </span>
                   </div>
                 </div>
               </template>
@@ -202,11 +213,72 @@
             <el-table-column label="操作" fixed="right" align="center" width="280">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
-                  <el-button link type="primary" v-hasPermi="['erp:finance-expense:query']" @click.stop="openDetailDialog(row.id)">详情</el-button>
-                  <el-button v-if="canEditRow(row)" link type="primary" v-hasPermi="['erp:finance-expense:update']" :disabled="actionBusy" @click.stop="openFormDialog(row.id)">编辑</el-button>
-                  <el-button v-if="canUpdateStatus(row)" link type="success" v-hasPermi="['erp:finance-expense:update-status']" :disabled="actionBusy" @click.stop="handleUpdateStatus(row.id, 20)">审核</el-button>
-                  <el-button v-if="canRollback(row)" link type="warning" v-hasPermi="['erp:finance-expense:update-status']" :disabled="actionBusy" @click.stop="handleUpdateStatus(row.id, 10)">反审核</el-button>
-                  <el-button v-if="canDeleteRow(row)" link type="danger" v-hasPermi="['erp:finance-expense:delete']" :disabled="actionBusy" @click.stop="handleDelete([row.id])">删除</el-button>
+                  <el-button
+                    link
+                    type="primary"
+                    v-hasPermi="['erp:finance-expense:query']"
+                    :disabled="isRowBusy(row.id)"
+                    @click.stop="openDetailDialog(row.id)"
+                  >
+                    详情
+                  </el-button>
+                  <el-button
+                    v-if="canEditRow(row)"
+                    link
+                    type="primary"
+                    v-hasPermi="['erp:finance-expense:update']"
+                    :disabled="isRowBusy(row.id)"
+                    @click.stop="openFormDialog(row.id)"
+                  >
+                    编辑
+                  </el-button>
+                  <el-button
+                    v-if="canSubmitRow(row)"
+                    link
+                    :type="Number(row.status) === FINANCE_EXPENSE_STATUS.FAILED ? 'warning' : 'primary'"
+                    v-hasPermi="['erp:finance-expense:submit']"
+                    :loading="isSubmittingApproval(row.id)"
+                    :disabled="isDeletingRow(row.id) || isCancelingApproval(row.id)"
+                    @click.stop="openSubmitDialog(row)"
+                  >
+                    {{
+                      Number(row.status) === FINANCE_EXPENSE_STATUS.REJECT ||
+                      Number(row.status) === FINANCE_EXPENSE_STATUS.FAILED
+                        ? '重新提交审批'
+                        : '提交审批'
+                    }}
+                  </el-button>
+                  <el-button
+                    v-if="canCancelApprovalRow(row)"
+                    link
+                    type="warning"
+                    v-hasPermi="['erp:finance-expense:cancel-approval']"
+                    :loading="isCancelingApproval(row.id)"
+                    :disabled="isDeletingRow(row.id) || isSubmittingApproval(row.id)"
+                    @click.stop="handleCancelApproval(row)"
+                  >
+                    撤回审批
+                  </el-button>
+                  <el-button
+                    v-if="canViewProcessRow(row)"
+                    link
+                    v-hasPermi="['erp:finance-expense:query']"
+                    :disabled="isRowBusy(row.id)"
+                    @click.stop="handleProcessDetail(row)"
+                  >
+                    查看审批
+                  </el-button>
+                  <el-button
+                    v-if="canDeleteRow(row)"
+                    link
+                    type="danger"
+                    v-hasPermi="['erp:finance-expense:delete']"
+                    :loading="isDeletingRow(row.id)"
+                    :disabled="isSubmittingApproval(row.id) || isCancelingApproval(row.id)"
+                    @click.stop="handleDelete([row.id])"
+                  >
+                    删除
+                  </el-button>
                 </div>
               </template>
             </el-table-column>
@@ -221,11 +293,10 @@
       <div class="finance-shell__dialog-panel">
         <div class="finance-shell__dialog-context">
           <div>
-            <div class="finance-shell__dialog-eyebrow">费用单</div>
             <div class="finance-shell__dialog-title">{{ formDialogTitle }}</div>
             <div class="finance-shell__dialog-meta">
               <span>{{ formModel.no || '未生成单号' }}</span>
-              <span>状态 {{ getStatusLabel(formModel.status) }}</span>
+              <span>状态 {{ getStatusLabel(formModel.status, formModel.processInstanceId) }}</span>
             </div>
           </div>
           <div class="finance-shell__dialog-summary">
@@ -327,7 +398,7 @@
       </div>
       <template #footer>
         <el-button @click="closeFormDialog">取消</el-button>
-        <el-button type="primary" :loading="formSubmitting" :disabled="!canSubmitForm" @click="submitForm">保存</el-button>
+        <el-button type="primary" :loading="saveSubmitting" :disabled="!canSubmitForm" @click="submitForm">保存</el-button>
       </template>
     </el-dialog>
 
@@ -335,7 +406,6 @@
       <div class="finance-shell__drawer">
         <div class="finance-shell__drawer-context">
           <div>
-            <div class="finance-shell__drawer-eyebrow">费用单详情</div>
             <div class="finance-shell__drawer-title">{{ detailData.no || '-' }}</div>
             <div class="finance-shell__drawer-meta">
               <span>{{ detailData.expenseTypeName || getExpenseTypeLabel(detailData.expenseType) }}</span>
@@ -353,7 +423,9 @@
             </div>
             <div class="finance-shell__drawer-summary-card">
               <div class="finance-shell__drawer-summary-label">状态</div>
-              <div class="finance-shell__drawer-summary-value">{{ getStatusLabel(detailData.status) }}</div>
+              <div class="finance-shell__drawer-summary-value">
+                {{ getStatusLabel(detailData.status, detailData.processInstanceId) }}
+              </div>
             </div>
           </div>
         </div>
@@ -491,6 +563,11 @@
         </template>
       </div>
     </el-drawer>
+    <FinanceExpenseSubmitDialog
+      ref="submitDialogRef"
+      @success="handleSubmitSuccess"
+      @close="handleSubmitDialogClose"
+    />
   </div>
 </template>
 
@@ -498,9 +575,11 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import download from '@/utils/download'
 import { formatDate } from '@/utils/formatTime'
 import { erpPriceInputFormatter } from '@/utils'
+import { resolveErpAuditStatusLabel } from '@/utils/erpAuditStatus'
 import {
   ERP_FINANCE_EXPENSE_STATUS_OPTIONS,
   FinanceExpenseApi,
@@ -516,6 +595,12 @@ import { AccountApi, type AccountVO } from '@/api/erp/finance/account'
 import { ProjectApi, type ProjectSimpleVO } from '@/api/erp/project'
 import { getSimpleDeptList, type DeptVO } from '@/api/system/dept'
 import { getSimpleUserList, type SimpleUserVO } from '@/api/system/user'
+import FinanceExpenseSubmitDialog from './FinanceExpenseSubmitDialog.vue'
+import { useUserStoreWithOut } from '@/store/modules/user'
+import {
+  FINANCE_EXPENSE_STATUS,
+  getFinanceExpenseRowActionDescriptor
+} from './expenseStatus.helpers'
 
 defineOptions({ name: 'ErpFinanceExpense' })
 
@@ -528,8 +613,12 @@ type ExpenseFormItem = {
 }
 
 const message = useMessage()
+const { push } = useRouter()
+const userStore = useUserStoreWithOut()
+const currentUserId = computed(() => String(userStore.getUser.id || ''))
 const queryFormRef = ref<FormInstance>()
 const formRef = ref<FormInstance>()
+const submitDialogRef = ref<InstanceType<typeof FinanceExpenseSubmitDialog>>()
 const advancedExpanded = ref(false)
 
 const queryParams = reactive<ErpFinanceExpensePageReqVO>({
@@ -553,7 +642,11 @@ const listLoading = ref(false)
 const listErrorMessage = ref('')
 const refreshing = ref(false)
 const exportLoading = ref(false)
-const formSubmitting = ref(false)
+const saveSubmitting = ref(false)
+const deleteLoadingIds = ref<number[]>([])
+const submitApprovalIds = ref<number[]>([])
+const cancelApprovalIds = ref<number[]>([])
+const activeSubmitRowId = ref<number>()
 const selectionList = ref<ErpFinanceExpenseVO[]>([])
 
 const deptOptions = ref<DeptVO[]>([])
@@ -572,7 +665,14 @@ const typeLoading = ref(false)
 
 const formDialogVisible = ref(false)
 const editingId = ref<number | null>(null)
-const formModel = reactive<ErpFinanceExpenseSaveReqVO & { no?: string; status?: number; items: ExpenseFormItem[] }>({
+const formModel = reactive<
+  ErpFinanceExpenseSaveReqVO & {
+    no?: string
+    status?: number
+    processInstanceId?: string
+    items: ExpenseFormItem[]
+  }
+>({
   expenseTime: '',
   expenseType: undefined,
   deptId: undefined,
@@ -892,21 +992,31 @@ const displayTotal = computed(() => (isDemoMode.value ? demoExpenses.length : to
 
 const statusCount = computed(() => {
   const count = { process: 0, approve: 0, reject: 0 }
-  list.value.forEach((item) => {
-    if (item.status === 20) count.approve += 1
-    else if (item.status === 30) count.reject += 1
+  displayList.value.forEach((item) => {
+    if (item.status === FINANCE_EXPENSE_STATUS.APPROVE) count.approve += 1
+    else if (item.status === FINANCE_EXPENSE_STATUS.REJECT) count.reject += 1
     else count.process += 1
   })
   return count
 })
 
 const selectedIds = computed(() => selectionList.value.map((item) => Number(item.id)).filter(Boolean))
-const canQuery = computed(() => !listLoading.value && !formSubmitting.value)
+const canQuery = computed(
+  () =>
+    !listLoading.value &&
+    !saveSubmitting.value &&
+    !deleteLoadingIds.value.length &&
+    !submitApprovalIds.value.length &&
+    !cancelApprovalIds.value.length
+)
 const canReset = computed(() => !listLoading.value)
-const actionBusy = computed(() => listLoading.value || formSubmitting.value || exportLoading.value)
-const itemTotal = computed(() => (formModel.items || []).reduce((sum, item) => sum + Number(item.amount || 0), 0))
-const canSubmitForm = computed(() => !formSubmitting.value && itemTotal.value > 0)
+const canSubmitForm = computed(() => !saveSubmitting.value && itemTotal.value > 0)
 const formDialogTitle = computed(() => (editingId.value ? '编辑费用单' : '新建费用单'))
+const isDeletingRow = (id?: number) => !!id && deleteLoadingIds.value.includes(id)
+const isSubmittingApproval = (id?: number) => !!id && submitApprovalIds.value.includes(id)
+const isCancelingApproval = (id?: number) => !!id && cancelApprovalIds.value.includes(id)
+const isRowBusy = (id?: number) =>
+  isDeletingRow(id) || isSubmittingApproval(id) || isCancelingApproval(id)
 
 const formRules: FormRules = {
   expenseTime: [{ required: true, message: '请选择报销时间', trigger: 'change' }],
@@ -926,29 +1036,38 @@ const formatAmount = (value?: number) => {
   return erpPriceInputFormatter(value)
 }
 
-const formatDateValue = (value?: string) => (value ? formatDate(new Date(value), 'YYYY-MM-DD HH:mm:ss') : '-')
+const formatDateValue = (value?: string) =>
+  value ? formatDate(new Date(value), 'YYYY-MM-DD HH:mm:ss') : '-'
 
-const getStatusLabel = (status?: number) =>
-  ERP_FINANCE_EXPENSE_STATUS_OPTIONS.find((item) => item.value === status)?.label || '未审核'
+const getStatusLabel = (status?: number, processInstanceId?: string) =>
+  resolveErpAuditStatusLabel(status, processInstanceId)
 
-const resolveStatusClass = (status?: number) => {
-  if (status === 20) return 'finance-shell__metric-pill--success'
-  if (status === 30) return 'finance-shell__metric-pill--warning'
+const resolveStatusClass = (status?: number, processInstanceId?: string) => {
+  if (status === FINANCE_EXPENSE_STATUS.APPROVE) return 'finance-shell__metric-pill--success'
+  if (status === FINANCE_EXPENSE_STATUS.REJECT) return 'finance-shell__metric-pill--warning'
+  if (status === FINANCE_EXPENSE_STATUS.FAILED) return 'finance-shell__metric-pill--danger'
+  if (status === FINANCE_EXPENSE_STATUS.PROCESS && processInstanceId) {
+    return 'finance-shell__metric-pill--warning'
+  }
   return 'finance-shell__metric-pill--primary'
-}
-
-const resolveStatusLabel = (status?: number) => {
-  if (status === 20) return '已审核'
-  if (status === 30) return '已驳回'
-  return '未审核'
 }
 
 const getExpenseTypeLabel = (value?: number) => expenseTypeOptions.value.find((item) => item.value === value)?.label || '-'
 
-const canEditRow = (row: ErpFinanceExpenseVO) => Number(row.status || 10) !== 20
-const canDeleteRow = (row: ErpFinanceExpenseVO) => Number(row.status || 10) !== 20
-const canUpdateStatus = (row: ErpFinanceExpenseVO) => Number(row.status || 10) !== 20
-const canRollback = (row: ErpFinanceExpenseVO) => Number(row.status || 10) === 20
+const getRowDescriptor = (row: ErpFinanceExpenseVO) =>
+  getFinanceExpenseRowActionDescriptor({
+    status: row.status,
+    processInstanceId: row.processInstanceId,
+    creator: row.creator,
+    currentUserId: currentUserId.value
+  })
+
+const canEditRow = (row: ErpFinanceExpenseVO) => getRowDescriptor(row).canEdit
+const canDeleteRow = (row: ErpFinanceExpenseVO) => getRowDescriptor(row).canDelete
+const canSubmitRow = (row: ErpFinanceExpenseVO) => getRowDescriptor(row).canSubmit
+const canCancelApprovalRow = (row: ErpFinanceExpenseVO) =>
+  getRowDescriptor(row).canCancelApproval
+const canViewProcessRow = (row: ErpFinanceExpenseVO) => getRowDescriptor(row).canViewProcess
 const findDemoExpense = (id?: number | null) => demoExpenses.find((item) => item.id === id)
 
 const resetFormModel = () => {
@@ -963,6 +1082,7 @@ const resetFormModel = () => {
     expensePrice: undefined,
     remark: '',
     status: undefined,
+    processInstanceId: undefined,
     no: undefined,
     items: [
       {
@@ -1119,6 +1239,7 @@ const openFormDialog = async (id?: number) => {
           id: expense?.id,
           no: expense?.no,
           status: expense?.status,
+          processInstanceId: expense?.processInstanceId,
           expenseTime: expense?.expenseTime || '',
           expenseType: expense?.expenseType,
           deptId: expense?.deptId,
@@ -1155,6 +1276,7 @@ const openFormDialog = async (id?: number) => {
       id: expense?.id,
       no: expense?.no,
       status: expense?.status,
+      processInstanceId: expense?.processInstanceId,
       expenseTime: expense?.expenseTime || '',
       expenseType: expense?.expenseType,
       deptId: expense?.deptId,
@@ -1213,7 +1335,7 @@ const removeFormItem = (index: number) => {
 }
 
 const submitForm = async () => {
-  if (formSubmitting.value) return
+  if (saveSubmitting.value) return
   await formRef.value?.validate()
   if (itemTotal.value <= 0) {
     message.warning('请至少填写一条金额大于 0 的费用明细')
@@ -1240,7 +1362,7 @@ const submitForm = async () => {
         assetCandidateFlag: Boolean(item.assetCandidateFlag)
       }))
   }
-  formSubmitting.value = true
+  saveSubmitting.value = true
   try {
     if (editingId.value) {
       await FinanceExpenseApi.updateFinanceExpense(payload)
@@ -1254,7 +1376,7 @@ const submitForm = async () => {
   } catch (error: any) {
     message.error(error?.message || '保存失败')
   } finally {
-    formSubmitting.value = false
+    saveSubmitting.value = false
   }
 }
 
@@ -1297,7 +1419,7 @@ const loadDetail = async () => {
 }
 
 const handleDelete = async (ids: number[]) => {
-  if (!ids.length || actionBusy.value) return
+  if (!ids.length || deleteLoadingIds.value.length) return
   try {
     await ElMessageBox.confirm(`确定删除选中的 ${ids.length} 条费用单吗？`, '删除费用单', {
       type: 'warning',
@@ -1308,7 +1430,7 @@ const handleDelete = async (ids: number[]) => {
   } catch {
     return
   }
-  formSubmitting.value = true
+  deleteLoadingIds.value = Array.from(new Set([...deleteLoadingIds.value, ...ids]))
   try {
     await FinanceExpenseApi.deleteFinanceExpense(ids)
     message.success('删除成功')
@@ -1316,35 +1438,103 @@ const handleDelete = async (ids: number[]) => {
   } catch (error: any) {
     message.error(error?.message || '删除失败')
   } finally {
-    formSubmitting.value = false
+    deleteLoadingIds.value = deleteLoadingIds.value.filter((id) => !ids.includes(id))
   }
 }
 
-const handleUpdateStatus = async (id?: number, status?: number) => {
-  if (!id || !status || actionBusy.value) return
-  try {
-    await ElMessageBox.confirm(`确定${status === 20 ? '审核' : '反审核'}该费用单吗？`, '费用单状态变更', {
-      type: 'warning',
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      closeOnClickModal: false
-    })
-  } catch {
+const openSubmitDialog = (row: ErpFinanceExpenseVO) => {
+  if (!row.id || isSubmittingApproval(row.id)) {
     return
   }
-  formSubmitting.value = true
+  activeSubmitRowId.value = Number(row.id)
+  submitApprovalIds.value = Array.from(new Set([...submitApprovalIds.value, Number(row.id)]))
+  submitDialogRef.value?.open(row).catch(() => {
+    activeSubmitRowId.value = undefined
+    submitApprovalIds.value = submitApprovalIds.value.filter((id) => id !== Number(row.id))
+  })
+}
+
+const handleSubmitSuccess = async () => {
+  const rowId = activeSubmitRowId.value
   try {
-    await FinanceExpenseApi.updateFinanceExpenseStatus(id, status)
-    message.success(`${status === 20 ? '审核' : '反审核'}成功`)
     await getList()
-    if (detailDrawerVisible.value && detailId.value === id) {
+    if (!rowId) {
+      message.warning('提交请求已发送，请刷新后确认状态')
+      return
+    }
+    const latestRow = list.value.find((item) => Number(item.id) === rowId)
+    if (latestRow?.status === FINANCE_EXPENSE_STATUS.FAILED) {
+      message.warning('提交已受理，但流程创建失败')
+    } else if (
+      latestRow?.status === FINANCE_EXPENSE_STATUS.PROCESS &&
+      latestRow.processInstanceId
+    ) {
+      message.success('已提交审批，等待流程受理')
+    } else {
+      message.warning('提交请求已发送，请刷新后确认状态')
+    }
+    if (detailDrawerVisible.value && detailId.value === rowId) {
       await loadDetail()
     }
-  } catch (error: any) {
-    message.error(error?.message || '状态变更失败')
   } finally {
-    formSubmitting.value = false
+    if (rowId) {
+      submitApprovalIds.value = submitApprovalIds.value.filter((id) => id !== rowId)
+    }
+    activeSubmitRowId.value = undefined
   }
+}
+
+const handleSubmitDialogClose = () => {
+  const rowId = activeSubmitRowId.value
+  if (rowId) {
+    submitApprovalIds.value = submitApprovalIds.value.filter((id) => id !== rowId)
+  } else {
+    submitApprovalIds.value = []
+  }
+  activeSubmitRowId.value = undefined
+}
+
+const handleCancelApproval = async (row: ErpFinanceExpenseVO) => {
+  if (!row.id || cancelApprovalIds.value.includes(Number(row.id))) return
+  try {
+    const { value } = await ElMessageBox.prompt('请输入撤回原因', '撤回审批', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPattern: /^[\s\S]*.*\S[\s\S]*$/,
+      inputErrorMessage: '撤回原因不能为空'
+    })
+    cancelApprovalIds.value = Array.from(
+      new Set([...cancelApprovalIds.value, Number(row.id)])
+    )
+    await FinanceExpenseApi.cancelFinanceExpenseApproval({
+      id: Number(row.id),
+      reason: value
+    })
+    message.success('撤回审批成功')
+    await getList()
+    if (detailDrawerVisible.value && detailId.value === Number(row.id)) {
+      await loadDetail()
+    }
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      throw error
+    }
+  } finally {
+    cancelApprovalIds.value = cancelApprovalIds.value.filter((id) => id !== Number(row.id))
+  }
+}
+
+const handleProcessDetail = (row: ErpFinanceExpenseVO) => {
+  if (!row.processInstanceId) {
+    message.warning('当前费用单暂无审批流程')
+    return
+  }
+  push({
+    name: 'BpmProcessInstanceDetail',
+    query: {
+      id: row.processInstanceId
+    }
+  })
 }
 
 const handleExport = async () => {
@@ -1440,13 +1630,6 @@ onMounted(async () => {
 
 .finance-shell__drawer-context {
   background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
-}
-
-.finance-shell__dialog-eyebrow,
-.finance-shell__drawer-eyebrow {
-  color: rgba(255, 255, 255, 0.68);
-  font-size: 12px;
-  letter-spacing: 0.08em;
 }
 
 .finance-shell__dialog-title,

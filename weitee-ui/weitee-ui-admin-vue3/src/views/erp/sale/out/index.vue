@@ -211,7 +211,7 @@
           <div class="sale-out-empty__title">暂无出库记录</div>
         </div>
       </template>
-      <el-table-column width="36" type="selection" :selectable="canDelete" />
+      <el-table-column width="36" type="selection" :selectable="canDeleteRow" />
       <el-table-column label="出库信息" min-width="144">
         <template #default="{ row }">
           <div class="ledger-order">
@@ -329,7 +329,7 @@
                     反审批
                   </el-dropdown-item>
                   <el-dropdown-item
-                    v-if="canRemove"
+                    v-if="canRemove && canDeleteRow(row)"
                     command="delete"
                     :disabled="isDeletingRow(row.id)"
                     divided
@@ -356,6 +356,7 @@
           <div class="sale-out-mobile-card__head">
             <el-checkbox
               :model-value="selectedIdSet.has(row.id)"
+              :disabled="!canDeleteRow(row)"
               @change="(checked) => toggleSelection(row, checked)"
             />
             <div class="sale-out-mobile-card__identity">
@@ -451,7 +452,7 @@
                     反审批
                   </el-dropdown-item>
                   <el-dropdown-item
-                    v-if="canRemove"
+                    v-if="canRemove && canDeleteRow(row)"
                     command="delete"
                     :disabled="isDeletingRow(row.id)"
                     divided
@@ -511,6 +512,10 @@ import { AccountApi, AccountVO } from '@/api/erp/finance/account'
 import { resolveErpAuditStatusLabel, resolveErpAuditStatusTagType } from '@/utils/erpAuditStatus'
 import { checkPermi } from '@/utils/permission'
 import { useWindowSize } from '@vueuse/core'
+import {
+  getSaleOutRowActionDescriptor,
+  getSaleOutToolbarDescriptor
+} from './saleOutStatus.helpers'
 
 interface SaleOutListRow extends SaleOutVO {
   customerName?: string
@@ -640,10 +645,11 @@ const getReceiptStatusTagType = (row: SaleOutListRow): 'info' | 'warning' | 'suc
   return 'warning'
 }
 
-const canEdit = (row: SaleOutListRow) => row.status !== 20
-const canApprove = (row: SaleOutListRow) => row.status === 10
-const canReverseApprove = (row: SaleOutListRow) => row.status !== 10
-const canDelete = () => true
+const canEdit = (row: SaleOutListRow) => getSaleOutRowActionDescriptor(row).canEdit
+const canApprove = (row: SaleOutListRow) => getSaleOutRowActionDescriptor(row).canApprove
+const canReverseApprove = (row: SaleOutListRow) =>
+  getSaleOutRowActionDescriptor(row).canReverseApprove
+const canDeleteRow = (row: SaleOutListRow) => getSaleOutRowActionDescriptor(row).canDelete
 const canViewDetail = checkPermi(['erp:sale-out:query'])
 const canUpdate = checkPermi(['erp:sale-out:update'])
 const canUpdateStatus = checkPermi(['erp:sale-out:update-status'])
@@ -652,10 +658,18 @@ const isCompactLayout = computed(() => width.value < 1180)
 const canRetryList = computed(() => listLoadFailed.value && !loading.value)
 const selectedIdSet = computed(() => new Set(selectionList.value.map((item) => item.id)))
 
-const deletableSelectionIds = computed(() => selectionList.value.map((item) => item.id))
+const deletableSelectionIds = computed(() =>
+  selectionList.value.filter((item) => canDeleteRow(item)).map((item) => item.id)
+)
 
 const toolbarState = computed(() => ({
-  disableBatchDelete: deletableSelectionIds.value.length <= 0 || deletingIds.value.length > 0
+  ...getSaleOutToolbarDescriptor({
+    deletableSelectionCount: deletableSelectionIds.value.length
+  }),
+  disableBatchDelete:
+    getSaleOutToolbarDescriptor({
+      deletableSelectionCount: deletableSelectionIds.value.length
+    }).disableBatchDelete || deletingIds.value.length > 0
 }))
 
 const toggleAdvancedSearch = () => {
@@ -675,7 +689,7 @@ const isUpdatingStatus = (id?: number) => !!id && statusUpdatingIds.value.includ
 const hasMoreActions = (row: SaleOutListRow) =>
   (canUpdate && canEdit(row)) ||
   (canUpdateStatus && (canApprove(row) || canReverseApprove(row))) ||
-  canRemove
+  (canRemove && canDeleteRow(row))
 
 const resolveSettledValue = <T,>(result: PromiseSettledResult<T>, fallback: T) =>
   result.status === 'fulfilled' ? result.value : fallback
@@ -734,7 +748,10 @@ const handleRetryList = () => {
 }
 
 const handleDelete = async (ids: number[]) => {
-  const executableIds = Array.from(new Set(ids.filter((id) => !deletingIds.value.includes(id))))
+  const deletableIdSet = new Set(list.value.filter((item) => canDeleteRow(item)).map((item) => item.id))
+  const executableIds = Array.from(
+    new Set(ids.filter((id) => !deletingIds.value.includes(id) && deletableIdSet.has(id)))
+  )
   if (!executableIds.length) {
     return
   }
@@ -797,7 +814,7 @@ const handleExport = async () => {
 }
 
 const handleSelectionChange = (rows: SaleOutListRow[]) => {
-  selectionList.value = rows
+  selectionList.value = rows.filter((row) => canDeleteRow(row))
 }
 
 const toggleSelection = (row: SaleOutListRow, checked: unknown) => {
@@ -805,6 +822,9 @@ const toggleSelection = (row: SaleOutListRow, checked: unknown) => {
     return
   }
   if (checked === true) {
+    if (!canDeleteRow(row)) {
+      return
+    }
     if (!selectedIdSet.value.has(row.id)) {
       selectionList.value = [...selectionList.value, row]
     }

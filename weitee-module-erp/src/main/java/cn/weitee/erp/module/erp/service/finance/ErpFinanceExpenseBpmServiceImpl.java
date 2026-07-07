@@ -9,10 +9,11 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceExpenseMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseBpmConstants;
-import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -37,9 +38,10 @@ public class ErpFinanceExpenseBpmServiceImpl implements ErpFinanceExpenseBpmServ
 
     @Resource
     private BpmApprovalRuntimeService approvalRuntimeService;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public String submitFinanceExpense(Long userId, ErpFinanceExpenseSubmitReqVO reqVO) {
         ErpFinanceExpenseDO expense = getRequiredFinanceExpense(reqVO.getId());
         if (ObjectUtil.equal(expense.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
@@ -49,49 +51,38 @@ public class ErpFinanceExpenseBpmServiceImpl implements ErpFinanceExpenseBpmServ
                 && StrUtil.isNotBlank(expense.getProcessInstanceId())) {
             throw exception(EXPENSE_BPM_SUBMIT_FAIL);
         }
-        // 事务内：只写本地状态
         Long expenseId = expense.getId();
-        erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
+        executeInRequiredTransaction(() -> erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
                 .setId(expenseId)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
-                .setProcessInstanceId(null));
+                .setProcessInstanceId(null)));
 
-        // 事务外：调 BPM 创建流程
-        ErpTransactionUtils.afterCommit(() -> {
-            try {
-                String processInstanceId = approvalRuntimeService.submit(
-                        "erp.finance.expense.submit", expenseId, userId);
-                erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
-                        .setId(expenseId)
-                        .setProcessInstanceId(processInstanceId));
-            } catch (Exception e) {
-                log.error("[submitFinanceExpense] BPM 创建失败，expenseId={}", expenseId, e);
-                erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
-                        .setId(expenseId)
-                        .setStatus(ErpAuditStatus.FAILED.getStatus())
-                        .setProcessInstanceId(null));
-            }
-        });
-        return null;
+        String processInstanceId;
+        try {
+            processInstanceId = approvalRuntimeService.submit(
+                    "erp.finance.expense.submit", expenseId, userId);
+        } catch (Exception e) {
+            log.error("[submitFinanceExpense] BPM 创建失败，expenseId={}", expenseId, e);
+            executeInRequiredTransaction(() -> erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
+                    .setId(expenseId)
+                    .setStatus(ErpAuditStatus.FAILED.getStatus())
+                    .setProcessInstanceId(null)));
+            throw e;
+        }
+        executeInRequiredTransaction(() -> erpFinanceExpenseMapper.updateById(new ErpFinanceExpenseDO()
+                .setId(expenseId)
+                .setProcessInstanceId(processInstanceId)));
+        return processInstanceId;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void cancelFinanceExpenseApproval(Long userId, ErpFinanceExpenseCancelApprovalReqVO reqVO) {
         ErpFinanceExpenseDO expense = getRequiredFinanceExpense(reqVO.getId());
         if (!ObjectUtil.equal(expense.getStatus(), ErpAuditStatus.PROCESS.getStatus())
                 || StrUtil.isBlank(expense.getProcessInstanceId())) {
             throw exception(EXPENSE_BPM_CANCEL_FAIL);
         }
-        // 事务内：只做本地校验
-        Long expenseId = expense.getId();
-        ErpTransactionUtils.afterCommit(() -> {
-            try {
-                approvalRuntimeService.cancel("erp.finance.expense.submit", expenseId, userId, reqVO.getReason());
-            } catch (Exception e) {
-                log.warn("[cancelFinanceExpenseApproval] BPM 撤回失败，expenseId={}", expenseId, e);
-            }
-        });
+        approvalRuntimeService.cancel("erp.finance.expense.submit", expense.getId(), userId, reqVO.getReason());
     }
 
     @Override
@@ -110,6 +101,19 @@ public class ErpFinanceExpenseBpmServiceImpl implements ErpFinanceExpenseBpmServ
         variables.put(ErpFinanceExpenseBpmConstants.VARIABLE_FINANCE_USER_ID, expense.getFinanceUserId());
         variables.put(ErpFinanceExpenseBpmConstants.VARIABLE_ACCOUNT_ID, expense.getAccountId());
         return variables;
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     private ErpFinanceExpenseDO getRequiredFinanceExpense(Long expenseId) {

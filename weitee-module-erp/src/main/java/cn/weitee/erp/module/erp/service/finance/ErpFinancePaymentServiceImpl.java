@@ -302,11 +302,7 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
                     id, payment.getStatus());
             return;
         }
-        int updateCount = erpFinancePaymentMapper.updateByIdAndStatus(id, payment.getStatus(),
-                new ErpFinancePaymentDO()
-                        .setId(id)
-                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
-                        .setProcessInstanceId(null));
+        int updateCount = erpFinancePaymentMapper.resetStatusToDraftByBpm(id, processInstanceId);
         if (updateCount == 0) {
             throw exception(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL);
         }

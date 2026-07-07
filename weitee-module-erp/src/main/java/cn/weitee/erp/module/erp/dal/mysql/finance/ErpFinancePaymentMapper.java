@@ -6,6 +6,7 @@ import cn.weitee.erp.framework.mybatis.core.query.MPJLambdaWrapperX;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.payment.ErpFinancePaymentPageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePaymentItemDO;
+import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -45,6 +46,15 @@ public interface ErpFinancePaymentMapper extends BaseMapperX<ErpFinancePaymentDO
         return update(null, new LambdaUpdateWrapper<ErpFinancePaymentDO>()
                 .eq(ErpFinancePaymentDO::getId, id)
                 .eq(ErpFinancePaymentDO::getProcessInstanceId, processInstanceId)
+                .set(ErpFinancePaymentDO::getProcessInstanceId, null));
+    }
+
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(new LambdaUpdateWrapper<ErpFinancePaymentDO>()
+                .eq(ErpFinancePaymentDO::getId, id)
+                .eq(ErpFinancePaymentDO::getStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpFinancePaymentDO::getProcessInstanceId, processInstanceId)
+                .set(ErpFinancePaymentDO::getStatus, ErpAuditStatus.DRAFT.getStatus())
                 .set(ErpFinancePaymentDO::getProcessInstanceId, null));
     }
 

@@ -55,7 +55,8 @@
 <script setup lang="ts">
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
-import { PurchaseOrderApi, PurchaseOrderAuditLogVO, PurchaseOrderRejectLogVO } from '@/api/erp/purchase/order'
+import { PurchaseOrderApi, PurchaseOrderAuditLogVO } from '@/api/erp/purchase/order'
+import { resolvePurchaseOrderApprovalLogs } from './auditLogUtils'
 
 defineOptions({ name: 'PurchaseOrderAuditLogDialog' })
 
@@ -70,6 +71,9 @@ const auditLogs = ref<PurchaseOrderAuditLogVO[]>([])
 const canRetryAuditLog = computed(() => !!currentOrderId.value && !loading.value)
 
 const actionTextMap: Record<string, string> = {
+  CREATE: '创建',
+  UPDATE: '修改',
+  DELETE: '删除',
   APPROVE: '审批通过',
   REJECT: '驳回',
   RESUBMIT: '重新提交',
@@ -102,17 +106,6 @@ const formatStatus = (status?: number) => {
   return dict?.label || String(status)
 }
 
-const mapRejectLogsToAuditLogs = (rejectLogs: PurchaseOrderRejectLogVO[] = []) => {
-  return rejectLogs.map((item) => ({
-    actionType: 'REJECT',
-    reason: item.reason,
-    operatorId: item.rejectUserId,
-    operatorName: item.rejectUserName,
-    operatorNickname: item.rejectUserNickname || item.rejectUserName || item.creatorName,
-    createTime: item.rejectTime || item.createTime
-  })) as PurchaseOrderAuditLogVO[]
-}
-
 const resetState = () => {
   auditLogs.value = []
   loadFailed.value = false
@@ -125,8 +118,7 @@ const loadAuditLogs = async (id: number) => {
   loadFailed.value = false
   loadErrorMessage.value = ''
   const data = await PurchaseOrderApi.getPurchaseOrder(id)
-  auditLogs.value =
-    data.auditLogs && data.auditLogs.length ? data.auditLogs : mapRejectLogsToAuditLogs(data.rejectLogs || [])
+  auditLogs.value = resolvePurchaseOrderApprovalLogs(data)
 }
 
 const open = async (id: number) => {

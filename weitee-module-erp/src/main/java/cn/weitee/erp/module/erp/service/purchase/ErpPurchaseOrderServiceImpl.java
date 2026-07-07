@@ -51,8 +51,6 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.*;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 
-// TODO 芋艿：记录操作日志
-
 /**
  * ERP 采购订单 Service 实现类
  *
@@ -115,6 +113,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         // 2.2 插入订单项
         purchaseOrderItems.forEach(o -> o.setOrderId(purchaseOrder.getId()));
         erpPurchaseOrderItemMapper.insertBatch(purchaseOrderItems);
+        erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
+                .setOrderId(purchaseOrder.getId())
+                .setActionType(ErpPurchaseOrderAuditActionTypeConstants.CREATE)
+                .setBeforeStatus(null)
+                .setAfterStatus(purchaseOrder.getStatus()));
         return purchaseOrder.getId();
     }
 
@@ -144,6 +147,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         erpPurchaseOrderMapper.updateById(updateObj);
         // 2.2 更新订单项
         updatePurchaseOrderItemList(updateReqVO.getId(), purchaseOrderItems);
+        erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
+                .setOrderId(updateReqVO.getId())
+                .setActionType(ErpPurchaseOrderAuditActionTypeConstants.UPDATE)
+                .setBeforeStatus(purchaseOrder.getStatus())
+                .setAfterStatus(purchaseOrder.getStatus()));
     }
 
     @Override
@@ -216,6 +224,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         if (updateCount == 0) {
             throw exception(approve ? PURCHASE_ORDER_APPROVE_FAIL : PURCHASE_ORDER_PROCESS_FAIL);
         }
+        erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
+                .setOrderId(id)
+                .setActionType(resolveStatusAuditActionType(purchaseOrder.getStatus(), status))
+                .setBeforeStatus(purchaseOrder.getStatus())
+                .setAfterStatus(status));
 
         // 3. 如果是反审核操作，发布采购订单变更事件
         if (!approve) {
@@ -449,6 +462,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         purchaseOrders.forEach(purchaseOrder -> {
             erpPurchaseOrderMapper.deleteById(purchaseOrder.getId());
             erpPurchaseOrderItemMapper.deleteByOrderId(purchaseOrder.getId());
+            erpPurchaseOrderAuditLogMapper.insert(new ErpPurchaseOrderAuditLogDO()
+                    .setOrderId(purchaseOrder.getId())
+                    .setActionType(ErpPurchaseOrderAuditActionTypeConstants.DELETE)
+                    .setBeforeStatus(purchaseOrder.getStatus())
+                    .setAfterStatus(null));
             eventPublisher.publishEvent(new PurchaseOrderChangedEvent(
                     purchaseOrder.getId(), PurchaseOrderChangedEvent.ChangeType.ORDER_CANCELLED));
         });
@@ -569,6 +587,14 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
             return ErpPurchaseOrderAuditActionTypeConstants.REJECT;
         }
         return ErpPurchaseOrderAuditActionTypeConstants.CANCEL;
+    }
+
+    private String resolveStatusAuditActionType(Integer beforeStatus, Integer afterStatus) {
+        if (ErpAuditStatus.APPROVE.getStatus().equals(beforeStatus)
+                && ErpAuditStatus.PROCESS.getStatus().equals(afterStatus)) {
+            return ErpPurchaseOrderAuditActionTypeConstants.REVERSE_APPROVE;
+        }
+        return resolveAuditActionType(afterStatus);
     }
 
 }

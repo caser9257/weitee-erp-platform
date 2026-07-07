@@ -196,10 +196,18 @@ public class ErpPurchaseOrderDisplayService {
             purchaseOrderVO.setSourceType(displayContext.getSourceType(purchaseOrderVO.getId()));
             purchaseOrderVO.setHasPendingPurchaseIn(displayContext.hasPendingPurchaseIn(purchaseOrderVO.getId()));
             purchaseOrderVO.setPendingPurchaseInId(displayContext.getPendingPurchaseInId(purchaseOrderVO.getId()));
+            List<ErpPurchaseOrderAuditLogRespVO> operationLogs = buildAuditLogRespVOs(auditLogs, userMap);
+            List<ErpPurchaseOrderAuditLogRespVO> approvalLogs = buildBpmAuditLogRespVOs(bpmAuditLogs, userMap);
+            if (CollUtil.isNotEmpty(operationLogs)) {
+                purchaseOrderVO.setOperationLogs(operationLogs);
+            }
+            if (CollUtil.isNotEmpty(approvalLogs)) {
+                purchaseOrderVO.setApprovalLogs(approvalLogs);
+            }
             if (CollUtil.isNotEmpty(auditLogs) || CollUtil.isNotEmpty(bpmAuditLogs)) {
                 purchaseOrderVO.setAuditLogs(ErpPurchaseOrderDisplaySupport.mergeAuditLogs(
-                        new ArrayList<>(buildAuditLogRespVOs(auditLogs, userMap)),
-                        buildBpmAuditLogRespVOs(bpmAuditLogs, userMap)));
+                        new ArrayList<>(operationLogs),
+                        approvalLogs));
             }
             if (CollUtil.isNotEmpty(rejectLogs)) {
                 purchaseOrderVO.setRejectLogs(buildRejectLogRespVOs(rejectLogs, userMap));

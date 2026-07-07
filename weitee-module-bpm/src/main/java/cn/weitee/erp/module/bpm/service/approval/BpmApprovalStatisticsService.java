@@ -32,4 +32,18 @@ public interface BpmApprovalStatisticsService {
      */
     List<UserApprovalStatisticsRespVO> getAllUserApprovalStatistics();
 
+    /**
+     * 获取当前有效审批统计数据
+     *
+     * @return 当前有效审批统计数据
+     */
+    ApprovalStatisticsRespVO getCurrentApprovalStatistics();
+
+    /**
+     * 获取所有用户的当前有效审批统计数据
+     *
+     * @return 用户当前有效审批统计数据列表
+     */
+    List<UserApprovalStatisticsRespVO> getAllCurrentUserApprovalStatistics();
+
 }

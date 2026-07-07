@@ -26,11 +26,13 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_BATCH_REBUILD_CONFIRM_REQUIRED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_BATCH_REBUILD_HAS_FAILED_DETAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_BATCH_REBUILD_UNSUPPORTED_BIZ_TYPE;
@@ -118,8 +120,9 @@ public class ErpStockBatchRebuildServiceImpl implements ErpStockBatchRebuildServ
         List<OutboundItem> result = new ArrayList<>();
         if (ObjectUtil.equal(reqVO.getBizType(), ErpStockRecordBizTypeEnum.SALE_OUT.getType())) {
             List<ErpSaleOutDO> saleOuts = erpSaleOutMapper.selectApprovedListForBatchRebuild(reqVO.getBizId(), limit);
+            Map<Long, List<ErpSaleOutItemDO>> saleOutItemMap = getSaleOutItemMap(saleOuts);
             for (ErpSaleOutDO saleOut : saleOuts) {
-                for (ErpSaleOutItemDO item : erpSaleOutItemMapper.selectListByOutId(saleOut.getId())) {
+                for (ErpSaleOutItemDO item : saleOutItemMap.getOrDefault(saleOut.getId(), List.of())) {
                     result.add(new OutboundItem(reqVO.getBizType(), saleOut.getId(), item.getId(), saleOut.getNo(),
                             item.getProductId(), item.getWarehouseId(), item.getCount()));
                 }
@@ -127,13 +130,38 @@ public class ErpStockBatchRebuildServiceImpl implements ErpStockBatchRebuildServ
             return result;
         }
         List<ErpStockOutDO> stockOuts = erpStockOutMapper.selectApprovedListForBatchRebuild(reqVO.getBizId(), limit);
+        Map<Long, List<ErpStockOutItemDO>> stockOutItemMap = getStockOutItemMap(stockOuts);
         for (ErpStockOutDO stockOut : stockOuts) {
-            for (ErpStockOutItemDO item : erpStockOutItemMapper.selectListByOutId(stockOut.getId())) {
+            for (ErpStockOutItemDO item : stockOutItemMap.getOrDefault(stockOut.getId(), List.of())) {
                 result.add(new OutboundItem(reqVO.getBizType(), stockOut.getId(), item.getId(), stockOut.getNo(),
                         item.getProductId(), item.getWarehouseId(), item.getCount()));
             }
         }
         return result;
+    }
+
+    private Map<Long, List<ErpSaleOutItemDO>> getSaleOutItemMap(List<ErpSaleOutDO> saleOuts) {
+        if (CollUtil.isEmpty(saleOuts)) {
+            return Map.of();
+        }
+        List<ErpSaleOutItemDO> saleOutItems = erpSaleOutItemMapper.selectListByOutIds(extractSaleOutIds(saleOuts));
+        return convertMultiMap(saleOutItems, ErpSaleOutItemDO::getOutId);
+    }
+
+    private Collection<Long> extractSaleOutIds(List<ErpSaleOutDO> saleOuts) {
+        return saleOuts.stream().map(ErpSaleOutDO::getId).toList();
+    }
+
+    private Map<Long, List<ErpStockOutItemDO>> getStockOutItemMap(List<ErpStockOutDO> stockOuts) {
+        if (CollUtil.isEmpty(stockOuts)) {
+            return Map.of();
+        }
+        List<ErpStockOutItemDO> stockOutItems = erpStockOutItemMapper.selectListByOutIds(extractStockOutIds(stockOuts));
+        return convertMultiMap(stockOutItems, ErpStockOutItemDO::getOutId);
+    }
+
+    private Collection<Long> extractStockOutIds(List<ErpStockOutDO> stockOuts) {
+        return stockOuts.stream().map(ErpStockOutDO::getId).toList();
     }
 
     private void fillPreviewResult(ErpStockBatchRebuildOutboundRespVO.Detail detail, Map<String, BigDecimal> plannedQtyMap) {

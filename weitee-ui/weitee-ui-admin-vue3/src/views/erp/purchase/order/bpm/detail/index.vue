@@ -341,10 +341,10 @@ import {
   PurchaseOrderApi,
   type PurchaseOrderAuditLogVO,
   type PurchaseOrderItemVO,
-  type PurchaseOrderRejectLogVO,
   type PurchaseOrderVO
 } from '@/api/erp/purchase/order'
 import { getPurchaseOrderRowActionDescriptor } from '@/views/erp/purchase/order/purchaseOrderStatus.helpers'
+import { resolvePurchaseOrderOperationLogs } from '@/views/erp/purchase/order/auditLogUtils'
 import { useUserStoreWithOut } from '@/store/modules/user'
 
 defineOptions({ name: 'ErpPurchaseOrderBpmDetail' })
@@ -365,6 +365,9 @@ const purchaseOrder = ref<PurchaseOrderVO | null>(null)
 const accountList = ref<AccountVO[]>([])
 
 const actionTextMap: Record<string, string> = {
+  CREATE: '创建',
+  UPDATE: '修改',
+  DELETE: '删除',
   APPROVE: '审批通过',
   REJECT: '驳回',
   RESUBMIT: '重新提交',
@@ -392,20 +395,7 @@ const detailTitle = computed(() => {
   return '采购订单详情'
 })
 
-const displayAuditLogs = computed(() => {
-  const data = detailData.value
-  if (data.auditLogs?.length) {
-    return data.auditLogs
-  }
-  return (data.rejectLogs || []).map((item: PurchaseOrderRejectLogVO) => ({
-    actionType: 'REJECT',
-    reason: item.reason,
-    operatorId: item.rejectUserId,
-    operatorName: item.rejectUserName,
-    operatorNickname: item.rejectUserNickname || item.rejectUserName || item.creatorName,
-    createTime: item.rejectTime || item.createTime
-  })) as PurchaseOrderAuditLogVO[]
-})
+const displayAuditLogs = computed(() => resolvePurchaseOrderOperationLogs(detailData.value))
 
 const currentUserId = computed(() => String(userStore.getUser.id || ''))
 const actionState = computed(() =>

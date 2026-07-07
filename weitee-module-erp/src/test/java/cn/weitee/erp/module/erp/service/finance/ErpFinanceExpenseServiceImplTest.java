@@ -344,14 +344,16 @@ class ErpFinanceExpenseServiceImplTest {
                 .setNo("LSBX20260429000001")
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId("PI-ROLLBACK");
-        AtomicReference<ErpFinanceExpenseDO> updatedExpenseRef = new AtomicReference<>();
+        AtomicReference<Long> resetIdRef = new AtomicReference<>();
+        AtomicReference<String> resetProcessInstanceIdRef = new AtomicReference<>();
 
         setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return expense;
             }
-            if ("updateByIdAndStatus".equals(methodName)) {
-                updatedExpenseRef.set((ErpFinanceExpenseDO) args[2]);
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                resetIdRef.set((Long) args[0]);
+                resetProcessInstanceIdRef.set((String) args[1]);
                 return 1;
             }
             return null;
@@ -359,8 +361,8 @@ class ErpFinanceExpenseServiceImplTest {
 
         service.rollbackFinanceExpenseStatusToDraftByBpm(11L, "PI-ROLLBACK", "cancel");
 
-        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedExpenseRef.get().getStatus());
-        assertEquals(null, updatedExpenseRef.get().getProcessInstanceId());
+        assertEquals(11L, resetIdRef.get());
+        assertEquals("PI-ROLLBACK", resetProcessInstanceIdRef.get());
     }
 
     @Test

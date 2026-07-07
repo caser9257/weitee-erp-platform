@@ -202,10 +202,7 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
                     id, expense.getStatus());
             return;
         }
-        int updateCount = erpFinanceExpenseMapper.updateByIdAndStatus(id, expense.getStatus(),
-                new ErpFinanceExpenseDO().setId(id)
-                        .setStatus(ErpAuditStatus.DRAFT.getStatus())
-                        .setProcessInstanceId(null));
+        int updateCount = erpFinanceExpenseMapper.resetStatusToDraftByBpm(id, processInstanceId);
         if (updateCount == 0) {
             throw exception(ErrorCodeConstantsExpense.EXPENSE_STATUS_UPDATE_ILLEGAL);
         }

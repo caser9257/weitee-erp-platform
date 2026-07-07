@@ -45,6 +45,11 @@ public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstan
     }
 
     @Override
+    public BpmApprovalInstanceSnapshotDO getEffectiveSnapshotBySceneCodeAndBizId(String sceneCode, String bizId) {
+        return approvalInstanceSnapshotMapper.selectEffectiveBySceneCodeAndBizId(sceneCode, bizId);
+    }
+
+    @Override
     public BpmApprovalInstanceSnapshotDO getSnapshotByApprovalId(String approvalId) {
         return approvalInstanceSnapshotMapper.selectByApprovalId(approvalId);
     }
@@ -86,7 +91,7 @@ public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstan
         if (snapshot == null) {
             throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
         }
-        approvalInstanceSnapshotMapper.deleteById(id);
+        approvalInstanceSnapshotMapper.hardDeleteById(id);
     }
 
 }

@@ -37,7 +37,7 @@ public class BpmApprovalInstanceSnapshotController {
     public CommonResult<BpmApprovalInstanceSnapshotDO> getSnapshotBySceneCodeAndBizId(
             @RequestParam("sceneCode") String sceneCode,
             @RequestParam("bizId") String bizId) {
-        return success(approvalInstanceSnapshotService.getSnapshotBySceneCodeAndBizId(sceneCode, bizId));
+        return success(approvalInstanceSnapshotService.getEffectiveSnapshotBySceneCodeAndBizId(sceneCode, bizId));
     }
 
 }

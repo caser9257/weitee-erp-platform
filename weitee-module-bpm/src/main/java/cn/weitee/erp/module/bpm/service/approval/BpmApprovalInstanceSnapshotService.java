@@ -30,6 +30,11 @@ public interface BpmApprovalInstanceSnapshotService {
     BpmApprovalInstanceSnapshotDO getSnapshotBySceneCodeAndBizId(String sceneCode, String bizId);
 
     /**
+     * 根据场景编码和业务 ID 获取当前有效快照
+     */
+    BpmApprovalInstanceSnapshotDO getEffectiveSnapshotBySceneCodeAndBizId(String sceneCode, String bizId);
+
+    /**
      * 根据审批 ID（UUID）获取快照
      */
     BpmApprovalInstanceSnapshotDO getSnapshotByApprovalId(String approvalId);

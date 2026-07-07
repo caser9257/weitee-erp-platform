@@ -487,15 +487,17 @@ class ErpFinancePaymentServiceImplTest {
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId("PI-ROLLBACK")
                 .setSupplierId(201L);
-        AtomicReference<ErpFinancePaymentDO> updatedPaymentRef = new AtomicReference<>();
+        AtomicReference<Long> resetIdRef = new AtomicReference<>();
+        AtomicReference<String> resetProcessInstanceIdRef = new AtomicReference<>();
         AtomicReference<Boolean> itemQueryCalledRef = new AtomicReference<>(false);
 
         setField(service, "erpFinancePaymentMapper", createProxy(ErpFinancePaymentMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return payment;
             }
-            if ("updateByIdAndStatus".equals(methodName)) {
-                updatedPaymentRef.set((ErpFinancePaymentDO) args[2]);
+            if ("resetStatusToDraftByBpm".equals(methodName)) {
+                resetIdRef.set((Long) args[0]);
+                resetProcessInstanceIdRef.set((String) args[1]);
                 return 1;
             }
             return null;
@@ -509,8 +511,8 @@ class ErpFinancePaymentServiceImplTest {
 
         service.rollbackFinancePaymentStatusToDraftByBpm(5L, "PI-ROLLBACK", "cancel");
 
-        assertEquals(ErpAuditStatus.DRAFT.getStatus(), updatedPaymentRef.get().getStatus());
-        assertEquals(null, updatedPaymentRef.get().getProcessInstanceId());
+        assertEquals(5L, resetIdRef.get());
+        assertEquals("PI-ROLLBACK", resetProcessInstanceIdRef.get());
         assertEquals(Boolean.FALSE, itemQueryCalledRef.get());
     }
 

@@ -81,6 +81,8 @@ const { delView } = useTagsViewStore() // 视图操作
 const { push, currentRoute } = useRouter() // 路由
 const { query } = useRoute() // 查询参数
 
+const { validateForm } = useFormValidation(formRef)
+
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const formData = ref({
   type: undefined,
@@ -107,9 +109,7 @@ const processDefinitionId = ref('')
 /** 提交表单 */
 const submitForm = async () => {
   // 1.1 校验表单
-  if (!formRef) return
-  const valid = await formRef.value.validate()
-  if (!valid) return
+  if (!await validateForm()) return
   // 1.2 审批相关：校验指定审批人
   if (startUserSelectTasks.value?.length > 0) {
     for (const userTask of startUserSelectTasks.value) {

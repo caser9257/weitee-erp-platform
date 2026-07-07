@@ -396,11 +396,11 @@ import {
   PurchaseOrderApi,
   type PurchaseOrderAuditLogVO,
   type PurchaseOrderItemVO,
-  type PurchaseOrderRejectLogVO,
   type PurchaseOrderVO
 } from '@/api/erp/purchase/order'
 import { AccountApi, type AccountVO } from '@/api/erp/finance/account'
 import { getPurchaseOrderRowActionDescriptor } from './purchaseOrderStatus.helpers'
+import { resolvePurchaseOrderOperationLogs } from './auditLogUtils'
 import { useUserStoreWithOut } from '@/store/modules/user'
 
 defineOptions({ name: 'PurchaseOrderDetailDialog' })
@@ -456,6 +456,8 @@ const detailData = computed(() => ({
   ...(detailRowSnapshot.value || {}),
   ...(purchaseOrder.value || {}),
   items: purchaseOrder.value?.items || detailRowSnapshot.value?.items || [],
+  operationLogs: purchaseOrder.value?.operationLogs || detailRowSnapshot.value?.operationLogs || [],
+  approvalLogs: purchaseOrder.value?.approvalLogs || detailRowSnapshot.value?.approvalLogs || [],
   auditLogs: purchaseOrder.value?.auditLogs || detailRowSnapshot.value?.auditLogs || [],
   rejectLogs: purchaseOrder.value?.rejectLogs || detailRowSnapshot.value?.rejectLogs || []
 } as PurchaseOrderVO))
@@ -572,20 +574,7 @@ const baseInfoEntries = computed(() => [
   { label: '关联附件', value: fileName.value, file: detailData.value.fileUrl && fileName.value !== '-' }
 ])
 
-const displayAuditLogs = computed(() => {
-  const data = detailData.value
-  if (data.auditLogs?.length) {
-    return data.auditLogs
-  }
-  return (data.rejectLogs || []).map((item: PurchaseOrderRejectLogVO) => ({
-    actionType: 'REJECT',
-    reason: item.reason,
-    operatorId: item.rejectUserId,
-    operatorName: item.rejectUserName,
-    operatorNickname: item.rejectUserNickname || item.rejectUserName || item.creatorName,
-    createTime: item.rejectTime || item.createTime
-  })) as PurchaseOrderAuditLogVO[]
-})
+const displayAuditLogs = computed(() => resolvePurchaseOrderOperationLogs(detailData.value))
 
 const formatCount = (value?: number | string | null) => {
   const numberValue = normalizeNumber(value)

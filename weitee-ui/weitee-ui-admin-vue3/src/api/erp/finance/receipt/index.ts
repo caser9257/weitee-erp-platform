@@ -38,7 +38,7 @@ export interface FinanceReceiptPageReqVO {
   pageNo: number
   pageSize: number
   no?: string
-  receiptTime?: (string | number)[]
+  receiptTime?: string[]
   customerId?: number
   creator?: number
   financeUserId?: number

@@ -54,6 +54,7 @@ export function createVitePlugins() {
           '@/hooks/web/useMessage': ['useMessage'],
           '@/hooks/web/useTable': ['useTable'],
           '@/hooks/web/useCrudSchemas': ['useCrudSchemas'],
+          '@/hooks/web/useFormValidation': ['useFormValidation'],
           '@/utils/formRules': ['required'],
           '@/utils/dict': ['DICT_TYPE']
         }

@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @Mapper
 public interface ErpFinanceVoucherMapper extends BaseMapperX<ErpFinanceVoucherDO> {
@@ -31,6 +32,19 @@ public interface ErpFinanceVoucherMapper extends BaseMapperX<ErpFinanceVoucherDO
                 .eq(ErpFinanceVoucherDO::getLedgerId, ledgerId)
                 .eq(ErpFinanceVoucherDO::getBizType, bizType)
                 .eq(ErpFinanceVoucherDO::getBizId, bizId));
+    }
+
+    default List<ErpFinanceVoucherDO> selectListByLedgerIdsAndBizTypeAndBizIds(List<Long> ledgerIds,
+                                                                                Integer bizType,
+                                                                                Set<Long> bizIds) {
+        if (ledgerIds == null || ledgerIds.isEmpty() || bizIds == null || bizIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ErpFinanceVoucherDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
+                .in(ErpFinanceVoucherDO::getLedgerId, ledgerIds)
+                .eq(ErpFinanceVoucherDO::getBizType, bizType)
+                .in(ErpFinanceVoucherDO::getBizId, bizIds));
+        return list == null ? Collections.emptyList() : list;
     }
 
     default List<ErpFinanceVoucherDO> selectPostedListByLedgerIdAndPeriodId(Long ledgerId, Long periodId) {

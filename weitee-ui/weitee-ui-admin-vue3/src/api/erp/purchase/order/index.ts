@@ -91,6 +91,8 @@ export interface PurchaseOrderVO {
   lastRejectUserId?: number
   sourceType?: string
   rejectLogs?: PurchaseOrderRejectLogVO[]
+  operationLogs?: PurchaseOrderAuditLogVO[]
+  approvalLogs?: PurchaseOrderAuditLogVO[]
   auditLogs?: PurchaseOrderAuditLogVO[]
   items: PurchaseOrderItemVO[]
 }

@@ -18,7 +18,39 @@
   justify-content: flex-start;
 }
 
-/* nprogress 适配 element-plus 的主题色 */
+/* ==============================================================
+   表单校验增强 — 必填项错误提示醒目化
+   Element Plus 默认 .el-form-item__error 仅 12px 灰红小字，
+   以下增强让用户扫视表单时能更快定位必填缺失项
+   ============================================================== */
+.el-form-item.is-error {
+  .el-form-item__error {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--erp-danger-600);
+    padding-top: 4px;
+    display: block;
+    animation: shake-error-msg 0.35s ease-in-out;
+  }
+  .el-input__wrapper,
+  .el-select__wrapper {
+    box-shadow: 0 0 0 1.5px var(--erp-danger-600) inset !important;
+    /* !important: 覆盖 Element Plus 默认 input/select 样式 */
+    transition: box-shadow 0.2s ease;
+  }
+  .el-textarea__inner {
+    box-shadow: 0 0 0 1.5px var(--erp-danger-600) inset !important;
+    /* !important: 覆盖 Element Plus 默认 textarea 样式 */
+    transition: box-shadow 0.2s ease;
+  }
+}
+
+@keyframes shake-error-msg {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
 #nprogress {
   & .bar {
     background-color: var(--el-color-primary) !important;

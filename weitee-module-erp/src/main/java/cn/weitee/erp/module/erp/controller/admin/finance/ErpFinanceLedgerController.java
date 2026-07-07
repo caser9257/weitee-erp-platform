@@ -87,6 +87,7 @@ public class ErpFinanceLedgerController {
 
     @GetMapping("/simple-list")
     @Operation(summary = "获得启用账簿精简列表")
+    @PreAuthorize("@ss.hasPermission('erp:finance-ledger:query')")
     public CommonResult<List<ErpFinanceLedgerRespVO>> getFinanceLedgerSimpleList() {
         List<ErpFinanceLedgerDO> list = financeLedgerService.getFinanceLedgerListByStatus(CommonStatusEnum.ENABLE.getStatus());
         return success(convertList(list, ledger -> new ErpFinanceLedgerRespVO()

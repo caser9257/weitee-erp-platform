@@ -16,6 +16,80 @@ const props = defineProps({
   maxHeight: propTypes.oneOfType([String, Number]).def('400px')
 })
 
+// ==========================================================
+// 表单校验错误横幅 + 自动聚焦
+// 当 Dialog 内 el-form-item 出现 .is-error 时自动触发
+// ==========================================================
+const showErrorBanner = ref(false)
+const errorMessage = ref('请完善必填信息后再提交')
+let errorObserver: MutationObserver | null = null
+let prevErrorCount = 0 // 上一次检测到的错误字段数，用于区分新增/移除
+const dialogBodyRef = ref<HTMLElement | null>(null)
+
+function setupErrorObserver(bodyEl: Element) {
+  tearDownErrorObserver()
+  showErrorBanner.value = false
+  prevErrorCount = 0
+
+  errorObserver = new MutationObserver(() => {
+    nextTick(() => {
+      const currentCount = bodyEl.querySelectorAll('.el-form-item.is-error').length
+      if (currentCount > 0 && prevErrorCount === 0) {
+        // 错误从无到有 → 显示横幅 + 聚焦第一个错误字段
+        showErrorBanner.value = true
+        const firstError = bodyEl.querySelector('.el-form-item.is-error')
+        if (firstError) {
+          const input = firstError.querySelector<HTMLElement>(
+            'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+          input?.focus()
+        }
+      } else if (currentCount === 0 && prevErrorCount > 0) {
+        // 所有错误已修正 → 收起横幅
+        showErrorBanner.value = false
+      }
+      prevErrorCount = currentCount
+    })
+  })
+
+  errorObserver.observe(bodyEl, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class']
+  })
+}
+
+function tearDownErrorObserver() {
+  errorObserver?.disconnect()
+  errorObserver = null
+  prevErrorCount = 0
+}
+
+const elDialogRef = ref<InstanceType<typeof ElDialog> | null>(null)
+
+function onDialogOpened() {
+  nextTick(() => {
+    const bodyEl = dialogBodyRef.value
+    if (bodyEl) {
+      setupErrorObserver(bodyEl)
+    }
+  })
+}
+
+// 点击表单字段时自动收起错误横幅
+const FORM_FIELD_SELECTOR = '.el-form-item, .el-input, .el-select, .el-textarea, .el-date-editor, .el-radio, .el-checkbox, .el-switch, .el-tree-select'
+function onBodyClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (target.closest(FORM_FIELD_SELECTOR)) {
+    showErrorBanner.value = false
+  }
+}
+
+onUnmounted(() => {
+  tearDownErrorObserver()
+})
+
 const getBindValue = computed(() => {
   const delArr: string[] = ['fullscreen', 'title', 'maxHeight', 'appendToBody']
   const attrs = useAttrs()
@@ -67,11 +141,14 @@ function closeHandler() {
 
 function closedHandler() {
   closing.value = false
+  showErrorBanner.value = false
+  tearDownErrorObserver()
 }
 </script>
 
 <template>
   <ElDialog
+    ref="elDialogRef"
     v-bind="getBindValue"
     :close-on-click-modal="true"
     :fullscreen="isFullscreen"
@@ -81,6 +158,7 @@ function closedHandler() {
     draggable
     class="com-dialog"
     :show-close="false"
+    @opened="onDialogOpened"
     @close="closeHandler"
     @closed="closedHandler"
   >
@@ -112,9 +190,33 @@ function closedHandler() {
     </template>
 
     <ElScrollbar v-if="scroll" :style="dialogStyle">
-      <slot></slot>
+      <div ref="dialogBodyRef" class="dialog-body-wrapper" @click="onBodyClick">
+        <ElAlert
+          v-if="showErrorBanner"
+          class="mb-15px"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          closable
+          @close="showErrorBanner = false"
+        />
+        <slot></slot>
+      </div>
     </ElScrollbar>
-    <slot v-else></slot>
+    <template v-else>
+      <div ref="dialogBodyRef" class="dialog-body-wrapper" @click="onBodyClick">
+        <ElAlert
+          v-if="showErrorBanner"
+          class="mb-15px"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          closable
+          @close="showErrorBanner = false"
+        />
+        <slot></slot>
+      </div>
+    </template>
     <template v-if="slots.footer" #footer>
       <div :style="{ 'pointer-events': closing ? 'none' : 'auto' }">
         <slot name="footer"></slot>

@@ -95,10 +95,12 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
 
     @Override
     public String submit(String sceneCode, Long bizId, Long userId) {
-        return executeInRequiredTransaction(() -> submitInTransaction(sceneCode, bizId, userId));
+        SubmitPreparation preparation = executeInRequiredTransaction(() ->
+                prepareSubmitInTransaction(sceneCode, bizId, userId));
+        return launchProcess(preparation);
     }
 
-    String submitInTransaction(String sceneCode, Long bizId, Long userId) {
+    SubmitPreparation prepareSubmitInTransaction(String sceneCode, Long bizId, Long userId) {
         // 1. 校验场景存在（getSceneByCode 已内置不存在时抛异常）
         BpmApprovalSceneRespVO scene = approvalSceneService.getSceneByCode(sceneCode);
         if (!ObjectUtil.equal(scene.getStatus(), BpmApprovalSceneStatusEnum.ENABLED.getStatus())) {
@@ -181,27 +183,12 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
         variables.put("bizId", String.valueOf(bizId));
         variables.put("snapshotId", snapshotId);
 
-        // 9. 事务提交后启动 BPM 实例（铁律 1：事务内禁止调外部系统）
-        //    返回 snapshotId 而非 processInstanceId，调用方可通过 snapshot 查询审批状态
-        String processKeyFinal = processKey;
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                new org.springframework.transaction.support.TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        launchProcessAfterCommit(snapshotId, sceneCode, bizId, userId, processKeyFinal, variables);
-                    }
-                });
-
-        return String.valueOf(snapshotId);
+        return new SubmitPreparation(snapshotId, sceneCode, bizId, userId, processKey, variables);
     }
 
     @Override
     public BpmApprovalDetailRespVO getApprovalDetail(String sceneCode, Long bizId) {
-        BpmApprovalInstanceSnapshotDO snapshot = approvalInstanceSnapshotService
-                .getSnapshotBySceneCodeAndBizId(sceneCode, String.valueOf(bizId));
-        if (snapshot == null) {
-            throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
-        }
+        BpmApprovalInstanceSnapshotDO snapshot = getSnapshotForApprovalDetail(sceneCode, bizId);
         BpmApprovalDetailReqVO reqVO = new BpmApprovalDetailReqVO();
         reqVO.setProcessInstanceId(snapshot.getProcessInstanceId());
         return processInstanceService.getApprovalDetail(NumberUtils.parseLong(snapshot.getCreator()), reqVO);
@@ -215,10 +202,12 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
 
     @Override
     public void cancel(String sceneCode, Long bizId, Long userId, String reason) {
-        executeInRequiredTransaction(() -> cancelInTransaction(sceneCode, bizId, userId, reason));
+        CancelPreparation preparation = executeInRequiredTransaction(() ->
+                prepareCancelInTransaction(sceneCode, bizId, userId, reason));
+        cancelProcess(preparation);
     }
 
-    void cancelInTransaction(String sceneCode, Long bizId, Long userId, String reason) {
+    CancelPreparation prepareCancelInTransaction(String sceneCode, Long bizId, Long userId, String reason) {
         // 1. 查找快照
         BpmApprovalInstanceSnapshotDO snapshot = approvalInstanceSnapshotService
                 .getSnapshotBySceneCodeAndBizId(sceneCode, String.valueOf(bizId));
@@ -243,61 +232,52 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 .build();
         approvalRecordService.createRecord(record);
 
-        // 4. 事务提交后调用外部 BPM 系统（铁律 1：事务内禁止调外部系统）
-        //    终态写入和业务回调统一由 BpmApprovalEventDispatcher.handleCancel() 处理（铁律 3：单一路径）
-        Long snapshotId = snapshot.getId();
-        String processInstanceId = snapshot.getProcessInstanceId();
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                new org.springframework.transaction.support.TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        cancelProcessAfterCommit(snapshotId, sceneCode, bizId, userId, processInstanceId, reason);
-                    }
-                });
+        return new CancelPreparation(snapshot.getId(), sceneCode, bizId, userId, snapshot.getProcessInstanceId(), reason);
     }
 
-    private void launchProcessAfterCommit(Long snapshotId, String sceneCode, Long bizId, Long userId,
-                                          String processDefinitionKey, Map<String, Object> variables) {
+    private String launchProcess(SubmitPreparation preparation) {
         try {
-            String processInstanceId = processInstanceApi.createProcessInstance(userId,
+            String processInstanceId = processInstanceApi.createProcessInstance(preparation.userId(),
                     new BpmProcessInstanceCreateReqDTO()
-                            .setProcessDefinitionKey(processDefinitionKey)
-                            .setBusinessKey(String.valueOf(bizId))
-                            .setVariables(variables));
+                            .setProcessDefinitionKey(preparation.processDefinitionKey())
+                            .setBusinessKey(String.valueOf(preparation.bizId()))
+                            .setVariables(preparation.variables()));
             executeInRequiredTransaction(() ->
-                    approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(snapshotId, processInstanceId));
+                    approvalInstanceSnapshotService.updateSnapshotProcessInstanceId(preparation.snapshotId(), processInstanceId));
+            return processInstanceId;
         } catch (Exception e) {
             log.error("[submit] BPM 创建失败，snapshotId={}, sceneCode={}, bizId={}",
-                    snapshotId, sceneCode, bizId, e);
+                    preparation.snapshotId(), preparation.sceneCode(), preparation.bizId(), e);
             try {
                 executeInRequiredTransaction(() ->
-                        approvalInstanceSnapshotService.updateSnapshotStatus(snapshotId,
+                        approvalInstanceSnapshotService.updateSnapshotStatus(preparation.snapshotId(),
                                 BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus(),
                                 "BPM创建失败: " + e.getMessage()));
             } catch (Exception ex) {
-                log.error("[submit] 更新快照为FAILED状态也失败，snapshotId={}", snapshotId, ex);
+                log.error("[submit] 更新快照为FAILED状态也失败，snapshotId={}", preparation.snapshotId(), ex);
             }
+            throw e;
         }
     }
 
-    private void cancelProcessAfterCommit(Long snapshotId, String sceneCode, Long bizId, Long userId,
-                                          String processInstanceId, String reason) {
+    private void cancelProcess(CancelPreparation preparation) {
         try {
-            processInstanceService.cancelProcessInstanceByStartUser(userId,
+            processInstanceService.cancelProcessInstanceByStartUser(preparation.userId(),
                     new BpmProcessInstanceCancelReqVO()
-                            .setId(processInstanceId)
-                            .setReason(reason));
+                            .setId(preparation.processInstanceId())
+                            .setReason(preparation.reason()));
         } catch (Exception e) {
             log.error("[cancel] BPM 撤回失败，sceneCode={}, bizId={}, processInstanceId={}",
-                    sceneCode, bizId, processInstanceId, e);
+                    preparation.sceneCode(), preparation.bizId(), preparation.processInstanceId(), e);
             try {
                 executeInRequiredTransaction(() ->
-                        approvalInstanceSnapshotService.updateSnapshotStatus(snapshotId,
+                        approvalInstanceSnapshotService.updateSnapshotStatus(preparation.snapshotId(),
                                 BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus(),
                                 "BPM撤回失败: " + e.getMessage()));
             } catch (Exception ex) {
-                log.error("[cancel] 更新快照为FAILED状态也失败，snapshotId={}", snapshotId, ex);
+                log.error("[cancel] 更新快照为FAILED状态也失败，snapshotId={}", preparation.snapshotId(), ex);
             }
+            throw e;
         }
     }
 
@@ -317,6 +297,18 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     @Override
     public void dispatchResult(BpmProcessInstanceStatusEvent event) {
         approvalEventDispatcher.onApplicationEvent(event);
+    }
+
+    private BpmApprovalInstanceSnapshotDO getSnapshotForApprovalDetail(String sceneCode, Long bizId) {
+        BpmApprovalInstanceSnapshotDO snapshot = approvalInstanceSnapshotService
+                .getEffectiveSnapshotBySceneCodeAndBizId(sceneCode, String.valueOf(bizId));
+        if (snapshot == null) {
+            throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
+        }
+        if (StrUtil.isBlank(snapshot.getProcessInstanceId())) {
+            throw exception(APPROVAL_PROCESS_INSTANCE_NOT_EXISTS);
+        }
+        return snapshot;
     }
 
     /**
@@ -377,6 +369,14 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             log.warn("[parseNotifyJson] 解析通知配置 JSON 失败，原始值: {}", notifyJson, e);
             return null;
         }
+    }
+
+    private record SubmitPreparation(Long snapshotId, String sceneCode, Long bizId, Long userId,
+                                     String processDefinitionKey, Map<String, Object> variables) {
+    }
+
+    private record CancelPreparation(Long snapshotId, String sceneCode, Long bizId, Long userId,
+                                     String processInstanceId, String reason) {
     }
 
 }

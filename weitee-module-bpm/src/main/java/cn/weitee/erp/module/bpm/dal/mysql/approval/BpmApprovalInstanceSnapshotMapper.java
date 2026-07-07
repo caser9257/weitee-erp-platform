@@ -3,6 +3,7 @@ package cn.weitee.erp.module.bpm.dal.mysql.approval;
 import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -16,6 +17,9 @@ import java.util.Map;
 @Mapper
 public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprovalInstanceSnapshotDO> {
 
+    @Delete("DELETE FROM bpm_approval_instance_snapshot WHERE id = #{id}")
+    int hardDeleteById(@Param("id") Long id);
+
     default BpmApprovalInstanceSnapshotDO selectByProcessInstanceId(String processInstanceId) {
         return selectOne(new LambdaQueryWrapperX<BpmApprovalInstanceSnapshotDO>()
                 .eq(BpmApprovalInstanceSnapshotDO::getProcessInstanceId, processInstanceId)
@@ -26,6 +30,15 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
         return selectOne(new LambdaQueryWrapperX<BpmApprovalInstanceSnapshotDO>()
                 .eq(BpmApprovalInstanceSnapshotDO::getSceneCode, sceneCode)
                 .eq(BpmApprovalInstanceSnapshotDO::getBizId, bizId)
+                .orderByDesc(BpmApprovalInstanceSnapshotDO::getId)
+                .last("LIMIT 1"));
+    }
+
+    default BpmApprovalInstanceSnapshotDO selectEffectiveBySceneCodeAndBizId(String sceneCode, String bizId) {
+        return selectOne(new LambdaQueryWrapperX<BpmApprovalInstanceSnapshotDO>()
+                .eq(BpmApprovalInstanceSnapshotDO::getSceneCode, sceneCode)
+                .eq(BpmApprovalInstanceSnapshotDO::getBizId, bizId)
+                .notIn(BpmApprovalInstanceSnapshotDO::getStatus, 4, 5)
                 .orderByDesc(BpmApprovalInstanceSnapshotDO::getId)
                 .last("LIMIT 1"));
     }
@@ -70,6 +83,17 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
     Map<String, Object> selectStatusStatistics();
 
     /**
+     * 全局当前有效审批状态聚合统计
+     */
+    @Select("SELECT " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS processingCount, " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS approvedCount, " +
+            "SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS rejectedCount, " +
+            "0 AS cancelledCount " +
+            "FROM bpm_approval_instance_snapshot WHERE deleted = 0 AND status NOT IN (4, 5)")
+    Map<String, Object> selectEffectiveStatusStatistics();
+
+    /**
      * 按用户各状态聚合统计
      */
     @Select("SELECT " +
@@ -79,6 +103,17 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
             "SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS cancelledCount " +
             "FROM bpm_approval_instance_snapshot WHERE start_user_id = #{startUserId} AND deleted = 0")
     Map<String, Object> selectStatusStatisticsByStartUserId(@Param("startUserId") Long startUserId);
+
+    /**
+     * 按用户当前有效审批状态聚合统计
+     */
+    @Select("SELECT " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS processingCount, " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS approvedCount, " +
+            "SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS rejectedCount, " +
+            "0 AS cancelledCount " +
+            "FROM bpm_approval_instance_snapshot WHERE start_user_id = #{startUserId} AND deleted = 0 AND status NOT IN (4, 5)")
+    Map<String, Object> selectEffectiveStatusStatisticsByStartUserId(@Param("startUserId") Long startUserId);
 
     /**
      * 按用户分组统计各状态数量
@@ -91,5 +126,18 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
             "SUM(CASE WHEN status = 4 THEN 1 ELSE 0 END) AS cancelledCount " +
             "FROM bpm_approval_instance_snapshot WHERE deleted = 0 GROUP BY start_user_id")
     List<Map<String, Object>> selectGroupByStartUserId();
+
+    /**
+     * 按用户分组统计当前有效审批状态数量
+     */
+    @Select("SELECT start_user_id AS startUserId, " +
+            "COUNT(*) AS totalCount, " +
+            "SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) AS processingCount, " +
+            "SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) AS approvedCount, " +
+            "SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) AS rejectedCount, " +
+            "0 AS cancelledCount " +
+            "FROM bpm_approval_instance_snapshot " +
+            "WHERE deleted = 0 AND status NOT IN (4, 5) GROUP BY start_user_id")
+    List<Map<String, Object>> selectEffectiveGroupByStartUserId();
 
 }

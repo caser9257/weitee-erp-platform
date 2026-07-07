@@ -81,6 +81,7 @@ public class ErpFinanceDualLedgerConfigController {
 
     @GetMapping("/simple-list")
     @Operation(summary = "获得启用双账套账簿映射精简列表")
+    @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-config:query')")
     public CommonResult<List<ErpFinanceDualLedgerConfigRespVO>> getDualLedgerConfigSimpleList() {
         List<ErpFinanceDualLedgerConfigDO> list = dualLedgerConfigService
                 .getDualLedgerConfigListByStatus(CommonStatusEnum.ENABLE.getStatus());

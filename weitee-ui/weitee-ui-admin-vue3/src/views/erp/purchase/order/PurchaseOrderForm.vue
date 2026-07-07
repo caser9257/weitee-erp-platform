@@ -342,6 +342,7 @@ import { formatDate } from '@/utils/formatTime'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { erpCountInputFormatter, erpPriceInputFormatter, erpPriceMultiply } from '@/utils'
 import * as UserApi from '@/api/system/user'
+import { resolvePurchaseOrderApprovalLogs } from './auditLogUtils'
 
 defineOptions({ name: 'PurchaseOrderForm' })
 
@@ -382,6 +383,8 @@ type PurchaseOrderFormData = PurchaseOrderVO & {
   lastRejectTime?: Date
   lastRejectUserId?: number
   rejectLogs?: PurchaseOrderRejectLogVO[]
+  operationLogs?: PurchaseOrderAuditLogVO[]
+  approvalLogs?: PurchaseOrderAuditLogVO[]
   auditLogs?: PurchaseOrderAuditLogVO[]
   items: PurchaseOrderItemVO[]
 }
@@ -435,6 +438,8 @@ const createFormData = (): PurchaseOrderFormData => ({
   lastRejectTime: undefined,
   lastRejectUserId: undefined,
   rejectLogs: [],
+  operationLogs: [],
+  approvalLogs: [],
   auditLogs: [],
   items: []
 })
@@ -573,6 +578,9 @@ watch(
 )
 
 const actionTextMap: Record<string, string> = {
+  CREATE: '创建',
+  UPDATE: '修改',
+  DELETE: '删除',
   APPROVE: '审批通过',
   REJECT: '驳回',
   RESUBMIT: '重新提交',
@@ -580,24 +588,7 @@ const actionTextMap: Record<string, string> = {
   REVERSE_APPROVE: '反审核'
 }
 
-const mapRejectLogsToAuditLogs = (rejectLogs: PurchaseOrderRejectLogVO[] = []) => {
-  return rejectLogs.map((item) => ({
-    actionType: 'REJECT',
-    reason: item.reason,
-    operatorId: item.rejectUserId,
-    operatorName: item.rejectUserName,
-    operatorNickname: item.rejectUserNickname || item.rejectUserName || item.creatorName,
-    createTime: item.rejectTime || item.createTime
-  })) as PurchaseOrderAuditLogVO[]
-}
-
-const displayAuditLogs = computed(() => {
-  const auditLogs = formData.value.auditLogs || []
-  if (auditLogs.length) {
-    return auditLogs
-  }
-  return mapRejectLogsToAuditLogs(formData.value.rejectLogs || [])
-})
+const displayAuditLogs = computed(() => resolvePurchaseOrderApprovalLogs(formData.value))
 
 const formatAuditLogTime = (item: PurchaseOrderAuditLogVO) => {
   return item.createTime ? formatDate(item.createTime as Date, 'YYYY-MM-DD') : '-'

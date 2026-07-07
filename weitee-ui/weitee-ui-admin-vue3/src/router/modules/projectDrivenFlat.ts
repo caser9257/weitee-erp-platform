@@ -621,6 +621,31 @@ const decorateScmMenus = (routes: AppCustomRouteRecordRaw[] = []) => {
 
 const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
   {
+    path: '/approval',
+    icon: 'ep:promotion',
+    name: '审批中心',
+    component: '',
+    componentName: 'FormalApprovalRoot',
+    redirect: '/approval/todo',
+    meta: {},
+    visible: true,
+    keepAlive: true,
+    alwaysShow: true,
+    children: [
+      {
+        path: 'statistics',
+        name: '审批统计看板',
+        icon: 'ep:data-analysis',
+        component: 'bpm/approval/statistics/index',
+        componentName: 'BpmApprovalStatistics',
+        redirect: '',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      }
+    ]
+  },
+  {
     path: '/erp',
     icon: '',
     name: 'ERP',

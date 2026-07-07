@@ -1,5 +1,4 @@
 <template>
-
   <ContentWrap>
     <el-form
       ref="queryFormRef"
@@ -62,7 +61,10 @@
           </el-select>
         </el-form-item>
       </div>
-      <div v-if="advancedSearchVisible" class="finance-payment-page__query-grid finance-payment-page__query-grid--advanced">
+      <div
+        v-if="advancedSearchVisible"
+        class="finance-payment-page__query-grid finance-payment-page__query-grid--advanced"
+      >
         <el-form-item label="创建人" prop="creator">
           <el-select
             v-model="queryParams.creator"
@@ -131,11 +133,11 @@
         </el-form-item>
       </div>
       <div class="finance-payment-page__query-actions">
-        <el-button :loading="loadingList" @click="handleQuery">
+        <el-button :loading="loadingList" :disabled="!canQuery" @click="handleQuery">
           <Icon icon="ep:search" class="mr-5px" />
           搜索
         </el-button>
-        <el-button :disabled="loadingList" @click="resetQuery">
+        <el-button :disabled="!canReset" @click="resetQuery">
           <Icon icon="ep:refresh" class="mr-5px" />
           重置
         </el-button>
@@ -169,7 +171,7 @@
         <el-button
           type="danger"
           plain
-          @click="handleDelete(selectionList.map((item) => Number(item.id)))"
+          @click="handleDelete(deletableSelectionIds)"
           :disabled="!canBatchDelete"
           :loading="batchDeleteLoading"
           v-hasPermi="['erp:finance-payment:delete']"
@@ -250,62 +252,86 @@
             class-name="font-mono"
             :formatter="erpPriceTableColumnFormatter"
           />
-          <el-table-column label="状态" align="center" fixed="right" width="90" prop="status">
+          <el-table-column label="状态" align="center" fixed="right" width="96" prop="status">
             <template #default="{ row }">
-              <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
+              <el-tag
+                size="small"
+                effect="light"
+                :type="resolveErpAuditStatusTagType(row.status, row.processInstanceId)"
+              >
+                {{ resolveErpAuditStatusLabel(row.status, row.processInstanceId) }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" fixed="right" width="240">
+          <el-table-column label="操作" align="center" fixed="right" width="320">
             <template #default="{ row }">
-              <el-button
-                link
-                :disabled="isRowBusy(row.id)"
-                @click="openForm('detail', row.id)"
-                v-hasPermi="['erp:finance-payment:query']"
-              >
-                详情
-              </el-button>
-              <el-button
-                link
-                type="primary"
-                :disabled="row.status === 20 || isRowBusy(row.id)"
-                @click="openForm('update', row.id)"
-                v-hasPermi="['erp:finance-payment:update']"
-              >
-                编辑
-              </el-button>
-              <el-button
-                v-if="row.status === 10"
-                link
-                type="primary"
-                :loading="statusLoadingId === row.id"
-                :disabled="isDeleting(row.id)"
-                @click="handleUpdateStatus(row.id, 20)"
-                v-hasPermi="['erp:finance-payment:update-status']"
-              >
-                审核
-              </el-button>
-              <el-button
-                v-else
-                link
-                type="warning"
-                :loading="statusLoadingId === row.id"
-                :disabled="isDeleting(row.id)"
-                @click="handleUpdateStatus(row.id, 10)"
-                v-hasPermi="['erp:finance-payment:update-status']"
-              >
-                反审核
-              </el-button>
-              <el-button
-                link
-                type="danger"
-                :loading="isDeleting(row.id)"
-                :disabled="statusLoadingId === row.id"
-                @click="handleDelete([Number(row.id)])"
-                v-hasPermi="['erp:finance-payment:delete']"
-              >
-                删除
-              </el-button>
+              <div class="finance-payment-page__row-actions">
+                <el-button
+                  link
+                  :disabled="isRowBusy(row.id)"
+                  @click="openForm('detail', row.id)"
+                  v-hasPermi="['erp:finance-payment:query']"
+                >
+                  详情
+                </el-button>
+                <el-button
+                  v-if="canEditRow(row)"
+                  link
+                  type="primary"
+                  :disabled="isRowBusy(row.id)"
+                  @click="openForm('update', row.id)"
+                  v-hasPermi="['erp:finance-payment:update']"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                  v-if="canSubmitRow(row)"
+                  link
+                  :type="Number(row.status) === FINANCE_PAYMENT_STATUS.FAILED ? 'warning' : 'primary'"
+                  :loading="isSubmittingApproval(row.id)"
+                  :disabled="isDeleting(row.id) || isCancelingApproval(row.id)"
+                  @click="openSubmitDialog(row)"
+                  v-hasPermi="['erp:finance-payment:submit']"
+                >
+                  {{
+                    Number(row.status) === FINANCE_PAYMENT_STATUS.REJECT ||
+                    Number(row.status) === FINANCE_PAYMENT_STATUS.FAILED
+                      ? '重新提交审批'
+                      : '提交审批'
+                  }}
+                </el-button>
+                <el-button
+                  v-if="canCancelApprovalRow(row)"
+                  link
+                  type="warning"
+                  :loading="isCancelingApproval(row.id)"
+                  :disabled="isDeleting(row.id) || isSubmittingApproval(row.id)"
+                  @click="handleCancelApproval(row)"
+                  v-hasPermi="['erp:finance-payment:cancel-approval']"
+                >
+                  撤回审批
+                </el-button>
+                <el-button
+                  v-if="canViewProcessRow(row)"
+                  link
+                  :disabled="isRowBusy(row.id)"
+                  @click="handleProcessDetail(row)"
+                  v-hasPermi="['erp:finance-payment:query']"
+                >
+                  查看审批
+                </el-button>
+                <el-button
+                  v-if="canDeleteRow(row)"
+                  link
+                  type="danger"
+                  :loading="isDeleting(row.id)"
+                  :disabled="isSubmittingApproval(row.id) || isCancelingApproval(row.id)"
+                  @click="handleDelete([Number(row.id)])"
+                  v-hasPermi="['erp:finance-payment:delete']"
+                >
+                  删除
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -324,33 +350,53 @@
   </ContentWrap>
 
   <FinancePaymentForm ref="formRef" @success="handleFormSuccess" />
+  <FinancePaymentSubmitDialog
+    ref="submitDialogRef"
+    @success="handleSubmitSuccess"
+    @close="handleSubmitDialogClose"
+  />
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { dateFormatter2 } from '@/utils/formatTime'
 import download from '@/utils/download'
+import { resolveErpAuditStatusLabel, resolveErpAuditStatusTagType } from '@/utils/erpAuditStatus'
 import {
   FinancePaymentApi,
   FinancePaymentPageReqVO,
   FinancePaymentVO
 } from '@/api/erp/finance/payment'
 import FinancePaymentForm from './FinancePaymentForm.vue'
+import FinancePaymentSubmitDialog from './FinancePaymentSubmitDialog.vue'
 import { type SimpleUserVO, getSimpleUserList } from '@/api/system/user'
 import { erpPriceTableColumnFormatter } from '@/utils'
 import { SupplierApi, SupplierVO } from '@/api/erp/purchase/supplier'
 import { AccountApi, AccountVO } from '@/api/erp/finance/account'
+import { useUserStoreWithOut } from '@/store/modules/user'
+import {
+  FINANCE_PAYMENT_STATUS,
+  getFinancePaymentRowActionDescriptor
+} from './paymentStatus.helpers'
 
 defineOptions({ name: 'ErpFinancePayment' })
 
 const message = useMessage()
+const userStore = useUserStoreWithOut()
+const { push } = useRouter()
+const currentUserId = computed(() => String(userStore.getUser.id || ''))
 
 const loadingList = ref(false)
 const exportLoading = ref(false)
 const listErrorMessage = ref('')
 const deleteLoadingIds = ref<number[]>([])
-const statusLoadingId = ref<number>()
+const submitApprovalIds = ref<number[]>([])
+const cancelApprovalIds = ref<number[]>([])
 const advancedSearchVisible = ref(false)
+const activeSubmitRowId = ref<number>()
 
 const list = ref<FinancePaymentVO[]>([])
 const total = ref(0)
@@ -375,14 +421,70 @@ const queryParams = reactive<FinancePaymentPageReqVO>({
 
 const queryFormRef = ref()
 const formRef = ref<InstanceType<typeof FinancePaymentForm>>()
+const submitDialogRef = ref<InstanceType<typeof FinancePaymentSubmitDialog>>()
 
 const isActionCanceled = (error: unknown) => error === 'cancel' || error === 'close'
+const setIdsLoading = (source: typeof deleteLoadingIds, ids: number[], loadingState: boolean) => {
+  if (loadingState) {
+    source.value = Array.from(new Set([...source.value, ...ids]))
+    return
+  }
+  source.value = source.value.filter((item) => !ids.includes(item))
+}
+
+const getRowDescriptor = (row: FinancePaymentVO) =>
+  getFinancePaymentRowActionDescriptor({
+    status: row.status,
+    processInstanceId: row.processInstanceId,
+    creator: row.creator,
+    currentUserId: currentUserId.value
+  })
+
 const isDeleting = (id?: number) => (id != null ? deleteLoadingIds.value.includes(id) : false)
-const isRowBusy = (id?: number) => isDeleting(id) || (id != null && statusLoadingId.value === id)
+const isSubmittingApproval = (id?: number) =>
+  id != null ? submitApprovalIds.value.includes(id) : false
+const isCancelingApproval = (id?: number) =>
+  id != null ? cancelApprovalIds.value.includes(id) : false
+const isRowBusy = (id?: number) =>
+  isDeleting(id) || isSubmittingApproval(id) || isCancelingApproval(id)
+
+const deletableSelectionIds = computed(() =>
+  selectionList.value
+    .filter((item) => item.id != null && getRowDescriptor(item).canDelete)
+    .map((item) => Number(item.id))
+)
 const batchDeleteLoading = computed(() => deleteLoadingIds.value.length > 1)
 const canBatchDelete = computed(
-  () => selectionList.value.length > 0 && !deleteLoadingIds.value.length && !statusLoadingId.value
+  () =>
+    deletableSelectionIds.value.length > 0 &&
+    !deleteLoadingIds.value.length &&
+    !submitApprovalIds.value.length &&
+    !cancelApprovalIds.value.length
 )
+const canQuery = computed(
+  () => !loadingList.value && !deleteLoadingIds.value.length && !submitApprovalIds.value.length
+)
+const canReset = computed(
+  () =>
+    canQuery.value &&
+    (!!queryParams.no ||
+      !!queryParams.supplierId ||
+      !!queryParams.creator ||
+      !!queryParams.financeUserId ||
+      !!queryParams.accountId ||
+      queryParams.status !== undefined ||
+      !!queryParams.remark ||
+      !!queryParams.bizNo ||
+      !!queryParams.paymentTime?.length ||
+      advancedSearchVisible.value)
+)
+
+const canEditRow = (row: FinancePaymentVO) => getRowDescriptor(row).canEdit
+const canDeleteRow = (row: FinancePaymentVO) => getRowDescriptor(row).canDelete
+const canSubmitRow = (row: FinancePaymentVO) => getRowDescriptor(row).canSubmit
+const canCancelApprovalRow = (row: FinancePaymentVO) =>
+  getRowDescriptor(row).canCancelApproval
+const canViewProcessRow = (row: FinancePaymentVO) => getRowDescriptor(row).canViewProcess
 
 const loadQueryOptions = async () => {
   const [suppliers, users, accounts] = await Promise.all([
@@ -400,11 +502,11 @@ const getList = async () => {
   listErrorMessage.value = ''
   try {
     const data = await FinancePaymentApi.getFinancePaymentPage(queryParams)
-    list.value = data.list
-    total.value = data.total
-  } catch {
+    list.value = data.list || []
+    total.value = data.total || 0
+  } catch (error: any) {
     if (!list.value.length) {
-      listErrorMessage.value = '请检查网络或稍后重试。'
+      listErrorMessage.value = error?.message || '请检查网络或稍后重试。'
     }
   } finally {
     loadingList.value = false
@@ -437,7 +539,7 @@ const handleDelete = async (ids: number[]) => {
   }
   try {
     await message.delConfirm()
-    deleteLoadingIds.value = [...ids]
+    setIdsLoading(deleteLoadingIds, ids, true)
     await FinancePaymentApi.deleteFinancePayment(ids)
     message.success('删除成功')
     if (list.value.length === ids.length && queryParams.pageNo > 1) {
@@ -450,27 +552,103 @@ const handleDelete = async (ids: number[]) => {
       throw error
     }
   } finally {
-    deleteLoadingIds.value = []
+    setIdsLoading(deleteLoadingIds, ids, false)
   }
 }
 
-const handleUpdateStatus = async (id?: number, status?: number) => {
-  if (!id || !status || statusLoadingId.value) {
+const openSubmitDialog = (row: FinancePaymentVO) => {
+  if (!row.id || isSubmittingApproval(row.id)) {
+    return
+  }
+  activeSubmitRowId.value = Number(row.id)
+  setIdsLoading(submitApprovalIds, [row.id], true)
+  submitDialogRef.value
+    ?.open(row)
+    .catch(() => {
+      activeSubmitRowId.value = undefined
+      setIdsLoading(submitApprovalIds, [row.id], false)
+    })
+}
+
+const handleSubmitSuccess = async () => {
+  const rowId = activeSubmitRowId.value
+  try {
+    await getList()
+    if (!rowId) {
+      message.warning('提交请求已发送，请刷新后确认状态')
+      return
+    }
+    const latestRow = list.value.find((item) => Number(item.id) === rowId)
+    if (latestRow?.status === FINANCE_PAYMENT_STATUS.FAILED) {
+      message.warning('提交已受理，但流程创建失败')
+      return
+    }
+    if (
+      latestRow?.status === FINANCE_PAYMENT_STATUS.PROCESS &&
+      latestRow.processInstanceId
+    ) {
+      message.success('已提交审批，等待流程受理')
+      return
+    }
+    message.warning('提交请求已发送，请刷新后确认状态')
+  } finally {
+    if (rowId) {
+      setIdsLoading(submitApprovalIds, [rowId], false)
+    } else {
+      submitApprovalIds.value = []
+    }
+    activeSubmitRowId.value = undefined
+  }
+}
+
+const handleSubmitDialogClose = () => {
+  const rowId = activeSubmitRowId.value
+  if (rowId) {
+    setIdsLoading(submitApprovalIds, [rowId], false)
+  } else {
+    submitApprovalIds.value = []
+  }
+  activeSubmitRowId.value = undefined
+}
+
+const handleCancelApproval = async (row: FinancePaymentVO) => {
+  if (!row.id || cancelApprovalIds.value.includes(Number(row.id))) {
     return
   }
   try {
-    await message.confirm(`确认${status === 20 ? '审核' : '反审核'}该付款单吗？`)
-    statusLoadingId.value = id
-    await FinancePaymentApi.updateFinancePaymentStatus(id, status)
-    message.success(`${status === 20 ? '审核' : '反审核'}成功`)
+    const { value } = await ElMessageBox.prompt('请输入撤回原因', '撤回审批', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPattern: /^[\s\S]*.*\S[\s\S]*$/,
+      inputErrorMessage: '撤回原因不能为空'
+    })
+    setIdsLoading(cancelApprovalIds, [Number(row.id)], true)
+    await FinancePaymentApi.cancelFinancePaymentApproval({
+      id: Number(row.id),
+      reason: value
+    })
+    message.success('撤回审批成功')
     await getList()
   } catch (error) {
     if (!isActionCanceled(error)) {
       throw error
     }
   } finally {
-    statusLoadingId.value = undefined
+    setIdsLoading(cancelApprovalIds, [Number(row.id)], false)
   }
+}
+
+const handleProcessDetail = (row: FinancePaymentVO) => {
+  if (!row.processInstanceId) {
+    message.warning('当前付款单暂无审批流程')
+    return
+  }
+  push({
+    name: 'BpmProcessInstanceDetail',
+    query: {
+      id: row.processInstanceId
+    }
+  })
 }
 
 const handleExport = async () => {
@@ -547,7 +725,8 @@ onMounted(async () => {
   margin-bottom: 12px;
 }
 
-.finance-payment-page__toolbar-actions {
+.finance-payment-page__toolbar-actions,
+.finance-payment-page__row-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;

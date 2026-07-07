@@ -33,6 +33,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -129,24 +132,11 @@ public class ErpFinanceVoucherIntegrityServiceImpl implements ErpFinanceVoucherI
                         .eq(ErpSaleOutDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
                         .between(ErpSaleOutDO::getOutTime, start, end)
                         .orderByAsc(ErpSaleOutDO::getId));
-
-        for (ErpSaleOutDO saleOut : approvedList) {
-            for (Long ledgerId : ledgerIds) {
-                ErpFinanceVoucherDO voucher = voucherMapper.selectByLedgerIdAndBiz(
-                        ledgerId, ErpBizTypeEnum.SALE_OUT.getType(), saleOut.getId());
-                if (voucher == null) {
-                    ErpFinanceLedgerDO ledger = financeLedgerService.getFinanceLedger(ledgerId);
-                    missingList.add(new MissingVoucherItem(
-                            ErpBizTypeEnum.SALE_OUT.getType(),
-                            ErpBizTypeEnum.SALE_OUT.getName(),
-                            saleOut.getId(),
-                            saleOut.getNo(),
-                            "已审核",
-                            ledger != null ? ledger.getName() : String.valueOf(ledgerId)
-                    ));
-                }
-            }
-        }
+        Map<Long, String> ledgerNameMap = resolveLedgerNameMap(ledgerIds);
+        Map<String, Boolean> existingVoucherMap = buildExistingVoucherMap(ledgerIds,
+                ErpBizTypeEnum.SALE_OUT.getType(), approvedList, ErpSaleOutDO::getId);
+        appendMissingVoucherItems(missingList, ledgerIds, approvedList, existingVoucherMap, ledgerNameMap,
+                ErpBizTypeEnum.SALE_OUT, ErpSaleOutDO::getId, ErpSaleOutDO::getNo);
         return missingList;
     }
 
@@ -161,24 +151,11 @@ public class ErpFinanceVoucherIntegrityServiceImpl implements ErpFinanceVoucherI
                         .eq(ErpSaleReturnDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
                         .between(ErpSaleReturnDO::getReturnTime, start, end)
                         .orderByAsc(ErpSaleReturnDO::getId));
-
-        for (ErpSaleReturnDO saleReturn : approvedList) {
-            for (Long ledgerId : ledgerIds) {
-                ErpFinanceVoucherDO voucher = voucherMapper.selectByLedgerIdAndBiz(
-                        ledgerId, ErpBizTypeEnum.SALE_RETURN.getType(), saleReturn.getId());
-                if (voucher == null) {
-                    ErpFinanceLedgerDO ledger = financeLedgerService.getFinanceLedger(ledgerId);
-                    missingList.add(new MissingVoucherItem(
-                            ErpBizTypeEnum.SALE_RETURN.getType(),
-                            ErpBizTypeEnum.SALE_RETURN.getName(),
-                            saleReturn.getId(),
-                            saleReturn.getNo(),
-                            "已审核",
-                            ledger != null ? ledger.getName() : String.valueOf(ledgerId)
-                    ));
-                }
-            }
-        }
+        Map<Long, String> ledgerNameMap = resolveLedgerNameMap(ledgerIds);
+        Map<String, Boolean> existingVoucherMap = buildExistingVoucherMap(ledgerIds,
+                ErpBizTypeEnum.SALE_RETURN.getType(), approvedList, ErpSaleReturnDO::getId);
+        appendMissingVoucherItems(missingList, ledgerIds, approvedList, existingVoucherMap, ledgerNameMap,
+                ErpBizTypeEnum.SALE_RETURN, ErpSaleReturnDO::getId, ErpSaleReturnDO::getNo);
         return missingList;
     }
 
@@ -193,24 +170,11 @@ public class ErpFinanceVoucherIntegrityServiceImpl implements ErpFinanceVoucherI
                         .eq(ErpPurchaseInDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
                         .between(ErpPurchaseInDO::getInTime, start, end)
                         .orderByAsc(ErpPurchaseInDO::getId));
-
-        for (ErpPurchaseInDO purchaseIn : approvedList) {
-            for (Long ledgerId : ledgerIds) {
-                ErpFinanceVoucherDO voucher = voucherMapper.selectByLedgerIdAndBiz(
-                        ledgerId, ErpBizTypeEnum.PURCHASE_IN.getType(), purchaseIn.getId());
-                if (voucher == null) {
-                    ErpFinanceLedgerDO ledger = financeLedgerService.getFinanceLedger(ledgerId);
-                    missingList.add(new MissingVoucherItem(
-                            ErpBizTypeEnum.PURCHASE_IN.getType(),
-                            ErpBizTypeEnum.PURCHASE_IN.getName(),
-                            purchaseIn.getId(),
-                            purchaseIn.getNo(),
-                            "已审核",
-                            ledger != null ? ledger.getName() : String.valueOf(ledgerId)
-                    ));
-                }
-            }
-        }
+        Map<Long, String> ledgerNameMap = resolveLedgerNameMap(ledgerIds);
+        Map<String, Boolean> existingVoucherMap = buildExistingVoucherMap(ledgerIds,
+                ErpBizTypeEnum.PURCHASE_IN.getType(), approvedList, ErpPurchaseInDO::getId);
+        appendMissingVoucherItems(missingList, ledgerIds, approvedList, existingVoucherMap, ledgerNameMap,
+                ErpBizTypeEnum.PURCHASE_IN, ErpPurchaseInDO::getId, ErpPurchaseInDO::getNo);
         return missingList;
     }
 
@@ -225,25 +189,74 @@ public class ErpFinanceVoucherIntegrityServiceImpl implements ErpFinanceVoucherI
                         .eq(ErpPurchaseReturnDO::getStatus, ErpAuditStatus.APPROVE.getStatus())
                         .between(ErpPurchaseReturnDO::getReturnTime, start, end)
                         .orderByAsc(ErpPurchaseReturnDO::getId));
+        Map<Long, String> ledgerNameMap = resolveLedgerNameMap(ledgerIds);
+        Map<String, Boolean> existingVoucherMap = buildExistingVoucherMap(ledgerIds,
+                ErpBizTypeEnum.PURCHASE_RETURN.getType(), approvedList, ErpPurchaseReturnDO::getId);
+        appendMissingVoucherItems(missingList, ledgerIds, approvedList, existingVoucherMap, ledgerNameMap,
+                ErpBizTypeEnum.PURCHASE_RETURN, ErpPurchaseReturnDO::getId, ErpPurchaseReturnDO::getNo);
+        return missingList;
+    }
 
-        for (ErpPurchaseReturnDO purchaseReturn : approvedList) {
+    private Map<Long, String> resolveLedgerNameMap(List<Long> ledgerIds) {
+        Map<Long, ErpFinanceLedgerDO> ledgerMap = financeLedgerService.getFinanceLedgerMap(ledgerIds);
+        Map<Long, String> ledgerNameMap = new HashMap<>();
+        for (Long ledgerId : ledgerIds) {
+            ErpFinanceLedgerDO ledger = ledgerMap.get(ledgerId);
+            ledgerNameMap.put(ledgerId, ledger != null ? ledger.getName() : String.valueOf(ledgerId));
+        }
+        return ledgerNameMap;
+    }
+
+    private <T> Map<String, Boolean> buildExistingVoucherMap(List<Long> ledgerIds,
+                                                             Integer bizType,
+                                                             List<T> documents,
+                                                             java.util.function.Function<T, Long> idGetter) {
+        if (documents == null || documents.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Set<Long> bizIds = documents.stream()
+                .map(idGetter)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<ErpFinanceVoucherDO> vouchers = voucherMapper.selectListByLedgerIdsAndBizTypeAndBizIds(
+                ledgerIds, bizType, bizIds);
+        return vouchers.stream().collect(Collectors.toMap(
+                voucher -> buildVoucherPresenceKey(voucher.getLedgerId(), voucher.getBizId()),
+                voucher -> Boolean.TRUE,
+                (left, right) -> left));
+    }
+
+    private <T> void appendMissingVoucherItems(List<MissingVoucherItem> missingList,
+                                               List<Long> ledgerIds,
+                                               List<T> documents,
+                                               Map<String, Boolean> existingVoucherMap,
+                                               Map<Long, String> ledgerNameMap,
+                                               ErpBizTypeEnum bizTypeEnum,
+                                               java.util.function.Function<T, Long> idGetter,
+                                               java.util.function.Function<T, String> noGetter) {
+        for (T document : documents) {
+            Long bizId = idGetter.apply(document);
+            if (bizId == null) {
+                continue;
+            }
             for (Long ledgerId : ledgerIds) {
-                ErpFinanceVoucherDO voucher = voucherMapper.selectByLedgerIdAndBiz(
-                        ledgerId, ErpBizTypeEnum.PURCHASE_RETURN.getType(), purchaseReturn.getId());
-                if (voucher == null) {
-                    ErpFinanceLedgerDO ledger = financeLedgerService.getFinanceLedger(ledgerId);
-                    missingList.add(new MissingVoucherItem(
-                            ErpBizTypeEnum.PURCHASE_RETURN.getType(),
-                            ErpBizTypeEnum.PURCHASE_RETURN.getName(),
-                            purchaseReturn.getId(),
-                            purchaseReturn.getNo(),
-                            "已审核",
-                            ledger != null ? ledger.getName() : String.valueOf(ledgerId)
-                    ));
+                if (existingVoucherMap.containsKey(buildVoucherPresenceKey(ledgerId, bizId))) {
+                    continue;
                 }
+                missingList.add(new MissingVoucherItem(
+                        bizTypeEnum.getType(),
+                        bizTypeEnum.getName(),
+                        bizId,
+                        noGetter.apply(document),
+                        "已审核",
+                        ledgerNameMap.getOrDefault(ledgerId, String.valueOf(ledgerId))
+                ));
             }
         }
-        return missingList;
+    }
+
+    private String buildVoucherPresenceKey(Long ledgerId, Long bizId) {
+        return ledgerId + ":" + bizId;
     }
 
     /**

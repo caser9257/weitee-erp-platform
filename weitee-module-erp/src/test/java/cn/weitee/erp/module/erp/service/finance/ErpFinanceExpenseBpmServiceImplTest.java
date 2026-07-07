@@ -1,10 +1,13 @@
 package cn.weitee.erp.module.erp.service.finance;
 
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.bpm.service.approval.BpmApprovalRuntimeService;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceExpenseMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -12,25 +15,24 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinanceExpenseBpmServiceImplTest {
 
     @Test
-    void submitFinanceExpense_shouldStartProcessAndBindProcessInstance() throws Exception {
+    void submitFinanceExpense_shouldReturnProcessInstanceIdAndBindProcessInstance() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpFinanceExpenseDO> expenseRef = new AtomicReference<>(
                 new ErpFinanceExpenseDO()
                         .setId(21L)
                         .setNo("LSBX20260521000001")
-                        .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                        .setStatus(ErpAuditStatus.REJECT.getStatus())
                         .setExpenseTime(LocalDateTime.of(2026, 5, 21, 10, 0))
                         .setExpensePrice(new BigDecimal("888.66"))
                         .setDeptId(11L)
@@ -41,6 +43,7 @@ class ErpFinanceExpenseBpmServiceImplTest {
         List<ErpFinanceExpenseDO> updatedExpenses = new ArrayList<>();
         AtomicReference<Long> submitBizIdRef = new AtomicReference<>();
 
+        setField(service, "transactionManager", createTransactionManagerProxy());
         setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return expenseRef.get();
@@ -64,20 +67,100 @@ class ErpFinanceExpenseBpmServiceImplTest {
 
         Object result = method.invoke(service, 9527L, reqVO);
 
-        // afterCommit 模式：submit 返回 null
-        assertNull(result);
+        assertEquals("PI-FIN-EXP-001", result);
         assertEquals(21L, submitBizIdRef.get());
-        // 第一次 updateById：设置 PROCESS 状态，processInstanceId=null
-        assertEquals(21L, updatedExpenses.get(0).getId());
+        assertEquals(2, updatedExpenses.size());
         assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedExpenses.get(0).getStatus());
-        assertNull(updatedExpenses.get(0).getProcessInstanceId());
-        // 第二次 updateById（afterCommit）：设置 processInstanceId
-        assertEquals(21L, updatedExpenses.get(1).getId());
         assertEquals("PI-FIN-EXP-001", updatedExpenses.get(1).getProcessInstanceId());
     }
 
     @Test
-    void cancelFinanceExpenseApproval_shouldCancelProcessAndClearBinding() throws Exception {
+    void submitFinanceExpense_shouldMarkFailedAndThrowWhenBpmSubmitThrows() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpFinanceExpenseDO> expenseRef = new AtomicReference<>(
+                new ErpFinanceExpenseDO()
+                        .setId(24L)
+                        .setNo("LSBX20260521000024")
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus()));
+        List<ErpFinanceExpenseDO> updatedExpenses = new ArrayList<>();
+
+        setField(service, "transactionManager", createTransactionManagerProxy());
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expenseRef.get();
+            }
+            if ("updateById".equals(methodName)) {
+                updatedExpenses.add((ErpFinanceExpenseDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("submit".equals(methodName)) {
+                throw new IllegalStateException("flowable unavailable");
+            }
+            return null;
+        }));
+
+        Object reqVO = createSubmitReqVO(24L, Map.of());
+        Method method = service.getClass().getMethod("submitFinanceExpense", Long.class, reqVO.getClass());
+
+        java.lang.reflect.InvocationTargetException ex = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(service, 9527L, reqVO));
+
+        assertEquals(IllegalStateException.class, ex.getCause().getClass());
+        assertEquals("flowable unavailable", ex.getCause().getMessage());
+        assertEquals(2, updatedExpenses.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedExpenses.get(0).getStatus());
+        assertEquals(ErpAuditStatus.FAILED.getStatus(), updatedExpenses.get(1).getStatus());
+    }
+
+    @Test
+    void submitFinanceExpense_shouldNotMarkFailedWhenBindingProcessInstanceThrows() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpFinanceExpenseDO> expenseRef = new AtomicReference<>(
+                new ErpFinanceExpenseDO()
+                        .setId(26L)
+                        .setNo("LSBX20260521000026")
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus()));
+        List<ErpFinanceExpenseDO> updatedExpenses = new ArrayList<>();
+
+        setField(service, "transactionManager", createTransactionManagerProxy());
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expenseRef.get();
+            }
+            if ("updateById".equals(methodName)) {
+                ErpFinanceExpenseDO update = (ErpFinanceExpenseDO) args[0];
+                if ("PI-FIN-EXP-BIND-FAIL".equals(update.getProcessInstanceId())) {
+                    throw new IllegalStateException("bind failed");
+                }
+                updatedExpenses.add(update);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("submit".equals(methodName)) {
+                return "PI-FIN-EXP-BIND-FAIL";
+            }
+            return null;
+        }));
+
+        Object reqVO = createSubmitReqVO(26L, Map.of());
+        Method method = service.getClass().getMethod("submitFinanceExpense", Long.class, reqVO.getClass());
+
+        java.lang.reflect.InvocationTargetException ex = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(service, 9527L, reqVO));
+
+        assertEquals(IllegalStateException.class, ex.getCause().getClass());
+        assertEquals("bind failed", ex.getCause().getMessage());
+        assertEquals(1, updatedExpenses.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updatedExpenses.get(0).getStatus());
+    }
+
+    @Test
+    void cancelFinanceExpenseApproval_shouldCancelProcessSynchronously() throws Exception {
         Object service = instantiateService();
         AtomicReference<ErpFinanceExpenseDO> expenseRef = new AtomicReference<>(
                 new ErpFinanceExpenseDO()
@@ -106,9 +189,34 @@ class ErpFinanceExpenseBpmServiceImplTest {
         Method method = service.getClass().getMethod("cancelFinanceExpenseApproval", Long.class, reqVO.getClass());
         method.invoke(service, 9527L, reqVO);
 
-        // afterCommit 模式：BPM 撤回在 afterCommit 中执行
         assertEquals(22L, cancelBizIdRef.get());
         assertEquals("资料待补充", cancelReasonRef.get());
+    }
+
+    @Test
+    void cancelFinanceExpenseApproval_shouldThrowWhenNoRunningProcess() throws Exception {
+        Object service = instantiateService();
+        AtomicReference<ErpFinanceExpenseDO> expenseRef = new AtomicReference<>(
+                new ErpFinanceExpenseDO()
+                        .setId(25L)
+                        .setNo("LSBX20260521000025")
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus()));
+
+        setField(service, "erpFinanceExpenseMapper", createProxy(ErpFinanceExpenseMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return expenseRef.get();
+            }
+            return null;
+        }));
+        setField(service, "approvalRuntimeService", createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> null));
+
+        Object reqVO = createCancelReqVO(25L, "资料待补充");
+        Method method = service.getClass().getMethod("cancelFinanceExpenseApproval", Long.class, reqVO.getClass());
+
+        java.lang.reflect.InvocationTargetException ex = assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(service, 9527L, reqVO));
+        assertNotNull(ex.getCause());
+        assertEquals(ServiceException.class, ex.getCause().getClass());
     }
 
     @Test
@@ -117,9 +225,7 @@ class ErpFinanceExpenseBpmServiceImplTest {
 
         Method method = service.getClass().getMethod("handleProcessInstanceResult",
                 Long.class, String.class, Integer.class, String.class);
-        // 结果回写已收敛到 ExpenseResultHandler，此方法为空实现
-        method.invoke(service, 23L, "PI-MATCH", bpmStatus("APPROVE"), "approved");
-        // 无异常即通过
+        method.invoke(service, 23L, "PI-MATCH", 2, "approved");
     }
 
     private Object instantiateService() throws Exception {
@@ -143,18 +249,16 @@ class ErpFinanceExpenseBpmServiceImplTest {
         return reqVO;
     }
 
-    private Object createProxyByName(String className, MethodHandler handler) throws Exception {
-        return createProxy(Class.forName(className), handler);
-    }
-
-    private Object readProperty(Object target, String methodName) throws Exception {
-        return target.getClass().getMethod(methodName).invoke(target);
-    }
-
-    private Integer bpmStatus(String enumName) throws Exception {
-        Class<?> clazz = Class.forName("cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum");
-        Object enumObj = Enum.valueOf((Class<Enum>) clazz.asSubclass(Enum.class), enumName);
-        return (Integer) clazz.getMethod("getStatus").invoke(enumObj);
+    private PlatformTransactionManager createTransactionManagerProxy() {
+        return createProxy(PlatformTransactionManager.class, (methodName, args) -> {
+            if ("getTransaction".equals(methodName)) {
+                return new SimpleTransactionStatus();
+            }
+            if ("commit".equals(methodName) || "rollback".equals(methodName)) {
+                return null;
+            }
+            return null;
+        });
     }
 
     @SuppressWarnings("unchecked")

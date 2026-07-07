@@ -1,5 +1,5 @@
 <template>
-  <Dialog title="提交审批" v-model="dialogVisible" width="960">
+  <Dialog title="提交审批" v-model="dialogVisible" width="960" @closed="handleClosed">
     <div v-loading="loading">
       <el-alert
         class="mb-16px"
@@ -60,9 +60,11 @@ const startUserSelectTasks = ref<ApprovalNodeInfo[]>([])
 const startUserSelectAssignees = ref<Record<string, number[]>>({})
 const tempStartUserSelectAssignees = ref<Record<string, number[]>>({})
 const currentPayment = ref<FinancePaymentVO>()
+const submitted = ref(false)
 
 const emit = defineEmits<{
   (e: 'success'): void
+  (e: 'close'): void
 }>()
 
 const resetState = () => {
@@ -72,6 +74,7 @@ const resetState = () => {
   startUserSelectAssignees.value = {}
   tempStartUserSelectAssignees.value = {}
   currentPayment.value = undefined
+  submitted.value = false
 }
 
 const buildProcessVariables = (payment: FinancePaymentVO) => {
@@ -161,12 +164,20 @@ const submit = async () => {
       id: currentPayment.value.id!,
       startUserSelectAssignees: startUserSelectAssignees.value
     })
+    submitted.value = true
     message.warning('提交请求已发送，列表将刷新校验状态')
     dialogVisible.value = false
     emit('success')
   } finally {
     submitLoading.value = false
   }
+}
+
+const handleClosed = () => {
+  if (!submitted.value) {
+    emit('close')
+  }
+  resetState()
 }
 
 defineExpose({ open })

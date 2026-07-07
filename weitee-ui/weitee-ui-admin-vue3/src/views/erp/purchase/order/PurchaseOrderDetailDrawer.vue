@@ -304,11 +304,11 @@ import {
   PurchaseOrderApi,
   type PurchaseOrderAuditLogVO,
   type PurchaseOrderItemVO,
-  type PurchaseOrderRejectLogVO,
   type PurchaseOrderVO
 } from '@/api/erp/purchase/order'
 import { AccountApi, type AccountVO } from '@/api/erp/finance/account'
 import { getPurchaseOrderRowActionDescriptor } from './purchaseOrderStatus.helpers'
+import { resolvePurchaseOrderOperationLogs } from './auditLogUtils'
 import { useUserStoreWithOut } from '@/store/modules/user'
 
 defineOptions({ name: 'PurchaseOrderDetailDrawer' })
@@ -363,6 +363,8 @@ const detailData = computed(() => ({
   ...(detailRowSnapshot.value || {}),
   ...(purchaseOrder.value || {}),
   items: purchaseOrder.value?.items || detailRowSnapshot.value?.items || [],
+  operationLogs: purchaseOrder.value?.operationLogs || detailRowSnapshot.value?.operationLogs || [],
+  approvalLogs: purchaseOrder.value?.approvalLogs || detailRowSnapshot.value?.approvalLogs || [],
   auditLogs: purchaseOrder.value?.auditLogs || detailRowSnapshot.value?.auditLogs || [],
   rejectLogs: purchaseOrder.value?.rejectLogs || detailRowSnapshot.value?.rejectLogs || []
 } as PurchaseOrderVO))
@@ -429,20 +431,7 @@ const deliveryDateText = computed(() => {
   }
   return `${formattedDates[0]} 等 ${formattedDates.length} 个日期`
 })
-const displayAuditLogs = computed(() => {
-  const data = detailData.value
-  if (data.auditLogs?.length) {
-    return data.auditLogs
-  }
-  return (data.rejectLogs || []).map((item: PurchaseOrderRejectLogVO) => ({
-    actionType: 'REJECT',
-    reason: item.reason,
-    operatorId: item.rejectUserId,
-    operatorName: item.rejectUserName,
-    operatorNickname: item.rejectUserNickname || item.rejectUserName || item.creatorName,
-    createTime: item.rejectTime || item.createTime
-  })) as PurchaseOrderAuditLogVO[]
-})
+const displayAuditLogs = computed(() => resolvePurchaseOrderOperationLogs(detailData.value))
 const normalizeNumber = (value?: number | string | null) => Number(value || 0)
 
 const formatCount = (value?: number | string | null) => {
@@ -472,6 +461,9 @@ const formatSourceType = (value?: string) => {
 }
 
 const formatAuditAction = (actionType?: string) =>
+  (actionType === 'CREATE' && '创建') ||
+  (actionType === 'UPDATE' && '修改') ||
+  (actionType === 'DELETE' && '删除') ||
   (actionType === 'APPROVE' && '审批通过') ||
   (actionType === 'REJECT' && '驳回') ||
   (actionType === 'RESUBMIT' && '重新提交') ||

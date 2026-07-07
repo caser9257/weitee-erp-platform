@@ -122,7 +122,13 @@ public class ErpPurchaseOrderRespVO {
     @Schema(description = "驳回记录")
     private List<ErpPurchaseOrderRejectLogRespVO> rejectLogs;
 
-    @Schema(description = "审批流转记录")
+    @Schema(description = "业务操作日志")
+    private List<ErpPurchaseOrderAuditLogRespVO> operationLogs;
+
+    @Schema(description = "审批历史")
+    private List<ErpPurchaseOrderAuditLogRespVO> approvalLogs;
+
+    @Schema(description = "合并后的日志记录（兼容字段）")
     private List<ErpPurchaseOrderAuditLogRespVO> auditLogs;
 
     @Schema(description = "产品信息", requiredMode = Schema.RequiredMode.REQUIRED)

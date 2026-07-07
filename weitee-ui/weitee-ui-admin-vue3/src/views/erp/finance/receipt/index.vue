@@ -7,7 +7,14 @@
       label-width="76px"
       class="finance-receipt-page__query-form"
     >
-      <div class="finance-receipt-page__query-grid">
+      <div class="finance-receipt-page__query-head">
+        <div class="finance-receipt-page__query-title">基础筛选</div>
+        <el-button link type="primary" @click="toggleAdvancedSearch">
+          <Icon :icon="advancedSearchVisible ? 'ep:arrow-up' : 'ep:arrow-down'" class="mr-5px" />
+          {{ advancedSearchVisible ? '收起高级筛选' : '展开高级筛选' }}
+        </el-button>
+      </div>
+      <div class="finance-receipt-page__query-grid finance-receipt-page__query-grid--basic">
         <el-form-item label="收款单号" prop="no">
           <el-input
             v-model="queryParams.no"
@@ -44,6 +51,18 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
+            <el-option
+              v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+      </div>
+      <div v-if="advancedSearchVisible" class="finance-receipt-page__query-grid finance-receipt-page__query-grid--advanced">
         <el-form-item label="创建人" prop="creator">
           <el-select
             v-model="queryParams.creator"
@@ -89,16 +108,6 @@
               :key="item.id"
               :label="item.name"
               :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-full">
-            <el-option
-              v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
             />
           </el-select>
         </el-form-item>
@@ -193,7 +202,7 @@
               <div class="finance-receipt-page__primary-cell">
                 <span class="finance-receipt-page__primary-text">{{ row.no || '-' }}</span>
                 <span class="finance-receipt-page__mono-tag">
-                  {{ dateFormatter2(row, undefined, row.receiptTime, undefined) || '-' }}
+                  {{ dateFormatter2(row, undefined, row.receiptTime) || '-' }}
                 </span>
               </div>
             </template>
@@ -345,6 +354,7 @@ const exportLoading = ref(false)
 const deleteLoading = ref(false)
 const statusLoadingId = ref<number>()
 const listErrorMessage = ref('')
+const advancedSearchVisible = ref(false)
 
 const list = ref<FinanceReceiptVO[]>([])
 const total = ref(0)
@@ -358,7 +368,7 @@ const queryParams = reactive<FinanceReceiptPageReqVO>({
   pageNo: 1,
   pageSize: 10,
   no: undefined,
-  receiptTime: [],
+  receiptTime: [] as string[],
   customerId: undefined,
   creator: undefined,
   financeUserId: undefined,
@@ -417,8 +427,13 @@ const handleQuery = async () => {
 
 const resetQuery = async () => {
   queryFormRef.value?.resetFields()
+  advancedSearchVisible.value = false
   queryParams.pageNo = 1
   await getList()
+}
+
+const toggleAdvancedSearch = () => {
+  advancedSearchVisible.value = !advancedSearchVisible.value
 }
 
 const openForm = (type: 'create' | 'update' | 'detail', id?: number) => {
@@ -505,10 +520,29 @@ onMounted(async () => {
   gap: 12px;
 }
 
+.finance-receipt-page__query-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.finance-receipt-page__query-title {
+  color: var(--erp-slate-700);
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .finance-receipt-page__query-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0 16px;
+}
+
+.finance-receipt-page__query-grid--advanced {
+  padding-top: 4px;
+  border-top: 1px solid var(--erp-slate-100);
 }
 
 .finance-receipt-page__query-actions {
@@ -552,11 +586,11 @@ onMounted(async () => {
 
 .finance-receipt-page__mono-tag {
   width: fit-content;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--erp-slate-200);
   border-radius: 6px;
   padding: 2px 8px;
-  background: #f8fafc;
-  color: #64748b;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-500);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
   font-size: 12px;
