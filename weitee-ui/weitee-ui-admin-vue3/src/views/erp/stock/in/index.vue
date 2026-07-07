@@ -211,7 +211,13 @@
         </el-table-column>
         <el-table-column label="状态" min-width="96" fixed="right">
           <template #default="{ row }">
-            <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="row.status" />
+            <el-tag
+              size="small"
+              effect="light"
+              :type="getStockAuditStatusTagType({ status: row.status, processInstanceId: row.processInstanceId })"
+            >
+              {{ getStockAuditStatusLabel({ status: row.status, processInstanceId: row.processInstanceId }) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right" align="left">
@@ -275,6 +281,10 @@
 <script setup lang="ts">
 import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
+import {
+  getStockAuditStatusLabel,
+  getStockAuditStatusTagType
+} from '../shared/stockAuditStatus.helpers'
 import download from '@/utils/download'
 import { StockInApi, StockInVO } from '@/api/erp/stock/in'
 import StockInForm from './StockInForm.vue'
@@ -300,6 +310,7 @@ type StockInListRow = StockInVO & {
   productNames?: string
   supplierName?: string
   creatorName?: string
+  creator?: string | number
 }
 
 type StockInActionKey = 'detail' | 'edit' | 'submit' | 'cancelApproval' | 'toggleStatus' | 'delete'
