@@ -97,13 +97,6 @@ export const FinancePaymentApi = {
     return await request.put({ url: '/erp/finance-payment/update', data })
   },
 
-  updateFinancePaymentStatus: async (id: number, status: number) => {
-    return await request.put({
-      url: '/erp/finance-payment/update-status',
-      params: { id, status }
-    })
-  },
-
   submitFinancePayment: async (data: FinancePaymentSubmitReqVO) => {
     return await request.post({
       url: '/erp/finance-payment/submit',

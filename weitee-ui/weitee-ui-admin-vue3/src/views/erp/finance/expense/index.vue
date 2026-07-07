@@ -213,72 +213,40 @@
             <el-table-column label="操作" fixed="right" align="center" width="280">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
-                  <el-button
-                    link
-                    type="primary"
-                    v-hasPermi="['erp:finance-expense:query']"
-                    :disabled="isRowBusy(row.id)"
-                    @click.stop="openDetailDialog(row.id)"
+                  <template v-for="action in getExpenseInlineActions(row)" :key="`${row.id}-${action.key}`">
+                    <el-button
+                      link
+                      :type="action.type"
+                      :loading="action.loading"
+                      :disabled="action.disabled"
+                      @click.stop="action.handler()"
+                    >
+                      {{ action.label }}
+                    </el-button>
+                  </template>
+                  <el-dropdown
+                    v-if="getExpenseOverflowActions(row).length"
+                    @command="(key) => handleExpenseOverflowCommand(key, row)"
                   >
-                    详情
-                  </el-button>
-                  <el-button
-                    v-if="canEditRow(row)"
-                    link
-                    type="primary"
-                    v-hasPermi="['erp:finance-expense:update']"
-                    :disabled="isRowBusy(row.id)"
-                    @click.stop="openFormDialog(row.id)"
-                  >
-                    编辑
-                  </el-button>
-                  <el-button
-                    v-if="canSubmitRow(row)"
-                    link
-                    :type="Number(row.status) === FINANCE_EXPENSE_STATUS.FAILED ? 'warning' : 'primary'"
-                    v-hasPermi="['erp:finance-expense:submit']"
-                    :loading="isSubmittingApproval(row.id)"
-                    :disabled="isDeletingRow(row.id) || isCancelingApproval(row.id)"
-                    @click.stop="openSubmitDialog(row)"
-                  >
-                    {{
-                      Number(row.status) === FINANCE_EXPENSE_STATUS.REJECT ||
-                      Number(row.status) === FINANCE_EXPENSE_STATUS.FAILED
-                        ? '重新提交审批'
-                        : '提交审批'
-                    }}
-                  </el-button>
-                  <el-button
-                    v-if="canCancelApprovalRow(row)"
-                    link
-                    type="warning"
-                    v-hasPermi="['erp:finance-expense:cancel-approval']"
-                    :loading="isCancelingApproval(row.id)"
-                    :disabled="isDeletingRow(row.id) || isSubmittingApproval(row.id)"
-                    @click.stop="handleCancelApproval(row)"
-                  >
-                    撤回审批
-                  </el-button>
-                  <el-button
-                    v-if="canViewProcessRow(row)"
-                    link
-                    v-hasPermi="['erp:finance-expense:query']"
-                    :disabled="isRowBusy(row.id)"
-                    @click.stop="handleProcessDetail(row)"
-                  >
-                    查看审批
-                  </el-button>
-                  <el-button
-                    v-if="canDeleteRow(row)"
-                    link
-                    type="danger"
-                    v-hasPermi="['erp:finance-expense:delete']"
-                    :loading="isDeletingRow(row.id)"
-                    :disabled="isSubmittingApproval(row.id) || isCancelingApproval(row.id)"
-                    @click.stop="handleDelete([row.id])"
-                  >
-                    删除
-                  </el-button>
+                    <el-tooltip content="更多操作" placement="top">
+                      <el-button link type="primary" class="finance-shell__more-action">
+                        <Icon icon="ep:more-filled" />
+                      </el-button>
+                    </el-tooltip>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item
+                          v-for="action in getExpenseOverflowActions(row)"
+                          :key="`${row.id}-overflow-${action.key}`"
+                          :command="action.key"
+                          :disabled="action.disabled"
+                          :divided="action.danger"
+                        >
+                          {{ action.label }}
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                 </div>
               </template>
             </el-table-column>
@@ -578,7 +546,7 @@ import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import download from '@/utils/download'
 import { formatDate } from '@/utils/formatTime'
-import { erpPriceInputFormatter } from '@/utils'
+import { erpPriceDisplayFormatter } from '@/utils'
 import { resolveErpAuditStatusLabel } from '@/utils/erpAuditStatus'
 import {
   ERP_FINANCE_EXPENSE_STATUS_OPTIONS,
@@ -590,13 +558,14 @@ import {
   type ErpFinanceExpenseTypeVO,
   type ErpFinanceExpenseVO
 } from '@/api/erp/finance/expense'
-import { SupplierApi, type SupplierVO } from '@/api/erp/purchase/supplier'
-import { AccountApi, type AccountVO } from '@/api/erp/finance/account'
-import { ProjectApi, type ProjectSimpleVO } from '@/api/erp/project'
-import { getSimpleDeptList, type DeptVO } from '@/api/system/dept'
-import { getSimpleUserList, type SimpleUserVO } from '@/api/system/user'
+import { SupplierApi } from '@/api/erp/purchase/supplier'
+import { AccountApi } from '@/api/erp/finance/account'
+import { ProjectApi } from '@/api/erp/project'
+import { getSimpleDeptList } from '@/api/system/dept'
+import { getSimpleUserList } from '@/api/system/user'
 import FinanceExpenseSubmitDialog from './FinanceExpenseSubmitDialog.vue'
 import { useUserStoreWithOut } from '@/store/modules/user'
+import { checkPermi } from '@/utils/permission'
 import {
   FINANCE_EXPENSE_STATUS,
   getFinanceExpenseRowActionDescriptor
@@ -604,12 +573,31 @@ import {
 
 defineOptions({ name: 'ErpFinanceExpense' })
 
+type ExpenseRowAction = {
+  key: string
+  label: string
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  permi: string[]
+  loading?: boolean
+  disabled?: boolean
+  danger?: boolean
+  handler: () => void
+}
+
 type ExpenseFormItem = {
   id?: number
   itemName: string
   amount: number | undefined
   remark: string
   assetCandidateFlag: boolean
+}
+type SelectNameOption = {
+  id: number
+  name: string
+}
+type SelectUserOption = {
+  id: number
+  nickname: string
 }
 
 const message = useMessage()
@@ -649,11 +637,11 @@ const cancelApprovalIds = ref<number[]>([])
 const activeSubmitRowId = ref<number>()
 const selectionList = ref<ErpFinanceExpenseVO[]>([])
 
-const deptOptions = ref<DeptVO[]>([])
-const projectOptions = ref<ProjectSimpleVO[]>([])
-const supplierOptions = ref<SupplierVO[]>([])
-const accountOptions = ref<AccountVO[]>([])
-const userOptions = ref<SimpleUserVO[]>([])
+const deptOptions = ref<SelectNameOption[]>([])
+const projectOptions = ref<SelectNameOption[]>([])
+const supplierOptions = ref<SelectNameOption[]>([])
+const accountOptions = ref<SelectNameOption[]>([])
+const userOptions = ref<SelectUserOption[]>([])
 const expenseTypeOptions = ref<ErpFinanceExpenseTypeVO[]>([])
 
 const deptLoading = ref(false)
@@ -684,6 +672,12 @@ const formModel = reactive<
   remark: '',
   items: []
 })
+const itemTotal = computed(() =>
+  formModel.items.reduce((total, item) => {
+    const amount = Number(item.amount || 0)
+    return total + (Number.isFinite(amount) ? amount : 0)
+  }, 0)
+)
 
 const detailDrawerVisible = ref(false)
 const detailLoading = ref(false)
@@ -1033,7 +1027,7 @@ const formItemRules = {
 
 const formatAmount = (value?: number) => {
   if (value == null) return '-'
-  return erpPriceInputFormatter(value)
+  return erpPriceDisplayFormatter(value)
 }
 
 const formatDateValue = (value?: string) =>
@@ -1068,6 +1062,87 @@ const canSubmitRow = (row: ErpFinanceExpenseVO) => getRowDescriptor(row).canSubm
 const canCancelApprovalRow = (row: ErpFinanceExpenseVO) =>
   getRowDescriptor(row).canCancelApproval
 const canViewProcessRow = (row: ErpFinanceExpenseVO) => getRowDescriptor(row).canViewProcess
+const getExpenseActions = (row: ErpFinanceExpenseVO): ExpenseRowAction[] => {
+  const actions: ExpenseRowAction[] = [
+    {
+      key: 'detail',
+      label: '详情',
+      type: 'primary',
+      permi: ['erp:finance-expense:query'],
+      disabled: isRowBusy(row.id),
+      handler: () => openDetailDialog(row.id)
+    }
+  ]
+  if (canEditRow(row)) {
+    actions.push({
+      key: 'edit',
+      label: '编辑',
+      type: 'primary',
+      permi: ['erp:finance-expense:update'],
+      disabled: isRowBusy(row.id),
+      handler: () => openFormDialog(row.id)
+    })
+  }
+  if (canSubmitRow(row)) {
+    actions.push({
+      key: 'submit',
+      label:
+        Number(row.status) === FINANCE_EXPENSE_STATUS.REJECT ||
+        Number(row.status) === FINANCE_EXPENSE_STATUS.FAILED
+          ? '重新提交审批'
+          : '提交审批',
+      type: Number(row.status) === FINANCE_EXPENSE_STATUS.FAILED ? 'warning' : 'primary',
+      permi: ['erp:finance-expense:submit'],
+      loading: isSubmittingApproval(row.id),
+      disabled: isDeletingRow(row.id) || isCancelingApproval(row.id),
+      handler: () => openSubmitDialog(row)
+    })
+  }
+  if (canCancelApprovalRow(row)) {
+    actions.push({
+      key: 'cancelApproval',
+      label: '撤回审批',
+      type: 'warning',
+      permi: ['erp:finance-expense:cancel-approval'],
+      loading: isCancelingApproval(row.id),
+      disabled: isDeletingRow(row.id) || isSubmittingApproval(row.id),
+      handler: () => handleCancelApproval(row)
+    })
+  }
+  if (canViewProcessRow(row)) {
+    actions.push({
+      key: 'process',
+      label: '查看审批',
+      type: 'primary',
+      permi: ['erp:finance-expense:query'],
+      disabled: isRowBusy(row.id),
+      handler: () => handleProcessDetail(row)
+    })
+  }
+  if (canDeleteRow(row)) {
+    actions.push({
+      key: 'delete',
+      label: '删除',
+      type: 'danger',
+      permi: ['erp:finance-expense:delete'],
+      loading: isDeletingRow(row.id),
+      disabled: isSubmittingApproval(row.id) || isCancelingApproval(row.id),
+      danger: true,
+      handler: () => handleDelete([row.id])
+    })
+  }
+  return actions.filter((action) => checkPermi(action.permi))
+}
+
+const getExpenseInlineActions = (row: ErpFinanceExpenseVO) => getExpenseActions(row).slice(0, 3)
+const getExpenseOverflowActions = (row: ErpFinanceExpenseVO) => getExpenseActions(row).slice(3)
+const handleExpenseOverflowCommand = (key: string | number | object, row: ErpFinanceExpenseVO) => {
+  const action = getExpenseOverflowActions(row).find((item) => item.key === key)
+  if (!action || action.disabled) {
+    return
+  }
+  action.handler()
+}
 const findDemoExpense = (id?: number | null) => demoExpenses.find((item) => item.id === id)
 
 const resetFormModel = () => {
@@ -1582,6 +1657,18 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 @import '../shared/readOnlyPage.css';
+
+.finance-shell__row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.finance-shell__more-action {
+  padding: 0 4px;
+}
 
 .finance-shell__section-head {
   display: flex;

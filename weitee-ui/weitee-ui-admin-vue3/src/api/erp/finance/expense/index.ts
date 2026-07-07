@@ -183,13 +183,6 @@ export const FinanceExpenseApi = {
     return await request.put({ url: '/erp/finance-expense/update', data })
   },
 
-  updateFinanceExpenseStatus: async (id: number, status: number) => {
-    return await request.put({
-      url: '/erp/finance-expense/update-status',
-      params: { id, status }
-    })
-  },
-
   submitFinanceExpense: async (data: ErpFinanceExpenseSubmitReqVO) => {
     return await request.post({
       url: '/erp/finance-expense/submit',

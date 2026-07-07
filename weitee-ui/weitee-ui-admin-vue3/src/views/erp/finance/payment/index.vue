@@ -266,71 +266,40 @@
           <el-table-column label="操作" align="center" fixed="right" width="320">
             <template #default="{ row }">
               <div class="finance-payment-page__row-actions">
-                <el-button
-                  link
-                  :disabled="isRowBusy(row.id)"
-                  @click="openForm('detail', row.id)"
-                  v-hasPermi="['erp:finance-payment:query']"
+                <template v-for="action in getPaymentInlineActions(row)" :key="`${row.id}-${action.key}`">
+                  <el-button
+                    link
+                    :type="action.type"
+                    :loading="action.loading"
+                    :disabled="action.disabled"
+                    @click="action.handler()"
+                  >
+                    {{ action.label }}
+                  </el-button>
+                </template>
+                <el-dropdown
+                  v-if="getPaymentOverflowActions(row).length"
+                  @command="(key) => handlePaymentOverflowCommand(key, row)"
                 >
-                  详情
-                </el-button>
-                <el-button
-                  v-if="canEditRow(row)"
-                  link
-                  type="primary"
-                  :disabled="isRowBusy(row.id)"
-                  @click="openForm('update', row.id)"
-                  v-hasPermi="['erp:finance-payment:update']"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  v-if="canSubmitRow(row)"
-                  link
-                  :type="Number(row.status) === FINANCE_PAYMENT_STATUS.FAILED ? 'warning' : 'primary'"
-                  :loading="isSubmittingApproval(row.id)"
-                  :disabled="isDeleting(row.id) || isCancelingApproval(row.id)"
-                  @click="openSubmitDialog(row)"
-                  v-hasPermi="['erp:finance-payment:submit']"
-                >
-                  {{
-                    Number(row.status) === FINANCE_PAYMENT_STATUS.REJECT ||
-                    Number(row.status) === FINANCE_PAYMENT_STATUS.FAILED
-                      ? '重新提交审批'
-                      : '提交审批'
-                  }}
-                </el-button>
-                <el-button
-                  v-if="canCancelApprovalRow(row)"
-                  link
-                  type="warning"
-                  :loading="isCancelingApproval(row.id)"
-                  :disabled="isDeleting(row.id) || isSubmittingApproval(row.id)"
-                  @click="handleCancelApproval(row)"
-                  v-hasPermi="['erp:finance-payment:cancel-approval']"
-                >
-                  撤回审批
-                </el-button>
-                <el-button
-                  v-if="canViewProcessRow(row)"
-                  link
-                  :disabled="isRowBusy(row.id)"
-                  @click="handleProcessDetail(row)"
-                  v-hasPermi="['erp:finance-payment:query']"
-                >
-                  查看审批
-                </el-button>
-                <el-button
-                  v-if="canDeleteRow(row)"
-                  link
-                  type="danger"
-                  :loading="isDeleting(row.id)"
-                  :disabled="isSubmittingApproval(row.id) || isCancelingApproval(row.id)"
-                  @click="handleDelete([Number(row.id)])"
-                  v-hasPermi="['erp:finance-payment:delete']"
-                >
-                  删除
-                </el-button>
+                  <el-tooltip content="更多操作" placement="top">
+                    <el-button link type="primary" class="finance-payment-page__more-action">
+                      <Icon icon="ep:more-filled" />
+                    </el-button>
+                  </el-tooltip>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                        v-for="action in getPaymentOverflowActions(row)"
+                        :key="`${row.id}-overflow-${action.key}`"
+                        :command="action.key"
+                        :disabled="action.disabled"
+                        :divided="action.danger"
+                      >
+                        {{ action.label }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </template>
           </el-table-column>
@@ -377,12 +346,24 @@ import { erpPriceTableColumnFormatter } from '@/utils'
 import { SupplierApi, SupplierVO } from '@/api/erp/purchase/supplier'
 import { AccountApi, AccountVO } from '@/api/erp/finance/account'
 import { useUserStoreWithOut } from '@/store/modules/user'
+import { checkPermi } from '@/utils/permission'
 import {
   FINANCE_PAYMENT_STATUS,
   getFinancePaymentRowActionDescriptor
 } from './paymentStatus.helpers'
 
 defineOptions({ name: 'ErpFinancePayment' })
+
+type PaymentRowAction = {
+  key: string
+  label: string
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  permi: string[]
+  loading?: boolean
+  disabled?: boolean
+  danger?: boolean
+  handler: () => void
+}
 
 const message = useMessage()
 const userStore = useUserStoreWithOut()
@@ -485,6 +466,88 @@ const canSubmitRow = (row: FinancePaymentVO) => getRowDescriptor(row).canSubmit
 const canCancelApprovalRow = (row: FinancePaymentVO) =>
   getRowDescriptor(row).canCancelApproval
 const canViewProcessRow = (row: FinancePaymentVO) => getRowDescriptor(row).canViewProcess
+
+const getPaymentActions = (row: FinancePaymentVO): PaymentRowAction[] => {
+  const actions: PaymentRowAction[] = [
+    {
+      key: 'detail',
+      label: '详情',
+      type: 'primary',
+      permi: ['erp:finance-payment:query'],
+      disabled: isRowBusy(row.id),
+      handler: () => openForm('detail', row.id)
+    }
+  ]
+  if (canEditRow(row)) {
+    actions.push({
+      key: 'edit',
+      label: '编辑',
+      type: 'primary',
+      permi: ['erp:finance-payment:update'],
+      disabled: isRowBusy(row.id),
+      handler: () => openForm('update', row.id)
+    })
+  }
+  if (canSubmitRow(row)) {
+    actions.push({
+      key: 'submit',
+      label:
+        Number(row.status) === FINANCE_PAYMENT_STATUS.REJECT ||
+        Number(row.status) === FINANCE_PAYMENT_STATUS.FAILED
+          ? '重新提交审批'
+          : '提交审批',
+      type: Number(row.status) === FINANCE_PAYMENT_STATUS.FAILED ? 'warning' : 'primary',
+      permi: ['erp:finance-payment:submit'],
+      loading: isSubmittingApproval(row.id),
+      disabled: isDeleting(row.id) || isCancelingApproval(row.id),
+      handler: () => openSubmitDialog(row)
+    })
+  }
+  if (canCancelApprovalRow(row)) {
+    actions.push({
+      key: 'cancelApproval',
+      label: '撤回审批',
+      type: 'warning',
+      permi: ['erp:finance-payment:cancel-approval'],
+      loading: isCancelingApproval(row.id),
+      disabled: isDeleting(row.id) || isSubmittingApproval(row.id),
+      handler: () => handleCancelApproval(row)
+    })
+  }
+  if (canViewProcessRow(row)) {
+    actions.push({
+      key: 'process',
+      label: '查看审批',
+      type: 'primary',
+      permi: ['erp:finance-payment:query'],
+      disabled: isRowBusy(row.id),
+      handler: () => handleProcessDetail(row)
+    })
+  }
+  if (canDeleteRow(row)) {
+    actions.push({
+      key: 'delete',
+      label: '删除',
+      type: 'danger',
+      permi: ['erp:finance-payment:delete'],
+      loading: isDeleting(row.id),
+      disabled: isSubmittingApproval(row.id) || isCancelingApproval(row.id),
+      danger: true,
+      handler: () => handleDelete([Number(row.id)])
+    })
+  }
+  return actions.filter((action) => checkPermi(action.permi))
+}
+
+const getPaymentInlineActions = (row: FinancePaymentVO) => getPaymentActions(row).slice(0, 3)
+const getPaymentOverflowActions = (row: FinancePaymentVO) => getPaymentActions(row).slice(3)
+const handlePaymentOverflowCommand = (key: string | number | object, row: FinancePaymentVO) => {
+  const action = getPaymentOverflowActions(row).find((item) => item.key === key)
+  if (!action || action.disabled) {
+    return
+  }
+  action.handler()
+}
 
 const loadQueryOptions = async () => {
   const [suppliers, users, accounts] = await Promise.all([
@@ -730,6 +793,16 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.finance-payment-page__row-actions {
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.finance-payment-page__more-action {
+  padding: 0 4px;
 }
 
 .finance-payment-page__table-wrap {
