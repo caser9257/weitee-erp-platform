@@ -25,6 +25,7 @@ import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseOrderRejectLogMapp
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseOrderAuditActionTypeConstants;
+import cn.weitee.erp.module.erp.enums.purchase.ErpPaymentStatusEnum;
 import cn.weitee.erp.module.erp.framework.event.PurchaseOrderChangedEvent;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
@@ -424,11 +425,11 @@ public class ErpPurchaseOrderServiceImpl implements ErpPurchaseOrderService {
         // 4. 计算付款状态
         Integer paymentStatus;
         if (totalPaymentPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            paymentStatus = 0; // 未付款
+            paymentStatus = ErpPaymentStatusEnum.NONE.getStatus();
         } else if (totalPaymentPrice.compareTo(totalPrice) >= 0) {
-            paymentStatus = 2; // 全额付款
+            paymentStatus = ErpPaymentStatusEnum.FULL.getStatus();
         } else {
-            paymentStatus = 1; // 部分付款
+            paymentStatus = ErpPaymentStatusEnum.PARTIAL.getStatus();
         }
 
         // 5. 更新采购订单

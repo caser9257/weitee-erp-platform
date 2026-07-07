@@ -30,6 +30,7 @@ import cn.weitee.erp.module.erp.enums.ErpBusinessTypeConstants;
 import cn.weitee.erp.module.erp.enums.ErpSaleOrderAuditActionTypeConstants;
 import cn.weitee.erp.module.erp.enums.ErpSettlementTypeConstants;
 import cn.weitee.erp.module.erp.enums.mrp.ErpMrpStockReservationStatusEnum;
+import cn.weitee.erp.module.erp.enums.sale.ErpReceiptStatusEnum;
 import cn.weitee.erp.module.erp.enums.sale.ErpSaleOrderDeliveryReadyStatusEnum;
 import cn.weitee.erp.module.erp.framework.event.ErpSaleOrderApprovedEvent;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
@@ -640,11 +641,11 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
         // 4. 计算收款状态
         Integer receiptStatus;
         if (totalReceiptPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            receiptStatus = 0; // 未收款
+            receiptStatus = ErpReceiptStatusEnum.NONE.getStatus();
         } else if (totalReceiptPrice.compareTo(totalPrice) >= 0) {
-            receiptStatus = 2; // 全额收款
+            receiptStatus = ErpReceiptStatusEnum.FULL.getStatus();
         } else {
-            receiptStatus = 1; // 部分收款
+            receiptStatus = ErpReceiptStatusEnum.PARTIAL.getStatus();
         }
 
         // 5. 更新销售订单
