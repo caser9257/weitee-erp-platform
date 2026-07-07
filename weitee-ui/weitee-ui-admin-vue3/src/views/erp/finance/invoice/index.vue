@@ -4,7 +4,6 @@
       <div class="page-header">
         <div class="page-header__main">
           <div class="page-header__title">销项发票管理</div>
-          <div class="page-header__desc">管理销售发票的开具、作废和查询</div>
         </div>
         <div class="page-header__actions">
           <el-button type="primary" @click="handleCreate">
@@ -209,7 +208,8 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/formatTime'
-import * as CustomerApi from '@/api/erp/sale/customer'
+import { erpPriceDisplayFormatter } from '@/utils'
+import { CustomerApi } from '@/api/erp/sale/customer'
 import InvoiceForm from './InvoiceForm.vue'
 
 defineOptions({ name: 'ErpInvoicePage' })
@@ -337,8 +337,7 @@ const statusTagType = (status?: string) => {
 }
 
 const formatMoney = (value?: number | string | null) => {
-  const amount = Number(value || 0)
-  return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return `¥${erpPriceDisplayFormatter(value ?? 0)}`
 }
 
 onMounted(async () => {
@@ -368,12 +367,6 @@ onMounted(async () => {
   color: var(--erp-slate-900);
   font-size: 20px;
   font-weight: 800;
-}
-
-.page-header__desc {
-  margin-top: 4px;
-  color: var(--erp-slate-500);
-  font-size: 12px;
 }
 
 .page-header__actions {
@@ -436,7 +429,7 @@ onMounted(async () => {
     padding: 16px;
     margin: -16px -16px 16px;
     background: linear-gradient(135deg, var(--erp-slate-900), var(--erp-slate-800));
-    color: #fff;
+    color: var(--erp-slate-50);
     border-radius: 0 0 16px 16px;
   }
 
