@@ -437,6 +437,14 @@ const formatLocalizedFixed = (num: number | string | undefined, digit: number, t
   return trimZeros ? trimTrailingZeros(formatted) : formatted
 }
 
+export const erpPriceDisplayFormatter = (num: number | string | undefined) => {
+  return formatLocalizedFixed(num, ERP_PRICE_DIGIT)
+}
+
+export const erpCountDisplayFormatter = (num: number | string | undefined) => {
+  return formatLocalizedFixed(num, ERP_COUNT_DIGIT, true)
+}
+
 /**
  * 【ERP】格式化数量，保留三位小数
  *
