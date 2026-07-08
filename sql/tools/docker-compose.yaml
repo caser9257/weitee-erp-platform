@@ -21,7 +21,7 @@ services:
         volumes:
             - mysql:/var/lib/mysql/
             # 注入初始化脚本
-            - ../mysql/base/weitee-erp.sql:/docker-entrypoint-initdb.d/init.sql:ro
+            - ../../production/ruoyi-vue-pro/ruoyi-vue-pro-restore-source-2026-04-10-170813.sql:/docker-entrypoint-initdb.d/init.sql:ro
         command:
             --default-authentication-plugin=mysql_native_password
             --character-set-server=utf8mb4

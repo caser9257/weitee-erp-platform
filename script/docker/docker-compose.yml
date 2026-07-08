@@ -17,7 +17,12 @@ services:
     volumes:
       - mysql:/var/lib/mysql/
       - ../../sql/mysql/base/quartz.sql:/docker-entrypoint-initdb.d/01-quartz.sql:ro
-      - ../../sql/mysql/base/weitee-erp.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
+      - ../../production/ruoyi-vue-pro/ruoyi-vue-pro-restore-source-2026-04-10-170813.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
 
   redis:
     container_name: weitee-redis
@@ -26,6 +31,11 @@ services:
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   server:
     container_name: weitee-server
@@ -47,11 +57,14 @@ services:
         --spring.datasource.dynamic.datasource.slave.username=${SLAVE_DATASOURCE_USERNAME:-root}
         --spring.datasource.dynamic.datasource.slave.password=${SLAVE_DATASOURCE_PASSWORD:-123456}
         --spring.redis.host=${REDIS_HOST:-weitee-redis}
+        --spring.redis.port=${REDIS_PORT:-6379}
+        --spring.data.redis.host=${REDIS_HOST:-weitee-redis}
+        --spring.data.redis.port=${REDIS_PORT:-6379}
     depends_on:
       mysql:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   admin:
     container_name: weitee-admin
@@ -64,7 +77,8 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - server
+      server:
+        condition: service_started
 
 volumes:
   mysql:
