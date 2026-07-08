@@ -68,7 +68,7 @@
   <SaleReturnRefundEnableList ref="saleReturnRefundEnableListRef" @success="handleAddSaleReturn" />
 </template>
 <script setup lang="ts">
-import type { SummaryMethodProps } from 'element-plus'
+import type { SummaryMethod } from 'element-plus'
 import { ProductVO } from '@/api/erp/product/product'
 import { erpPriceInputFormatter, getSumValue } from '@/utils'
 import SaleOutReceiptEnableList from '@/views/erp/sale/out/components/SaleOutReceiptEnableList.vue'
@@ -102,7 +102,7 @@ watch(
 )
 
 /** 合计 */
-const getSummaries = (param: SummaryMethodProps) => {
+const getSummaries: SummaryMethod<any> = (param) => {
   const { columns, data } = param
   const sums: string[] = []
   columns.forEach((column, index: number) => {

@@ -394,6 +394,7 @@ const saveBatchDialog = () => {
     return
   }
   editableItems.value[currentBatchIndex.value].batches = batchDraftRows.value.map(({ rowKey, ...row }) => ({
+    rowKey,
     ...row,
     batchNo: row.batchNo.trim()
   }))

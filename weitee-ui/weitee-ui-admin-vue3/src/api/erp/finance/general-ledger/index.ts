@@ -65,6 +65,17 @@ export interface ErpFinanceGeneralLedgerDetailReqVO {
   voucherTime?: string[]
 }
 
+export interface ErpFinanceGeneralLedgerRebuildReqVO {
+  ledgerId: number
+}
+
+export interface ErpFinanceGeneralLedgerRebuildRespVO {
+  ledgerId?: number
+  voucherCount?: number
+  entryCount?: number
+  subjectCount?: number
+}
+
 export const FinanceGeneralLedgerApi = {
   getSubjectBalancePage: async (params: ErpFinanceSubjectBalancePageReqVO) => {
     return await request.get({ url: '/erp/finance-general-ledger/subject-balance-page', params })
@@ -72,5 +83,12 @@ export const FinanceGeneralLedgerApi = {
 
   getGeneralLedgerDetail: async (params: ErpFinanceGeneralLedgerDetailReqVO) => {
     return await request.get({ url: '/erp/finance-general-ledger/detail', params })
+  },
+
+  rebuildSubjectBalance: async (data: ErpFinanceGeneralLedgerRebuildReqVO) => {
+    return await request.post<ErpFinanceGeneralLedgerRebuildRespVO>({
+      url: '/erp/finance-general-ledger/rebuild-subject-balance',
+      data
+    })
   }
 }

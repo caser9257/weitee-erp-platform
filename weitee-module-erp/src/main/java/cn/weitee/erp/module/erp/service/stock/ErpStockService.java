@@ -42,6 +42,28 @@ public interface ErpStockService {
     List<ErpStockDO> getStockListByProductIds(Collection<Long> productIds);
 
     /**
+     * 根据产品编号和仓库编号批量查询库存
+     *
+     * @param productIds 产品编号集合
+     * @param warehouseIds 仓库编号集合
+     * @return 库存列表
+     */
+    List<ErpStockDO> getStockListByProductAndWarehouseIds(Collection<Long> productIds, Collection<Long> warehouseIds);
+
+    /**
+     * 根据产品编号和仓库编号批量查询库存 Map
+     *
+     * @param productIds 产品编号集合
+     * @param warehouseIds 仓库编号集合
+     * @return key 为 productId:warehouseId 的库存 Map
+     */
+    Map<String, ErpStockDO> getStockMapByProductAndWarehouseIds(Collection<Long> productIds, Collection<Long> warehouseIds);
+
+    static String buildProductWarehouseKey(Long productId, Long warehouseId) {
+        return productId + ":" + warehouseId;
+    }
+
+    /**
      * 获得产品库存数量
      *
      * 如果不存在库存记录，则返回 0

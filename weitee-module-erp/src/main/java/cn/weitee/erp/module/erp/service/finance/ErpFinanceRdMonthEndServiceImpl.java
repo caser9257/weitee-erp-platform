@@ -88,16 +88,29 @@ public class ErpFinanceRdMonthEndServiceImpl implements ErpFinanceRdMonthEndServ
     }
 
     private Map<String, BigDecimal> aggregateExpenseSubjects(Long ledgerId, List<ErpFinanceExpenseDO> expenseList) {
+        Set<Long> expenseIds = new LinkedHashSet<>();
+        for (ErpFinanceExpenseDO expense : expenseList) {
+            if (ErpFinanceExpenseAccountingTypeEnum.EXPENSE.getType().equals(expense.getRdAccountingType())) {
+                expenseIds.add(expense.getId());
+            }
+        }
+        Map<Long, ErpFinanceVoucherDO> expenseVoucherMap = convertVoucherBizMap(
+                financeVoucherService.getVoucherListByLedgerAndBiz(
+                        ledgerId, ErpBizTypeEnum.FINANCE_EXPENSE_EXPENSE.getType(), expenseIds));
+        Set<Long> fallbackExpenseIds = new LinkedHashSet<>(expenseIds);
+        fallbackExpenseIds.removeAll(expenseVoucherMap.keySet());
+        Map<Long, ErpFinanceVoucherDO> fallbackVoucherMap = convertVoucherBizMap(
+                financeVoucherService.getVoucherListByLedgerAndBiz(
+                        ledgerId, ErpBizTypeEnum.FINANCE_EXPENSE.getType(), fallbackExpenseIds));
+
         Set<Long> voucherIds = new LinkedHashSet<>();
         for (ErpFinanceExpenseDO expense : expenseList) {
             if (!ErpFinanceExpenseAccountingTypeEnum.EXPENSE.getType().equals(expense.getRdAccountingType())) {
                 continue;
             }
-            ErpFinanceVoucherDO voucher = financeVoucherService.getVoucherByLedgerAndBiz(
-                    ledgerId, ErpBizTypeEnum.FINANCE_EXPENSE_EXPENSE.getType(), expense.getId());
+            ErpFinanceVoucherDO voucher = expenseVoucherMap.get(expense.getId());
             if (voucher == null) {
-                voucher = financeVoucherService.getVoucherByLedgerAndBiz(
-                        ledgerId, ErpBizTypeEnum.FINANCE_EXPENSE.getType(), expense.getId());
+                voucher = fallbackVoucherMap.get(expense.getId());
             }
             if (voucher != null) {
                 voucherIds.add(voucher.getId());
@@ -116,6 +129,17 @@ public class ErpFinanceRdMonthEndServiceImpl implements ErpFinanceRdMonthEndServ
             subjectAmountMap.merge(entry.getSubjectCode(), debitAmount, BigDecimal::add);
         }
         return subjectAmountMap;
+    }
+
+    private Map<Long, ErpFinanceVoucherDO> convertVoucherBizMap(List<ErpFinanceVoucherDO> vouchers) {
+        Map<Long, ErpFinanceVoucherDO> result = new LinkedHashMap<>();
+        if (CollUtil.isEmpty(vouchers)) {
+            return result;
+        }
+        for (ErpFinanceVoucherDO voucher : vouchers) {
+            result.putIfAbsent(voucher.getBizId(), voucher);
+        }
+        return result;
     }
 
     private void validateSubjects(Long ledgerId, Collection<String> expenseSubjectCodes, String profitSubjectCode) {

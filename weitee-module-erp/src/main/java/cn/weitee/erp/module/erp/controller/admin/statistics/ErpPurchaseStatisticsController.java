@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.annotation.Resource;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static cn.hutool.core.date.DatePattern.NORM_MONTH_PATTERN;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
@@ -55,15 +57,27 @@ public class ErpPurchaseStatisticsController {
     @PreAuthorize("@ss.hasPermission('erp:statistics:query')")
     public CommonResult<List<ErpPurchaseTimeSummaryRespVO>> getPurchaseTimeSummary(
             @RequestParam(value = "count", defaultValue = "6") Integer count) {
+        int actualCount = normalizeCount(count);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime beginTime = LocalDateTimeUtils.beginOfMonth(now.minusMonths(actualCount - 1L));
+        LocalDateTime endTime = LocalDateTimeUtils.beginOfMonth(now.plusMonths(1));
+        Map<String, BigDecimal> priceMap = purchaseStatisticsService.getPurchasePriceMapByMonth(beginTime, endTime);
         List<ErpPurchaseTimeSummaryRespVO> summaryList = new ArrayList<>();
-        for (int i = count - 1; i >= 0; i--) {
-            LocalDateTime startTime = LocalDateTimeUtils.beginOfMonth(LocalDateTime.now().minusMonths(i));
-            LocalDateTime endTime = LocalDateTimeUtils.endOfMonth(startTime);
+        for (int i = actualCount - 1; i >= 0; i--) {
+            LocalDateTime startTime = LocalDateTimeUtils.beginOfMonth(now.minusMonths(i));
+            String month = LocalDateTimeUtil.format(startTime, NORM_MONTH_PATTERN);
             summaryList.add(new ErpPurchaseTimeSummaryRespVO()
-                    .setTime(LocalDateTimeUtil.format(startTime, NORM_MONTH_PATTERN))
-                    .setPrice(purchaseStatisticsService.getPurchasePrice(startTime, endTime)));
+                    .setTime(month)
+                    .setPrice(priceMap.getOrDefault(month, BigDecimal.ZERO)));
         }
         return success(summaryList);
+    }
+
+    private int normalizeCount(Integer count) {
+        if (count == null) {
+            return 6;
+        }
+        return Math.max(1, Math.min(count, 24));
     }
 
 }

@@ -209,6 +209,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/formatTime'
 import { erpPriceDisplayFormatter } from '@/utils'
+import request from '@/config/axios'
 import { CustomerApi } from '@/api/erp/sale/customer'
 import InvoiceForm from './InvoiceForm.vue'
 
@@ -216,19 +217,15 @@ defineOptions({ name: 'ErpInvoicePage' })
 
 const InvoiceApi = {
   getInvoicePage: async (params: any) => {
-    const { request } = await import('@/config/axios')
     return await request.get({ url: '/erp/invoice/page', params })
   },
   getInvoiceItems: async (invoiceId: number) => {
-    const { request } = await import('@/config/axios')
     return await request.get({ url: `/erp/invoice/list-items?invoiceId=${invoiceId}` })
   },
   updateInvoiceStatus: async (id: number, status: string) => {
-    const { request } = await import('@/config/axios')
     return await request.put({ url: '/erp/invoice/update-status', params: { id, status } })
   },
   deleteInvoice: async (ids: number[]) => {
-    const { request } = await import('@/config/axios')
     return await request.delete({ url: '/erp/invoice/delete', params: { ids: ids.join(',') } })
   }
 }

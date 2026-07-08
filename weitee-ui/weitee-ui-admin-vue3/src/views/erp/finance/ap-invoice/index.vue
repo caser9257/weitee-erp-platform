@@ -773,11 +773,16 @@ import {
   type ErpApInvoiceSaveReqVO,
   type ErpApInvoiceVO
 } from '@/api/erp/finance/ap-invoice'
-import { SupplierApi, type SupplierVO } from '@/api/erp/purchase/supplier'
+import { SupplierApi } from '@/api/erp/purchase/supplier'
 import { erpCountTableColumnFormatter, erpPriceInputFormatter } from '@/utils'
 import { formatDate } from '@/utils/formatTime'
 
 defineOptions({ name: 'ErpFinanceApInvoice' })
+
+interface SupplierOption {
+  id: number
+  name: string
+}
 
 interface MatchDraft {
   matchCount?: number
@@ -809,7 +814,7 @@ const total = ref(0)
 const listLoading = ref(false)
 const listErrorMessage = ref('')
 
-const supplierList = ref<SupplierVO[]>([])
+const supplierList = ref<SupplierOption[]>([])
 const supplierLoading = ref(false)
 
 const formDialogVisible = ref(false)
@@ -876,7 +881,7 @@ const isLocalDemoHost = () => {
   )
 }
 
-const demoSupplierList: SupplierVO[] = [
+const demoSupplierList: SupplierOption[] = [
   { id: 71001, name: '苏州泽科电子有限公司' },
   { id: 71002, name: '杭州瑞联供应链有限公司' },
   { id: 71003, name: '深圳启宏科技有限公司' }

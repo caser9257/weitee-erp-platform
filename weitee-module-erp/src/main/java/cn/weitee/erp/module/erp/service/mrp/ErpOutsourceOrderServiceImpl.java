@@ -187,6 +187,9 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                 .filter(item -> PURCHASE_IN_SOURCE_BIZ_TYPE.equals(item.getSourceBizType()))
                 .map(ErpStockBatchDO::getSourceBizItemId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, ErpPurchaseInItemDO> purchaseInItemMap = convertMap(erpPurchaseInItemMapper.selectListByIds(purchaseInItemIds), ErpPurchaseInItemDO::getId);
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(reqVO.getItems(), ErpOutsourceIssueCreateReqVO.Item::getMaterialId),
+                convertSet(reqVO.getItems(), ErpOutsourceIssueCreateReqVO.Item::getWarehouseId));
 
         ErpOutsourceIssueDO issue = new ErpOutsourceIssueDO()
                 .setIssueNo(noRedisDAO.generate(ErpNoRedisDAO.OUTSOURCE_ISSUE_NO_PREFIX))
@@ -224,7 +227,8 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                 stockBatchService.decreaseBatch(new ErpStockBatchChangeReqBO(stockBatch.getId(), batch.getIssueQty(),
                         ErpStockRecordBizTypeEnum.OUTSOURCE_ISSUE.getType(), issue.getId(), issueItem.getId(), issue.getIssueNo(), item.getRemark()));
                 // 获取加权平均成本作为发料价格
-                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                        item.getMaterialId(), item.getWarehouseId()));
                 BigDecimal price = stock != null ? stock.getAverageCost() : null;
                 BigDecimal amount = price != null ? price.multiply(batch.getIssueQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(item.getMaterialId(), item.getWarehouseId(),
@@ -297,6 +301,9 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
         erpOutsourceReturnBatchMapper.selectListByIssueBatchIds(issueBatchIds)
                 .forEach(item -> existingReturnedQtyMap.merge(item.getIssueBatchId(),
                         ObjectUtil.defaultIfNull(item.getReturnQty(), BigDecimal.ZERO), BigDecimal::add));
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(reqVO.getItems(), ErpOutsourceReturnCreateReqVO.Item::getMaterialId),
+                convertSet(reqVO.getItems(), ErpOutsourceReturnCreateReqVO.Item::getWarehouseId));
 
         ErpOutsourceReturnDO returning = new ErpOutsourceReturnDO()
                 .setReturnNo(noRedisDAO.generate(ErpNoRedisDAO.OUTSOURCE_RETURN_NO_PREFIX))
@@ -348,7 +355,8 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                         ErpStockRecordBizTypeEnum.OUTSOURCE_RETURN.getType(), returning.getId(), returnItem.getId(),
                         returning.getReturnNo(), item.getRemark()));
                 // 获取加权平均成本作为退料价格
-                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                        item.getMaterialId(), item.getWarehouseId()));
                 BigDecimal price = stock != null ? stock.getAverageCost() : null;
                 BigDecimal amount = price != null ? price.multiply(batch.getReturnQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(item.getMaterialId(), item.getWarehouseId(),

@@ -1,8 +1,8 @@
 import { resolve } from 'path'
+import type { Plugin } from 'vite'
 import legacy from '@vitejs/plugin-legacy'
 import Vue from '@vitejs/plugin-vue'
 import VueJsx from '@vitejs/plugin-vue-jsx'
-import progress from 'vite-plugin-progress'
 import EslintPlugin from 'vite-plugin-eslint'
 import PurgeIcons from 'vite-plugin-purge-icons'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
@@ -12,12 +12,23 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import viteCompression from 'vite-plugin-compression'
-import topLevelAwait from 'vite-plugin-top-level-await'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons-ng'
 import UnoCSS from 'unocss/vite'
 
-export function createVitePlugins() {
+function forceEsnextBuildTarget(): Plugin {
+  return {
+    name: 'weitee:force-esnext-build-target',
+    enforce: 'post' as const,
+    configResolved(config) {
+      if (config.command === 'build') {
+        config.build.target = 'esnext'
+      }
+    }
+  }
+}
+
+export function createVitePlugins(isBuild = false) {
   const root = process.cwd()
   const blockedAutoComponentPathPattern =
     /(^|[\\/])(?:dist(?:-[^\\/]+)?)(?:[\\/]|$)|(^|[\\/])\.tsconfig\..*\.json$|(^|[\\/])tmp-node-.*\.ts$|(^|[\\/])auto-.*\.d\.ts$/
@@ -28,14 +39,14 @@ export function createVitePlugins() {
   }
 
   return [
-    legacy({
-      targets: ['defaults', 'not IE 11'],
-      modernPolyfills: true
-    }),
+    !isBuild &&
+      legacy({
+        targets: ['defaults', 'not IE 11'],
+        modernPolyfills: true
+      }),
     Vue(),
     VueJsx(),
     UnoCSS(),
-    progress(),
     PurgeIcons(),
     ElementPlus({}),
     AutoImport({
@@ -81,10 +92,11 @@ export function createVitePlugins() {
       exclude: [/[\\/]node_modules[\\/]/, /[\\/]\.git[\\/]/, blockedAutoComponentPathPattern],
       globs: ["src/components/**/**.{vue, md}", '!src/components/DiyEditor/components/mobile/**']
     }),
-    EslintPlugin({
-      cache: false,
-      include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
-    }),
+    !isBuild &&
+      EslintPlugin({
+        cache: false,
+        include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
+      }),
     VueI18nPlugin({
       runtimeOnly: true,
       compositionOnly: true,
@@ -103,12 +115,6 @@ export function createVitePlugins() {
       deleteOriginFile: false //压缩后是否删除源文件
     }),
     ViteEjsPlugin(),
-    topLevelAwait({
-      // https://juejin.cn/post/7152191742513512485
-      // The export name of top-level await promise for each chunk module
-      promiseExportName: '__tla',
-      // The function to generate import names of top-level await promise in each chunk module
-      promiseImportName: (i) => `__tla_${i}`
-    })
+    forceEsnextBuildTarget()
   ]
 }

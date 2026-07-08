@@ -158,6 +158,7 @@
 </template>
 
 <script setup lang="ts">
+import type { SummaryMethod } from 'element-plus'
 import SaleOrderProductPickerDrawer from './SaleOrderProductPickerDrawer.vue'
 import {
   erpCountInputFormatter,
@@ -229,7 +230,7 @@ watch(
   { deep: true }
 )
 
-const getSummaries = (param: SummaryMethodProps) => {
+const getSummaries: SummaryMethod<SaleOrderItemRow> = (param) => {
   const { columns, data } = param
   const sums: string[] = []
   columns.forEach((column, index: number) => {

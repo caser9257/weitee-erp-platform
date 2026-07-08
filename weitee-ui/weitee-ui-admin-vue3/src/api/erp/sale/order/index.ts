@@ -117,6 +117,23 @@ export interface SaleOrderCancelApprovalReqVO {
   reason: string
 }
 
+export interface SaleOrderBatchUpdateReqVO {
+  ids: number[]
+  fieldKey: string
+  mode: 'overwrite'
+  value: string
+}
+
+export interface SaleOrderBatchUpdateResultVO {
+  successCount: number
+  failureCount: number
+  updatedIds: number[]
+  failedItems: Array<{
+    id: number
+    message: string
+  }>
+}
+
 // ERP 销售订单 API
 export const SaleOrderApi = {
   // 查询销售订单分页
@@ -142,6 +159,14 @@ export const SaleOrderApi = {
   // 修改销售订单
   updateSaleOrder: async (data: SaleOrderVO) => {
     return await request.put({ url: `/erp/sale-order/update`, data })
+  },
+
+  // 批量修改销售订单
+  batchUpdateSaleOrder: async (data: SaleOrderBatchUpdateReqVO) => {
+    return await request.put<SaleOrderBatchUpdateResultVO>({
+      url: `/erp/sale-order/batch-update`,
+      data
+    })
   },
 
   // 更新销售订单的状态

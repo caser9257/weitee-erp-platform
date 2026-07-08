@@ -6,6 +6,7 @@ import cn.weitee.erp.module.system.controller.admin.mail.vo.template.MailTemplat
 import cn.weitee.erp.module.system.dal.dataobject.mail.MailTemplateDO;
 
 import jakarta.validation.Valid;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -93,5 +94,13 @@ public interface MailTemplateService {
      * @return 数量
      */
     long getMailTemplateCountByAccountId(Long accountId);
+
+    /**
+     * 判断指定邮件账号下是否存在邮件模板
+     *
+     * @param accountIds 邮件账号编号集合
+     * @return 是否存在邮件模板
+     */
+    boolean hasMailTemplateByAccountIds(Collection<Long> accountIds);
 
 }

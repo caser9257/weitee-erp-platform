@@ -43,6 +43,8 @@ public interface ErpFinanceVoucherService {
 
     ErpFinanceVoucherDO getVoucherByLedgerAndBiz(Long ledgerId, Integer bizType, Long bizId);
 
+    List<ErpFinanceVoucherDO> getVoucherListByLedgerAndBiz(Long ledgerId, Integer bizType, Collection<Long> bizIds);
+
     PageResult<ErpFinanceVoucherDO> getVoucherPage(ErpFinanceVoucherPageReqVO pageReqVO);
 
     List<ErpFinanceVoucherEntryDO> getVoucherEntryListByVoucherId(Long voucherId);

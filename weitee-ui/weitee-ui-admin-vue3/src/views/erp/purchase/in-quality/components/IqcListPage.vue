@@ -319,6 +319,13 @@ import {
 } from '@/api/erp/purchase/in-quality'
 
 type IqcScene = 'erp' | 'qms'
+type QualityActionStatus =
+  | typeof PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING
+  | typeof PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK
+  | typeof PURCHASE_IN_QUALITY_STATUS.RECHECKING
+type QualityRecheckStatus =
+  | typeof PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK
+  | typeof PURCHASE_IN_QUALITY_STATUS.RECHECKING
 
 interface Props {
   scene: IqcScene
@@ -495,13 +502,14 @@ const getQualityResultTagType = (result?: number) => {
 }
 
 const canAssignChecker = (row: PurchaseInQualityVO) => {
+  const assignableStatuses: readonly QualityActionStatus[] = [
+    PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING,
+    PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK,
+    PURCHASE_IN_QUALITY_STATUS.RECHECKING
+  ]
   return (
     hasAssignCheckerPermission &&
-    [
-      PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING,
-      PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK,
-      PURCHASE_IN_QUALITY_STATUS.RECHECKING
-    ].includes(Number(row.status))
+    assignableStatuses.includes(Number(row.status) as QualityActionStatus)
   )
 }
 
@@ -535,9 +543,11 @@ const summaryCards = computed(() => {
     return Number(row.status) === PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING && !!row.assignedCheckerUserId
   }).length
   const rechecking = list.value.filter((row) => {
-    return [PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK, PURCHASE_IN_QUALITY_STATUS.RECHECKING].includes(
-      Number(row.status)
-    )
+    const recheckStatuses: readonly QualityRecheckStatus[] = [
+      PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK,
+      PURCHASE_IN_QUALITY_STATUS.RECHECKING
+    ]
+    return recheckStatuses.includes(Number(row.status) as QualityRecheckStatus)
   }).length
   const doneCount = list.value.filter((row) => Number(row.status) === PURCHASE_IN_QUALITY_STATUS.DONE).length
   return [

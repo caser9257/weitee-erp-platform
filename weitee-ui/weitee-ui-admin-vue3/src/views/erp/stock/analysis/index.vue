@@ -692,8 +692,11 @@ const warehouseChartOptions = computed<EChartsOption>(() => {
   return {
     tooltip: {
       trigger: 'item',
-      formatter: ({ name, value }: { name?: string; value?: number }) =>
-        `${name || '-'}<br/>库存数量：${formatCount(value)}<br/>占比：${formatWarehouseShare(value)}`
+      formatter: (params: any) => {
+        const item = Array.isArray(params) ? params[0] : params
+        const value = Number(item?.value || 0)
+        return `${item?.name || '-'}<br/>库存数量：${formatCount(value)}<br/>占比：${formatWarehouseShare(value)}`
+      }
     },
     legend: {
       show: false

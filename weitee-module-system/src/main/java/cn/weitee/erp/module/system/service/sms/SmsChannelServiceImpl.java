@@ -68,11 +68,9 @@ public class SmsChannelServiceImpl implements SmsChannelService {
     @Override
     public void deleteSmsChannelList(List<Long> ids) {
         // 1. 校验是否有在使用该账号的模版
-        ids.forEach(id -> {
-            if (smsTemplateService.getSmsTemplateCountByChannelId(id) > 0) {
-                throw exception(SMS_CHANNEL_HAS_CHILDREN);
-            }
-        });
+        if (smsTemplateService.hasSmsTemplateByChannelIds(ids)) {
+            throw exception(SMS_CHANNEL_HAS_CHILDREN);
+        }
 
         // 2. 批量删除
         smsChannelMapper.deleteByIds(ids);

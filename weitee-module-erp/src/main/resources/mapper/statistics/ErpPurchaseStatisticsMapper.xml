@@ -20,4 +20,24 @@
                 AND deleted = 0)
     </select>
 
+    <select id="getPurchasePriceListByMonth" resultType="java.util.Map">
+        SELECT ym, IFNULL(SUM(price), 0) AS price
+        FROM (
+            SELECT DATE_FORMAT(in_time, '%Y-%m') AS ym, IFNULL(SUM(total_price), 0) AS price
+            FROM erp_purchase_in
+            WHERE in_time >= #{beginTime}
+              AND in_time &lt; #{endTime}
+              AND deleted = 0
+            GROUP BY DATE_FORMAT(in_time, '%Y-%m')
+            UNION ALL
+            SELECT DATE_FORMAT(return_time, '%Y-%m') AS ym, -IFNULL(SUM(total_price), 0) AS price
+            FROM erp_purchase_return
+            WHERE return_time >= #{beginTime}
+              AND return_time &lt; #{endTime}
+              AND deleted = 0
+            GROUP BY DATE_FORMAT(return_time, '%Y-%m')
+        ) monthly_price
+        GROUP BY ym
+    </select>
+
 </mapper>

@@ -39,7 +39,7 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
             // },
         },
         // 项目使用的vite插件。 单独提取到build/vite/plugin中管理
-        plugins: createVitePlugins(),
+        plugins: createVitePlugins(isBuild),
         css: {
             preprocessorOptions: {
                 scss: {
@@ -68,6 +68,7 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
             sourcemap: env.VITE_SOURCEMAP === 'true' ? 'inline' : false,
             // brotliSize: false,
             terserOptions: {
+                maxWorkers: 1,
                 compress: {
                     drop_debugger: env.VITE_DROP_DEBUGGER === 'true',
                     drop_console: env.VITE_DROP_CONSOLE === 'true'

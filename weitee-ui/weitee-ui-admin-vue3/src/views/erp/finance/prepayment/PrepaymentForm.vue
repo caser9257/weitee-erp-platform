@@ -91,7 +91,7 @@ import {
 defineOptions({ name: 'ErpFinancePrepaymentForm' })
 
 type FormType = 'create' | 'update' | 'detail'
-type PrepaymentFormData = ErpFinancePrepaymentVO & {
+type PrepaymentFormData = Omit<ErpFinancePrepaymentVO, 'prepaymentTime'> & {
   prepaymentTime?: string
 }
 

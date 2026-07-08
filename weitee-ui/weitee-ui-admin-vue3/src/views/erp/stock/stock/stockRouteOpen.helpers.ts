@@ -89,12 +89,12 @@ export function resolveStockRouteOpen(input: StockRouteOpenInput): StockRouteOpe
   }
 }
 
-export function findRouteOpenBatch(
-  batches: StockRouteOpenBatch[],
+export function findRouteOpenBatch<T extends StockRouteOpenBatch>(
+  batches: T[],
   productId: number,
   warehouseId: number,
   routeBatchNo?: string
-) {
+): T | undefined {
   const normalizedRouteBatchNo = routeBatchNo?.trim()
   const matchedBatches = batches.filter(
     (item) => item.productId === productId && item.warehouseId === warehouseId

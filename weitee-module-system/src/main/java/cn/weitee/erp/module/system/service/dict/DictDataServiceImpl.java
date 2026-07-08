@@ -148,6 +148,14 @@ public class DictDataServiceImpl implements DictDataService {
         return dictDataMapper.selectCountByDictType(dictType);
     }
 
+    @Override
+    public boolean hasDictDataByDictTypes(Collection<String> dictTypes) {
+        if (CollUtil.isEmpty(dictTypes)) {
+            return false;
+        }
+        return dictDataMapper.selectCountByDictTypes(dictTypes) > 0;
+    }
+
     @VisibleForTesting
     public void validateDictDataValueUnique(Long id, String dictType, String value) {
         DictDataDO dictData = dictDataMapper.selectByDictTypeAndValue(dictType, value);

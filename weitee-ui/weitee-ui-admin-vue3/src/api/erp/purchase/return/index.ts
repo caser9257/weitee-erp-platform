@@ -27,6 +27,7 @@ export interface PurchaseReturnVO {
   creatorName?: string // 创建人名称
   createTime?: Date | string | number // 创建时间
   items?: PurchaseReturnItemVO[]
+  productNames?: string // 产品信息
 }
 
 export interface PurchaseReturnSubmitReqVO {

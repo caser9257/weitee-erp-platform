@@ -3,7 +3,7 @@ import request from '@/config/axios'
 export interface ErpFinancePrepaymentVO {
   id?: number
   no?: string
-  prepaymentTime?: Date
+  prepaymentTime?: Date | string
   supplierName?: string
   supplierId?: number
   accountName?: string

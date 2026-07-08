@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SummaryMethodProps } from 'element-plus'
+import type { SummaryMethod } from 'element-plus'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { StockApi } from '@/api/erp/stock/stock'
@@ -237,7 +237,7 @@ watch(
   { deep: true }
 )
 
-const getSummaries = ({ columns, data }: SummaryMethodProps<StockCheckItemRow>) => {
+const getSummaries: SummaryMethod<StockCheckItemRow> = ({ columns, data }) => {
   const sums: string[] = []
   columns.forEach((column, index) => {
     if (index === 0) {

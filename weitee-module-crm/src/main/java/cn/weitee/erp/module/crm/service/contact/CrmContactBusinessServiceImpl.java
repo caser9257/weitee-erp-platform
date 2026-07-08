@@ -18,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.module.crm.enums.ErrorCodeConstants.BUSINESS_NOT_EXISTS;
@@ -51,8 +52,9 @@ public class CrmContactBusinessServiceImpl implements CrmContactBusinessService 
         }
         // 遍历处理，考虑到一般数量不会太多，代码处理简单
         List<CrmContactBusinessDO> saveDOList = new ArrayList<>();
+        Map<Long, CrmBusinessDO> businessMap = businessService.getBusinessMap(createReqVO.getBusinessIds());
         createReqVO.getBusinessIds().forEach(businessId -> {
-            CrmBusinessDO business = businessService.getBusiness(businessId);
+            CrmBusinessDO business = businessMap.get(businessId);
             if (business == null) {
                 throw exception(BUSINESS_NOT_EXISTS);
             }
@@ -77,8 +79,9 @@ public class CrmContactBusinessServiceImpl implements CrmContactBusinessService 
         }
         // 遍历处理，考虑到一般数量不会太多，代码处理简单
         List<CrmContactBusinessDO> saveDOList = new ArrayList<>();
+        Map<Long, CrmContactDO> contactMap = contactService.getContactMap(createReqVO.getContactIds());
         createReqVO.getContactIds().forEach(contactId -> {
-            CrmContactDO contact = contactService.getContact(contactId);
+            CrmContactDO contact = contactMap.get(contactId);
             if (contact == null) {
                 throw exception(CONTACT_NOT_EXISTS);
             }

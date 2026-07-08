@@ -5,7 +5,7 @@ import type {
 } from '@/api/erp/purchase/in'
 import type {
   BatchEditableField,
-  BatchEditableFieldOption
+  BatchEditFieldOption
 } from '@/components/BatchEdit/types'
 
 export type PurchaseInBatchFieldKey = 'accountId' | 'inTime' | 'remark'
@@ -16,7 +16,7 @@ const purchaseInBatchFieldKeySet = new Set<PurchaseInBatchFieldKey>([
   'remark'
 ])
 
-const normalizeAccountOptions = (accountOptions: AccountVO[]): BatchEditableFieldOption[] =>
+const normalizeAccountOptions = (accountOptions: AccountVO[]): BatchEditFieldOption[] =>
   accountOptions.map((item) => ({
     label: item.name,
     value: item.id

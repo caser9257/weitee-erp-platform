@@ -40,7 +40,7 @@
             link
             type="primary"
             :disabled="!canQueryStock"
-            @click="getList"
+            @click="getList()"
           >
             重试
           </el-button>
@@ -202,7 +202,7 @@
                 <Icon icon="ep:warning-filled" />
               </div>
               <div class="stock-empty__title">库存列表加载失败</div>
-              <el-button type="primary" plain :disabled="!canQueryStock" @click="getList"
+              <el-button type="primary" plain :disabled="!canQueryStock" @click="getList()"
                 >重试</el-button
               >
             </div>
@@ -337,7 +337,7 @@
                   link
                   type="primary"
                   :disabled="batchListLoading"
-                  @click="getBatchList"
+                  @click="getBatchList()"
                 >
                   重试
                 </el-button>
@@ -869,7 +869,8 @@ const openBatchDrawerFromRouteFallback = async (
       productId,
       warehouseId
     })
-    const routeBatch = findRouteOpenBatch(data.list || [], productId, warehouseId, routeBatchNo)
+    const rows = (data.list || []) as StockBatchVO[]
+    const routeBatch = findRouteOpenBatch(rows, productId, warehouseId, routeBatchNo)
     if (!routeBatch) {
       message.warning('暂无符合条件的库存批次')
       return
@@ -886,7 +887,7 @@ const openBatchDrawerFromRouteFallback = async (
     batchQueryParams.warehouseId = warehouseId
     batchQueryParams.batchNo = undefined
     clearBatchTrace()
-    batchList.value = data.list || []
+    batchList.value = rows
     batchTotal.value = data.total || 0
     await selectBatch(routeBatch, sessionToken)
   } catch {

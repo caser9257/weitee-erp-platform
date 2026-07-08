@@ -501,7 +501,13 @@ const handleResize = () => {
 
 onMounted(async () => {
   try {
-    productList.value = await ProductionCostApi.getCostProductList()
+    const costProducts = await ProductionCostApi.getCostProductList()
+    productList.value = costProducts
+      .filter((item): item is ProductOption => !!item.id && !!item.name)
+      .map((item) => ({
+        id: item.id,
+        name: item.name
+      }))
   } catch {
     productList.value = []
   }

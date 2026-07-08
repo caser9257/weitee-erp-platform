@@ -35,7 +35,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -96,20 +99,22 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
 
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createSaleOut(ErpSaleOutSaveReqVO createReqVO) {
+        validateSaleUser(createReqVO.getSaleUserId());
+        return executeInRequiredTransaction(() -> createSaleOutInTransaction(createReqVO));
+    }
+
+    Long createSaleOutInTransaction(ErpSaleOutSaveReqVO createReqVO) {
         // 1.1 校验销售订单已审核
         ErpSaleOrderDO saleOrder = saleOrderService.validateSaleOrder(createReqVO.getOrderId());
         // 1.2 校验出库项的有效性
         List<ErpSaleOutItemDO> saleOutItems = validateSaleOutItems(createReqVO.getItems());
         // 1.3 校验结算账户
         accountService.validateAccount(createReqVO.getAccountId());
-        // 1.4 校验销售人员
-        if (createReqVO.getSaleUserId() != null) {
-            adminUserApi.validateUser(createReqVO.getSaleUserId());
-        }
         // 1.5 生成出库单号，并校验唯一性
         String no = noRedisDAO.generate(ErpNoRedisDAO.SALE_OUT_NO_PREFIX);
         if (erpSaleOutMapper.selectByNo(no) != null) {
@@ -132,8 +137,12 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateSaleOut(ErpSaleOutSaveReqVO updateReqVO) {
+        validateSaleUser(updateReqVO.getSaleUserId());
+        executeInRequiredTransaction(() -> updateSaleOutInTransaction(updateReqVO));
+    }
+
+    void updateSaleOutInTransaction(ErpSaleOutSaveReqVO updateReqVO) {
         // 1.1 校验存在
         ErpSaleOutDO saleOut = validateSaleOutExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(saleOut.getStatus())) {
@@ -143,10 +152,6 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         ErpSaleOrderDO saleOrder = saleOrderService.validateSaleOrder(updateReqVO.getOrderId());
         // 1.3 校验结算账户
         accountService.validateAccount(updateReqVO.getAccountId());
-        // 1.4 校验销售人员
-        if (updateReqVO.getSaleUserId() != null) {
-            adminUserApi.validateUser(updateReqVO.getSaleUserId());
-        }
         // 1.5 校验订单项的有效性
         List<ErpSaleOutItemDO> saleOutItems = validateSaleOutItems(updateReqVO.getItems());
 
@@ -164,6 +169,25 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         if (ObjectUtil.notEqual(saleOut.getOrderId(), updateObj.getOrderId())) {
             updateSaleOrderOutCount(saleOut.getOrderId());
         }
+    }
+
+    private void validateSaleUser(Long saleUserId) {
+        if (saleUserId != null) {
+            adminUserApi.validateUser(saleUserId);
+        }
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     private void calculateTotalPrice(ErpSaleOutDO saleOut, List<ErpSaleOutItemDO> saleOutItems) {
@@ -215,6 +239,9 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         List<ErpSaleOutItemDO> saleOutItems = erpSaleOutItemMapper.selectListByOutId(id);
         Integer bizType = approve ? ErpStockRecordBizTypeEnum.SALE_OUT.getType()
                 : ErpStockRecordBizTypeEnum.SALE_OUT_CANCEL.getType();
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(saleOutItems, ErpSaleOutItemDO::getProductId),
+                convertSet(saleOutItems, ErpSaleOutItemDO::getWarehouseId));
         if (approve) {
             allocateSaleOutBatches(saleOut, saleOutItems);
         } else {
@@ -224,7 +251,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         saleOutItems.forEach(saleOutItem -> {
             BigDecimal count = approve ? saleOutItem.getCount().negate() : saleOutItem.getCount();
             // 获取加权平均成本作为出库价格
-            ErpStockDO stock = stockService.getStock(saleOutItem.getProductId(), saleOutItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                    saleOutItem.getProductId(), saleOutItem.getWarehouseId()));
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(saleOutItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(

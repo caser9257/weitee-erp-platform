@@ -20,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -207,6 +208,14 @@ public class MailTemplateServiceImpl implements MailTemplateService {
     @Override
     public long getMailTemplateCountByAccountId(Long accountId) {
         return mailTemplateMapper.selectCountByAccountId(accountId);
+    }
+
+    @Override
+    public boolean hasMailTemplateByAccountIds(Collection<Long> accountIds) {
+        if (accountIds == null || accountIds.isEmpty()) {
+            return false;
+        }
+        return mailTemplateMapper.selectCountByAccountIds(accountIds) > 0;
     }
 
     /**

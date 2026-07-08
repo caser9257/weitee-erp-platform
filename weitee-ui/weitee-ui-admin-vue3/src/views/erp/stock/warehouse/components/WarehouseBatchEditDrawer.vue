@@ -59,13 +59,11 @@ import { useBatchEdit } from '@/hooks/web/useBatchEdit'
 import { useBatchEditFields } from '@/hooks/web/useBatchEditFields'
 import {
   WarehouseApi,
+  type WarehouseBatchFieldKey,
   type WarehouseBatchUpdateResultVO,
   type WarehouseVO
 } from '@/api/erp/stock/warehouse'
-import {
-  warehouseBatchEditAdapter,
-  type WarehouseBatchFieldKey
-} from './warehouseBatchEditAdapter'
+import { warehouseBatchEditAdapter } from './warehouseBatchEditAdapter'
 
 defineOptions({ name: 'WarehouseBatchEditDrawer' })
 

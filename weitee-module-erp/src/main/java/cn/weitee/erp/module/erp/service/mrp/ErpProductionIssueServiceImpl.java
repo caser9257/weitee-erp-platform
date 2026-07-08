@@ -156,6 +156,9 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
         Map<Long, ErpPurchaseInItemDO> purchaseInItemMap = convertMap(
                 erpPurchaseInItemMapper.selectListByIds(purchaseInItemIds),
                 ErpPurchaseInItemDO::getId);
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(reqItems, ErpProductionIssueCreateReqVO.Item::getMaterialId),
+                convertSet(reqItems, ErpProductionIssueCreateReqVO.Item::getWarehouseId));
 
         ErpProductionIssueDO issue = new ErpProductionIssueDO()
                 .setIssueNo(noRedisDAO.generate("SCLL"))
@@ -197,7 +200,8 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
                         stockBatch.getId(), batch.getIssueQty(), ErpStockRecordBizTypeEnum.PRODUCTION_ISSUE.getType(),
                         issue.getId(), issueItem.getId(), issue.getIssueNo(), item.getRemark()));
                 // 获取加权平均成本作为发料价格
-                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                        item.getMaterialId(), item.getWarehouseId()));
                 BigDecimal price = stock != null ? stock.getAverageCost() : null;
                 BigDecimal amount = price != null ? price.multiply(batch.getIssueQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(

@@ -5,7 +5,7 @@
       <el-timeline-item
         v-for="(item, index) in auditLogs"
         :key="index"
-        :timestamp="item.createTime ? dateFormatter2(item.createTime) : '-'"
+        :timestamp="item.createTime ? dateFormatter2(undefined, undefined, item.createTime) : '-'"
         placement="top"
       >
         <div class="text-13px leading-22px">

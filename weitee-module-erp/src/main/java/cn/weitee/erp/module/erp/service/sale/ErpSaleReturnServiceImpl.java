@@ -28,7 +28,10 @@ import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -82,20 +85,22 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
 
     @Resource
     private AdminUserApi adminUserApi;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createSaleReturn(ErpSaleReturnSaveReqVO createReqVO) {
+        validateSaleUser(createReqVO.getSaleUserId());
+        return executeInRequiredTransaction(() -> createSaleReturnInTransaction(createReqVO));
+    }
+
+    Long createSaleReturnInTransaction(ErpSaleReturnSaveReqVO createReqVO) {
         // 1.1 校验销售订单已审核
         ErpSaleOrderDO saleOrder = saleOrderService.validateSaleOrder(createReqVO.getOrderId());
         // 1.2 校验退货项的有效性
         List<ErpSaleReturnItemDO> saleReturnItems = validateSaleReturnItems(createReqVO.getItems());
         // 1.3 校验结算账户
         accountService.validateAccount(createReqVO.getAccountId());
-        // 1.4 校验销售人员
-        if (createReqVO.getSaleUserId() != null) {
-            adminUserApi.validateUser(createReqVO.getSaleUserId());
-        }
         // 1.5 生成退货单号，并校验唯一性
         String no = noRedisDAO.generate(ErpNoRedisDAO.SALE_RETURN_NO_PREFIX);
         if (erpSaleReturnMapper.selectByNo(no) != null) {
@@ -118,8 +123,12 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateSaleReturn(ErpSaleReturnSaveReqVO updateReqVO) {
+        validateSaleUser(updateReqVO.getSaleUserId());
+        executeInRequiredTransaction(() -> updateSaleReturnInTransaction(updateReqVO));
+    }
+
+    void updateSaleReturnInTransaction(ErpSaleReturnSaveReqVO updateReqVO) {
         // 1.1 校验存在
         ErpSaleReturnDO saleReturn = validateSaleReturnExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(saleReturn.getStatus())) {
@@ -129,10 +138,6 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         ErpSaleOrderDO saleOrder = saleOrderService.validateSaleOrder(updateReqVO.getOrderId());
         // 1.3 校验结算账户
         accountService.validateAccount(updateReqVO.getAccountId());
-        // 1.4 校验销售人员
-        if (updateReqVO.getSaleUserId() != null) {
-            adminUserApi.validateUser(updateReqVO.getSaleUserId());
-        }
         // 1.5 校验订单项的有效性
         List<ErpSaleReturnItemDO> saleReturnItems = validateSaleReturnItems(updateReqVO.getItems());
 
@@ -150,6 +155,25 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         if (ObjectUtil.notEqual(saleReturn.getOrderId(), updateObj.getOrderId())) {
             updateSaleOrderReturnCount(saleReturn.getOrderId());
         }
+    }
+
+    private void validateSaleUser(Long saleUserId) {
+        if (saleUserId != null) {
+            adminUserApi.validateUser(saleUserId);
+        }
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     private void calculateTotalPrice(ErpSaleReturnDO saleReturn, List<ErpSaleReturnItemDO> saleReturnItems) {
@@ -201,10 +225,14 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         List<ErpSaleReturnItemDO> saleReturnItems = erpSaleReturnItemMapper.selectListByReturnId(id);
         Integer bizType = approve ? ErpStockRecordBizTypeEnum.SALE_RETURN.getType()
                 : ErpStockRecordBizTypeEnum.SALE_RETURN_CANCEL.getType();
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(saleReturnItems, ErpSaleReturnItemDO::getProductId),
+                convertSet(saleReturnItems, ErpSaleReturnItemDO::getWarehouseId));
         saleReturnItems.forEach(saleReturnItem -> {
             BigDecimal count = approve ? saleReturnItem.getCount() : saleReturnItem.getCount().negate();
             // 获取加权平均成本作为入库价格（退货入库）
-            ErpStockDO stock = stockService.getStock(saleReturnItem.getProductId(), saleReturnItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                    saleReturnItem.getProductId(), saleReturnItem.getWarehouseId()));
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(saleReturnItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(

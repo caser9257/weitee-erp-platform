@@ -330,7 +330,7 @@ const printing = ref(false)
 const navigatingEdit = ref(false)
 const activeTab = ref<'items' | 'logs'>('items')
 const purchaseOrder = ref<PurchaseOrderVO | null>(null)
-const detailRowSnapshot = ref<PurchaseOrderVO>()
+const detailRowSnapshot = ref<Pick<PurchaseOrderVO, 'id'> & Partial<PurchaseOrderVO>>()
 const accountList = ref<AccountVO[]>([])
 const selectedOrderId = ref<number>()
 

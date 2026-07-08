@@ -18,6 +18,7 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +70,21 @@ public class ErpStockServiceImpl implements ErpStockService {
     @Override
     public List<ErpStockDO> getStockListByProductIds(Collection<Long> productIds) {
         return erpStockMapper.selectListByProductIdIn(productIds);
+    }
+
+    @Override
+    public List<ErpStockDO> getStockListByProductAndWarehouseIds(Collection<Long> productIds, Collection<Long> warehouseIds) {
+        return erpStockMapper.selectListByProductIdsAndWarehouseIds(productIds, warehouseIds);
+    }
+
+    @Override
+    public Map<String, ErpStockDO> getStockMapByProductAndWarehouseIds(Collection<Long> productIds, Collection<Long> warehouseIds) {
+        List<ErpStockDO> stockList = getStockListByProductAndWarehouseIds(productIds, warehouseIds);
+        Map<String, ErpStockDO> stockMap = new HashMap<>(stockList.size());
+        for (ErpStockDO stock : stockList) {
+            stockMap.put(ErpStockService.buildProductWarehouseKey(stock.getProductId(), stock.getWarehouseId()), stock);
+        }
+        return stockMap;
     }
 
     @Override

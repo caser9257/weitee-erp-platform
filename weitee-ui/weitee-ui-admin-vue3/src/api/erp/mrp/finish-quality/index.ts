@@ -25,6 +25,12 @@ export interface ProductionFinishQualityVO {
   createTime?: Date | string | number
 }
 
+export interface ProductionFinishQualityPrintDataVO {
+  productionFinishQuality?: ProductionFinishQualityVO
+  productName?: string
+  checkerName?: string
+}
+
 export interface ProductionFinishQualityPageReqVO {
   pageNo: number
   pageSize: number
@@ -48,6 +54,12 @@ export const ProductionFinishQualityApi = {
 
   getProductionFinishQuality: async (id: number) => {
     return await request.get({ url: '/erp/production-finish-quality/get?id=' + id })
+  },
+
+  getProductionFinishQualityPrintData: async (id: number) => {
+    return await request.get<ProductionFinishQualityPrintDataVO>({
+      url: '/erp/production-finish-quality/get-print-data?id=' + id
+    })
   },
 
   submitProductionFinishQuality: async (data: ProductionFinishQualitySubmitReqVO) => {

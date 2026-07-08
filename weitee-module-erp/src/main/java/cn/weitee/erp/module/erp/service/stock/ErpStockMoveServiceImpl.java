@@ -128,11 +128,15 @@ public class ErpStockMoveServiceImpl implements ErpStockMoveService {
                 : ErpStockRecordBizTypeEnum.MOVE_OUT_CANCEL.getType();
         Integer toBizType = approve ? ErpStockRecordBizTypeEnum.MOVE_IN.getType()
                 : ErpStockRecordBizTypeEnum.MOVE_IN_CANCEL.getType();
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(stockMoveItems, ErpStockMoveItemDO::getProductId),
+                convertSet(stockMoveItems, ErpStockMoveItemDO::getFromWarehouseId));
         stockMoveItems.forEach(stockMoveItem -> {
             BigDecimal fromCount = approve ? stockMoveItem.getCount().negate() : stockMoveItem.getCount();
             BigDecimal toCount = approve ? stockMoveItem.getCount() : stockMoveItem.getCount().negate();
             // 获取加权平均成本作为移库价格
-            ErpStockDO stock = stockService.getStock(stockMoveItem.getProductId(), stockMoveItem.getFromWarehouseId());
+            ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                    stockMoveItem.getProductId(), stockMoveItem.getFromWarehouseId()));
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(stockMoveItem.getCount()) : null;
             stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(

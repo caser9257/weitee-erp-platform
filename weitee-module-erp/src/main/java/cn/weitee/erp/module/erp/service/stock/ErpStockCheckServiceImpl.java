@@ -230,9 +230,10 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
         // 批量查询库存（消除 N+1）
         Set<Long> checkProductIds = convertSet(stockCheckItems, ErpStockCheckItemDO::getProductId);
-        List<ErpStockDO> stockList = stockService.getStockListByProductIds(checkProductIds);
+        Set<Long> checkWarehouseIds = convertSet(stockCheckItems, ErpStockCheckItemDO::getWarehouseId);
+        List<ErpStockDO> stockList = stockService.getStockListByProductAndWarehouseIds(checkProductIds, checkWarehouseIds);
         Map<String, ErpStockDO> stockMap = stockList.stream().collect(Collectors.toMap(
-                s -> s.getProductId() + ":" + s.getWarehouseId(), s -> s, (a, b) -> a));
+                s -> ErpStockService.buildProductWarehouseKey(s.getProductId(), s.getWarehouseId()), s -> s, (a, b) -> a));
         stockCheckItems.forEach(stockCheckItem -> {
             // 没有盈亏，不用出入库
             if (stockCheckItem.getCount().compareTo(BigDecimal.ZERO) == 0) {
@@ -245,7 +246,8 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
                     : ErpStockRecordBizTypeEnum.CHECK_LESS_OUT.getType();
 
             // 获取加权平均成本作为盘点价格
-            ErpStockDO stock = stockMap.get(stockCheckItem.getProductId() + ":" + stockCheckItem.getWarehouseId());
+            ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                    stockCheckItem.getProductId(), stockCheckItem.getWarehouseId()));
             BigDecimal price = stock != null ? stock.getAverageCost() : null;
             BigDecimal amount = price != null ? price.multiply(stockCheckItem.getCount().abs()) : null;
 
@@ -301,8 +303,9 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         Set<Long> warehouseIds = stockCheckItems.stream()
                 .map(ErpStockCheckItemDO::getWarehouseId)
                 .collect(Collectors.toSet());
+        Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
         warehouseIds.forEach(warehouseId -> {
-            ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
+            ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
             if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
                 warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
                         .setId(warehouseId).setFrozen(false));
@@ -328,8 +331,9 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             Set<Long> warehouseIds = checkItems.stream()
                     .map(ErpStockCheckItemDO::getWarehouseId)
                     .collect(Collectors.toSet());
+            Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
             warehouseIds.forEach(warehouseId -> {
-                ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
+                ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
                 if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
                     warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
                             .setId(warehouseId).setFrozen(false));

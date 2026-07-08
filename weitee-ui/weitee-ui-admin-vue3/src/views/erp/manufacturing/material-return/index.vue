@@ -113,6 +113,8 @@ import ReturnBatchDialog from './ReturnBatchDialog.vue'
 
 defineOptions({ name: 'ErpManufacturingMaterialReturn' })
 
+type ElementTagType = 'success' | 'warning' | 'primary' | 'info' | 'danger'
+
 const queryFormRef = ref()
 const returnDialogRef = ref<InstanceType<typeof ReturnBatchDialog>>()
 
@@ -145,11 +147,11 @@ const resolveStatusLabel = (status?: number) => {
   return '-'
 }
 
-const resolveStatusType = (status?: number) => {
+const resolveStatusType = (status?: number): ElementTagType => {
   if (status === 10) return 'success'
   if (status === 20) return 'warning'
   if (status === 30) return 'info'
-  return ''
+  return 'info'
 }
 
 const getOrderList = async () => {

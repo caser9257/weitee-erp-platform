@@ -2,6 +2,7 @@ package cn.weitee.erp.module.erp.service.statistics;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * ERP 采购统计 Service 接口
@@ -20,5 +21,7 @@ public interface ErpPurchaseStatisticsService {
      * @return 采购金额
      */
     BigDecimal getPurchasePrice(LocalDateTime beginTime, LocalDateTime endTime);
+
+    Map<String, BigDecimal> getPurchasePriceMapByMonth(LocalDateTime beginTime, LocalDateTime endTime);
 
 }

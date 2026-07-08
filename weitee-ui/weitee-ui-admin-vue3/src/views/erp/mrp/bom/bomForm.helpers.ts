@@ -1,3 +1,5 @@
+import type { BomSaveReqVO } from '@/api/erp/mrp/bom'
+
 export type BomItemSubstituteFormData = {
   id?: number
   substituteMaterialId?: number
@@ -34,15 +36,7 @@ export type BomFormData = {
   items: BomItemFormData[]
 }
 
-export type BomPayload = {
-  id?: number
-  bomCode: string
-  productId: number
-  version?: string
-  status: number
-  remark?: string
-  items: BomItemFormData[]
-}
+export type BomPayload = BomSaveReqVO
 
 export function createEmptyBomItem(): BomItemFormData {
   return {
@@ -187,7 +181,7 @@ export function buildBomPayload(formData: BomFormData): BomPayload {
     remark: normalizedFormData.remark,
     items: normalizedFormData.items.map((item) => ({
       id: item.id,
-      materialId: item.materialId,
+      materialId: item.materialId!,
       materialType: item.materialType,
       unitId: item.unitId,
       usageQty: item.usageQty,
@@ -199,7 +193,7 @@ export function buildBomPayload(formData: BomFormData): BomPayload {
       remark: item.remark,
       substitutes: (item.substitutes || []).map((substitute) => ({
         id: substitute.id,
-        substituteMaterialId: substitute.substituteMaterialId,
+        substituteMaterialId: substitute.substituteMaterialId!,
         substituteMaterialName: substitute.substituteMaterialName,
         priority: substitute.priority,
         replaceRatio: substitute.replaceRatio,

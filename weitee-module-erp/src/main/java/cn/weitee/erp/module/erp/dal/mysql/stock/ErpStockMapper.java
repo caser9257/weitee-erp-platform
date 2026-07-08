@@ -88,6 +88,21 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
                 .in(ErpStockDO::getProductId, productIds));
     }
 
+    /**
+     * 根据产品编号和仓库编号批量查询库存。
+     *
+     * 查询条件按产品集合和仓库集合收敛，调用方再按产品+仓库组合键取值，避免循环内单条查询。
+     */
+    default List<ErpStockDO> selectListByProductIdsAndWarehouseIds(Collection<Long> productIds,
+                                                                   Collection<Long> warehouseIds) {
+        if (CollUtil.isEmpty(productIds) || CollUtil.isEmpty(warehouseIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapperX<ErpStockDO>()
+                .in(ErpStockDO::getProductId, productIds)
+                .in(ErpStockDO::getWarehouseId, warehouseIds));
+    }
+
     default Map<Long, BigDecimal> selectSumMapByProductIds(Collection<Long> productIds) {
         if (CollUtil.isEmpty(productIds)) {
             return Collections.emptyMap();

@@ -23,6 +23,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Resource;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -133,6 +134,14 @@ public class SmsTemplateServiceImpl implements SmsTemplateService {
     @Override
     public Long getSmsTemplateCountByChannelId(Long channelId) {
         return smsTemplateMapper.selectCountByChannelId(channelId);
+    }
+
+    @Override
+    public boolean hasSmsTemplateByChannelIds(Collection<Long> channelIds) {
+        if (channelIds == null || channelIds.isEmpty()) {
+            return false;
+        }
+        return smsTemplateMapper.selectCountByChannelIds(channelIds) > 0;
     }
 
     @VisibleForTesting

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { deriveRecheckFinalCounts } from './recheckForm.ts'
+import { deriveRecheckFinalCounts } from './recheckForm'
 
 const shouldSetAllCountsToPassAfterFullRecheck = () => {
   const result = deriveRecheckFinalCounts({

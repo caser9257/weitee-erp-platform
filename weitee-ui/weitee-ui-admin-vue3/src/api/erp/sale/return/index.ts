@@ -5,11 +5,47 @@ export interface SaleReturnVO {
   id: number // 销售退货编号
   no: string // 销售退货号
   customerId: number // 客户编号
+  customerName?: string // 客户名称
+  accountId?: number // 结算账户编号
+  accountName?: string // 结算账户名称
+  saleUserId?: number // 退货员编号
   returnTime: Date // 退货时间
+  orderId?: number // 销售订单编号
+  orderNo?: string // 销售订单号
   totalCount: number // 合计数量
   totalPrice: number // 合计金额，单位：元
+  refundPrice?: number // 已退款金额，单位：元
+  totalProductPrice?: number // 合计产品价格，单位：元
+  totalTaxPrice?: number // 合计税额，单位：元
+  discountPercent?: number // 优惠率，百分比
+  discountPrice?: number // 优惠金额，单位：元
+  otherPrice?: number // 其它金额，单位：元
+  fileUrl?: string // 附件地址
   status: number // 状态
   remark: string // 备注
+  creator?: string // 创建人
+  creatorName?: string // 创建人名称
+  createTime?: string | Date | number // 创建时间
+  items?: SaleReturnItemVO[] // 退货项列表
+  productNames?: string // 产品信息
+  warehouseName?: string // 仓库名称
+}
+
+export interface SaleReturnItemVO {
+  id?: number
+  orderItemId?: number
+  warehouseId?: number
+  productId?: number
+  productUnitId?: number
+  productPrice?: number
+  count?: number
+  taxPercent?: number
+  taxPrice?: number
+  remark?: string
+  productName?: string
+  productBarCode?: string
+  productUnitName?: string
+  stockCount?: number
 }
 
 // ERP 销售退货 API

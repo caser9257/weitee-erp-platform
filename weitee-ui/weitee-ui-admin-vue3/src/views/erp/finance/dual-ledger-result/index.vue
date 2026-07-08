@@ -527,7 +527,8 @@ const handleConfirmExport = async () => {
       bizId: row.bizId!,
       ledgerSide: exportLedgerSide.value
     })
-    // 文件名使用中性标题，不含账簿名    const bizNo = row.bizNo || '鍑瘉鏄庣粏瀵煎嚭'
+    // 文件名使用中性标题，不含账簿名
+    const bizNo = row.bizNo || '鍑瘉鏄庣粏瀵煎嚭'
     const fileName = bizNo === '鍑瘉鏄庣粏瀵煎嚭' ? '鍑瘉鏄庣粏瀵煎嚭.xlsx' : `${bizNo}-鍑瘉鏄庣粏瀵煎嚭.xlsx`
     download.excel(data, fileName)
     message.success('导出成功')

@@ -25,7 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static cn.hutool.core.date.DatePattern.PURE_DATE_PATTERN;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -273,9 +275,10 @@ public class FileServiceImpl implements FileService {
         }
 
         // 批量删除
+        Map<Long, FileClient> clientMap = new HashMap<>();
         for (FileDO file : recycleFiles) {
             try {
-                FileClient client = fileConfigService.getFileClient(file.getConfigId());
+                FileClient client = clientMap.computeIfAbsent(file.getConfigId(), fileConfigService::getFileClient);
                 if (client != null) {
                     client.delete(file.getPath());
                 }

@@ -5,7 +5,10 @@ import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.weitee.erp.module.system.controller.admin.sms.vo.template.SmsTemplatePageReqVO;
 import cn.weitee.erp.module.system.dal.dataobject.sms.SmsTemplateDO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
+
+import java.util.Collection;
 
 @Mapper
 public interface SmsTemplateMapper extends BaseMapperX<SmsTemplateDO> {
@@ -28,6 +31,10 @@ public interface SmsTemplateMapper extends BaseMapperX<SmsTemplateDO> {
 
     default Long selectCountByChannelId(Long channelId) {
         return selectCount(SmsTemplateDO::getChannelId, channelId);
+    }
+
+    default Long selectCountByChannelIds(Collection<Long> channelIds) {
+        return selectCount(new LambdaQueryWrapper<SmsTemplateDO>().in(SmsTemplateDO::getChannelId, channelIds));
     }
 
 }

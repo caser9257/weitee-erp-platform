@@ -170,7 +170,7 @@
   </el-form>
 </template>
 <script setup lang="ts">
-import type { SummaryMethodProps } from 'element-plus'
+import type { SummaryMethod } from 'element-plus'
 import { StockApi } from '@/api/erp/stock/stock'
 import {
   erpCountInputFormatter,
@@ -234,7 +234,7 @@ watch(
 )
 
 /** 合计 */
-const getSummaries = (param: SummaryMethodProps) => {
+const getSummaries: SummaryMethod<any> = (param) => {
   const { columns, data } = param
   const sums: string[] = []
   columns.forEach((column, index: number) => {
@@ -276,6 +276,13 @@ const handleAdd = () => {
 /** 删除按钮操作 */
 const handleDelete = (index: number) => {
   formData.value.splice(index, 1)
+}
+
+/** 仓库变更 */
+const onChangeWarehouse = async (warehouseId: number | undefined, row: any) => {
+  row.warehouseId = warehouseId
+  row.stockCount = undefined
+  await setStockCount(row)
 }
 
 /** 加载库存 */

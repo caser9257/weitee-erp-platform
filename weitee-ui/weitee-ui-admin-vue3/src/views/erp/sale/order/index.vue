@@ -703,7 +703,7 @@ import { UserVO } from '@/api/system/user'
 import * as UserApi from '@/api/system/user'
 import { resolveErpAuditStatusLabel, resolveErpAuditStatusTagType } from '@/utils/erpAuditStatus'
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
-import { ProjectApi, ProjectVO } from '@/api/erp/project'
+import { ProjectApi, type ProjectSimpleVO } from '@/api/erp/project'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { checkPermi } from '@/utils/permission'
 import {
@@ -771,7 +771,7 @@ const queryParams = reactive({
 const queryFormRef = ref()
 const exportLoading = ref(false)
 const closureWorkbenchNavigating = ref(false)
-const projectList = ref<ProjectVO[]>([])
+const projectList = ref<ProjectSimpleVO[]>([])
 const productList = ref<ProductVO[]>([])
 const customerList = ref<CustomerVO[]>([])
 const userList = ref<UserVO[]>([])

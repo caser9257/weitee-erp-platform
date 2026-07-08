@@ -9,12 +9,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
@@ -44,6 +43,8 @@ public class StockAlertListener {
     private ErpPurchaseSuggestMapper erpPurchaseSuggestMapper;
     @Resource
     private RedissonClient redissonClient;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     /**
      * 处理库存低于安全库存事件
@@ -52,9 +53,12 @@ public class StockAlertListener {
      * - 注意：不使用 @Async，因为 @Async 会在新线程执行，导致 AFTER_COMMIT 语义不可靠
      *   （原始事务上下文在新线程中不存在，事件可能在事务未提交时就开始处理）
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onStockBelowSafety(StockBelowSafetyEvent event) {
+        handleStockBelowSafety(event);
+    }
+
+    private void handleStockBelowSafety(StockBelowSafetyEvent event) {
         try {
             log.info("[onStockBelowSafety] 库存预警：productId={}, warehouseId={}, current={}, safety={}, shortage={}",
                     event.getProductId(), event.getWarehouseId(), event.getCurrentCount(), event.getSafetyStock(), event.getShortage());
@@ -67,9 +71,9 @@ public class StockAlertListener {
                 return;
             }
             try {
-                createPurchaseSuggestIfAbsent(event);
+                executeInRequiresNewTransaction(() -> createPurchaseSuggestIfAbsent(event));
             } finally {
-                unlockAfterTransaction(lock);
+                unlockIfHeld(lock);
             }
 
         } catch (Exception e) {
@@ -77,6 +81,12 @@ public class StockAlertListener {
             log.error("[onStockBelowSafety] 处理库存预警事件失败，需人工介入或定时重试，productId={}, warehouseId={}",
                     event.getProductId(), event.getWarehouseId(), e);
         }
+    }
+
+    private void executeInRequiresNewTransaction(Runnable runnable) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        transactionTemplate.executeWithoutResult(status -> runnable.run());
     }
 
     private void createPurchaseSuggestIfAbsent(StockBelowSafetyEvent event) {
@@ -114,19 +124,6 @@ public class StockAlertListener {
 
             log.info("[onStockBelowSafety] 采购建议创建成功，id={}, productId={}, warehouseId={}, qty={}",
                     suggest.getId(), event.getProductId(), event.getWarehouseId(), suggestQty);
-    }
-
-    private void unlockAfterTransaction(RLock lock) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            unlockIfHeld(lock);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                unlockIfHeld(lock);
-            }
-        });
     }
 
     private void unlockIfHeld(RLock lock) {

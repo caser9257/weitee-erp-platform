@@ -39,6 +39,7 @@ import java.util.Map;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
+import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_MATERIAL_ORDER_MISMATCH;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_MATERIAL_QTY_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_ORDER_NOT_EXISTS;
@@ -140,6 +141,9 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                 item -> ObjectUtil.defaultIfNull(item.getReturnQty(), BigDecimal.ZERO),
                 BigDecimal::add);
         Map<Long, BigDecimal> requestReturnedQtyMap = new HashMap<>();
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(reqVO.getItems(), ErpProductionReturnCreateReqVO.Item::getMaterialId),
+                convertSet(reqVO.getItems(), ErpProductionReturnCreateReqVO.Item::getWarehouseId));
 
         ErpProductionReturnDO productionReturn = new ErpProductionReturnDO()
                 .setReturnNo(noRedisDAO.generate("SCTL"))
@@ -183,7 +187,8 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                         batch.getStockBatchId(), batch.getReturnQty(), ErpStockRecordBizTypeEnum.PRODUCTION_RETURN.getType(),
                         productionReturn.getId(), returnItem.getId(), productionReturn.getReturnNo(), item.getRemark()));
                 // 获取加权平均成本作为退料价格
-                ErpStockDO stock = stockService.getStock(item.getMaterialId(), item.getWarehouseId());
+                ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                        item.getMaterialId(), item.getWarehouseId()));
                 BigDecimal price = stock != null ? stock.getAverageCost() : null;
                 BigDecimal amount = price != null ? price.multiply(batch.getReturnQty()) : null;
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(

@@ -170,6 +170,11 @@ import {
 
 defineOptions({ name: 'ErpPurchaseInQuality' })
 
+type QualityActionStatus =
+  | typeof PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING
+  | typeof PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK
+  | typeof PURCHASE_IN_QUALITY_STATUS.RECHECKING
+
 const router = useRouter()
 const message = useMessage()
 const userStore = useUserStoreWithOut()
@@ -236,13 +241,14 @@ const getQualityResultTagType = (result?: number) => {
 }
 
 const canAssignChecker = (row: PurchaseInQualityVO) => {
+  const assignableStatuses: readonly QualityActionStatus[] = [
+    PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING,
+    PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK,
+    PURCHASE_IN_QUALITY_STATUS.RECHECKING
+  ]
   return (
     hasAssignCheckerPermission &&
-    [
-      PURCHASE_IN_QUALITY_STATUS.FIRST_CHECKING,
-      PURCHASE_IN_QUALITY_STATUS.WAIT_RECHECK,
-      PURCHASE_IN_QUALITY_STATUS.RECHECKING
-    ].includes(Number(row.status))
+    assignableStatuses.includes(Number(row.status) as QualityActionStatus)
   )
 }
 

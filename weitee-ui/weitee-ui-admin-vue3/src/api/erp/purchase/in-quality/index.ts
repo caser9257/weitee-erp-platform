@@ -118,6 +118,14 @@ export interface PurchaseInQualityVO {
   defects?: PurchaseInQualityDefectVO[]
 }
 
+export interface PurchaseInQualityPrintDataVO {
+  purchaseInQuality?: PurchaseInQualityVO
+  sourceAttachments?: Array<{
+    name?: string
+    url?: string
+  }>
+}
+
 export interface PurchaseInQualityCreateReqVO {
   purchaseInId: number
 }
@@ -183,6 +191,12 @@ export const PurchaseInQualityApi = {
   getPurchaseInQualityByPurchaseInId: async (purchaseInId: number) => {
     return await request.get({
       url: `/erp/purchase-in-quality/get-by-purchase-in-id?purchaseInId=` + purchaseInId
+    })
+  },
+
+  getPurchaseInQualityPrintData: async (id: number) => {
+    return await request.get<PurchaseInQualityPrintDataVO>({
+      url: `/erp/purchase-in-quality/get-print-data?id=${id}`
     })
   },
 

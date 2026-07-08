@@ -422,7 +422,7 @@ const navigatingEdit = ref(false)
 const activeTab = ref<'items' | 'logs'>('items')
 const infoExpanded = ref(true)
 const purchaseOrder = ref<PurchaseOrderVO | null>(null)
-const detailRowSnapshot = ref<PurchaseOrderVO>()
+const detailRowSnapshot = ref<Pick<PurchaseOrderVO, 'id'> & Partial<PurchaseOrderVO>>()
 const accountList = ref<AccountVO[]>([])
 const selectedOrderId = ref<number>()
 

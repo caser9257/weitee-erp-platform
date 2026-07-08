@@ -13,6 +13,37 @@ export interface StockInVO {
   remark: string // 备注
 }
 
+export interface StockInItemVO {
+  id?: number
+  warehouseId?: number
+  productId?: number
+  productPrice?: number
+  count?: number
+  remark?: string
+  productName?: string
+  productBarCode?: string
+  productUnitName?: string
+  stockCount?: number
+}
+
+export interface StockInVO {
+  supplierName?: string
+  fileUrl?: string
+  creator?: string
+  creatorName?: string
+  createTime?: Date | string | number
+  items?: StockInItemVO[]
+  productNames?: string
+}
+
+export interface StockInPrintDataVO {
+  stockIn?: StockInVO
+  sourceAttachments?: Array<{
+    name?: string
+    url?: string
+  }>
+}
+
 export interface StockInSubmitReqVO {
   id: number
   startUserSelectAssignees?: Record<string, number[]>
@@ -36,6 +67,13 @@ export const StockInApi = {
   },
 
   // 新增其它入库单
+  // 鏌ヨ鍏跺畠鍏ュ簱鎵撳嵃鏁版嵁
+  getStockInPrintData: async (id: number) => {
+    return await request.get<StockInPrintDataVO>({
+      url: `/erp/stock-in/get-print-data?id=${id}`
+    })
+  },
+
   createStockIn: async (data: StockInVO) => {
     return await request.post({ url: `/erp/stock-in/create`, data })
   },

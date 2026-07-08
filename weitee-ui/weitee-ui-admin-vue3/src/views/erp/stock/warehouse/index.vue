@@ -143,7 +143,7 @@
                 {{ row.name || '-' }}
               </div>
               <div class="ledger-warehouse__meta">
-                <Icon icon="ep:box" class="mr-2px" /> {{ row.code || '-' }}
+                <Icon icon="ep:box" class="mr-2px" /> {{ row.categoryName || `#${row.id}` }}
               </div>
               <div class="ledger-warehouse__meta">
                 <Icon icon="ep:user" class="mr-2px" /> 负责人 {{ row.principal || '-' }}
@@ -432,10 +432,8 @@ const handleCopy = (row: WarehouseRow) => {
     if (formRef.value?.setFields) {
       formRef.value.setFields({
         name: `${row.name} - 副本`,
-        code: row.code ? `${row.code}_copy` : undefined,
         categoryId: row.categoryId,
         principal: row.principal,
-        phone: row.phone,
         address: row.address,
         warehousePrice: row.warehousePrice,
         truckagePrice: row.truckagePrice,

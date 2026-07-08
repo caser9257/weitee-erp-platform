@@ -32,9 +32,12 @@ import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -92,10 +95,16 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     private AdminUserApi adminUserApi;
     @Resource
     private RedissonClient redissonClient;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createFinanceReceipt(ErpFinanceReceiptSaveReqVO createReqVO) {
+        validateFinanceUser(createReqVO.getFinanceUserId());
+        return executeInRequiredTransaction(() -> createFinanceReceiptInTransaction(createReqVO));
+    }
+
+    Long createFinanceReceiptInTransaction(ErpFinanceReceiptSaveReqVO createReqVO) {
         // 1.1 校验订单项的有效性
         List<ErpFinanceReceiptItemDO> receiptItems = validateFinanceReceiptItems(
                 createReqVO.getCustomerId(), createReqVO.getItems());
@@ -104,10 +113,6 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         // 1.3 校验结算账户
         if (createReqVO.getAccountId() != null) {
             accountService.validateAccount(createReqVO.getAccountId());
-        }
-        // 1.4 校验财务人员
-        if (createReqVO.getFinanceUserId() != null) {
-            adminUserApi.validateUser(createReqVO.getFinanceUserId());
         }
         // 1.5 生成收款单号，并校验唯一性
         String no = noRedisDAO.generate(ErpNoRedisDAO.FINANCE_RECEIPT_NO_PREFIX);
@@ -128,8 +133,12 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateFinanceReceipt(ErpFinanceReceiptSaveReqVO updateReqVO) {
+        validateFinanceUser(updateReqVO.getFinanceUserId());
+        executeInRequiredTransaction(() -> updateFinanceReceiptInTransaction(updateReqVO));
+    }
+
+    void updateFinanceReceiptInTransaction(ErpFinanceReceiptSaveReqVO updateReqVO) {
         // 1.1 校验存在
         ErpFinanceReceiptDO receipt = validateFinanceReceiptExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(receipt.getStatus())) {
@@ -141,10 +150,6 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         if (updateReqVO.getAccountId() != null) {
             accountService.validateAccount(updateReqVO.getAccountId());
         }
-        // 1.4 校验财务人员
-        if (updateReqVO.getFinanceUserId() != null) {
-            adminUserApi.validateUser(updateReqVO.getFinanceUserId());
-        }
         // 1.5 校验收款单项的有效性
         List<ErpFinanceReceiptItemDO> receiptItems = validateFinanceReceiptItems(
                 updateReqVO.getCustomerId(), updateReqVO.getItems());
@@ -155,6 +160,25 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         erpFinanceReceiptMapper.updateById(updateObj);
         // 2.2 更新收款单项
         updateFinanceReceiptItemList(updateReqVO.getId(), receiptItems);
+    }
+
+    private void validateFinanceUser(Long financeUserId) {
+        if (financeUserId != null) {
+            adminUserApi.validateUser(financeUserId);
+        }
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     private void calculateTotalPrice(ErpFinanceReceiptDO receipt, List<ErpFinanceReceiptItemDO> receiptItems) {

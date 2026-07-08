@@ -32,6 +32,10 @@ public interface DictDataMapper extends BaseMapperX<DictDataDO> {
         return selectCount(DictDataDO::getDictType, dictType);
     }
 
+    default long selectCountByDictTypes(Collection<String> dictTypes) {
+        return selectCount(new LambdaQueryWrapper<DictDataDO>().in(DictDataDO::getDictType, dictTypes));
+    }
+
     default PageResult<DictDataDO> selectPage(DictDataPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<DictDataDO>()
                 .likeIfPresent(DictDataDO::getLabel, reqVO.getLabel())

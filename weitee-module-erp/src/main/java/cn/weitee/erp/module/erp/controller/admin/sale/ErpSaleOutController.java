@@ -11,6 +11,7 @@ import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.out.ErpSaleOutPageReqVO;
+import cn.weitee.erp.module.erp.controller.admin.sale.vo.out.ErpSaleOutPrintDataRespVO;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.out.ErpSaleOutRespVO;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpCustomerDO;
@@ -35,6 +36,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -118,6 +120,21 @@ public class ErpSaleOutController {
                 }))));
     }
 
+    @GetMapping("/get-print-data")
+    @Operation(summary = "获得销售出库打印数据")
+    @Parameter(name = "id", description = "编号", required = true, example = "1024")
+    @PreAuthorize("@ss.hasPermission('erp:sale-out:query')")
+    public CommonResult<ErpSaleOutPrintDataRespVO> getSaleOutPrintData(@RequestParam("id") Long id) {
+        ErpSaleOutRespVO saleOut = getSaleOut(id).getData();
+        if (saleOut == null) {
+            return success(null);
+        }
+        ErpSaleOutPrintDataRespVO printData = new ErpSaleOutPrintDataRespVO();
+        printData.setSaleOut(saleOut);
+        printData.setSourceAttachments(buildSaleOutSourceAttachments(saleOut.getFileUrl()));
+        return success(printData);
+    }
+
     @GetMapping("/page")
     @Operation(summary = "获得销售出库分页")
     @PreAuthorize("@ss.hasPermission('erp:sale-out:query')")
@@ -136,6 +153,28 @@ public class ErpSaleOutController {
         List<ErpSaleOutRespVO> list = buildSaleOutVOPageResult(saleOutService.getSaleOutPage(pageReqVO)).getList();
         // 导出 Excel
         ExcelUtils.write(response, "销售出库.xls", "数据", ErpSaleOutRespVO.class, list);
+    }
+
+    private List<ErpSaleOutPrintDataRespVO.SourceAttachment> buildSaleOutSourceAttachments(String fileUrl) {
+        if (StrUtil.isBlank(fileUrl)) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(fileUrl.split(","))
+                .map(String::trim)
+                .filter(StrUtil::isNotBlank)
+                .map(url -> {
+                    ErpSaleOutPrintDataRespVO.SourceAttachment attachment = new ErpSaleOutPrintDataRespVO.SourceAttachment();
+                    attachment.setUrl(url);
+                    attachment.setName(resolveAttachmentName(url));
+                    return attachment;
+                })
+                .toList();
+    }
+
+    private String resolveAttachmentName(String url) {
+        String cleanUrl = url.split("\\?")[0].split("#")[0];
+        String[] segments = cleanUrl.split("/");
+        return segments.length == 0 ? "附件" : segments[segments.length - 1];
     }
 
     private PageResult<ErpSaleOutRespVO> buildSaleOutVOPageResult(PageResult<ErpSaleOutDO> pageResult) {

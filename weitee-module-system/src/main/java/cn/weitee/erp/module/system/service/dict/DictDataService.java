@@ -89,6 +89,14 @@ public interface DictDataService {
     long getDictDataCountByDictType(String dictType);
 
     /**
+     * 判断指定字典类型下是否存在字典数据
+     *
+     * @param dictTypes 字典类型集合
+     * @return 是否存在字典数据
+     */
+    boolean hasDictDataByDictTypes(Collection<String> dictTypes);
+
+    /**
      * 校验字典数据们是否有效。如下情况，视为无效：
      * 1. 字典数据不存在
      * 2. 字典数据被禁用

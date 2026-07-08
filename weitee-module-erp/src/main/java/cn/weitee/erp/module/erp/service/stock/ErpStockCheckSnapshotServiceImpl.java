@@ -14,6 +14,9 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
+import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 
 /**
  * ERP 盘点快照 Service 实现类
@@ -50,10 +53,14 @@ public class ErpStockCheckSnapshotServiceImpl implements ErpStockCheckSnapshotSe
         // 3. 生成快照
         LocalDateTime snapshotTime = LocalDateTime.now();
         int count = 0;
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(checkItems, ErpStockCheckItemDO::getProductId),
+                convertSet(checkItems, ErpStockCheckItemDO::getWarehouseId));
 
         for (ErpStockCheckItemDO item : checkItems) {
             // 获取当前库存
-            ErpStockDO stock = stockService.getStock(item.getProductId(), item.getWarehouseId());
+            ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                    item.getProductId(), item.getWarehouseId()));
 
             // 构建快照记录
             ErpStockCheckSnapshotDO snapshot = ErpStockCheckSnapshotDO.builder()

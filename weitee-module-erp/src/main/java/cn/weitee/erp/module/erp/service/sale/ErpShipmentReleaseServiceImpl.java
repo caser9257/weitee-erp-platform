@@ -23,9 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -65,6 +66,8 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     private CrmContractService crmContractService;
     @Resource
     private RedissonClient redissonClient;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
     public ShipmentReleaseResultVO checkRelease(Long orderId) {
@@ -520,30 +523,22 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createSaleOutFromRelease(Long orderId, Long warehouseId, Long userId) {
         RLock lock = redissonClient.getLock("erp:shipment-release:create-sale-out:" + orderId);
         if (!lock.tryLock()) {
             throw exception(SALE_OUT_ALREADY_EXISTS);
         }
         try {
-            return doCreateSaleOutFromRelease(orderId, warehouseId);
+            return executeInRequiredTransaction(() -> doCreateSaleOutFromRelease(orderId, warehouseId));
         } finally {
-            unlockAfterTransaction(lock);
+            unlockIfHeld(lock);
         }
     }
 
-    private void unlockAfterTransaction(RLock lock) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            unlockIfHeld(lock);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                unlockIfHeld(lock);
-            }
-        });
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
     }
 
     private void unlockIfHeld(RLock lock) {

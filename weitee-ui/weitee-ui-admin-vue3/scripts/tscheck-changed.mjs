@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const scriptDir = path.dirname(__filename)
 const workspaceDir = path.resolve(scriptDir, '..')
-const workspaceRelativeRoot = 'yudao-ui/yudao-ui-admin-vue3'
 const relevantExtensions = ['.ts', '.tsx', '.vue', '.d.ts']
 
 const runCommand = (command, args, options = {}) => {
@@ -35,6 +34,9 @@ const runGitCommand = (args) => {
   const gitCommand = `& git ${args.map(escapePowerShellArgument).join(' ')}`
   return runCommand('powershell.exe', ['-NoProfile', '-Command', gitCommand])
 }
+
+const repoRoot = runGitCommand(['rev-parse', '--show-toplevel']).trim()
+const workspaceRelativeRoot = path.relative(repoRoot, workspaceDir).split(path.sep).join('/')
 
 const isRelevantFile = (filePath) => {
   if (filePath.endsWith('.d.ts')) {
@@ -102,8 +104,12 @@ const getChangedFiles = () => {
   const trackedStaged = readGitLines(['diff', '--cached', '--name-only', '--diff-filter=ACMR', '--', '.'])
   const untracked = readGitLines(['ls-files', '--others', '--exclude-standard', '--', '.'])
   return [...trackedUnstaged, ...trackedStaged, ...untracked]
-    .map((relativePath) => path.resolve(workspaceDir, relativePath))
+    .map((relativePath) => path.resolve(repoRoot, relativePath))
     .filter((absolutePath) => fs.existsSync(absolutePath))
+    .filter((absolutePath) => {
+      const relativePath = path.relative(workspaceDir, absolutePath)
+      return !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
+    })
     .filter(isRelevantFile)
 }
 

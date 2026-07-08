@@ -579,6 +579,9 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void updateSaleOrderOutCount(Long id, Map<Long, BigDecimal> outCountMap) {
         List<ErpSaleOrderItemDO> orderItems = erpSaleOrderItemMapper.selectListByOrderId(id);
+        Map<Long, ErpProductDO> productMap = convertMap(
+                productService.validProductList(convertSet(orderItems, ErpSaleOrderItemDO::getProductId)),
+                ErpProductDO::getId);
         // 1. 更新每个销售订单项
         orderItems.forEach(item -> {
             BigDecimal outCount = outCountMap.getOrDefault(item.getId(), BigDecimal.ZERO);
@@ -587,7 +590,7 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
             }
             if (outCount.compareTo(item.getCount()) > 0) {
                 throw exception(SALE_ORDER_ITEM_OUT_FAIL_PRODUCT_EXCEED,
-                        productService.getProduct(item.getProductId()).getName(), item.getCount());
+                        productMap.get(item.getProductId()).getName(), item.getCount());
             }
             erpSaleOrderItemMapper.updateById(new ErpSaleOrderItemDO().setId(item.getId()).setOutCount(outCount));
         });
@@ -601,6 +604,9 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
     @Transactional(rollbackFor = Exception.class)
     public void updateSaleOrderReturnCount(Long orderId, Map<Long, BigDecimal> returnCountMap) {
         List<ErpSaleOrderItemDO> orderItems = erpSaleOrderItemMapper.selectListByOrderId(orderId);
+        Map<Long, ErpProductDO> productMap = convertMap(
+                productService.validProductList(convertSet(orderItems, ErpSaleOrderItemDO::getProductId)),
+                ErpProductDO::getId);
         // 1. 更新每个销售订单项
         orderItems.forEach(item -> {
             BigDecimal returnCount = returnCountMap.getOrDefault(item.getId(), BigDecimal.ZERO);
@@ -609,7 +615,7 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
             }
             if (returnCount.compareTo(item.getOutCount()) > 0) {
                 throw exception(SALE_ORDER_ITEM_RETURN_FAIL_OUT_EXCEED,
-                        productService.getProduct(item.getProductId()).getName(), item.getOutCount());
+                        productMap.get(item.getProductId()).getName(), item.getOutCount());
             }
             erpSaleOrderItemMapper.updateById(new ErpSaleOrderItemDO().setId(item.getId()).setReturnCount(returnCount));
         });

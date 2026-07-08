@@ -74,10 +74,8 @@ public class MailAccountServiceImpl implements MailAccountService {
             allEntries = true) // allEntries 清空所有缓存，因为 Spring Cache 不支持按照 ids 批量删除
     public void deleteMailAccountList(List<Long> ids) {
         // 1. 校验是否存在关联模版
-        for (Long id : ids) {
-            if (mailTemplateService.getMailTemplateCountByAccountId(id) > 0) {
-                throw exception(MAIL_ACCOUNT_RELATE_TEMPLATE_EXISTS);
-            }
+        if (mailTemplateService.hasMailTemplateByAccountIds(ids)) {
+            throw exception(MAIL_ACCOUNT_RELATE_TEMPLATE_EXISTS);
         }
 
         // 2. 批量删除

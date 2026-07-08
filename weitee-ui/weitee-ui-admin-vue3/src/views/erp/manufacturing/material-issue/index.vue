@@ -190,6 +190,8 @@ import IssuePrintDialog from './IssuePrintDialog.vue'
 
 defineOptions({ name: 'ErpManufacturingMaterialIssue' })
 
+type ElementTagType = 'success' | 'warning' | 'primary' | 'info' | 'danger'
+
 const queryFormRef = ref()
 const issueDialogRef = ref<InstanceType<typeof IssueBatchDialog>>()
 
@@ -239,14 +241,14 @@ const resolveStatusLabel = (status?: number) => {
   return '-'
 }
 
-const resolveStatusType = (status?: number) => {
+const resolveStatusType = (status?: number): ElementTagType => {
   if (status === 10) return 'success'
   if (status === 20) return 'warning'
   if (status === 30) return 'info'
-  return ''
+  return 'info'
 }
 
-const resolveIssueStatusType = (status?: number) => {
+const resolveIssueStatusType = (status?: number): ElementTagType => {
   if (status === 20) return 'success'
   if (status === 30) return 'info'
   return 'warning'

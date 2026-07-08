@@ -456,6 +456,7 @@ import { checkPermi } from '@/utils/permission'
 defineOptions({ name: 'ErpSaleOrderMrpTraceView' })
 
 type SuggestTagType = 'info' | 'warning' | 'primary' | 'success' | 'danger'
+type ElementTagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 
 const DELIVERY_READY_STATUS = {
   NOT_READY: 'NOT_READY',
@@ -478,7 +479,7 @@ const closureStageLabelMap: Record<string, string> = {
   CLOSED: '已闭环'
 }
 
-const closureStageTagTypeMap: Record<string, string> = {
+const closureStageTagTypeMap: Record<string, ElementTagType> = {
   WAIT_SALE_APPROVAL: 'danger',
   WAIT_PURCHASE_SUGGEST_CONFIRM: 'warning',
   WAIT_PURCHASE_ORDER_CONVERT: 'warning',
@@ -620,7 +621,7 @@ const resolveDeliveryReadyLabel = (status?: string) => {
   return '暂无可发'
 }
 
-const resolveDeliveryReadyTagType = (status?: string) => {
+const resolveDeliveryReadyTagType = (status?: string): ElementTagType => {
   if (status === DELIVERY_READY_STATUS.PART_READY) {
     return 'warning'
   }
@@ -637,7 +638,7 @@ const resolveClosureStageLabel = (stage?: string) => {
   return closureStageLabelMap[stage] || stage
 }
 
-const resolveClosureStageTagType = (stage?: string) => {
+const resolveClosureStageTagType = (stage?: string): ElementTagType => {
   if (!stage) {
     return 'info'
   }

@@ -6,6 +6,7 @@ import cn.weitee.erp.module.system.controller.admin.sms.vo.template.SmsTemplateS
 import cn.weitee.erp.module.system.dal.dataobject.sms.SmsTemplateDO;
 
 import jakarta.validation.Valid;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +78,14 @@ public interface SmsTemplateService {
      * @return 数量
      */
     Long getSmsTemplateCountByChannelId(Long channelId);
+
+    /**
+     * 判断指定短信渠道下是否存在短信模板
+     *
+     * @param channelIds 短信渠道编号集合
+     * @return 是否存在短信模板
+     */
+    boolean hasSmsTemplateByChannelIds(Collection<Long> channelIds);
 
     /**
      * 格式化短信内容

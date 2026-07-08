@@ -13,6 +13,37 @@ export interface StockOutVO {
   remark: string // 备注
 }
 
+export interface StockOutItemVO {
+  id?: number
+  warehouseId?: number
+  productId?: number
+  productPrice?: number
+  count?: number
+  remark?: string
+  productName?: string
+  productBarCode?: string
+  productUnitName?: string
+  stockCount?: number
+}
+
+export interface StockOutVO {
+  customerName?: string
+  fileUrl?: string
+  creator?: string
+  creatorName?: string
+  createTime?: Date | string | number
+  items?: StockOutItemVO[]
+  productNames?: string
+}
+
+export interface StockOutPrintDataVO {
+  stockOut?: StockOutVO
+  sourceAttachments?: Array<{
+    name?: string
+    url?: string
+  }>
+}
+
 export interface StockOutSubmitReqVO {
   id: number
   startUserSelectAssignees?: Record<string, number[]>
@@ -36,6 +67,13 @@ export const StockOutApi = {
   },
 
   // 新增其它出库单
+  // 鏌ヨ鍏跺畠鍑哄簱鎵撳嵃鏁版嵁
+  getStockOutPrintData: async (id: number) => {
+    return await request.get<StockOutPrintDataVO>({
+      url: `/erp/stock-out/get-print-data?id=${id}`
+    })
+  },
+
   createStockOut: async (data: StockOutVO) => {
     return await request.post({ url: `/erp/stock-out/create`, data })
   },

@@ -58,6 +58,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -568,6 +569,15 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     @Override
     public ErpFinanceVoucherDO getVoucherByLedgerAndBiz(Long ledgerId, Integer bizType, Long bizId) {
         return erpFinanceVoucherMapper.selectByLedgerIdAndBiz(ledgerId, bizType, bizId);
+    }
+
+    @Override
+    public List<ErpFinanceVoucherDO> getVoucherListByLedgerAndBiz(Long ledgerId, Integer bizType, Collection<Long> bizIds) {
+        if (ledgerId == null || bizType == null || CollUtil.isEmpty(bizIds)) {
+            return Collections.emptyList();
+        }
+        return erpFinanceVoucherMapper.selectListByLedgerIdsAndBizTypeAndBizIds(
+                List.of(ledgerId), bizType, new LinkedHashSet<>(bizIds));
     }
 
     @Override
