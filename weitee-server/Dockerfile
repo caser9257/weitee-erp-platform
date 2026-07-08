@@ -1,5 +1,5 @@
-## Eclipse Temurin 17 长期支持版本
-FROM eclipse-temurin:17-jre
+## Eclipse Temurin 21 长期支持版本；需与 pom.xml 的 java.version=21 保持一致
+FROM eclipse-temurin:21-jre
 
 ## 创建目录，并使用它作为工作目录
 RUN mkdir -p /app
