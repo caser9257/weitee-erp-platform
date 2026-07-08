@@ -20,7 +20,7 @@ import UnoCSS from 'unocss/vite'
 export function createVitePlugins() {
   const root = process.cwd()
   const blockedAutoComponentPathPattern =
-    /(^|[\\/])(?:dist(?:-[^\\/]+)?)(?:[\\/]|$)|(^|[\\/])\.tsconfig\..*\.json$|(^|[\\/])tmp-node-.*\.ts$/
+    /(^|[\\/])(?:dist(?:-[^\\/]+)?)(?:[\\/]|$)|(^|[\\/])\.tsconfig\..*\.json$|(^|[\\/])tmp-node-.*\.ts$|(^|[\\/])auto-.*\.d\.ts$/
 
   // 路径查找
   function pathResolve(dir: string) {
@@ -78,6 +78,7 @@ export function createVitePlugins() {
         }
         return componentPath
       },
+      exclude: [/[\\/]node_modules[\\/]/, /[\\/]\.git[\\/]/, blockedAutoComponentPathPattern],
       globs: ["src/components/**/**.{vue, md}", '!src/components/DiyEditor/components/mobile/**']
     }),
     EslintPlugin({
