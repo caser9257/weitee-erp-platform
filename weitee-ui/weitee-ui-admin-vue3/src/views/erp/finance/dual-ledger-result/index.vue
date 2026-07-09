@@ -49,7 +49,7 @@
         <div class="finance-shell__query-actions">
           <el-button type="primary" :loading="loadingList" @click="handleQuery">
             <Icon icon="ep:search" class="mr-5px" />
-            查询
+            查询
           </el-button>
           <el-button @click="resetQuery">
             <Icon icon="ep:refresh-left" class="mr-5px" />
@@ -101,7 +101,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:office-building" class="finance-shell__column-icon" />
-                  澶栬处鍑瘉
+                  外账凭证
                 </span>
               </template>
               <template #default="{ row }">
@@ -123,7 +123,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:office-building" class="finance-shell__column-icon" />
-                  鍐呰处鍑瘉
+                  内账凭证
                 </span>
               </template>
               <template #default="{ row }">
@@ -145,7 +145,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  差额
+                  差额
                 </span>
               </template>
               <template #default="{ row }">
@@ -187,7 +187,7 @@
                     :disabled="loadingDetail && detailBizId === row.bizId"
                     @click.stop="handleViewDetail(row)"
                   >
-                    查看差额紓
+                    查看差异
                   </el-button>
                   <el-button
                     v-if="canRecompute"
@@ -261,25 +261,25 @@
           <div v-else class="finance-dual-ledger-page__drawer-body">
             <div class="finance-shell__metric-grid finance-dual-ledger-page__drawer-metrics">
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">外部金额</div>
+                <div class="finance-shell__metric-label">外部金额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.externalDebitAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">内部金额</div>
+                <div class="finance-shell__metric-label">内部金额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.internalDebitAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">鍊熸柟差额</div>
+                <div class="finance-shell__metric-label">借方差额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.debitAmountDiff) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">璐锋柟差额</div>
+                <div class="finance-shell__metric-label">贷方差额</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.creditAmountDiff) }}</div>
               </div>
             </div>
 
             <div v-if="detailData?.issueMessages?.length" class="finance-dual-ledger-page__issues">
-              <div class="finance-shell__section-title">问提示</div>
+              <div class="finance-shell__section-title">问题提示</div>
               <div class="finance-dual-ledger-page__issue-list">
                 <div v-for="(item, index) in detailData.issueMessages" :key="`${detailData.bizId}-${index}`" class="finance-dual-ledger-page__issue-item">
                   {{ item }}
@@ -287,7 +287,7 @@
               </div>
             </div>
 
-            <div class="finance-shell__section-title">差额紓鏄庣粏</div>
+            <div class="finance-shell__section-title">差异明细</div>
             <div v-if="selectedDiffItems.length" class="finance-dual-ledger-page__detail-table">
               <el-table :data="selectedDiffItems" stripe class="finance-shell__table finance-shell__table--dense" :show-overflow-tooltip="false">
                 <el-table-column label="差异项" min-width="140">
@@ -302,24 +302,24 @@
                     <span class="finance-shell__muted-text">{{ row.calculationTypeName || '-' }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="内部金额" min-width="120" align="right">
+                <el-table-column label="内部金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalAmount) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="外部金额" min-width="120" align="right">
+                <el-table-column label="外部金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalAmount) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="差额紓閲戦" min-width="120" align="right">
+                <el-table-column label="差异金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono" :class="{ 'text-red-500': Number(row.diffAmount || 0) !== 0 }">
                       {{ formatAmount(row.diffAmount) }}
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="差额紓姣斾緥" min-width="100" align="right">
+                <el-table-column label="差异比例" min-width="100" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__muted-text finance-shell__mono">{{ formatRatio(row.diffRatio) }}</span>
                   </template>
@@ -344,7 +344,7 @@
       </div>
     </el-drawer>
 
-    <!-- 导出套账閫夋嫨寮圭獥 -->
+    <!-- 导出套账选择弹窗 -->
     <el-dialog
       v-model="exportDialogVisible"
       title="选择导出账簿"
@@ -368,8 +368,8 @@
           <div class="finance-dual-ledger-page__export-option-info">
             <div class="finance-dual-ledger-page__export-option-title">{{ exportRow?.externalLedgerName || '外部账簿' }}</div>
             <div class="finance-dual-ledger-page__export-option-desc">
-              <span v-if="exportRow?.externalVoucherNo" class="finance-shell__mono">鍑瘉鍙凤細{{ exportRow.externalVoucherNo }}</span>
-              <span v-else>鏆傛棤鍑瘉</span>
+              <span v-if="exportRow?.externalVoucherNo" class="finance-shell__mono">凭证号：{{ exportRow.externalVoucherNo }}</span>
+              <span v-else>暂无凭证</span>
             </div>
               <div v-if="!hasExternalVoucher(exportRow!)" class="finance-dual-ledger-page__export-option-hint">
                 当前账簿暂无可导出凭证
@@ -394,11 +394,12 @@
           <div class="finance-dual-ledger-page__export-option-info">
             <div class="finance-dual-ledger-page__export-option-title">{{ exportRow?.internalLedgerName || '内部账簿' }}</div>
             <div class="finance-dual-ledger-page__export-option-desc">
-              <span v-if="exportRow?.internalVoucherNo" class="finance-shell__mono">鍑瘉鍙凤細{{ exportRow.internalVoucherNo }}</span>
-              <span v-else>鏆傛棤鍑瘉</span>
+              <span v-if="exportRow?.internalVoucherNo" class="finance-shell__mono">凭证号：{{ exportRow.internalVoucherNo }}</span>
+              <span v-else>暂无凭证</span>
             </div>
             <div v-if="!hasInternalVoucher(exportRow!)" class="finance-dual-ledger-page__export-option-hint">
-              褰撳墠璐︾翱鏆傛棤鍙鍑哄嚟璇?            </div>
+              当前账簿暂无可导出凭证
+            </div>
           </div>
           <div v-if="exportLedgerSide === 'internal'" class="finance-dual-ledger-page__export-option-check">
             <Icon icon="ep:check" />
@@ -414,7 +415,7 @@
           :disabled="!exportRow || (exportLedgerSide === 'external' && !hasExternalVoucher(exportRow)) || (exportLedgerSide === 'internal' && !hasInternalVoucher(exportRow))"
           @click="handleConfirmExport"
         >
-          纭瀵煎嚭
+          确认导出
         </el-button>
       </template>
     </el-dialog>
@@ -473,8 +474,8 @@ const bizTypeOptions = [
   { label: '采购退货', value: ErpBizType.PURCHASE_RETURN },
   { label: '销售出库', value: ErpBizType.SALE_OUT },
   { label: '销售退货', value: ErpBizType.SALE_RETURN },
-  { label: '委入库', value: ErpBizType.OUTSOURCE_INBOUND },
-  { label: '鑷埗入库', value: ErpBizType.PRODUCTION_INBOUND },
+  { label: '委外入库', value: ErpBizType.OUTSOURCE_INBOUND },
+  { label: '自制入库', value: ErpBizType.PRODUCTION_INBOUND },
   { label: '费用报销', value: ErpBizType.FINANCE_EXPENSE }
 ]
 
@@ -490,7 +491,7 @@ const formatAmount = (value?: number) =>
   value == null ? '-' : Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const formatRatio = (value?: number) => (value == null ? '-' : `${Number(value).toFixed(2)}%`)
 
-// 导出套账鐩稿叧鍑芥暟
+// 导出套账相关函数
 const hasExternalVoucher = (row: DualLedgerResultVO) => !!row.externalVoucherId
 const hasInternalVoucher = (row: DualLedgerResultVO) => !!row.internalVoucherId
 const canOpenExport = (row: DualLedgerResultVO) => hasExternalVoucher(row) || hasInternalVoucher(row)
@@ -528,8 +529,8 @@ const handleConfirmExport = async () => {
       ledgerSide: exportLedgerSide.value
     })
     // 文件名使用中性标题，不含账簿名
-    const bizNo = row.bizNo || '鍑瘉鏄庣粏瀵煎嚭'
-    const fileName = bizNo === '鍑瘉鏄庣粏瀵煎嚭' ? '鍑瘉鏄庣粏瀵煎嚭.xlsx' : `${bizNo}-鍑瘉鏄庣粏瀵煎嚭.xlsx`
+    const bizNo = row.bizNo || '凭证明细导出'
+    const fileName = bizNo === '凭证明细导出' ? '凭证明细导出.xlsx' : `${bizNo}-凭证明细导出.xlsx`
     download.excel(data, fileName)
     message.success('导出成功')
     exportDialogVisible.value = false
@@ -599,7 +600,7 @@ const loadDetail = async () => {
   try {
     detailData.value = await DualLedgerResultApi.getDualLedgerResult(detailBizType.value, detailBizId.value)
   } catch {
-    detailError.value = '璇︽儏鍔犺浇澶辫触锛岃绋嶅悗閲嶈瘯'
+    detailError.value = '详情加载失败，请稍后重试'
   } finally {
     loadingDetail.value = false
   }
@@ -620,13 +621,13 @@ const handleRecompute = async (row: DualLedgerResultVO) => {
       bizType: row.bizType,
       bizId: row.bizId
     })
-    message.success('重算鎴愬姛')
+    message.success('重算成功')
     await getList()
     if (detailDrawerVisible.value && detailBizType.value === row.bizType && detailBizId.value === row.bizId) {
       await loadDetail()
     }
   } catch {
-    // 重算澶辫触
+    // 重算失败
   } finally {
     recomputingBizId.value = undefined
   }
@@ -840,7 +841,7 @@ onMounted(() => {
   }
 }
 
-/* 导出套账寮圭獥鏍峰紡 */
+/* 导出套账弹窗样式 */
 .finance-dual-ledger-page__export-options {
   display: flex;
   flex-direction: column;

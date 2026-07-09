@@ -107,6 +107,25 @@ class ErpStockOutBpmServiceImplTest {
     }
 
     @Test
+    void cancelStockOutApproval_shouldPropagateBpmCancelFailure() throws Exception {
+        Object service = createService();
+        ErpStockOutDO entity = new ErpStockOutDO()
+                .setId(7L).setNo("SO-007")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus());
+        entity.setProcessInstanceId("PI-CANCEL-FAILED");
+        AtomicReference<ErpStockOutDO> entityRef = new AtomicReference<>(entity);
+
+        injectField(service, "erpStockOutMapper", createMapperProxy(entityRef, new ArrayList<>()));
+        injectField(service, "stockOutService", createServiceProxy());
+        injectField(service, "approvalRuntimeService", createCancelFailureProxy());
+
+        Object reqVO = createCancelReqVO(7L, "cancel failed");
+        Method method = service.getClass().getMethod("cancelStockOutApproval", Long.class, reqVO.getClass());
+        assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(service, 9527L, reqVO));
+    }
+
+    @Test
     void cancelStockOutApproval_shouldThrowWhenNotProcessing() throws Exception {
         Object service = createService();
         AtomicReference<ErpStockOutDO> entityRef = new AtomicReference<>(
@@ -209,6 +228,15 @@ class ErpStockOutBpmServiceImplTest {
         return createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
             if ("cancel".equals(methodName)) {
                 if (sceneCodeRef != null) sceneCodeRef.set((String) args[0]);
+            }
+            return null;
+        });
+    }
+
+    private Object createCancelFailureProxy() {
+        return createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("cancel".equals(methodName)) {
+                throw new IllegalStateException("flowable cancel failed");
             }
             return null;
         });

@@ -1,8 +1,10 @@
 package cn.weitee.erp.module.bpm.service.approval;
 
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.module.bpm.api.event.BpmProcessInstanceStatusEvent;
 import cn.weitee.erp.module.bpm.api.task.BpmProcessInstanceApi;
 import cn.weitee.erp.module.bpm.controller.admin.approval.vo.scene.BpmApprovalSceneRespVO;
+import cn.weitee.erp.module.bpm.controller.admin.task.vo.instance.BpmProcessInstanceCancelReqVO;
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalRuleDO;
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalSchemeVersionDO;
@@ -11,6 +13,9 @@ import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeVersionMappe
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalInstanceSnapshotStatusEnum;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSceneStatusEnum;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
+import cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
+import cn.weitee.erp.module.bpm.framework.flowable.core.event.BpmProcessInstanceEventPublisher;
+import cn.weitee.erp.module.bpm.service.task.BpmProcessInstanceService;
 import cn.weitee.erp.module.bpm.service.approval.engine.RuleConditionEvaluator;
 import cn.weitee.erp.module.bpm.service.approval.provider.ApprovalContext;
 import cn.weitee.erp.module.bpm.service.approval.provider.ApprovalContextProvider;
@@ -411,6 +416,98 @@ class BpmApprovalRuntimeServiceImplTest {
                 () -> service.getApprovalDetail("erp.finance.payment.submit", 981502L));
 
         assertEquals(APPROVAL_PROCESS_INSTANCE_NOT_EXISTS.getCode(), ex.getCode());
+    }
+
+    @Test
+    void cancel_shouldDispatchCancelResultAfterProcessCancelSucceeds() throws Exception {
+        BpmApprovalRuntimeServiceImpl service = new BpmApprovalRuntimeServiceImpl();
+        AtomicReference<String> cancelledProcessInstanceId = new AtomicReference<>();
+        AtomicReference<String> cancelReason = new AtomicReference<>();
+        AtomicReference<BpmProcessInstanceStatusEvent> dispatchedEvent = new AtomicReference<>();
+
+        setField(service, "transactionManager", createTransactionManagerProxy());
+        setField(service, "approvalInstanceSnapshotService", createProxy(BpmApprovalInstanceSnapshotService.class, (methodName, args) -> {
+            if ("getSnapshotBySceneCodeAndBizId".equals(methodName)) {
+                return BpmApprovalInstanceSnapshotDO.builder()
+                        .id(19L)
+                        .sceneCode("erp.stock.in.submit")
+                        .bizId("16")
+                        .status(BpmApprovalInstanceSnapshotStatusEnum.PROCESSING.getStatus())
+                        .processDefinitionKey("erp_stock_in")
+                        .processInstanceId("PROC-STOCK-IN-16")
+                        .build();
+            }
+            return null;
+        }));
+        setField(service, "approvalRecordService", createProxy(BpmApprovalRecordService.class, (methodName, args) -> null));
+        setField(service, "processInstanceService", createProxy(BpmProcessInstanceService.class, (methodName, args) -> {
+            if ("cancelProcessInstanceByStartUser".equals(methodName)) {
+                BpmProcessInstanceCancelReqVO reqVO = (BpmProcessInstanceCancelReqVO) args[1];
+                cancelledProcessInstanceId.set(reqVO.getId());
+                cancelReason.set(reqVO.getReason());
+                return null;
+            }
+            return null;
+        }));
+        setField(service, "processInstanceEventPublisher",
+                new BpmProcessInstanceEventPublisher(event -> dispatchedEvent.set((BpmProcessInstanceStatusEvent) event)));
+
+        service.cancel("erp.stock.in.submit", 16L, 145L, "撤回测试");
+
+        assertEquals("PROC-STOCK-IN-16", cancelledProcessInstanceId.get());
+        assertEquals("撤回测试", cancelReason.get());
+        assertNotNull(dispatchedEvent.get());
+        assertEquals("PROC-STOCK-IN-16", dispatchedEvent.get().getId());
+        assertEquals("erp_stock_in", dispatchedEvent.get().getProcessDefinitionKey());
+        assertEquals("16", dispatchedEvent.get().getBusinessKey());
+        assertEquals(BpmProcessInstanceStatusEnum.CANCEL.getStatus(), dispatchedEvent.get().getStatus());
+        assertEquals("撤回测试", dispatchedEvent.get().getReason());
+    }
+
+    @Test
+    void cancel_shouldRecoverWhenFlowableAlreadyCanceledButSnapshotFailed() throws Exception {
+        BpmApprovalRuntimeServiceImpl service = new BpmApprovalRuntimeServiceImpl();
+        AtomicReference<String> cancelledProcessInstanceId = new AtomicReference<>();
+        AtomicReference<BpmProcessInstanceStatusEvent> dispatchedEvent = new AtomicReference<>();
+
+        setField(service, "transactionManager", createTransactionManagerProxy());
+        setField(service, "approvalInstanceSnapshotService", createProxy(BpmApprovalInstanceSnapshotService.class, (methodName, args) -> {
+            if ("getSnapshotBySceneCodeAndBizId".equals(methodName)) {
+                return BpmApprovalInstanceSnapshotDO.builder()
+                        .id(29L)
+                        .sceneCode("erp.stock.in.submit")
+                        .bizId("16")
+                        .status(BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus())
+                        .processDefinitionKey("erp_stock_in")
+                        .processInstanceId("PROC-STOCK-IN-16")
+                        .resultReason("BPM撤回失败: sendProcessInstanceResultEvent.event.processDefinitionKey: 流程实例的 key 不能为空")
+                        .build();
+            }
+            return null;
+        }));
+        setField(service, "approvalRecordService", createProxy(BpmApprovalRecordService.class, (methodName, args) -> null));
+        setField(service, "processInstanceService", createProxy(BpmProcessInstanceService.class, (methodName, args) -> {
+            if ("isHistoricProcessInstanceCanceled".equals(methodName)) {
+                return true;
+            }
+            if ("cancelProcessInstanceByStartUser".equals(methodName)) {
+                BpmProcessInstanceCancelReqVO reqVO = (BpmProcessInstanceCancelReqVO) args[1];
+                cancelledProcessInstanceId.set(reqVO.getId());
+            }
+            return null;
+        }));
+        setField(service, "processInstanceEventPublisher",
+                new BpmProcessInstanceEventPublisher(event -> dispatchedEvent.set((BpmProcessInstanceStatusEvent) event)));
+
+        service.cancel("erp.stock.in.submit", 16L, 145L, "补发撤回事件");
+
+        assertNull(cancelledProcessInstanceId.get(), "历史流程已撤回结束时不应再次调用 Flowable 撤回");
+        assertNotNull(dispatchedEvent.get());
+        assertEquals("PROC-STOCK-IN-16", dispatchedEvent.get().getId());
+        assertEquals("erp_stock_in", dispatchedEvent.get().getProcessDefinitionKey());
+        assertEquals("16", dispatchedEvent.get().getBusinessKey());
+        assertEquals(BpmProcessInstanceStatusEnum.CANCEL.getStatus(), dispatchedEvent.get().getStatus());
+        assertEquals("补发撤回事件", dispatchedEvent.get().getReason());
     }
 
     private BpmApprovalRuleDO invokeMatchRule(BpmApprovalRuntimeServiceImpl target,

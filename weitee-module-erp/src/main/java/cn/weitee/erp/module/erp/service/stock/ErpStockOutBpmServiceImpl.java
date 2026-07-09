@@ -87,6 +87,7 @@ public class ErpStockOutBpmServiceImpl implements ErpStockOutBpmService {
                 // 不在此处清理 processInstanceId，由 ResultHandler.onCancel() 统一处理状态回写
             } catch (Exception e) {
                 log.warn("[cancelStockOutApproval] BPM 撤回失败，stockOutId={}", stockOutId, e);
+                throw e;
             }
         });
     }

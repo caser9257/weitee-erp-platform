@@ -66,6 +66,14 @@ public interface BpmProcessInstanceService {
     List<HistoricProcessInstance> getHistoricProcessInstances(Set<String> ids);
 
     /**
+     * 判断历史流程实例是否已按撤回结束。
+     *
+     * @param id 流程实例的编号
+     * @return 是否已撤回结束
+     */
+    boolean isHistoricProcessInstanceCanceled(String id);
+
+    /**
      * 获得历史的流程实例 Map
      *
      * @param ids 流程实例的编号集合

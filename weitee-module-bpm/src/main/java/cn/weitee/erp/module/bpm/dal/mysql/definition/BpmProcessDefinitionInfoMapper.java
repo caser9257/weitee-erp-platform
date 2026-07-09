@@ -16,7 +16,10 @@ public interface BpmProcessDefinitionInfoMapper extends BaseMapperX<BpmProcessDe
     }
 
     default BpmProcessDefinitionInfoDO selectByProcessDefinitionId(String processDefinitionId) {
-        return selectOne(BpmProcessDefinitionInfoDO::getProcessDefinitionId, processDefinitionId);
+        return selectOne(new LambdaQueryWrapperX<BpmProcessDefinitionInfoDO>()
+                .eq(BpmProcessDefinitionInfoDO::getProcessDefinitionId, processDefinitionId)
+                .orderByDesc(BpmProcessDefinitionInfoDO::getId)
+                .last("LIMIT 1"));
     }
 
     default void updateByModelId(String modelId, BpmProcessDefinitionInfoDO updateObj) {

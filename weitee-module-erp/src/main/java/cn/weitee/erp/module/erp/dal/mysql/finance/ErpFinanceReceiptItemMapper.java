@@ -40,7 +40,11 @@ public interface ErpFinanceReceiptItemMapper extends BaseMapperX<ErpFinanceRecei
         if (CollUtil.isEmpty(result)) {
             return BigDecimal.ZERO;
         }
-        Object sum = result.get(0).get("receipt_price_sum");
+        Map<String, Object> row = result.get(0);
+        if (row == null) {
+            return BigDecimal.ZERO;
+        }
+        Object sum = row.get("receipt_price_sum");
         if (sum == null) {
             return BigDecimal.ZERO;
         }

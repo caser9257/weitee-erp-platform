@@ -40,7 +40,11 @@ public interface ErpFinancePaymentItemMapper extends BaseMapperX<ErpFinancePayme
         if (CollUtil.isEmpty(result)) {
             return BigDecimal.ZERO;
         }
-        return BigDecimal.valueOf(MapUtil.getDouble(result.get(0), "payment_price_sum", 0D));
+        Map<String, Object> row = result.get(0);
+        if (row == null) {
+            return BigDecimal.ZERO;
+        }
+        return BigDecimal.valueOf(MapUtil.getDouble(row, "payment_price_sum", 0D));
     }
 
 }

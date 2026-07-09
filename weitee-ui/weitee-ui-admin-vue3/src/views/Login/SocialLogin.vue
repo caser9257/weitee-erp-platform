@@ -158,6 +158,7 @@ const permissionStore = usePermissionStore()
 const loginLoading = ref(false)
 const verify = ref()
 const captchaType = ref('blockPuzzle')
+const temporaryCaptchaDisabled = true
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
@@ -168,7 +169,7 @@ const LoginRules = {
 
 const loginData = reactive({
   isShowPassword: false,
-  captchaEnable: import.meta.env.VITE_APP_CAPTCHA_ENABLE !== 'false',
+  captchaEnable: temporaryCaptchaDisabled ? false : import.meta.env.VITE_APP_CAPTCHA_ENABLE !== 'false',
   loginForm: {
     username: 'superadmin',
     password: '123456',

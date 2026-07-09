@@ -1,0 +1,14 @@
+.git
+**/.git
+**/.idea
+**/.vscode
+**/node_modules
+**/target
+**/dist
+**/output
+**/.playwright-cli
+.worktrees-*
+.tester-runtime/*.log
+.tester-runtime/*.json
+tmp
+**/tmp

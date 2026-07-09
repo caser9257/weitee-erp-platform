@@ -3,19 +3,19 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">鎬昏处</div>
+          <div class="finance-shell__page-title">总账</div>
           <div class="finance-shell__page-subtitle">
-            鎸夎处绨垮拰鏈熼棿鏌ョ湅绉戠洰浣欓锛屽苟绌块€忚嚦鍑瘉鍒嗗綍鏄庣粏
+            按账簿和期间查看科目余额，并穿透至凭证分录明细
           </div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
-              璐︾翱 {{ selectedLedgerLabel }}
+              账簿 {{ selectedLedgerLabel }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--neutral">
-              鏈熼棿 {{ selectedPeriodLabel }}
+              期间 {{ selectedPeriodLabel }}
             </span>
             <span class="finance-shell__metric-chip finance-shell__metric-chip--success">
-              缁撴灉 {{ balanceTotal }}
+              结果 {{ balanceTotal }}
             </span>
           </div>
         </div>
@@ -29,7 +29,7 @@
             @click="handleRebuild"
           >
             <Icon icon="ep:refresh-right" class="mr-5px" />
-            閲嶅缓浣欓
+            重建余额
           </el-button>
         </div>
       </div>
@@ -37,7 +37,7 @@
 
     <ContentWrap class="finance-shell__filter-card">
       <div class="finance-shell__section-head">
-        <div class="finance-shell__section-title">绛涢€夋潯浠?</div>
+        <div class="finance-shell__section-title">筛选条件</div>
       </div>
       <el-form
         ref="queryFormRef"
@@ -47,10 +47,10 @@
         @submit.prevent
       >
         <div class="finance-shell__query-grid finance-shell__query-grid--wide">
-          <el-form-item label="璐︾翱" prop="ledgerId">
+          <el-form-item label="账簿" prop="ledgerId">
             <el-select
               v-model="queryParams.ledgerId"
-              placeholder="璇烽€夋嫨璐︾翱"
+              placeholder="请选择账簿"
               clearable
               filterable
               :loading="loadingLedgers"
@@ -65,10 +65,10 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="鏈熼棿" prop="periodId">
+          <el-form-item label="期间" prop="periodId">
             <el-select
               v-model="queryParams.periodId"
-              placeholder="璇烽€夋嫨鏈熼棿"
+              placeholder="请选择期间"
               clearable
               filterable
               :loading="loadingPeriods"
@@ -83,19 +83,19 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="绉戠洰缂栫爜" prop="subjectCode">
+          <el-form-item label="科目编码" prop="subjectCode">
             <el-input
               v-model="queryParams.subjectCode"
-              placeholder="璇疯緭鍏ョ鐩紪鐮?"
+              placeholder="请输入科目编码"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
             />
           </el-form-item>
-          <el-form-item label="绉戠洰鍚嶇О" prop="subjectName">
+          <el-form-item label="科目名称" prop="subjectName">
             <el-input
               v-model="queryParams.subjectName"
-              placeholder="璇疯緭鍏ョ鐩悕绉?"
+              placeholder="请输入科目名称"
               clearable
               class="!w-full"
               @keyup.enter="handleQuery"
@@ -105,11 +105,11 @@
         <div class="finance-shell__query-actions">
           <el-button type="primary" :loading="loadingList" :disabled="!canQuery" @click="handleQuery">
             <Icon icon="ep:search" class="mr-5px" />
-            鏌ヨ
+            查询
           </el-button>
           <el-button :disabled="!canReset" @click="resetQuery">
             <Icon icon="ep:refresh-left" class="mr-5px" />
-            閲嶇疆
+            重置
           </el-button>
         </div>
       </el-form>
@@ -118,9 +118,10 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">绉戠洰浣欓</div>
+          <div class="finance-shell__section-title">科目余额</div>
           <div class="finance-shell__toolbar-count">
-            褰撳墠鍏?<strong>{{ balanceTotal }}</strong> 鏉?          </div>
+            当前共 <strong>{{ balanceTotal }}</strong> 条
+          </div>
         </div>
       </div>
 
@@ -133,7 +134,7 @@
         :title="listErrorMessage"
       >
         <template #default>
-          <el-button link type="primary" :disabled="loadingList" @click="getList">閲嶆柊鍔犺浇</el-button>
+          <el-button link type="primary" :disabled="loadingList" @click="getList">重新加载</el-button>
         </template>
       </el-alert>
 
@@ -151,7 +152,7 @@
               <template #header>
                 <span class="finance-shell__column-header">
                   <Icon icon="ep:collection-tag" class="finance-shell__column-icon" />
-                  绉戠洰
+                  科目
                 </span>
               </template>
               <template #default="{ row }">
@@ -163,49 +164,49 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="鏈熷垵鍊熸柟" min-width="120" align="right">
+            <el-table-column label="期初借方" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">
                   {{ formatAmount(row.openingDebitAmount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏈熷垵璐锋柟" min-width="120" align="right">
+            <el-table-column label="期初贷方" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">
                   {{ formatAmount(row.openingCreditAmount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏈湡鍊熸柟" min-width="120" align="right">
+            <el-table-column label="本期借方" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">
                   {{ formatAmount(row.currentDebitAmount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏈湡璐锋柟" min-width="120" align="right">
+            <el-table-column label="本期贷方" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">
                   {{ formatAmount(row.currentCreditAmount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏈熸湯鍊熸柟" min-width="120" align="right">
+            <el-table-column label="期末借方" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">
                   {{ formatAmount(row.endingDebitAmount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鏈熸湯璐锋柟" min-width="120" align="right">
+            <el-table-column label="期末贷方" min-width="120" align="right">
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">
                   {{ formatAmount(row.endingCreditAmount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="鎿嶄綔" fixed="right" align="center" width="120">
+            <el-table-column label="操作" fixed="right" align="center" width="120">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
                   <el-button
@@ -215,14 +216,14 @@
                     :disabled="!canOpenDetail(row)"
                     @click="openDetailDrawer(row)"
                   >
-                    鏌ョ湅鏄庣粏
+                    查看明细
                   </el-button>
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
-        <el-empty v-else description="鏆傛棤绉戠洰浣欓鏁版嵁" />
+        <el-empty v-else description="暂无科目余额数据" />
 
         <Pagination
           v-if="balanceTotal > 0"
@@ -244,35 +245,35 @@
       <div class="finance-general-ledger-page__drawer">
         <div v-if="detailData" class="finance-shell__context-card finance-general-ledger-page__detail-context">
           <div class="finance-shell__context-main">
-            <div class="finance-shell__context-title">{{ detailData.subjectName || '鎬昏处鏄庣粏' }}</div>
+            <div class="finance-shell__context-title">{{ detailData.subjectName || '总账明细' }}</div>
             <div class="finance-shell__context-subtitle">
-              {{ detailData.subjectCode || '-' }} 路 {{ detailData.ledgerName || '-' }} 路
+              {{ detailData.subjectCode || '-' }} · {{ detailData.ledgerName || '-' }} ·
               {{ detailData.periodCode || '-' }}
             </div>
           </div>
           <div class="finance-shell__context-meta">
             <div class="finance-shell__context-meta-item">
-              <span>鏈熷垵鍊熸柟</span>
+              <span>期初借方</span>
               <span class="finance-shell__mono">{{ formatAmount(detailData.openingDebitAmount) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>鏈熷垵璐锋柟</span>
+              <span>期初贷方</span>
               <span class="finance-shell__mono">{{ formatAmount(detailData.openingCreditAmount) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>鏈湡鍊熸柟</span>
+              <span>本期借方</span>
               <span class="finance-shell__mono">{{ formatAmount(detailData.totalDebitAmount) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>鏈湡璐锋柟</span>
+              <span>本期贷方</span>
               <span class="finance-shell__mono">{{ formatAmount(detailData.totalCreditAmount) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>鏈熸湯鍊熸柟</span>
+              <span>期末借方</span>
               <span class="finance-shell__mono">{{ formatAmount(detailData.endingDebitAmount) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
-              <span>鏈熸湯璐锋柟</span>
+              <span>期末贷方</span>
               <span class="finance-shell__mono">{{ formatAmount(detailData.endingCreditAmount) }}</span>
             </div>
           </div>
@@ -282,21 +283,22 @@
           <el-result
             v-if="detailErrorMessage"
             icon="error"
-            title="鎬昏处鏄庣粏鍔犺浇澶辫触"
+            title="总账明细加载失败"
             :sub-title="detailErrorMessage"
           >
             <template #extra>
               <el-button type="primary" :disabled="loadingDetail || !selectedRow" @click="retryDetail">
-                閲嶈瘯
+                重试
               </el-button>
             </template>
           </el-result>
 
           <template v-else>
             <div class="finance-shell__section-head finance-general-ledger-page__detail-head">
-              <div class="finance-shell__section-title">鍑瘉鏄庣粏</div>
+              <div class="finance-shell__section-title">凭证明细</div>
               <div class="finance-shell__toolbar-count">
-                褰撳墠鍏?<strong>{{ detailData?.items?.length || 0 }}</strong> 鏉?              </div>
+                当前共 <strong>{{ detailData?.items?.length || 0 }}</strong> 条
+              </div>
             </div>
             <div v-if="detailData?.items?.length" class="finance-shell__table-wrap">
               <el-table
@@ -305,31 +307,31 @@
                 class="finance-shell__table finance-shell__table--dense"
                 :show-overflow-tooltip="false"
               >
-                <el-table-column label="鍑瘉鍙?" prop="voucherNo" min-width="150" />
-                <el-table-column label="鍑瘉鏃堕棿" prop="voucherTime" min-width="170">
+                <el-table-column label="凭证号" prop="voucherNo" min-width="150" />
+                <el-table-column label="凭证时间" prop="voucherTime" min-width="170">
                   <template #default="{ row }">{{ formatDateTimeValue(row.voucherTime) }}</template>
                 </el-table-column>
-                <el-table-column label="涓氬姟绫诲瀷" prop="bizTypeName" min-width="120" />
-                <el-table-column label="涓氬姟鍗曞彿" prop="bizNo" min-width="160" />
-                <el-table-column label="鎽樿" prop="summary" min-width="220" />
-                <el-table-column label="鍊熸柟閲戦" min-width="120" align="right">
+                <el-table-column label="业务类型" prop="bizTypeName" min-width="120" />
+                <el-table-column label="业务单号" prop="bizNo" min-width="160" />
+                <el-table-column label="摘要" prop="summary" min-width="220" />
+                <el-table-column label="借方金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">
                       {{ formatAmount(row.debitAmount) }}
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="璐锋柟閲戦" min-width="120" align="right">
+                <el-table-column label="贷方金额" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">
                       {{ formatAmount(row.creditAmount) }}
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="鍑瘉鐘舵€?" prop="voucherStatusName" min-width="120" />
+                <el-table-column label="凭证状态" prop="voucherStatusName" min-width="120" />
               </el-table>
             </div>
-            <el-empty v-else description="鏆傛棤鎬昏处鏄庣粏鏁版嵁" />
+            <el-empty v-else description="暂无总账明细数据" />
           </template>
         </div>
       </div>
@@ -389,10 +391,10 @@ const drawerSize = computed(() => {
 })
 
 const selectedLedgerLabel = computed(
-  () => ledgerOptions.value.find((item) => item.id === queryParams.ledgerId)?.name || '鏈€夋嫨'
+  () => ledgerOptions.value.find((item) => item.id === queryParams.ledgerId)?.name || '未选择'
 )
 const selectedPeriodLabel = computed(
-  () => periodOptions.value.find((item) => item.id === queryParams.periodId)?.periodCode || '鏈€夋嫨'
+  () => periodOptions.value.find((item) => item.id === queryParams.periodId)?.periodCode || '未选择'
 )
 const canQuery = computed(
   () => Boolean(queryParams.ledgerId && queryParams.periodId) && !loadingList.value
@@ -495,7 +497,7 @@ const getList = async () => {
     balanceTotal.value = data?.total || 0
   } catch {
     if (!balanceList.value.length) {
-      listErrorMessage.value = '绉戠洰浣欓鍔犺浇澶辫触锛岃绋嶅悗閲嶈瘯'
+      listErrorMessage.value = '科目余额加载失败，请稍后重试'
     }
   } finally {
     loadingList.value = false
@@ -541,7 +543,7 @@ const loadDetail = async () => {
       subjectCode: selectedRow.value.subjectCode
     })
   } catch {
-    detailErrorMessage.value = '璇锋鏌ョ綉缁滄垨绋嶅悗閲嶈瘯'
+    detailErrorMessage.value = '请检查网络或稍后重试'
   } finally {
     loadingDetail.value = false
   }
@@ -564,10 +566,10 @@ const handleRebuild = async () => {
   try {
     await ElMessageBox.confirm(
       '确认重建当前账簿科目余额吗？系统将按已过账凭证重新生成余额。',
-      '閲嶅缓浣欓',
+      '重建余额',
       {
-        confirmButtonText: '纭閲嶅缓',
-        cancelButtonText: '鍙栨秷',
+        confirmButtonText: '确认重建',
+        cancelButtonText: '取消',
         type: 'warning'
       }
     )
@@ -606,7 +608,7 @@ onMounted(async () => {
   min-height: 100%;
   flex-direction: column;
   gap: 16px;
-  background: #f8fafc;
+  background: var(--erp-slate-50);
 }
 
 .finance-general-ledger-page__drawer-body {

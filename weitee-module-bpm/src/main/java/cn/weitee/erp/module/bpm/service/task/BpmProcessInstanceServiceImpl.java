@@ -150,6 +150,17 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
                 .list();
     }
 
+    @Override
+    public boolean isHistoricProcessInstanceCanceled(String id) {
+        HistoricProcessInstance instance = getHistoricProcessInstance(id);
+        if (instance == null || instance.getEndTime() == null || instance.getProcessVariables() == null) {
+            return false;
+        }
+        Integer status = Convert.toInt(instance.getProcessVariables()
+                .get(BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_STATUS));
+        return ObjectUtil.equal(status, BpmProcessInstanceStatusEnum.CANCEL.getStatus());
+    }
+
     private Map<String, String> getFormFieldsPermission(BpmnModel bpmnModel,
                                                         String activityId, String taskId) {
         // 1. 获取流程活动编号。流程活动 Id 为空事，从流程任务中获取流程活动 Id
@@ -190,7 +201,7 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
         }
         // 特殊：如果是未发起的场景，则设置发起用户，解决“发起流程”时，需要使用到该变量的问题。例如说：https://t.zsxq.com/fMw5g
         if (historicProcessInstance == null) {
-            processVariables.put(BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_START_USER_ID, loginUserId);
+            putStartUserVariables(processVariables, loginUserId);
         }
         // 1.3 读取其它相关数据
         ProcessDefinition processDefinition = processDefinitionService.getProcessDefinition(
@@ -799,16 +810,15 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
         if (!processDefinitionService.canUserStartProcessDefinition(processDefinitionInfo, userId)) {
             throw exception(PROCESS_INSTANCE_START_USER_CAN_START);
         }
-        // 1.3 校验发起人自选审批人
-        validateStartUserSelectAssignees(userId, definition, startUserSelectAssignees, variables);
-
-        // 2. 创建流程实例
         if (variables == null) {
             variables = new HashMap<>();
         }
         FlowableUtils.filterProcessInstanceFormVariable(variables); // 过滤一下，避免 ProcessInstance 系统级的变量被占用
-        variables.put(BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_START_USER_ID, userId); // 设置流程变量，发起人 ID
-        variables.put("startUserId", userId); // 兼容现有 BPMN skipExpression 使用的变量名
+        putStartUserVariables(variables, userId);
+        // 1.3 校验发起人自选审批人
+        validateStartUserSelectAssignees(userId, definition, startUserSelectAssignees, variables);
+
+        // 2. 创建流程实例
         variables.put(BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_STATUS, // 流程实例状态：审批中
                 BpmProcessInstanceStatusEnum.RUNNING.getStatus());
         variables.put(BpmnVariableConstants.PROCESS_INSTANCE_SKIP_EXPRESSION_ENABLED, true); // 跳过表达式需要添加此变量为 true，不影响没配置 skipExpression 的节点
@@ -833,6 +843,11 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
         // 3.3 发起流程实例
         ProcessInstance instance = processInstanceBuilder.start();
         return instance.getId();
+    }
+
+    private void putStartUserVariables(Map<String, Object> variables, Long userId) {
+        variables.put(BpmnVariableConstants.PROCESS_INSTANCE_VARIABLE_START_USER_ID, userId); // 设置流程变量，发起人 ID
+        variables.put("startUserId", userId); // 兼容现有 BPMN skipExpression 使用的变量名
     }
 
     private void validateStartUserSelectAssignees(Long userId, ProcessDefinition definition,

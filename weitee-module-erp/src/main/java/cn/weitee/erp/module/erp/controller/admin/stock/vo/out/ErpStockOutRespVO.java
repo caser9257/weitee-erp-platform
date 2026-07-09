@@ -49,6 +49,9 @@ public class ErpStockOutRespVO {
     @DictFormat(AUDIT_STATUS)
     private Integer status;
 
+    @Schema(description = "BPM 流程实例 ID", example = "1024")
+    private String processInstanceId;
+
     @Schema(description = "备注", example = "随便")
     @ExcelProperty("备注")
     private String remark;

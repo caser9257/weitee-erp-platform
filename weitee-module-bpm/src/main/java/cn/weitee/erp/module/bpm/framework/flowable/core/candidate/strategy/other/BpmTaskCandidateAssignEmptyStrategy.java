@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.bpm.framework.flowable.core.candidate.strategy.other;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.lang.Assert;
 import cn.weitee.erp.module.bpm.dal.dataobject.definition.BpmProcessDefinitionInfoDO;
 import cn.weitee.erp.module.bpm.enums.definition.BpmUserTaskAssignEmptyHandlerTypeEnum;
@@ -63,7 +64,7 @@ public class BpmTaskCandidateAssignEmptyStrategy implements BpmTaskCandidateStra
         if (Objects.equals(assignEmptyHandlerType, BpmUserTaskAssignEmptyHandlerTypeEnum.ASSIGN_ADMIN.getType())) {
             BpmProcessDefinitionInfoDO processDefinition = processDefinitionService.getProcessDefinitionInfo(processDefinitionId);
             Assert.notNull(processDefinition, "流程定义({})不存在", processDefinitionId);
-            return new HashSet<>(processDefinition.getManagerUserIds());
+            return new HashSet<>(CollUtil.emptyIfNull(processDefinition.getManagerUserIds()));
         }
 
         // 都不满足，还是返回空

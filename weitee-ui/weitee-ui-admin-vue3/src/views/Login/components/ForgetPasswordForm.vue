@@ -125,6 +125,7 @@ const { handleBackLogin, getLoginState, setLoginState } = useLoginState()
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.RESET_PASSWORD)
 const captchaType = ref('blockPuzzle')
 const mobileCodeTimer = ref(0)
+const temporaryCaptchaDisabled = true
 
 const validatePass2 = (_rule, value, callback) => {
   if (value === '') {
@@ -153,7 +154,7 @@ const rules = {
 }
 
 const resetPasswordData = reactive({
-  captchaEnable: import.meta.env.VITE_APP_CAPTCHA_ENABLE,
+  captchaEnable: temporaryCaptchaDisabled ? 'false' : import.meta.env.VITE_APP_CAPTCHA_ENABLE,
   username: '',
   password: '',
   check_password: '',

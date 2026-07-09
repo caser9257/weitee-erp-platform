@@ -33,7 +33,7 @@ public class PurchaseReturnResultHandler implements SnapshotAwareApprovalResultH
     @Override
     public void onApproveWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
         validateExists(bizId);
-        purchaseReturnService.updatePurchaseReturnStatusByBpm(bizId, snapshotId,
+        purchaseReturnService.updatePurchaseReturnStatusByBpm(bizId, processInstanceId,
                 ErpAuditStatus.APPROVE.getStatus(), reason);
     }
 
@@ -46,7 +46,7 @@ public class PurchaseReturnResultHandler implements SnapshotAwareApprovalResultH
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onRejectWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
-        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, snapshotId, reason);
+        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, processInstanceId, reason);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class PurchaseReturnResultHandler implements SnapshotAwareApprovalResultH
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onCancelWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
-        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, snapshotId, reason);
+        purchaseReturnService.rollbackPurchaseReturnStatusToDraftByBpm(bizId, processInstanceId, reason);
     }
 
     private void validateExists(Long purchaseReturnId) {

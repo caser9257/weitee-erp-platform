@@ -132,6 +132,7 @@ const captchaType = ref('blockPuzzle')
 const loading = ref<any>()
 const showPassword = ref(false)
 const { loginText } = useLoginCopy()
+const temporaryCaptchaDisabled = true
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN)
 
@@ -146,7 +147,7 @@ const defaultLoginForm = {
 }
 
 const loginData = reactive({
-  captchaEnable: import.meta.env.VITE_APP_CAPTCHA_ENABLE,
+  captchaEnable: temporaryCaptchaDisabled ? 'false' : import.meta.env.VITE_APP_CAPTCHA_ENABLE,
   loginForm: {
     username: defaultLoginForm.username,
     password: defaultLoginForm.password,
@@ -201,7 +202,7 @@ const handleLogin = async (params: any) => {
   try {
     const loginDataLoginForm = {
       ...loginData.loginForm,
-      captchaVerification: params.captchaVerification
+      captchaVerification: params?.captchaVerification || ''
     }
     const res = await LoginApi.login(loginDataLoginForm)
     if (!res) {

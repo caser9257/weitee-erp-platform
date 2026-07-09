@@ -1,6 +1,5 @@
 package cn.weitee.erp.module.bpm.service.definition;
 
-import cn.weitee.erp.module.bpm.dal.dataobject.definition.BpmProcessDefinitionInfoDO;
 import cn.weitee.erp.module.bpm.dal.mysql.definition.BpmProcessDefinitionInfoMapper;
 import cn.weitee.erp.module.bpm.enums.definition.BpmModelFormTypeEnum;
 import cn.weitee.erp.module.bpm.enums.definition.BpmModelTypeEnum;
@@ -173,6 +172,8 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                 """);
         addColumnIfMissing("bpm_process_definition_info", "notification_policy_setting",
                 "`notification_policy_setting` mediumtext DEFAULT NULL COMMENT '通知策略设置' AFTER `task_after_trigger_setting`");
+        addColumnIfMissing("bpm_process_definition_info", "print_template_setting",
+                "`print_template_setting` mediumtext DEFAULT NULL COMMENT '自定义打印模板设置' AFTER `notification_policy_setting`");
     }
 
     void ensureErpExperienceSchema() {
@@ -353,26 +354,53 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
     }
 
     private void ensureDefinitionInfo(BundledProcessDefinition definition, ProcessDefinition processDefinition) {
-        BpmProcessDefinitionInfoDO existing = processDefinitionInfoMapper
-                .selectByProcessDefinitionId(processDefinition.getId());
-        if (existing != null) {
-            return;
+        String modelId = "bundled-" + definition.getKey();
+        long sort = System.currentTimeMillis();
+        int updated = jdbcTemplate.update("""
+                UPDATE `bpm_process_definition_info`
+                SET
+                    `model_id` = ?,
+                    `model_type` = ?,
+                    `category` = ?,
+                    `description` = ?,
+                    `form_type` = ?,
+                    `form_custom_create_path` = ?,
+                    `form_custom_view_path` = ?,
+                    `visible` = b'1',
+                    `allow_cancel_running_process` = b'1',
+                    `allow_withdraw_task` = b'1',
+                    `updater` = '1',
+                    `update_time` = NOW(),
+                    `deleted` = b'0'
+                WHERE `process_definition_id` = ?
+                """,
+                modelId,
+                BpmModelTypeEnum.BPMN.getType(),
+                definition.getCategory(),
+                definition.getName(),
+                BpmModelFormTypeEnum.CUSTOM.getType(),
+                definition.getFormCustomCreatePath(),
+                definition.getFormCustomViewPath(),
+                processDefinition.getId());
+        if (updated == 0) {
+            jdbcTemplate.update("""
+                    INSERT INTO `bpm_process_definition_info`
+                        (`process_definition_id`, `model_id`, `model_type`, `category`, `description`, `form_type`,
+                         `form_custom_create_path`, `form_custom_view_path`, `visible`, `sort`,
+                         `allow_cancel_running_process`, `allow_withdraw_task`,
+                         `creator`, `create_time`, `updater`, `update_time`, `deleted`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, b'1', ?, b'1', b'1', '1', NOW(), '1', NOW(), b'0')
+                    """,
+                    processDefinition.getId(),
+                    modelId,
+                    BpmModelTypeEnum.BPMN.getType(),
+                    definition.getCategory(),
+                    definition.getName(),
+                    BpmModelFormTypeEnum.CUSTOM.getType(),
+                    definition.getFormCustomCreatePath(),
+                    definition.getFormCustomViewPath(),
+                    sort);
         }
-        BpmProcessDefinitionInfoDO info = BpmProcessDefinitionInfoDO.builder()
-                .processDefinitionId(processDefinition.getId())
-                .modelId("bundled-" + definition.getKey())
-                .modelType(BpmModelTypeEnum.BPMN.getType())
-                .category(definition.getCategory())
-                .description(definition.getName())
-                .formType(BpmModelFormTypeEnum.CUSTOM.getType())
-                .formCustomCreatePath(definition.getFormCustomCreatePath())
-                .formCustomViewPath(definition.getFormCustomViewPath())
-                .visible(true)
-                .sort(System.currentTimeMillis())
-                .allowCancelRunningProcess(true)
-                .allowWithdrawTask(true)
-                .build();
-        processDefinitionInfoMapper.insert(info);
         log.info("[ensureDefinitionInfo][内置 BPMN 扩展信息已补齐，key={}, definitionId={}]",
                 definition.getKey(), processDefinition.getId());
     }

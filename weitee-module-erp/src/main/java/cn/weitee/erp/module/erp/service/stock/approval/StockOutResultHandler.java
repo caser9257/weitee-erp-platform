@@ -33,7 +33,7 @@ public class StockOutResultHandler implements SnapshotAwareApprovalResultHandler
     @Override
     public void onApproveWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
         validateExists(bizId);
-        stockOutService.updateStockOutStatusByBpm(bizId, snapshotId,
+        stockOutService.updateStockOutStatusByBpm(bizId, processInstanceId,
                 ErpAuditStatus.APPROVE.getStatus(), reason);
     }
 
@@ -46,7 +46,7 @@ public class StockOutResultHandler implements SnapshotAwareApprovalResultHandler
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onRejectWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
-        stockOutService.rollbackStockOutStatusToDraftByBpm(bizId, snapshotId, reason);
+        stockOutService.rollbackStockOutStatusToDraftByBpm(bizId, processInstanceId, reason);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class StockOutResultHandler implements SnapshotAwareApprovalResultHandler
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void onCancelWithSnapshot(Long bizId, String processInstanceId, String snapshotId, String reason) {
-        stockOutService.rollbackStockOutStatusToDraftByBpm(bizId, snapshotId, reason);
+        stockOutService.rollbackStockOutStatusToDraftByBpm(bizId, processInstanceId, reason);
     }
 
     private void validateExists(Long stockOutId) {

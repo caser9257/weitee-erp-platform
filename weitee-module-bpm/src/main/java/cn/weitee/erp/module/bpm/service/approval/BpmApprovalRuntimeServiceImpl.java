@@ -22,6 +22,8 @@ import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeVersionMappe
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalInstanceSnapshotStatusEnum;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSceneStatusEnum;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
+import cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
+import cn.weitee.erp.module.bpm.framework.flowable.core.event.BpmProcessInstanceEventPublisher;
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
 import cn.weitee.erp.module.bpm.service.approval.provider.ApprovalContext;
 import cn.weitee.erp.module.bpm.service.approval.provider.ApprovalContextProvider;
@@ -67,6 +69,8 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     private BpmProcessInstanceApi processInstanceApi;
     @Resource
     private BpmProcessInstanceService processInstanceService;
+    @Resource
+    private BpmProcessInstanceEventPublisher processInstanceEventPublisher;
     @Resource
     private BpmApprovalEventDispatcher approvalEventDispatcher;
     @Resource
@@ -214,7 +218,9 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
         if (snapshot == null) {
             throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
         }
-        if (!ObjectUtil.equal(snapshot.getStatus(), BpmApprovalInstanceSnapshotStatusEnum.PROCESSING.getStatus())) {
+        boolean recoverCanceledProcess = isRecoverableCanceledProcess(snapshot);
+        if (!ObjectUtil.equal(snapshot.getStatus(), BpmApprovalInstanceSnapshotStatusEnum.PROCESSING.getStatus())
+                && !recoverCanceledProcess) {
             throw exception(APPROVAL_INSTANCE_NOT_PROCESSING);
         }
 
@@ -232,7 +238,9 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
                 .build();
         approvalRecordService.createRecord(record);
 
-        return new CancelPreparation(snapshot.getId(), sceneCode, bizId, userId, snapshot.getProcessInstanceId(), reason);
+        String processDefinitionKey = StrUtil.blankToDefault(snapshot.getProcessDefinitionKey(), sceneCode);
+        return new CancelPreparation(snapshot.getId(), sceneCode, bizId, userId,
+                snapshot.getProcessInstanceId(), processDefinitionKey, reason, recoverCanceledProcess);
     }
 
     private String launchProcess(SubmitPreparation preparation) {
@@ -262,10 +270,18 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
 
     private void cancelProcess(CancelPreparation preparation) {
         try {
-            processInstanceService.cancelProcessInstanceByStartUser(preparation.userId(),
-                    new BpmProcessInstanceCancelReqVO()
-                            .setId(preparation.processInstanceId())
-                            .setReason(preparation.reason()));
+            if (!preparation.flowableAlreadyCanceled()) {
+                processInstanceService.cancelProcessInstanceByStartUser(preparation.userId(),
+                        new BpmProcessInstanceCancelReqVO()
+                                .setId(preparation.processInstanceId())
+                                .setReason(preparation.reason()));
+            }
+            processInstanceEventPublisher.sendProcessInstanceResultEvent(new BpmProcessInstanceStatusEvent(this)
+                    .setId(preparation.processInstanceId())
+                    .setProcessDefinitionKey(preparation.processDefinitionKey())
+                    .setStatus(BpmProcessInstanceStatusEnum.CANCEL.getStatus())
+                    .setBusinessKey(String.valueOf(preparation.bizId()))
+                    .setReason(preparation.reason()));
         } catch (Exception e) {
             log.error("[cancel] BPM 撤回失败，sceneCode={}, bizId={}, processInstanceId={}",
                     preparation.sceneCode(), preparation.bizId(), preparation.processInstanceId(), e);
@@ -279,6 +295,13 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             }
             throw e;
         }
+    }
+
+    private boolean isRecoverableCanceledProcess(BpmApprovalInstanceSnapshotDO snapshot) {
+        return ObjectUtil.equal(snapshot.getStatus(), BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus())
+                && StrUtil.isNotBlank(snapshot.getProcessInstanceId())
+                && StrUtil.startWith(snapshot.getResultReason(), "BPM撤回失败:")
+                && processInstanceService.isHistoricProcessInstanceCanceled(snapshot.getProcessInstanceId());
     }
 
     private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
@@ -376,7 +399,8 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     }
 
     private record CancelPreparation(Long snapshotId, String sceneCode, Long bizId, Long userId,
-                                     String processInstanceId, String reason) {
+                                     String processInstanceId, String processDefinitionKey, String reason,
+                                     boolean flowableAlreadyCanceled) {
     }
 
 }

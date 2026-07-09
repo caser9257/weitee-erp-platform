@@ -1,5 +1,3 @@
-version: "3.4"
-
 name: weitee-system
 
 services:
@@ -17,7 +15,8 @@ services:
     volumes:
       - mysql:/var/lib/mysql/
       - ../../sql/mysql/base/quartz.sql:/docker-entrypoint-initdb.d/01-quartz.sql:ro
-      - ../../production/ruoyi-vue-pro/ruoyi-vue-pro-restore-source-2026-04-10-170813.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
+      - ../../production/ruoyi-vue-pro/weitee-erp_backup_20260709.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
+      - ./initdb/03-weitee-post-import-fixes.sql:/docker-entrypoint-initdb.d/03-weitee-post-import-fixes.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent" ]
       interval: 10s
@@ -40,14 +39,15 @@ services:
   server:
     container_name: weitee-server
     build:
-      context: ../../weitee-server
+      context: ../..
+      dockerfile: weitee-server/Dockerfile
     image: weitee-server
     restart: unless-stopped
     ports:
       - "48080:48080"
     environment:
       SPRING_PROFILES_ACTIVE: local
-      JAVA_OPTS: ${JAVA_OPTS:-"-Xms512m -Xmx512m -Djava.security.egd=file:/dev/./urandom"}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms512m -Xmx512m -Djava.security.egd=file:/dev/./urandom}
       TZ: Asia/Shanghai
       ARGS: |
         --spring.datasource.dynamic.datasource.master.url=${MASTER_DATASOURCE_URL:-jdbc:mysql://weitee-mysql:3306/weitee-erp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true}

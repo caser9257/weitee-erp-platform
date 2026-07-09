@@ -85,4 +85,27 @@ public class BpmTaskCandidateAssignEmptyStrategyTest extends BaseMockitoUnitTest
         }
     }
 
+    @Test
+    public void testCalculateUsersByActivityForAssignAdminWhenManagerUsersIsNull() {
+        try (MockedStatic<BpmnModelUtils> bpmnModelUtilsMockedStatic = mockStatic(BpmnModelUtils.class)) {
+            String processDefinitionId = randomString();
+            String activityId = randomString();
+            String param = randomString();
+            FlowElement flowElement = mock(FlowElement.class);
+            BpmnModel bpmnModel = mock(BpmnModel.class);
+            bpmnModelUtilsMockedStatic.when(() -> BpmnModelUtils.getFlowElementById(same(bpmnModel), eq(activityId)))
+                    .thenReturn(flowElement);
+            bpmnModelUtilsMockedStatic.when(() -> BpmnModelUtils.parseAssignEmptyHandlerType(same(flowElement)))
+                    .thenReturn(BpmUserTaskAssignEmptyHandlerTypeEnum.ASSIGN_ADMIN.getType());
+            BpmProcessDefinitionInfoDO processDefinition = randomPojo(BpmProcessDefinitionInfoDO.class,
+                    o -> o.setManagerUserIds(null));
+            when(processDefinitionService.getProcessDefinitionInfo(eq(processDefinitionId))).thenReturn(processDefinition);
+
+            Set<Long> userIds = strategy.calculateUsersByActivity(bpmnModel, activityId, param,
+                    null, processDefinitionId, null);
+
+            assertEquals(Set.of(), userIds);
+        }
+    }
+
 }
