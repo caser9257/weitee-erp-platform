@@ -149,10 +149,10 @@
     <div class="finance-payment-page__toolbar">
       <div class="finance-payment-page__toolbar-actions">
         <el-button
+          v-if="canCreateFinancePayment"
           type="primary"
           plain
           @click="openForm('create')"
-          v-hasPermi="['erp:finance-payment:create']"
         >
           <Icon icon="ep:plus" class="mr-5px" />
           新增
@@ -327,7 +327,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
@@ -368,6 +368,7 @@ type PaymentRowAction = {
 const message = useMessage()
 const userStore = useUserStoreWithOut()
 const { push } = useRouter()
+const canCreateFinancePayment = checkPermi(['erp:finance-payment:create'])
 const currentUserId = computed(() => String(userStore.getUser.id || ''))
 
 const loadingList = ref(false)
@@ -403,6 +404,7 @@ const queryParams = reactive<FinancePaymentPageReqVO>({
 const queryFormRef = ref()
 const formRef = ref<InstanceType<typeof FinancePaymentForm>>()
 const submitDialogRef = ref<InstanceType<typeof FinancePaymentSubmitDialog>>()
+const pendingFormOpen = ref<{ type: 'create' | 'update' | 'detail'; id?: number } | null>(null)
 
 const isActionCanceled = (error: unknown) => error === 'cancel' || error === 'close'
 const setIdsLoading = (source: typeof deleteLoadingIds, ids: number[], loadingState: boolean) => {
@@ -592,8 +594,30 @@ const toggleAdvancedSearch = () => {
   advancedSearchVisible.value = !advancedSearchVisible.value
 }
 
-const openForm = (type: 'create' | 'update' | 'detail', id?: number) => {
-  formRef.value?.open(type, id)
+const flushPendingFormOpen = () => {
+  if (!formRef.value || !pendingFormOpen.value) {
+    return
+  }
+  const { type, id } = pendingFormOpen.value
+  pendingFormOpen.value = null
+  formRef.value.open(type, id)
+}
+
+watch(
+  () => formRef.value,
+  () => {
+    flushPendingFormOpen()
+  }
+)
+
+const openForm = async (type: 'create' | 'update' | 'detail', id?: number) => {
+  if (formRef.value) {
+    formRef.value.open(type, id)
+    return
+  }
+  pendingFormOpen.value = { type, id }
+  await nextTick()
+  flushPendingFormOpen()
 }
 
 const handleDelete = async (ids: number[]) => {

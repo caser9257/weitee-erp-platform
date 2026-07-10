@@ -173,10 +173,9 @@
     <div class="purchase-order-toolbar">
       <div class="purchase-order-toolbar__actions">
         <el-button
-          v-if="toolbarState.showCreate"
+          v-if="toolbarState.showCreate && canCreatePurchaseOrder"
           type="primary"
           @click="openForm('create')"
-          v-hasPermi="['erp:purchase-order:create']"
         >
           <Icon icon="ep:plus" class="mr-5px" /> 新增订单
         </el-button>
@@ -679,6 +678,7 @@ type PurchaseOrderActionDescriptor = {
 const route = useRoute()
 const router = useRouter()
 const { push, replace } = router
+const canCreatePurchaseOrder = checkPermi(['erp:purchase-order:create'])
 const canQueryPurchaseOrder = checkPermi(['erp:purchase-order:query'])
 const canUpdatePurchaseOrder = checkPermi(['erp:purchase-order:update'])
 const canSubmitPurchaseOrder = checkPermi(['erp:purchase-order:submit'])
@@ -721,6 +721,7 @@ const selectionList = ref<PurchaseOrderVO[]>([])
 const traceOrderId = ref<number | undefined>()
 const traceOrderNo = ref('')
 const formRef = ref()
+const pendingFormOpen = ref<{ type: string; id?: number } | null>(null)
 const purchaseInFormRef = ref()
 const auditLogDialogRef = ref()
 const submitDialogRef = ref()
@@ -1130,8 +1131,30 @@ const handleRetryList = () => {
   getList()
 }
 
-const openForm = (type: string, id?: number) => {
+const flushPendingFormOpen = () => {
+  if (!formRef.value || !pendingFormOpen.value) {
+    return
+  }
+  const { type, id } = pendingFormOpen.value
+  pendingFormOpen.value = null
   formRef.value.open(type, id)
+}
+
+watch(
+  () => formRef.value,
+  () => {
+    flushPendingFormOpen()
+  }
+)
+
+const openForm = async (type: string, id?: number) => {
+  if (formRef.value) {
+    formRef.value.open(type, id)
+    return
+  }
+  pendingFormOpen.value = { type, id }
+  await nextTick()
+  flushPendingFormOpen()
 }
 
 const openAuditLogDialog = (id: number) => {
