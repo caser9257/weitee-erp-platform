@@ -41,6 +41,12 @@ services:
     build:
       context: ../..
       dockerfile: weitee-server/Dockerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        ALL_PROXY: ${ALL_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
+        MAVEN_MIRROR: ${MAVEN_MIRROR:-https://maven.aliyun.com/repository/public}
     image: weitee-server
     restart: unless-stopped
     ports:
@@ -72,6 +78,12 @@ services:
       context: ../../weitee-ui/weitee-ui-admin-vue3
       args:
         NODE_ENV: ${NODE_ENV:-production}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        ALL_PROXY: ${ALL_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        PNPM_REGISTRY: ${PNPM_REGISTRY:-https://registry.npmmirror.com}
     image: weitee-admin
     restart: unless-stopped
     ports:
