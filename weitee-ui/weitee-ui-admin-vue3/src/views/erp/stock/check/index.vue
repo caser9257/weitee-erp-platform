@@ -280,6 +280,7 @@ import {
   resolveStockCheckStatus,
   STOCK_CHECK_STATUS
 } from './stockCheckStatus.helpers'
+import { createStockCheckListRequestGate } from './stockCheckListRequest.helpers'
 import download from '@/utils/download'
 import { StockCheckApi, StockCheckVO } from '@/api/erp/stock/check'
 import StockCheckForm from './StockCheckForm.vue'
@@ -344,6 +345,7 @@ const warehouseList = ref<WarehouseVO[]>([])
 const userList = ref<UserVO[]>([])
 const selectionList = ref<StockCheckListRow[]>([])
 const formRef = ref()
+const listRequestGate = createStockCheckListRequestGate()
 
 const stockCheckStatusOptions = Object.values(STOCK_CHECK_STATUS).map((value) => ({
   value,
@@ -495,20 +497,29 @@ const setLifecycleLoading = (id: number, action?: StockCheckLifecycleActionKey) 
 }
 
 const getList = async () => {
+  const requestId = listRequestGate.issue()
   loading.value = true
   listLoadFailed.value = false
   try {
     const data = await StockCheckApi.getStockCheckPage(queryParams)
+    if (!listRequestGate.isLatest(requestId)) {
+      return false
+    }
     list.value = data.list || []
     total.value = data.total || 0
     return true
   } catch {
+    if (!listRequestGate.isLatest(requestId)) {
+      return false
+    }
     list.value = []
     total.value = 0
     listLoadFailed.value = true
     return false
   } finally {
-    loading.value = false
+    if (listRequestGate.isLatest(requestId)) {
+      loading.value = false
+    }
   }
 }
 
