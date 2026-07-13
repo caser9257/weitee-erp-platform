@@ -285,6 +285,7 @@ public interface ErrorCodeConstants {
     ErrorCode PREPAYMENT_NO_EXISTS = new ErrorCode(1_030_605_004, "生成预付款单号失败，请重新提交");
     ErrorCode PREPAYMENT_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_605_005, "预付款单({})已审核，无法修改");
     ErrorCode PREPAYMENT_ALLOCATE_FAIL_APPROVE = new ErrorCode(1_030_605_006, "预付款单({})未审核，无法核销");
+    ErrorCode PREPAYMENT_ALLOCATE_AMOUNT_EXCEED = new ErrorCode(1_030_605_007, "预付款单({})本次核销金额({})超过剩余可核销金额({})");
 
     // ========== ERP 采购发票三单匹配 1-030-606-000 ==========
     ErrorCode AP_INVOICE_NOT_EXISTS = new ErrorCode(1_030_606_000, "采购发票不存在");
