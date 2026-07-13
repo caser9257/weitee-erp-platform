@@ -37,6 +37,7 @@ public class ErpNoRedisDAO {
      * 库存盘点 {@link cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO}
      */
     public static final String STOCK_CHECK_NO_PREFIX = "QCPD";
+    public static final String STOCK_ASSEMBLE_NO_PREFIX = "ZZCX";
 
     /**
      * 销售订单 {@link cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderDO}

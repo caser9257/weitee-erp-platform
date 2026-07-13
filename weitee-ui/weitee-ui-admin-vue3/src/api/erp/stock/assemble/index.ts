@@ -1,19 +1,44 @@
 import request from '@/config/axios'
 
-// 占位接口骨架，后续按装配/拆卸单据接口定稿补充字段
+export interface StockAssembleItemVO {
+  id?: number
+  productId?: number
+  productName?: string
+  count?: number
+  unitCost?: number
+  stockDirection?: number
+}
+
 export interface StockAssembleVO {
   id?: number
   no?: string
   actionType?: 'ASSEMBLE' | 'DISASSEMBLE'
   warehouseId?: number
-  projectId?: number
+  warehouseName?: string
+  productId?: number
+  productName?: string
+  bomId?: number
+  count?: number
+  totalCost?: number
   status?: number
   remark?: string
-  createTime?: Date | string
+  createTime?: Date | string | number
+  actionTypeName?: string
+  items?: StockAssembleItemVO[]
+}
+
+export interface StockAssemblePageReqVO {
+  pageNo: number
+  pageSize: number
+  no?: string
+  actionType?: StockAssembleVO['actionType']
+  warehouseId?: number
+  productId?: number
+  status?: number
 }
 
 export const StockAssembleApi = {
-  getStockAssemblePage: async (params: any) => {
+  getStockAssemblePage: async (params: StockAssemblePageReqVO) => {
     return await request.get({ url: '/erp/stock-assemble/page', params })
   },
 
@@ -27,5 +52,19 @@ export const StockAssembleApi = {
 
   updateStockAssemble: async (data: StockAssembleVO) => {
     return await request.put({ url: '/erp/stock-assemble/update', data })
+  },
+
+  updateStockAssembleStatus: async (id: number, status: number) => {
+    return await request.put({
+      url: '/erp/stock-assemble/update-status',
+      params: { id, status }
+    })
+  },
+
+  deleteStockAssemble: async (ids: number[]) => {
+    return await request.delete({
+      url: '/erp/stock-assemble/delete',
+      params: { ids: ids.join(',') }
+    })
   }
 }

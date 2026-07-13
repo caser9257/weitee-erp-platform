@@ -19,6 +19,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceDualWriteStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceDualLedgerDiffItemTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceDualLedgerDiffSourceTypeEnum;
+import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostDetailRespVO;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionCostService;
@@ -172,7 +173,7 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
                 "，来源凭证：" + sourceVoucher.getVoucherNo());
 
         // 生成目标凭证
-        Long targetVoucherId = voucherService.generateVoucher(reqVO);
+        Long targetVoucherId = voucherService.generateVoucherWithoutDualWrite(reqVO);
 
         // 根据 DiffConfig 重算金额差异
         recalculateAmountDiff(sourceVoucher, targetVoucherId, entries);
@@ -633,8 +634,9 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
         int count = 0;
         for (ErpFinanceDualWriteLogDO logDO : logs) {
             try {
-                recomputeSingleVoucher(logDO);
-                count++;
+                if (recomputeSingleVoucher(logDO)) {
+                    count++;
+                }
             } catch (Exception e) {
                 log.error("重算失败。logId={}, bizId={}", logDO.getId(), logDO.getBizId(), e);
             }
@@ -655,8 +657,7 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
         }
 
         try {
-            recomputeSingleVoucher(logDO);
-            return true;
+            return recomputeSingleVoucher(logDO);
         } catch (Exception e) {
             log.error("重算失败。bizType={}, bizId={}", bizType, bizId, e);
             return false;
@@ -666,7 +667,7 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
     /**
      * 重算单个凭证的金额差异
      */
-    private void recomputeSingleVoucher(ErpFinanceDualWriteLogDO logDO) {
+    private boolean recomputeSingleVoucher(ErpFinanceDualWriteLogDO logDO) {
         // 获取源凭证
         ErpFinanceVoucherDO sourceVoucher = voucherService.getVoucher(logDO.getSourceVoucherId());
         ErpFinanceVoucherDO targetVoucher = logDO.getTargetVoucherId() == null ? null
@@ -679,20 +680,29 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
             if (sourceVoucher == null || targetVoucher == null) {
                 log.warn("双写日志指向的凭证已失效，且未找到当前账簿凭证。logId={}, bizType={}, bizId={}",
                         logDO.getId(), logDO.getBizType(), logDO.getBizId());
-                return;
+                return false;
             }
             refreshLogVoucherPointers(logDO, sourceVoucher, targetVoucher);
+        }
+        if (ErpFinanceVoucherStatusEnum.isReversed(sourceVoucher.getStatus())
+                || ErpFinanceVoucherStatusEnum.isVoided(sourceVoucher.getStatus())
+                || ErpFinanceVoucherStatusEnum.isReversed(targetVoucher.getStatus())
+                || ErpFinanceVoucherStatusEnum.isVoided(targetVoucher.getStatus())) {
+            log.warn("双写凭证已冲销或作废，跳过重算。sourceVoucherId={}, targetVoucherId={}",
+                    sourceVoucher.getId(), targetVoucher.getId());
+            return false;
         }
 
         // 获取源凭证分录
         List<ErpFinanceVoucherEntryDO> sourceEntries = voucherService.getVoucherEntryListByVoucherId(sourceVoucher.getId());
         if (CollUtil.isEmpty(sourceEntries)) {
             log.warn("源凭证分录为空，跳过重算。sourceVoucherId={}", logDO.getSourceVoucherId());
-            return;
+            return false;
         }
 
         // 重新计算金额差异
         recalculateAmountDiff(sourceVoucher, targetVoucher.getId(), sourceEntries);
+        return true;
     }
 
     private void refreshLogVoucherPointers(ErpFinanceDualWriteLogDO logDO, ErpFinanceVoucherDO sourceVoucher,

@@ -151,7 +151,8 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
         if (!ErpAuditStatus.APPROVE.getStatus().equals(prepayment.getStatus())) {
             throw exception(PREPAYMENT_ALLOCATE_FAIL_APPROVE, prepayment.getNo());
         }
-        List<ErpFinancePrepaymentAllocateDO> allocates = validateAllocateItems(prepayment.getSupplierId(), reqVO.getItems());
+        List<ErpFinancePrepaymentAllocateDO> allocates = validateAllocateItems(prepayment.getId(),
+                prepayment.getSupplierId(), reqVO.getItems());
         if (CollUtil.isEmpty(allocates)) {
             return;
         }
@@ -213,7 +214,7 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
         return erpFinancePrepaymentAllocateMapper.selectApprovedListByStatementIds(statementIds);
     }
 
-    private List<ErpFinancePrepaymentAllocateDO> validateAllocateItems(Long supplierId,
+    private List<ErpFinancePrepaymentAllocateDO> validateAllocateItems(Long prepaymentId, Long supplierId,
                                                                        List<ErpFinancePrepaymentAllocateReqVO.Item> items) {
         if (CollUtil.isEmpty(items)) {
             return Collections.emptyList();
@@ -227,6 +228,7 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
             statementMap.put(statement.getId(), statement);
             requestAmountMap.merge(statement.getId(), defaultAmount(item.getAllocateAmount()), BigDecimal::add);
             allocates.add(new ErpFinancePrepaymentAllocateDO()
+                    .setPrepaymentId(prepaymentId)
                     .setApStatementId(statement.getId())
                     .setAllocateAmount(resolveAllocateAmount(statement, item.getAllocateAmount()))
                     .setSupplierId(supplierId)

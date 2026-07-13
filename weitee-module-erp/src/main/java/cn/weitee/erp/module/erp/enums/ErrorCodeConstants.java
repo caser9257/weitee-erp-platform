@@ -191,6 +191,17 @@ public interface ErrorCodeConstants {
     ErrorCode STOCK_OUT_MANUAL_STATUS_UPDATE_FORBIDDEN = new ErrorCode(1_030_402_010, "其它出库单({})已接入 BPM 审批，不允许手工更新状态");
     ErrorCode STOCK_OUT_STATUS_UPDATE_ILLEGAL = new ErrorCode(1_030_402_011, "当前其它出库单状态不允许执行该操作");
 
+    // ========== ERP 组装拆卸单 1-030-403-000 ==========
+    ErrorCode STOCK_ASSEMBLE_NOT_EXISTS = new ErrorCode(1_030_403_000, "组装拆卸单不存在");
+    ErrorCode STOCK_ASSEMBLE_NO_EXISTS = new ErrorCode(1_030_403_001, "生成组装拆卸单失败，请重新提交");
+    ErrorCode STOCK_ASSEMBLE_ACTION_TYPE_INVALID = new ErrorCode(1_030_403_002, "组装拆卸类型不合法");
+    ErrorCode STOCK_ASSEMBLE_BOM_NOT_EXISTS = new ErrorCode(1_030_403_003, "当前产品没有启用的 BOM");
+    ErrorCode STOCK_ASSEMBLE_BOM_ITEM_INVALID = new ErrorCode(1_030_403_004, "BOM 明细不合法，无法生成组装拆卸单");
+    ErrorCode STOCK_ASSEMBLE_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_403_005, "组装拆卸单({})已审核，无法修改");
+    ErrorCode STOCK_ASSEMBLE_DELETE_FAIL_APPROVE = new ErrorCode(1_030_403_006, "组装拆卸单({})已审核，无法删除");
+    ErrorCode STOCK_ASSEMBLE_APPROVE_FAIL = new ErrorCode(1_030_403_007, "组装拆卸单当前状态不允许审核");
+    ErrorCode STOCK_ASSEMBLE_STATUS_UPDATE_ILLEGAL = new ErrorCode(1_030_403_008, "组装拆卸单状态不允许执行该操作");
+
     // ========== ERP 库存调拨单 1-030-403-000 ==========
     ErrorCode STOCK_MOVE_NOT_EXISTS = new ErrorCode(1_030_403_000, "库存调拨单不存在");
     ErrorCode STOCK_MOVE_DELETE_FAIL_APPROVE = new ErrorCode(1_030_403_001, "库存调拨单({})已审核，无法删除");

@@ -51,7 +51,12 @@ public enum ErpStockRecordBizTypeEnum implements ArrayValuable<Integer> {
     PRODUCTION_IN_CANCEL(96, "自制入库（反执行）"),
 
     BATCH_ADJUST_IN(100, "批次调增"),
-    BATCH_ADJUST_OUT(101, "批次调减");
+    BATCH_ADJUST_OUT(101, "批次调减"),
+
+    ASSEMBLE_OUT(110, "组装领料"),
+    ASSEMBLE_IN(111, "组装入库"),
+    DISASSEMBLE_OUT(112, "拆卸出库"),
+    DISASSEMBLE_IN(113, "拆卸入库");
 
     public static final Integer[] ARRAYS = Arrays.stream(values())
             .map(ErpStockRecordBizTypeEnum::getType)
