@@ -156,6 +156,7 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
         if (CollUtil.isEmpty(allocates)) {
             return;
         }
+        validatePrepaymentAllocateAmount(prepayment, allocates);
         erpFinancePrepaymentAllocateMapper.insertBatch(allocates);
         refreshPrepaymentAmountById(prepayment.getId());
         refreshApStatementAndBizSummary(convertList(allocates, ErpFinancePrepaymentAllocateDO::getApStatementId));
@@ -270,6 +271,16 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
                         statement.getStatementNo(), requestAmount, availableAmount);
             }
         });
+    }
+
+    private void validatePrepaymentAllocateAmount(ErpFinancePrepaymentDO prepayment,
+                                                  List<ErpFinancePrepaymentAllocateDO> allocates) {
+        BigDecimal allocateAmount = getSumValue(allocates, ErpFinancePrepaymentAllocateDO::getAllocateAmount,
+                BigDecimal::add, BigDecimal.ZERO);
+        BigDecimal remainPrice = defaultAmount(prepayment.getRemainPrice());
+        if (allocateAmount.compareTo(remainPrice) > 0) {
+            throw exception(PREPAYMENT_ALLOCATE_AMOUNT_EXCEED, prepayment.getNo(), allocateAmount, remainPrice);
+        }
     }
 
     private void refreshPrepaymentAmountById(Long prepaymentId) {
