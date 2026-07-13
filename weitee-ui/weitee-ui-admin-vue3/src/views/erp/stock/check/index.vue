@@ -280,7 +280,10 @@ import {
   resolveStockCheckStatus,
   STOCK_CHECK_STATUS
 } from './stockCheckStatus.helpers'
-import { createStockCheckListRequestGate } from './stockCheckListRequest.helpers'
+import {
+  createStockCheckListRequestGate,
+  type StockCheckListRequestResult
+} from './stockCheckListRequest.helpers'
 import download from '@/utils/download'
 import { StockCheckApi, StockCheckVO } from '@/api/erp/stock/check'
 import StockCheckForm from './StockCheckForm.vue'
@@ -496,31 +499,41 @@ const setLifecycleLoading = (id: number, action?: StockCheckLifecycleActionKey) 
   lifecycleLoadingById.value = nextLoadingById
 }
 
-const getList = async () => {
-  const requestId = listRequestGate.issue()
+const getList = async (): Promise<StockCheckListRequestResult> => {
   loading.value = true
   listLoadFailed.value = false
-  try {
-    const data = await StockCheckApi.getStockCheckPage(queryParams)
-    if (!listRequestGate.isLatest(requestId)) {
-      return false
+  return listRequestGate.execute(
+    () => StockCheckApi.getStockCheckPage(queryParams),
+    {
+      onSuccess: (data) => {
+        list.value = data.list || []
+        total.value = data.total || 0
+      },
+      onFailure: () => {
+        list.value = []
+        total.value = 0
+        listLoadFailed.value = true
+      },
+      onFinally: () => {
+        loading.value = false
+      }
     }
-    list.value = data.list || []
-    total.value = data.total || 0
-    return true
-  } catch {
-    if (!listRequestGate.isLatest(requestId)) {
-      return false
-    }
-    list.value = []
-    total.value = 0
-    listLoadFailed.value = true
-    return false
-  } finally {
-    if (listRequestGate.isLatest(requestId)) {
-      loading.value = false
-    }
+  )
+}
+
+const notifyOperationRefreshResult = (
+  refreshResult: StockCheckListRequestResult,
+  successText: string
+) => {
+  if (refreshResult === 'applied') {
+    message.success(`${successText}，列表已更新`)
+    return
   }
+  if (refreshResult === 'failed') {
+    message.warning('操作已完成，列表刷新失败')
+    return
+  }
+  message.success('操作已完成，已切换至最新查询结果')
 }
 
 const loadFilterOptions = async () => {
@@ -570,11 +583,9 @@ const handleDelete = async (ids: number[]) => {
   try {
     await message.delConfirm()
     await StockCheckApi.deleteStockCheck(ids)
-    const refreshed = await getList()
+    const refreshResult = await getList()
     selectionList.value = selectionList.value.filter((item) => !ids.includes(item.id))
-    if (refreshed) {
-      message.success(t('common.delSuccess'))
-    }
+    notifyOperationRefreshResult(refreshResult, t('common.delSuccess'))
   } catch {
   } finally {
     setIdsLoading(deletingIds, ids, false)
@@ -634,10 +645,8 @@ const handleLifecycleAction = async (
   try {
     await message.confirm(config.confirmText)
     await config.execute(row.id)
-    const refreshed = await getList()
-    if (refreshed) {
-      message.success(config.successText)
-    }
+    const refreshResult = await getList()
+    notifyOperationRefreshResult(refreshResult, config.successText)
   } catch {
   } finally {
     setLifecycleLoading(row.id)
