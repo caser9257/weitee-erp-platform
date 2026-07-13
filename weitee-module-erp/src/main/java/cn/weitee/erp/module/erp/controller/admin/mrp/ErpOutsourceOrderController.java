@@ -270,6 +270,17 @@ public class ErpOutsourceOrderController {
         return success(new PageResult<>(convertList(pageResult.getList(), this::buildFeeResp), pageResult.getTotal()));
     }
 
+    @PostMapping("/fee/void")
+    @Operation(summary = "作废委外加工费")
+    @Parameter(name = "id", required = true, description = "加工费ID")
+    @Parameter(name = "reason", required = false, description = "作废原因")
+    @PreAuthorize("@ss.hasPermission('erp:production-order:update')")
+    public CommonResult<Boolean> voidOutsourceFee(@RequestParam("id") Long id,
+                                                  @RequestParam(value = "reason", required = false) String reason) {
+        outsourceOrderService.voidOutsourceFee(id, reason);
+        return success(true);
+    }
+
     @GetMapping("/cost-detail")
     @Operation(summary = "获得委外成本明细")
     @PreAuthorize("@ss.hasPermission('erp:production-order:query')")

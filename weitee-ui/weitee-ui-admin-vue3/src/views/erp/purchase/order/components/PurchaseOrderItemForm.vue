@@ -270,6 +270,7 @@ import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { BomApi, BomPricingPreviewVO } from '@/api/erp/mrp/bom'
 import { ProjectApi, ProjectSimpleVO } from '@/api/erp/project'
 import { StockApi } from '@/api/erp/stock/stock'
+import { applyProductToPurchaseOrderItem } from './purchaseOrderItemMapping.helpers'
 import {
   erpCountInputFormatter,
   erpPriceInputFormatter,
@@ -288,6 +289,7 @@ type PurchaseOrderItemFormRow = {
   id?: number
   productId?: number
   projectId?: number
+  productUnitId?: number
   projectName?: string
   productUnitName?: string
   productBarCode?: string
@@ -551,6 +553,7 @@ const onChangeProduct = async (
   const product = productList.value.find((item) => item.id === productId)
   if (!product) {
     row.productUnitName = undefined
+    row.productUnitId = undefined
     row.productBarCode = undefined
     row.productPrice = undefined
     row.pricingBomId = undefined
@@ -561,8 +564,7 @@ const onChangeProduct = async (
     return
   }
 
-  row.productUnitName = product.unitName
-  row.productBarCode = product.barCode
+  applyProductToPurchaseOrderItem(row, product)
   await fillPricingByProduct(productId, row, product.purchasePrice)
   await setStockCount(row)
   await clearRowValidate(rowIndex, ['productId', 'productPrice'])

@@ -189,71 +189,17 @@ public class ErpFinanceDualLedgerResultServiceImpl implements ErpFinanceDualLedg
                 ? "凭证明细导出.xlsx"
                 : bizNo + "-凭证明细导出.xlsx";
 
-        // 10. 使用 FastExcel 多表方式导出（上下文区 + 分录明细）
-        // 注意：header 在写入完成后设置，避免报错时响应已被修改
-        try (ExcelWriter writer = FastExcel.write(response.getOutputStream()).build()) {
-            WriteSheet sheet = FastExcel.writerSheet("凭证明细").build();
-
-            // 10.1 上下文区（单列合并显示）
-            WriteTable contextTable = FastExcel.writerTable().build();
-            List<List<String>> contextHead = new ArrayList<>();
-            contextHead.add(Collections.singletonList("凭证明细导出"));
-            List<List<Object>> contextData = new ArrayList<>();
-            contextData.add(Collections.singletonList("业务类型：" + bizTypeName));
-            contextData.add(Collections.singletonList("业务单号：" + bizNo));
-            contextData.add(Collections.singletonList("凭证号：" + voucherNo));
-            contextData.add(Collections.singletonList("凭证时间：" + voucherTime));
-            contextData.add(Collections.singletonList("凭证状态：" + voucherStatusName));
-            contextData.add(Collections.singletonList("导出时间：" + exportTime));
-            writer.write(contextData, sheet, contextTable);
-
-            // 10.2 空行分隔
-            WriteTable emptyTable = FastExcel.writerTable().build();
-            writer.write(Collections.singletonList(Collections.singletonList("")), sheet, emptyTable);
-
-            // 10.3 分录明细表
-            WriteTable detailTable = FastExcel.writerTable().build();
-            List<List<String>> detailHead = new ArrayList<>();
-            detailHead.add(Collections.singletonList("凭证号"));
-            detailHead.add(Collections.singletonList("业务类型"));
-            detailHead.add(Collections.singletonList("业务单号"));
-            detailHead.add(Collections.singletonList("凭证时间"));
-            detailHead.add(Collections.singletonList("行号"));
-            detailHead.add(Collections.singletonList("摘要"));
-            detailHead.add(Collections.singletonList("科目编码"));
-            detailHead.add(Collections.singletonList("科目名称"));
-            detailHead.add(Collections.singletonList("借方金额"));
-            detailHead.add(Collections.singletonList("贷方金额"));
-
-            List<List<Object>> detailData = new ArrayList<>();
-            for (VoucherEntryExportVO vo : exportList) {
-                List<Object> row = new ArrayList<>();
-                row.add(vo.getVoucherNo());
-                row.add(vo.getBizTypeName());
-                row.add(vo.getBizNo());
-                row.add(vo.getVoucherTime());
-                row.add(vo.getEntryNo());
-                row.add(vo.getSummary());
-                row.add(vo.getSubjectCode());
-                row.add(vo.getSubjectName());
-                row.add(vo.getDebitAmount());
-                row.add(vo.getCreditAmount());
-                detailData.add(row);
-            }
-            writer.write(detailData, sheet, detailTable);
-        }
-        // 写入完成后设置响应头（使用 RFC 5987 编码支持中文文件名）
+        // 10. 设置响应头，必须在 getOutputStream() 之前
         response.setContentType("application/vnd.ms-excel;charset=UTF-8");
         String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name()).replace("+", "%20");
         response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFileName);
 
+        // 11. 使用 FastExcel 多表方式导出（上下文区 + 分录明细）
         try (ExcelWriter writer = FastExcel.write(response.getOutputStream()).build()) {
             WriteSheet sheet = FastExcel.writerSheet("凭证明细").build();
 
-            // 10.1 上下文区（单列合并显示）
+            // 11.1 上下文区（单列合并显示）
             WriteTable contextTable = FastExcel.writerTable().build();
-            List<List<String>> contextHead = new ArrayList<>();
-            contextHead.add(Collections.singletonList("凭证明细导出"));
             List<List<Object>> contextData = new ArrayList<>();
             contextData.add(Collections.singletonList("业务类型：" + bizTypeName));
             contextData.add(Collections.singletonList("业务单号：" + bizNo));
@@ -263,24 +209,12 @@ public class ErpFinanceDualLedgerResultServiceImpl implements ErpFinanceDualLedg
             contextData.add(Collections.singletonList("导出时间：" + exportTime));
             writer.write(contextData, sheet, contextTable);
 
-            // 10.2 空行分隔
+            // 11.2 空行分隔
             WriteTable emptyTable = FastExcel.writerTable().build();
             writer.write(Collections.singletonList(Collections.singletonList("")), sheet, emptyTable);
 
-            // 10.3 分录明细表
+            // 11.3 分录明细表
             WriteTable detailTable = FastExcel.writerTable().build();
-            List<List<String>> detailHead = new ArrayList<>();
-            detailHead.add(Collections.singletonList("凭证号"));
-            detailHead.add(Collections.singletonList("业务类型"));
-            detailHead.add(Collections.singletonList("业务单号"));
-            detailHead.add(Collections.singletonList("凭证时间"));
-            detailHead.add(Collections.singletonList("行号"));
-            detailHead.add(Collections.singletonList("摘要"));
-            detailHead.add(Collections.singletonList("科目编码"));
-            detailHead.add(Collections.singletonList("科目名称"));
-            detailHead.add(Collections.singletonList("借方金额"));
-            detailHead.add(Collections.singletonList("贷方金额"));
-
             List<List<Object>> detailData = new ArrayList<>();
             for (VoucherEntryExportVO vo : exportList) {
                 List<Object> row = new ArrayList<>();

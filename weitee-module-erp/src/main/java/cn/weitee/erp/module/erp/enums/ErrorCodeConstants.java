@@ -353,6 +353,8 @@ public interface ErrorCodeConstants {
     ErrorCode OUTSOURCE_ORDER_TYPE_BOM_INVALID = new ErrorCode(1_030_700_037, "有 BOM 委外必须选择 BOM，无 BOM 委外不能选择 BOM");
     ErrorCode OUTSOURCE_ORDER_MATERIAL_TRACKING_FORBIDDEN = new ErrorCode(1_030_700_038, "无 BOM 委外不支持材料追踪，请切换为有 BOM 委外");
     ErrorCode OUTSOURCE_ORDER_BOM_PRODUCT_MISMATCH = new ErrorCode(1_030_700_039, "BOM 成品与委外订单产品不一致");
+    ErrorCode OUTSOURCE_FEE_NOT_EXISTS = new ErrorCode(1_030_700_040, "委外加工费不存在");
+    ErrorCode OUTSOURCE_FEE_VOID_FAIL_ALLOCATED = new ErrorCode(1_030_700_041, "委外加工费({})已被付款核销，无法作废");
 
     // ========== ERP 一期项目/销售扩展 ==========
     ErrorCode SALE_ORDER_BUSINESS_TYPE_REQUIRED = new ErrorCode(1_020_201_011, "销售订单业务类型不能为空");

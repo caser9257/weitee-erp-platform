@@ -30,10 +30,14 @@ import cn.weitee.erp.module.erp.service.stock.ErpWarehouseService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchInboundReqBO;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
+import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
+import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpApStatementDO;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
@@ -49,6 +53,7 @@ import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.con
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 
 @Service
+@Slf4j
 @Validated
 public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
 
@@ -492,6 +497,37 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
     @Override
     public PageResult<ErpOutsourceFeeDO> getOutsourceFeePage(ErpOutsourceFeePageReqVO pageReqVO) {
         return erpOutsourceFeeMapper.selectPage(pageReqVO);
+    }
+
+    private static final Integer FEE_VOID_STATUS = 30;
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void voidOutsourceFee(Long id, String reason) {
+        ErpOutsourceFeeDO fee = erpOutsourceFeeMapper.selectById(id);
+        if (fee == null) {
+            throw exception(OUTSOURCE_FEE_NOT_EXISTS);
+        }
+        if (ObjectUtil.equal(fee.getStatus(), FEE_VOID_STATUS)) {
+            log.warn("[voidOutsourceFee] 委外加工费已作废，幂等跳过，id={}", id);
+            return;
+        }
+        ErpApStatementDO statement = apStatementService.getApStatementByBizTypeAndBizId(
+                ErpBizTypeEnum.OUTSOURCE_FEE.getType(), id);
+        if (statement != null && statement.getPaidAmount() != null
+                && statement.getPaidAmount().compareTo(BigDecimal.ZERO) > 0) {
+            throw exception(OUTSOURCE_FEE_VOID_FAIL_ALLOCATED, fee.getFeeNo());
+        }
+        erpOutsourceFeeMapper.updateById(new ErpOutsourceFeeDO()
+                .setId(id)
+                .setStatus(FEE_VOID_STATUS));
+        if (statement != null) {
+            apStatementService.closeStatementByBiz(ErpBizTypeEnum.OUTSOURCE_FEE.getType(), id,
+                    reason != null ? reason : "委外加工费作废关闭台账");
+        }
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.OUTSOURCE_FEE.getType(), id,
+                userId, reason != null ? reason : "委外加工费作废回滚凭证");
     }
 
     @Override

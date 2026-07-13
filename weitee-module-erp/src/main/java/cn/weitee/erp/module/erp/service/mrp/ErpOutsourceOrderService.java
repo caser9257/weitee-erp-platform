@@ -52,6 +52,14 @@ public interface ErpOutsourceOrderService {
 
     Long createOutsourceFee(@Valid ErpOutsourceFeeSaveReqVO reqVO);
 
+    /**
+     * 作废委外加工费
+     *
+     * @param id     加工费ID
+     * @param reason 作废原因
+     */
+    void voidOutsourceFee(Long id, String reason);
+
     ErpOutsourceFeeDO getOutsourceFee(Long id);
 
     PageResult<ErpOutsourceFeeDO> getOutsourceFeePage(ErpOutsourceFeePageReqVO pageReqVO);
