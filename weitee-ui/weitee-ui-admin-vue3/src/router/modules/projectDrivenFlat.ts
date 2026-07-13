@@ -1302,12 +1302,17 @@ const shouldRetainFormalAugmentation = (
   route: AppCustomRouteRecordRaw,
   normalizedMenus: AppCustomRouteRecordRaw[] = []
 ) => {
-  if (normalizeRoutePath(route.path) !== '/scm') {
+  const routePath = normalizeRoutePath(route.path)
+  const remoteRoute = normalizedMenus.find((item) => normalizeRoutePath(item.path) === routePath)
+  if (!remoteRoute) {
+    return false
+  }
+
+  if (routePath !== '/scm') {
     return true
   }
 
-  const remoteScmRoute = normalizedMenus.find((item) => normalizeRoutePath(item.path) === '/scm')
-  return !remoteScmRoute?.children?.length
+  return !remoteRoute.children?.length
 }
 
 const filterEmbeddedScmCapabilities = (
