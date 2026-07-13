@@ -106,6 +106,20 @@ class ErpProductionFinishQualityServiceImplTest {
     }
 
     @Test
+    void submitQuality_shouldRejectNegativeQuantityEvenWhenTotalMatchesReportQty() {
+        selectedQualityRef.set(new ErpProductionFinishQualityDO()
+                .setId(4L)
+                .setReportQty(new BigDecimal("10"))
+                .setStatus(ErpQaStatusEnum.TO_INSPECT.getStatus()));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.submitQuality(4L, 2L, new BigDecimal("11"), new BigDecimal("-1"), "invalid"));
+
+        assertEquals(1_030_700_016, ex.getCode());
+        assertEquals(null, updatedQualityRef.get());
+    }
+
+    @Test
     void submitQuality_shouldMarkPartialAndPublishEvent() {
         selectedQualityRef.set(new ErpProductionFinishQualityDO()
                 .setId(1L)
