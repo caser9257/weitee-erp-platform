@@ -5,6 +5,7 @@ import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.inbound.ErpProductionInboundPageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionInboundDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -16,6 +17,14 @@ public interface ErpProductionInboundMapper extends BaseMapperX<ErpProductionInb
 
     default ErpProductionInboundDO selectByFinishQualityId(Long finishQualityId) {
         return selectOne(ErpProductionInboundDO::getFinishQualityId, finishQualityId);
+    }
+
+    default int resetExecutionInfoById(Long id) {
+        return update(new LambdaUpdateWrapper<ErpProductionInboundDO>()
+                .eq(ErpProductionInboundDO::getId, id)
+                .set(ErpProductionInboundDO::getExecutedBy, null)
+                .set(ErpProductionInboundDO::getExecutedTime, null)
+                .set(ErpProductionInboundDO::getInboundTime, null));
     }
 
     default PageResult<ErpProductionInboundDO> selectPage(ErpProductionInboundPageReqVO reqVO) {
