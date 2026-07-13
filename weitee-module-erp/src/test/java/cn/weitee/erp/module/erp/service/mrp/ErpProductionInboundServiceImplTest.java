@@ -30,6 +30,7 @@ class ErpProductionInboundServiceImplTest {
     private final AtomicReference<ErpProductionInboundDO> selectedInboundRef = new AtomicReference<>();
     private final AtomicReference<ErpProductionInboundDO> existingInboundByQualityRef = new AtomicReference<>();
     private final AtomicReference<ErpProductionInboundDO> updatedInboundRef = new AtomicReference<>();
+    private final AtomicReference<Long> resetExecutionInfoInboundIdRef = new AtomicReference<>();
     private final AtomicReference<ErpProductionOrderDO> selectedOrderRef = new AtomicReference<>();
     private final AtomicReference<ErpProductionCostDetailRespVO> costDetailRef = new AtomicReference<>();
     private final AtomicReference<ErpStockRecordCreateReqBO> stockRecordReqRef = new AtomicReference<>();
@@ -50,6 +51,7 @@ class ErpProductionInboundServiceImplTest {
         selectedInboundRef.set(null);
         existingInboundByQualityRef.set(null);
         updatedInboundRef.set(null);
+        resetExecutionInfoInboundIdRef.set(null);
         selectedOrderRef.set(null);
         costDetailRef.set(null);
         stockRecordReqRef.set(null);
@@ -76,6 +78,10 @@ class ErpProductionInboundServiceImplTest {
             }
             if ("updateById".equals(methodName)) {
                 updatedInboundRef.set((ErpProductionInboundDO) args[0]);
+                return 1;
+            }
+            if ("resetExecutionInfoById".equals(methodName)) {
+                resetExecutionInfoInboundIdRef.set((Long) args[0]);
                 return 1;
             }
             return null;
@@ -213,6 +219,7 @@ class ErpProductionInboundServiceImplTest {
         assertEquals(new BigDecimal("-7"), stockRecordReqRef.get().getCount());
         assertEquals(ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(), stockRecordReqRef.get().getBizType());
         assertEquals(ErpProductionInboundStatusEnum.PENDING.getStatus(), updatedInboundRef.get().getStatus());
+        assertEquals(63L, resetExecutionInfoInboundIdRef.get());
         assertEquals(ErpBizTypeEnum.PRODUCTION_INBOUND.getType(), rollbackBizTypeRef.get());
         assertEquals(63L, rollbackBizIdRef.get());
         assertEquals(100L, rollbackUserIdRef.get());
