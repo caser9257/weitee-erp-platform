@@ -68,10 +68,10 @@
           <el-form-item label="状态" prop="status">
             <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
               <el-option
-                v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
+                v-for="option in stockCheckStatusOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
               />
             </el-select>
           </el-form-item>
@@ -167,7 +167,7 @@
           </div>
         </template>
 
-        <el-table-column width="36" type="selection" />
+        <el-table-column width="36" type="selection" :selectable="canSelectForDelete" />
         <el-table-column label="盘点信息" min-width="188">
           <template #default="{ row }">
             <div class="ledger-order">
@@ -199,9 +199,9 @@
             <el-tag
               size="small"
               effect="light"
-              :type="getStockAuditStatusTagType({ status: row.status, processInstanceId: row.processInstanceId })"
+              :type="getStockCheckStatusTagType(row.status)"
             >
-              {{ getStockAuditStatusLabel({ status: row.status, processInstanceId: row.processInstanceId }) }}
+              {{ resolveStockCheckStatus(row.status).label }}
             </el-tag>
           </template>
         </el-table-column>
@@ -224,10 +224,17 @@
               </template>
               <el-dropdown
                 v-if="getOverflowActionDescriptors(row).length"
+                :disabled="isRowBusy(row.id)"
                 @command="(command) => handleCommand(command, row)"
               >
                 <el-tooltip content="更多操作" placement="top">
-                  <el-button link type="primary" class="ledger-actions__more">
+                  <el-button
+                    link
+                    type="primary"
+                    class="ledger-actions__more"
+                    :disabled="isRowBusy(row.id)"
+                    :loading="isOverflowActionLoading(row)"
+                  >
                     <Icon icon="ep:more-filled" />
                   </el-button>
                 </el-tooltip>
@@ -267,12 +274,12 @@
 </template>
 
 <script setup lang="ts">
-import { getIntDictOptions, DICT_TYPE } from '@/utils/dict'
 import { formatDate } from '@/utils/formatTime'
 import {
-  getStockAuditStatusLabel,
-  getStockAuditStatusTagType
-} from '../shared/stockAuditStatus.helpers'
+  deriveStockCheckActions,
+  resolveStockCheckStatus,
+  STOCK_CHECK_STATUS
+} from './stockCheckStatus.helpers'
 import download from '@/utils/download'
 import { StockCheckApi, StockCheckVO } from '@/api/erp/stock/check'
 import StockCheckForm from './StockCheckForm.vue'
@@ -290,7 +297,8 @@ type StockCheckListRow = StockCheckVO & {
   creatorName?: string
 }
 
-type StockCheckActionKey = 'detail' | 'edit' | 'toggleStatus' | 'delete'
+type StockCheckLifecycleActionKey = 'start' | 'submit' | 'approveAndClose' | 'reject'
+type StockCheckActionKey = 'detail' | 'edit' | StockCheckLifecycleActionKey | 'delete'
 
 type StockCheckActionDescriptor = {
   key: StockCheckActionKey
@@ -304,7 +312,7 @@ type StockCheckActionDescriptor = {
 const canQueryStockCheck = checkPermi(['erp:stock-check:query'])
 const canCreateStockCheck = checkPermi(['erp:stock-check:create'])
 const canUpdateStockCheck = checkPermi(['erp:stock-check:update'])
-const canUpdateStockCheckStatus = checkPermi(['erp:stock-check:update-status'])
+const canManageStockCheckLifecycle = checkPermi(['erp:stock-check:update-status'])
 const canDeleteStockCheck = checkPermi(['erp:stock-check:delete'])
 const canExportStockCheck = checkPermi(['erp:stock-check:export'])
 
@@ -330,12 +338,24 @@ const queryParams = reactive({
 const queryFormRef = ref()
 const exportLoading = ref(false)
 const deletingIds = ref<number[]>([])
-const statusUpdatingIds = ref<number[]>([])
+const lifecycleLoadingById = ref<Record<number, StockCheckLifecycleActionKey | undefined>>({})
 const productList = ref<ProductVO[]>([])
 const warehouseList = ref<WarehouseVO[]>([])
 const userList = ref<UserVO[]>([])
 const selectionList = ref<StockCheckListRow[]>([])
 const formRef = ref()
+
+const stockCheckStatusOptions = Object.values(STOCK_CHECK_STATUS).map((value) => ({
+  value,
+  label: resolveStockCheckStatus(value).label
+}))
+
+const stockCheckTagTypeMap = {
+  neutral: 'info',
+  primary: 'primary',
+  warning: 'warning',
+  success: 'success'
+} as const
 
 const selectedIds = computed(() => selectionList.value.map((item) => item.id))
 const canRetryList = computed(() => listLoadFailed.value && !loading.value)
@@ -343,9 +363,24 @@ const advancedFilterCount = computed(() => {
   const fields = [queryParams.creator, queryParams.status, queryParams.remark]
   return fields.filter((item) => item !== undefined && item !== null && item !== '').length
 })
-const disableBatchDelete = computed(
-  () => selectedIds.value.length === 0 || deletingIds.value.length > 0
-)
+const getLifecycleLoadingAction = (id?: number) =>
+  id ? lifecycleLoadingById.value[id] : undefined
+
+const isDeletingRow = (id?: number) => !!id && deletingIds.value.includes(id)
+const isRowBusy = (id?: number) =>
+  !!id && (isDeletingRow(id) || !!getLifecycleLoadingAction(id))
+
+const canSelectForDelete = (row: StockCheckListRow) =>
+  canDeleteStockCheck && deriveStockCheckActions(row.status).canDelete && !isRowBusy(row.id)
+
+const disableBatchDelete = computed(() => {
+  if (!selectionList.value.length) {
+    return true
+  }
+  return selectionList.value.some(
+    (row) => !deriveStockCheckActions(row.status).canDelete || isRowBusy(row.id)
+  )
+})
 
 const formatDateValue = (value?: Date | string | number) =>
   value ? formatDate(value, 'YYYY-MM-DD') : '-'
@@ -366,34 +401,64 @@ const formatCurrency = (value?: number | string | null) =>
     maximumFractionDigits: 2
   }).format(Number(value || 0))
 
-const canEdit = (row: StockCheckListRow) => row.status !== 20
-const canApprove = (row: StockCheckListRow) => row.status === 10
-const isDeletingRow = (id?: number) => !!id && deletingIds.value.includes(id)
-const isUpdatingStatus = (id?: number) => !!id && statusUpdatingIds.value.includes(id)
+const getStockCheckStatusTagType = (status?: number) =>
+  stockCheckTagTypeMap[resolveStockCheckStatus(status).tone]
 
 const getAllActionDescriptors = (row: StockCheckListRow): StockCheckActionDescriptor[] => {
   const actions: StockCheckActionDescriptor[] = []
+  const actionState = deriveStockCheckActions(row.status)
+  const rowBusy = isRowBusy(row.id)
+  const loadingAction = getLifecycleLoadingAction(row.id)
 
   if (canQueryStockCheck) {
-    actions.push({ key: 'detail', label: '详情', type: 'primary' })
+    actions.push({ key: 'detail', label: '详情', type: 'primary', disabled: rowBusy })
   }
-  if (canUpdateStockCheck && canEdit(row)) {
-    actions.push({ key: 'edit', label: '编辑' })
+  if (canUpdateStockCheck && actionState.canEdit) {
+    actions.push({ key: 'edit', label: '编辑', disabled: rowBusy })
   }
-  if (canUpdateStockCheckStatus) {
+  if (canManageStockCheckLifecycle && actionState.canStart) {
     actions.push({
-      key: 'toggleStatus',
-      label: canApprove(row) ? '审批' : '反审批',
-      type: canApprove(row) ? 'primary' : 'danger',
-      disabled: isUpdatingStatus(row.id),
-      loading: isUpdatingStatus(row.id)
+      key: 'start',
+      label: '开始盘点',
+      type: 'primary',
+      disabled: rowBusy,
+      loading: loadingAction === 'start'
     })
   }
-  if (canDeleteStockCheck) {
+  if (canManageStockCheckLifecycle && actionState.canSubmit) {
+    actions.push({
+      key: 'submit',
+      label: '提交审核',
+      type: 'primary',
+      disabled: rowBusy,
+      loading: loadingAction === 'submit'
+    })
+  }
+  if (canManageStockCheckLifecycle && actionState.canApproveAndClose) {
+    actions.push({
+      key: 'approveAndClose',
+      label: '审核并关闭',
+      type: 'primary',
+      disabled: rowBusy,
+      loading: loadingAction === 'approveAndClose'
+    })
+  }
+  if (canManageStockCheckLifecycle && actionState.canReject) {
+    actions.push({
+      key: 'reject',
+      label: '驳回',
+      type: 'danger',
+      disabled: rowBusy,
+      loading: loadingAction === 'reject',
+      danger: true
+    })
+  }
+  if (canDeleteStockCheck && actionState.canDelete) {
     actions.push({
       key: 'delete',
       label: '删除',
-      disabled: isDeletingRow(row.id),
+      disabled: rowBusy,
+      loading: isDeletingRow(row.id),
       danger: true
     })
   }
@@ -408,12 +473,25 @@ const getOverflowActionDescriptors = (row: StockCheckListRow) => {
   return getAllActionDescriptors(row).filter((item) => !inlineKeys.has(item.key))
 }
 
+const isOverflowActionLoading = (row: StockCheckListRow) =>
+  getOverflowActionDescriptors(row).some((action) => action.loading)
+
 const setIdsLoading = (source: Ref<number[]>, ids: number[], loadingState: boolean) => {
   if (loadingState) {
     source.value = Array.from(new Set([...source.value, ...ids]))
     return
   }
   source.value = source.value.filter((item) => !ids.includes(item))
+}
+
+const setLifecycleLoading = (id: number, action?: StockCheckLifecycleActionKey) => {
+  const nextLoadingById = { ...lifecycleLoadingById.value }
+  if (action) {
+    nextLoadingById[id] = action
+  } else {
+    delete nextLoadingById[id]
+  }
+  lifecycleLoadingById.value = nextLoadingById
 }
 
 const getList = async () => {
@@ -423,10 +501,12 @@ const getList = async () => {
     const data = await StockCheckApi.getStockCheckPage(queryParams)
     list.value = data.list || []
     total.value = data.total || 0
+    return true
   } catch {
     list.value = []
     total.value = 0
     listLoadFailed.value = true
+    return false
   } finally {
     loading.value = false
   }
@@ -466,37 +546,90 @@ const openForm = (type: string, id?: number) => {
 }
 
 const handleDelete = async (ids: number[]) => {
-  if (!ids.length) {
+  const targetRows = ids.map((id) => list.value.find((row) => row.id === id))
+  if (
+    !ids.length ||
+    targetRows.some(
+      (row) => !row || !deriveStockCheckActions(row.status).canDelete || isRowBusy(row.id)
+    )
+  ) {
     return
   }
+  setIdsLoading(deletingIds, ids, true)
   try {
     await message.delConfirm()
-    setIdsLoading(deletingIds, ids, true)
     await StockCheckApi.deleteStockCheck(ids)
-    message.success(t('common.delSuccess'))
-    await getList()
+    const refreshed = await getList()
     selectionList.value = selectionList.value.filter((item) => !ids.includes(item.id))
+    if (refreshed) {
+      message.success(t('common.delSuccess'))
+    }
   } catch {
   } finally {
     setIdsLoading(deletingIds, ids, false)
   }
 }
 
-const handleUpdateStatus = async (row: StockCheckListRow) => {
-  if (!row.id) {
+const lifecycleActionConfig = {
+  start: {
+    confirmText: '确定开始盘点该盘点单吗？',
+    successText: '已开始盘点',
+    execute: StockCheckApi.startCounting
+  },
+  submit: {
+    confirmText: '确定将该盘点单提交审核吗？',
+    successText: '已提交审核',
+    execute: StockCheckApi.submitForReview
+  },
+  approveAndClose: {
+    confirmText: '确定审核并关闭该盘点单吗？关闭后将写入库存并生成财务凭证。',
+    successText: '盘点单已审核并关闭',
+    execute: StockCheckApi.approveAndClose
+  },
+  reject: {
+    confirmText: '确定驳回该盘点单吗？',
+    successText: '盘点单已驳回',
+    execute: StockCheckApi.reject
+  }
+} as const
+
+const canExecuteLifecycleAction = (
+  action: StockCheckLifecycleActionKey,
+  row: StockCheckListRow
+) => {
+  const actionState = deriveStockCheckActions(row.status)
+  return {
+    start: actionState.canStart,
+    submit: actionState.canSubmit,
+    approveAndClose: actionState.canApproveAndClose,
+    reject: actionState.canReject
+  }[action]
+}
+
+const handleLifecycleAction = async (
+  action: StockCheckLifecycleActionKey,
+  row: StockCheckListRow
+) => {
+  if (
+    !row.id ||
+    !canManageStockCheckLifecycle ||
+    !canExecuteLifecycleAction(action, row) ||
+    isRowBusy(row.id)
+  ) {
     return
   }
-  const nextStatus = canApprove(row) ? 20 : 10
-  const actionText = nextStatus === 20 ? '审批' : '反审批'
+  const config = lifecycleActionConfig[action]
+  setLifecycleLoading(row.id, action)
   try {
-    await message.confirm(`确定${actionText}该盘点单吗？`)
-    setIdsLoading(statusUpdatingIds, [row.id], true)
-    await StockCheckApi.updateStockCheckStatus(row.id, nextStatus)
-    message.success(`${actionText}成功`)
-    await getList()
+    await message.confirm(config.confirmText)
+    await config.execute(row.id)
+    const refreshed = await getList()
+    if (refreshed) {
+      message.success(config.successText)
+    }
   } catch {
   } finally {
-    setIdsLoading(statusUpdatingIds, [row.id], false)
+    setLifecycleLoading(row.id)
   }
 }
 
@@ -517,6 +650,9 @@ const handleSelectionChange = (rows: StockCheckListRow[]) => {
 }
 
 const handleCommand = async (command: StockCheckActionKey | string, row: StockCheckListRow) => {
+  if (isRowBusy(row.id)) {
+    return
+  }
   switch (command) {
     case 'detail':
       openForm('detail', row.id)
@@ -524,8 +660,11 @@ const handleCommand = async (command: StockCheckActionKey | string, row: StockCh
     case 'edit':
       openForm('update', row.id)
       break
-    case 'toggleStatus':
-      await handleUpdateStatus(row)
+    case 'start':
+    case 'submit':
+    case 'approveAndClose':
+    case 'reject':
+      await handleLifecycleAction(command, row)
       break
     case 'delete':
       await handleDelete(row.id ? [row.id] : [])
