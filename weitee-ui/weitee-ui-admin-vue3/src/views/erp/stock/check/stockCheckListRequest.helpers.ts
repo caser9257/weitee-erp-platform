@@ -1,3 +1,11 @@
+export type StockCheckListRequestResult = 'applied' | 'failed' | 'superseded'
+
+export type StockCheckListRequestCallbacks<T> = {
+  onSuccess: (data: T) => void
+  onFailure: () => void
+  onFinally: () => void
+}
+
 export const createStockCheckListRequestGate = () => {
   let latestRequestId = 0
 
@@ -8,5 +16,30 @@ export const createStockCheckListRequestGate = () => {
 
   const isLatest = (requestId: number) => requestId === latestRequestId
 
-  return { issue, isLatest }
+  const execute = async <T>(
+    request: () => Promise<T>,
+    callbacks: StockCheckListRequestCallbacks<T>
+  ): Promise<StockCheckListRequestResult> => {
+    const requestId = issue()
+    try {
+      const data = await request()
+      if (!isLatest(requestId)) {
+        return 'superseded'
+      }
+      callbacks.onSuccess(data)
+      return 'applied'
+    } catch {
+      if (!isLatest(requestId)) {
+        return 'superseded'
+      }
+      callbacks.onFailure()
+      return 'failed'
+    } finally {
+      if (isLatest(requestId)) {
+        callbacks.onFinally()
+      }
+    }
+  }
+
+  return { issue, isLatest, execute }
 }
