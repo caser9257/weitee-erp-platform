@@ -190,6 +190,23 @@ class ErpProductionOrderServiceImplTest {
         assertEquals(new BigDecimal("12"), qualityReportQtyRef.get());
     }
 
+    @Test
+    void finishProductionOrder_shouldRejectCreatedOrder() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(14L)
+                .setProductId(502L)
+                .setStatus(ErpProductionOrderStatusEnum.CREATED.getStatus()));
+
+        assertThrows(ServiceException.class, () -> productionOrderService.finishProductionOrder(
+                new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderFinishReqVO()
+                        .setId(14L)
+                        .setWarehouseId(11L)
+                        .setFinishedQty(new BigDecimal("1"))));
+
+        assertEquals(null, updatedOrderRef.get());
+        assertEquals(null, qualityOrderRef.get());
+    }
+
     @SuppressWarnings("unchecked")
     private <T> T createProxy(Class<T> type, MethodHandler handler) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},
