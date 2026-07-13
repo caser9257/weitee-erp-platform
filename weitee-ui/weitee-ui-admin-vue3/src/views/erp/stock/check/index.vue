@@ -282,6 +282,7 @@ import {
 } from './stockCheckStatus.helpers'
 import {
   createStockCheckListRequestGate,
+  resolveStockCheckListRefreshMessage,
   type StockCheckListRequestResult
 } from './stockCheckListRequest.helpers'
 import download from '@/utils/download'
@@ -525,15 +526,12 @@ const notifyOperationRefreshResult = (
   refreshResult: StockCheckListRequestResult,
   successText: string
 ) => {
-  if (refreshResult === 'applied') {
-    message.success(`${successText}，列表已更新`)
-    return
-  }
+  const messageText = resolveStockCheckListRefreshMessage(refreshResult, successText)
   if (refreshResult === 'failed') {
-    message.warning('操作已完成，列表刷新失败')
+    message.warning(messageText)
     return
   }
-  message.success('操作已完成，已切换至最新查询结果')
+  message.success(messageText)
 }
 
 const loadFilterOptions = async () => {
