@@ -265,6 +265,131 @@ SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE887
 WHERE @experience_inbound_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-inbound:update' AND deleted = b'0');
 
+-- The formal stock-assemble menu can be absent from an older backup. Create
+-- the page and its controller permissions together so the experience role
+-- never receives a menu entry without executable actions.
+SET @experience_assemble_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'erp/stock/assemble/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+SET @experience_next_menu_id := @experience_next_menu_id + 1;
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0xE7BB84E8A385E4B88EE68B86E58DB8, '', 2, 90, @experience_scm_root_id,
+       'assemble', 'ep:set-up', 'erp/stock/assemble/index', 'ErpStockAssemblePage', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_scm_root_id IS NOT NULL
+  AND @experience_assemble_menu_id IS NULL;
+
+SET @experience_assemble_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'erp/stock/assemble/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE69FA5E8AFA2,
+       'erp:stock-assemble:query', 3, 1, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_assemble_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:query' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE696B0E5A29E,
+       'erp:stock-assemble:create', 3, 2, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_assemble_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:create' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE4BFAEE694B9,
+       'erp:stock-assemble:update', 3, 3, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_assemble_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:update' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE5AEA1E6A0B8,
+       'erp:stock-assemble:update-status', 3, 4, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_assemble_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:update-status' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE588A0E999A4,
+       'erp:stock-assemble:delete', 3, 5, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_assemble_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:delete' AND deleted = b'0');
+
+-- BOM is needed by the assembly workflow. Keep its buttons under the
+-- manufacturing page instead of inheriting the research (/rd) menu tree.
+SET @experience_bom_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'erp/mrp/bom/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+SET @experience_next_menu_id := @experience_next_menu_id + 1;
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0x42E4BEBFE7AEA1E79086, '', 2, 20, @experience_mes_root_id,
+       'bom', 'ep:document-copy', 'erp/mrp/bom/index', 'ErpBomPage', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_mes_root_id IS NOT NULL
+  AND @experience_bom_menu_id IS NULL;
+
+SET @experience_bom_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'erp/mrp/bom/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE69FA5E8AFA2,
+       'erp:bom:query', 3, 1, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bom_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:query' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE696B0E5A29E,
+       'erp:bom:create', 3, 2, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bom_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:create' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE4BFAEE694B9,
+       'erp:bom:update', 3, 3, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bom_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:update' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE588A0E999A4,
+       'erp:bom:delete', 3, 4, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bom_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:delete' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
+
 -- The supply-chain experience account receives the core business trees and a
 -- small manufacturing action allowlist. Finance, system administration,
 -- user/permission management, and research/engineering trees are excluded.
@@ -291,7 +416,6 @@ SELECT id
 FROM system_menu
 WHERE deleted = b'0'
   AND permission IN (
-      'erp:bom:query', 'erp:bom:create', 'erp:bom:update', 'erp:bom:update-status',
       'erp:mrp-plan:query', 'erp:mrp-plan:create', 'erp:mrp-plan:run',
       'erp:mrp-plan-rule:query', 'erp:mrp-plan-rule:create', 'erp:mrp-plan-rule:update',
       'erp:mrp-suggest:query', 'erp:mrp-suggest:approve', 'erp:mrp-suggest:reject',
@@ -307,8 +431,19 @@ WHERE deleted = b'0'
       'erp:purchase-in-quality:recheck', 'erp:purchase-in-quality:assign-checker',
       'erp:purchase-in-quality:update',
       'erp:stock-assemble:query', 'erp:stock-assemble:create',
-      'erp:stock-assemble:update', 'erp:stock-assemble:update-status'
+      'erp:stock-assemble:update', 'erp:stock-assemble:update-status',
+      'erp:stock-assemble:delete',
+      'erp:bom:query', 'erp:bom:create', 'erp:bom:update', 'erp:bom:delete'
   );
+
+-- The legacy research tree contains duplicate BOM permission strings. Keep
+-- only the buttons attached to the manufacturing BOM page for scm01.
+DELETE allowed
+FROM tmp_experience_scm_menu_ids allowed
+INNER JOIN system_menu menu ON menu.id = allowed.menu_id
+WHERE menu.deleted = b'0'
+  AND menu.permission IN ('erp:bom:query', 'erp:bom:create', 'erp:bom:update', 'erp:bom:delete')
+  AND menu.parent_id <> @experience_bom_menu_id;
 
 -- Keep the page entries for the explicitly tested manufacturing workflows.
 INSERT IGNORE INTO tmp_experience_scm_menu_ids (menu_id)
@@ -371,14 +506,22 @@ WHERE NOT EXISTS (
 
 DROP TEMPORARY TABLE IF EXISTS tmp_experience_scm_menu_ids;
 
+-- The experience account must not inherit the broad operational roles: they
+-- expose unrelated research and finance roots through their existing menus.
+UPDATE system_user_role ur
+INNER JOIN system_users u ON u.id = ur.user_id AND u.deleted = b'0'
+SET ur.deleted = b'1',
+    ur.updater = 'tester',
+    ur.update_time = NOW()
+WHERE u.username = 'scm01'
+  AND ur.role_id IN (920001, 920004, 920701)
+  AND ur.deleted = b'0';
+
 INSERT INTO system_user_role (user_id, role_id, creator, create_time, updater, update_time, deleted)
 SELECT u.id, r.role_id, 'tester', NOW(), 'tester', NOW(), b'0'
 FROM system_users u
 JOIN (
-    SELECT 910004 AS role_id UNION ALL
-    SELECT 920001 UNION ALL
-    SELECT 920004 UNION ALL
-    SELECT 920701
+    SELECT 910004 AS role_id
 ) r
 WHERE u.username = 'scm01'
   AND u.deleted = b'0'
@@ -386,3 +529,41 @@ WHERE u.username = 'scm01'
       SELECT 1 FROM system_user_role ur
       WHERE ur.user_id = u.id AND ur.role_id = r.role_id AND ur.deleted = b'0'
   );
+
+-- Auto-generated vouchers use the default ledger or both ledgers from an
+-- enabled dual-ledger configuration. Seed an open period for the current
+-- month for every such ledger so a newly started experience environment can
+-- complete supply-chain to finance voucher flows immediately.
+INSERT INTO erp_finance_period (ledger_id, period_code, period_year, period_month, period_sort,
+                                start_date, end_date, status, creator, create_time, updater, update_time, deleted)
+SELECT required.ledger_id,
+       DATE_FORMAT(CURDATE(), '%Y-%m'),
+       YEAR(CURDATE()),
+       MONTH(CURDATE()),
+       YEAR(CURDATE()) * 100 + MONTH(CURDATE()),
+       DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE()) - 1 DAY),
+       LAST_DAY(CURDATE()),
+       10,
+       'tester', NOW(), 'tester', NOW(), b'0'
+FROM (
+    SELECT id AS ledger_id
+    FROM erp_finance_ledger
+    WHERE default_status = b'1' AND status = 0 AND deleted = b'0'
+    UNION
+    SELECT external_ledger_id
+    FROM erp_finance_dual_ledger_config
+    WHERE status = 0 AND deleted = b'0'
+    UNION
+    SELECT internal_ledger_id
+    FROM erp_finance_dual_ledger_config
+    WHERE status = 0 AND deleted = b'0'
+) required
+INNER JOIN erp_finance_ledger ledger
+        ON ledger.id = required.ledger_id
+       AND ledger.status = 0
+       AND ledger.deleted = b'0'
+LEFT JOIN erp_finance_period period
+       ON period.ledger_id = required.ledger_id
+      AND period.period_sort = YEAR(CURDATE()) * 100 + MONTH(CURDATE())
+      AND period.deleted = b'0'
+WHERE period.id IS NULL;
