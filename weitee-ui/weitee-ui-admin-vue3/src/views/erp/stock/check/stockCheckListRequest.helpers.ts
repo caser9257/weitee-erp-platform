@@ -1,5 +1,18 @@
 export type StockCheckListRequestResult = 'applied' | 'failed' | 'superseded'
 
+export const resolveStockCheckListRefreshMessage = (
+  result: StockCheckListRequestResult,
+  successText: string
+) => {
+  if (result === 'applied') {
+    return `${successText}，列表已更新`
+  }
+  if (result === 'failed') {
+    return '操作已完成，列表刷新失败'
+  }
+  return '操作已完成，列表刷新已由新的查询请求接管'
+}
+
 export type StockCheckListRequestCallbacks<T> = {
   onSuccess: (data: T) => void
   onFailure: () => void

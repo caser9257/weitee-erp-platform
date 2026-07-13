@@ -1,5 +1,18 @@
 import assert from 'node:assert/strict'
-import { createStockCheckListRequestGate } from './stockCheckListRequest.helpers'
+import {
+  createStockCheckListRequestGate,
+  resolveStockCheckListRefreshMessage
+} from './stockCheckListRequest.helpers'
+
+assert.equal(
+  resolveStockCheckListRefreshMessage('applied', '已开始盘点'),
+  '已开始盘点，列表已更新'
+)
+assert.equal(resolveStockCheckListRefreshMessage('failed', '已开始盘点'), '操作已完成，列表刷新失败')
+assert.equal(
+  resolveStockCheckListRefreshMessage('superseded', '已开始盘点'),
+  '操作已完成，列表刷新已由新的查询请求接管'
+)
 
 const createDeferred = <T>() => {
   let resolve!: (value: T) => void
