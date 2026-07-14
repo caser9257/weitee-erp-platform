@@ -133,10 +133,8 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
                 inbound.getUnitCost(), inbound.getTotalCost()));
         erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
                 .setId(id)
-                .setStatus(ErpProductionInboundStatusEnum.PENDING.getStatus())
-                .setExecutedBy(null)
-                .setExecutedTime(null)
-                .setInboundTime(null));
+                .setStatus(ErpProductionInboundStatusEnum.PENDING.getStatus()));
+        erpProductionInboundMapper.resetExecutionInfoById(id);
         financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.PRODUCTION_INBOUND.getType(), id, operatorUserId, "自制入库反执行回滚凭证");
     }
 

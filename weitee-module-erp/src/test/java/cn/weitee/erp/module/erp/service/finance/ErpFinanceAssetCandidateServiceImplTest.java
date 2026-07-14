@@ -1,8 +1,11 @@
 package cn.weitee.erp.module.erp.service.finance;
 
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetCandidateDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseItemDO;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.asset.ErpFinanceAssetCandidateConfirmReqVO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseAccountingTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseTypeEnum;
@@ -13,13 +16,99 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceAsset.ASSET_CANDIDATE_CONFIRM_FAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinanceAssetCandidateServiceImplTest {
+
+    @Test
+    void confirmFinanceAssetCandidate_whenCandidateAlreadyLinkedAsset_shouldFailWithoutCreatingAsset() throws Exception {
+        ErpFinanceAssetCandidateServiceImpl service = new ErpFinanceAssetCandidateServiceImpl();
+        AtomicInteger createAssetCount = new AtomicInteger();
+        AtomicInteger updateCandidateCount = new AtomicInteger();
+
+        setField(service, "financeAssetCandidateMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetCandidateMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpFinanceAssetCandidateDO()
+                        .setId(108901L)
+                        .setSourceType(ErpFinanceAssetSourceTypeEnum.FINANCE_EXPENSE.getType())
+                        .setSourceBizId(981704L)
+                        .setSourceBizNo("FYBX-981704")
+                        .setSourceItemId(0L)
+                        .setStatus(ErpFinanceAssetCandidateStatusEnum.PENDING_CONFIRM.getStatus());
+            }
+            if ("updateById".equals(methodName)) {
+                updateCandidateCount.incrementAndGet();
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "financeAssetMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetMapper.class, (methodName, args) -> {
+            if ("selectByCandidateId".equals(methodName)) {
+                return new ErpFinanceAssetDO()
+                        .setId(108911L)
+                        .setCandidateId(108901L);
+            }
+            return null;
+        }));
+        setField(service, "financeAssetService", createProxy(ErpFinanceAssetService.class, (methodName, args) -> {
+            if ("createFinanceAsset".equals(methodName)) {
+                createAssetCount.incrementAndGet();
+                return 108913L;
+            }
+            return null;
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.confirmFinanceAssetCandidate(buildConfirmReqVO(108901L)));
+
+        assertEquals(ASSET_CANDIDATE_CONFIRM_FAIL.getCode(), ex.getCode());
+        assertEquals(0, createAssetCount.get());
+        assertEquals(0, updateCandidateCount.get());
+    }
+
+    @Test
+    void confirmFinanceAssetCandidate_whenCandidateStatusChangedConcurrently_shouldFailWithoutCreatingAsset() throws Exception {
+        ErpFinanceAssetCandidateServiceImpl service = new ErpFinanceAssetCandidateServiceImpl();
+        AtomicInteger createAssetCount = new AtomicInteger();
+
+        setField(service, "financeAssetCandidateMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetCandidateMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpFinanceAssetCandidateDO()
+                        .setId(108902L)
+                        .setSourceType(ErpFinanceAssetSourceTypeEnum.FINANCE_EXPENSE.getType())
+                        .setSourceBizId(981704L)
+                        .setSourceBizNo("FYBX-981704")
+                        .setSourceItemId(0L)
+                        .setStatus(ErpFinanceAssetCandidateStatusEnum.PENDING_CONFIRM.getStatus());
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                return 0;
+            }
+            return null;
+        }));
+        setField(service, "financeAssetMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetMapper.class, (methodName, args) -> null));
+        setField(service, "financeAssetService", createProxy(ErpFinanceAssetService.class, (methodName, args) -> {
+            if ("createFinanceAsset".equals(methodName)) {
+                createAssetCount.incrementAndGet();
+                return 108914L;
+            }
+            return null;
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.confirmFinanceAssetCandidate(buildConfirmReqVO(108902L)));
+
+        assertEquals(ASSET_CANDIDATE_CONFIRM_FAIL.getCode(), ex.getCode());
+        assertEquals(0, createAssetCount.get());
+    }
 
     @Test
     void createCandidateFromExpense_shouldSupportResearchCapitalizeExpense() throws Exception {
@@ -98,6 +187,22 @@ class ErpFinanceAssetCandidateServiceImplTest {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private ErpFinanceAssetCandidateConfirmReqVO buildConfirmReqVO(Long candidateId) {
+        ErpFinanceAssetCandidateConfirmReqVO reqVO = new ErpFinanceAssetCandidateConfirmReqVO();
+        reqVO.setCandidateId(candidateId);
+        reqVO.setName("研发测试设备");
+        reqVO.setCategoryName("研发设备");
+        reqVO.setPurchaseDate(LocalDate.of(2026, 5, 1));
+        reqVO.setStartUseDate(LocalDate.of(2026, 5, 1));
+        reqVO.setOriginalAmount(new BigDecimal("600.00"));
+        reqVO.setSalvageRate(BigDecimal.ZERO);
+        reqVO.setDepreciationMethod("STRAIGHT_LINE");
+        reqVO.setDepreciationPeriodMonths(36);
+        reqVO.setDepreciationStartPeriod("2026-05");
+        reqVO.setRemark("重复确认拦截");
+        return reqVO;
     }
 
     @FunctionalInterface

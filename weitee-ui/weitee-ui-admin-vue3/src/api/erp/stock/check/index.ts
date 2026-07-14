@@ -33,16 +33,20 @@ export const StockCheckApi = {
     return await request.put({ url: `/erp/stock-check/update`, data })
   },
 
-  // 更新库存盘点单的状态
-  updateStockCheckStatus: async (id: number, status: number) => {
-    return await request.put({
-      url: `/erp/stock-check/update-status`,
-      params: {
-        id,
-        status
-      }
-    })
-  },
+  // 开始盘点
+  startCounting: (id: number) =>
+    request.put({ url: '/erp/stock-check/start-counting', params: { id } }),
+
+  // 提交审核
+  submitForReview: (id: number) =>
+    request.put({ url: '/erp/stock-check/submit-for-review', params: { id } }),
+
+  // 审核并关闭
+  approveAndClose: (id: number) =>
+    request.put({ url: '/erp/stock-check/approve-and-close', params: { id } }),
+
+  // 驳回盘点单
+  reject: (id: number) => request.put({ url: '/erp/stock-check/reject', params: { id } }),
 
   // 删除库存盘点单
   deleteStockCheck: async (ids: number[]) => {

@@ -72,7 +72,9 @@ public class ErpProductionFinishQualityServiceImpl implements ErpProductionFinis
         }
         BigDecimal safeQualifiedQty = ObjectUtil.defaultIfNull(qualifiedQty, BigDecimal.ZERO);
         BigDecimal safeUnqualifiedQty = ObjectUtil.defaultIfNull(unqualifiedQty, BigDecimal.ZERO);
-        if (safeQualifiedQty.add(safeUnqualifiedQty).compareTo(quality.getReportQty()) != 0) {
+        if (safeQualifiedQty.compareTo(BigDecimal.ZERO) < 0
+                || safeUnqualifiedQty.compareTo(BigDecimal.ZERO) < 0
+                || safeQualifiedQty.add(safeUnqualifiedQty).compareTo(quality.getReportQty()) != 0) {
             throw exception(PRODUCTION_FINISH_QUALITY_COUNT_INVALID);
         }
         Integer qaStatus = resolveQaStatus(quality.getReportQty(), safeQualifiedQty);

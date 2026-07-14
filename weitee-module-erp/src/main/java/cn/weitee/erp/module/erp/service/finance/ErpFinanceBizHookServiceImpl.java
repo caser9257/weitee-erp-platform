@@ -25,8 +25,6 @@ public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
     @Resource
     private ErpFinanceVoucherService financeVoucherService;
     @Resource
-    private ErpFinanceDualWriteService dualWriteService;
-    @Resource
     private ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -38,7 +36,6 @@ public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
         }
         try {
             Long voucherId = financeVoucherService.autoGenerateVoucher(bizType, bizId);
-            dualWriteService.syncDualWriteBySourceVoucherId(voucherId);
             return voucherId;
         } catch (Exception e) {
             // 凭证生成失败，发布告警事件，不阻断业务审核
