@@ -675,3 +675,51 @@ LEFT JOIN erp_finance_period period
       AND period.period_sort = YEAR(CURDATE()) * 100 + MONTH(CURDATE())
       AND period.deleted = b'0'
 WHERE period.id IS NULL;
+
+-- Supply-chain approvers need only their own workflow inbox and task action.
+-- Keep this separate from the scm01 operator role so an applicant cannot
+-- approve its own stock and manufacturing documents.
+SET @experience_bpm_todo_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'bpm/task/todo/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+SET @experience_next_menu_id := (SELECT IFNULL(MAX(id), 0) + 1 FROM system_menu);
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0xE5BE85E58AA1E5AEA1, 'bpm:task:query', 2, 10, 3000,
+       'task-todo', 'ep:checked', 'bpm/task/todo/index', 'BpmTaskTodo', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bpm_todo_menu_id IS NULL
+  AND EXISTS (SELECT 1 FROM system_menu WHERE id = 3000 AND deleted = b'0');
+
+SET @experience_bpm_todo_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'bpm/task/todo/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+SET @experience_next_menu_id := @experience_next_menu_id + 1;
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0xE5AEA1E689B9, 'bpm:task:update', 3, 1, @experience_bpm_todo_menu_id,
+       '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bpm_todo_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'bpm:task:update' AND deleted = b'0');
+
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT 920003, menu.id, 'tester', NOW(), 'tester', NOW(), b'0'
+FROM system_menu menu
+WHERE menu.permission IN ('bpm:task:query', 'bpm:task:update')
+  AND menu.deleted = b'0'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM system_role_menu role_menu
+      WHERE role_menu.role_id = 920003
+        AND role_menu.menu_id = menu.id
+        AND role_menu.deleted = b'0'
+  );

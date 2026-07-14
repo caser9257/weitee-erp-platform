@@ -2,12 +2,18 @@ package cn.weitee.erp.module.erp.service.stock;
 
 import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockInDO;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockInItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockInMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_IN_MANUAL_STATUS_UPDATE_FORBIDDEN;
@@ -15,8 +21,23 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_IN_STATUS_
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_IN_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ErpStockInServiceImplTest {
+
+    @Mock
+    private ErpStockInMapper approvalMapper;
+    @Mock
+    private ErpStockInItemMapper approvalItemMapper;
+    @Mock
+    private ErpStockService approvalStockService;
+
+    @InjectMocks
+    private ErpStockInServiceImpl approvalService;
 
     @Test
     void updateStockInStatusManually_shouldThrowForbidden() {
@@ -66,6 +87,24 @@ class ErpStockInServiceImplTest {
         service.updateStockInStatusByBpm(10L, "PI-BOUND", ErpAuditStatus.APPROVE.getStatus(), "approved");
 
         assertEquals(Boolean.FALSE, updateCalledRef.get());
+    }
+
+    @Test
+    void updateStockInStatusByBpm_shouldClearProcessInstanceIdAfterApproval() {
+        Long stockInId = 10L;
+        String processInstanceId = "PI-BOUND";
+        when(approvalMapper.selectById(stockInId)).thenReturn(new ErpStockInDO().setId(stockInId)
+                .setNo("QTRK20260714000001")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId(processInstanceId));
+        when(approvalMapper.updateByIdStatusAndProcessInstanceId(any(), any(), any(), any())).thenReturn(1);
+        when(approvalItemMapper.selectListByInId(stockInId)).thenReturn(Collections.emptyList());
+        when(approvalStockService.getStockListByProductIds(anySet())).thenReturn(Collections.emptyList());
+
+        approvalService.updateStockInStatusByBpm(stockInId, processInstanceId,
+                ErpAuditStatus.APPROVE.getStatus(), "approved");
+
+        verify(approvalMapper).clearProcessInstanceId(stockInId, processInstanceId);
     }
 
     @Test
