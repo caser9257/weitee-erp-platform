@@ -63,6 +63,11 @@ UPDATE `erp_stock_check` SET `year_end_flag` = b'0' WHERE `year_end_flag` IS NUL
 UPDATE `erp_stock_check` SET `status` = 0 WHERE `status` = 10;
 UPDATE `erp_stock_check` SET `status` = 40 WHERE `status` = 20;
 
+-- 5.3 盘亏属于系统来源成本，不一定关联生产工单。
+-- 成本汇总代码已经跳过空工单号，数据库列需与此语义保持一致。
+ALTER TABLE `erp_production_cost_entry`
+    MODIFY COLUMN `production_order_id` BIGINT NULL COMMENT '生产工单编号；系统来源成本可为空';
+
 -- ============================================================
 -- 6. 凭证模板配置
 -- ============================================================
