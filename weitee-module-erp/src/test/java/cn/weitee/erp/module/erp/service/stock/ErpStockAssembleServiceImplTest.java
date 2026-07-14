@@ -7,6 +7,7 @@ import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockAssembleItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockAssembleMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockAssembleActionTypeEnum;
+import cn.weitee.erp.module.erp.service.product.ErpProductQuantityPrecisionService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ErpStockAssembleServiceImplTest {
 
+    @Mock
+    private ErpProductQuantityPrecisionService productQuantityPrecisionService;
     @Mock
     private ErpStockAssembleMapper assembleMapper;
     @Mock

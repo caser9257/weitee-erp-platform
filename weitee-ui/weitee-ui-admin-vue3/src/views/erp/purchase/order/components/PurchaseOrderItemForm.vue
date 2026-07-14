@@ -175,8 +175,9 @@
               <el-input-number
                 v-model="row.count"
                 controls-position="right"
-                :min="0.001"
-                :precision="3"
+                :min="getQuantityStep(row.productId)"
+                :step="getQuantityStep(row.productId)"
+                :precision="getQuantityPrecision(row.productId)"
                 class="!w-100% numeric-input"
               />
             </el-form-item>
@@ -277,6 +278,10 @@ import {
   erpPriceMultiply,
   getSumValue
 } from '@/utils'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep
+} from '@/utils/erpQuantityPrecision'
 
 const props = defineProps<{
   items: any[] | undefined
@@ -336,6 +341,14 @@ const formatCountValue = (value?: number | string | null) => {
 
 const formatPriceValue = (value?: number | string | null) => {
   return erpPriceInputFormatter(Number(value || 0))
+}
+
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
 }
 
 const formatDateValue = (value?: string | Date | null) => {

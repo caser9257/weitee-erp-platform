@@ -155,7 +155,8 @@
               controls-position="right"
               :min="0"
               :max="Number(detailForm.reportQty || 0)"
-              :precision="3"
+              :step="getQuantityStep(detailForm.productId)"
+              :precision="getQuantityPrecision(detailForm.productId)"
               :disabled="isReadonly"
               class="!w-100%"
               @change="syncSubmitCounts('qualified')"
@@ -167,7 +168,8 @@
               controls-position="right"
               :min="0"
               :max="Number(detailForm.reportQty || 0)"
-              :precision="3"
+              :step="getQuantityStep(detailForm.productId)"
+              :precision="getQuantityPrecision(detailForm.productId)"
               :disabled="isReadonly"
               class="!w-100%"
               @change="syncSubmitCounts('unqualified')"
@@ -207,6 +209,12 @@ import { computed, reactive, ref } from 'vue'
 import { formatDate } from '@/utils/formatTime'
 import { checkPermi } from '@/utils/permission'
 import { erpCountInputFormatter } from '@/utils'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep,
+  roundQuantityByPrecision
+} from '@/utils/erpQuantityPrecision'
 import {
   PRODUCTION_FINISH_QUALITY_STATUS,
   ProductionFinishQualityApi,
@@ -235,6 +243,7 @@ const dialogVisible = ref(false)
 const dialogMode = ref<'view' | 'submit'>('view')
 const queryFormRef = ref()
 const list = ref<ProductionFinishQualityVO[]>([])
+const productList = ref<ProductVO[]>([])
 const total = ref(0)
 const queryParams = reactive<ProductionFinishQualityPageReqVO>({
   pageNo: 1,
@@ -284,7 +293,15 @@ const canSubmitCurrent = computed(() => {
 })
 
 const roundCount = (value: number) => {
-  return Math.round((Number(value || 0) + Number.EPSILON) * 1000) / 1000
+  return roundQuantityByPrecision(value, getQuantityPrecision(detailForm.productId))
+}
+
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
 }
 
 const resolveStatusLabel = (status?: number) => {
@@ -375,7 +392,11 @@ const openDetail = async (id: number, mode: 'view' | 'submit') => {
   resetDetailForm()
   detailLoading.value = true
   try {
-    const data = await ProductionFinishQualityApi.getProductionFinishQuality(id)
+    const [data, products] = await Promise.all([
+      ProductionFinishQualityApi.getProductionFinishQuality(id),
+      productList.value.length ? Promise.resolve(productList.value) : ProductApi.getProductSimpleList()
+    ])
+    productList.value = products
     applyDetail(data)
   } finally {
     detailLoading.value = false

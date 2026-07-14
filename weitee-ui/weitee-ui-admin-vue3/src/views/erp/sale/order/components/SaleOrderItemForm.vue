@@ -75,8 +75,9 @@
             <el-input-number
               v-model="row.count"
               controls-position="right"
-              :min="0.001"
-              :precision="3"
+              :min="getQuantityStep(row)"
+              :step="getQuantityStep(row)"
+              :precision="getQuantityPrecision(row)"
               class="!w-100%"
             />
           </el-form-item>
@@ -160,12 +161,18 @@
 <script setup lang="ts">
 import type { SummaryMethod } from 'element-plus'
 import SaleOrderProductPickerDrawer from './SaleOrderProductPickerDrawer.vue'
+import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import {
   erpCountInputFormatter,
   erpPriceInputFormatter,
   erpPriceMultiply,
   getSumValue
 } from '@/utils'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep,
+  normalizeQuantityPrecision
+} from '@/utils/erpQuantityPrecision'
 
 type SaleOrderItemRow = Record<string, any>
 
@@ -177,6 +184,7 @@ interface ProductPickerSelection {
     productBarCode?: string
     productUnitId?: number
     productUnitName?: string
+    quantityPrecision?: number
     salePrice?: number
   }
   stockCount?: number
@@ -197,6 +205,7 @@ const formLoading = ref(false)
 const formData = ref<SaleOrderItemRow[]>([])
 const formRef = ref()
 const productPickerDrawerRef = ref<InstanceType<typeof SaleOrderProductPickerDrawer>>()
+const productList = ref<ProductVO[]>([])
 
 const formRules = reactive({
   productId: [{ required: true, message: '商品不能为空', trigger: 'blur' }],
@@ -250,6 +259,21 @@ const getSummaries: SummaryMethod<SaleOrderItemRow> = (param) => {
   return sums
 }
 
+const getQuantityPrecision = (row: SaleOrderItemRow) => {
+  if (row.quantityPrecision != null) {
+    return normalizeQuantityPrecision(row.quantityPrecision)
+  }
+  return getProductQuantityPrecision(productList.value, row.productId)
+}
+
+const getQuantityStep = (row: SaleOrderItemRow) => {
+  if (row.quantityPrecision != null) {
+    const precision = normalizeQuantityPrecision(row.quantityPrecision)
+    return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+  }
+  return getProductQuantityStep(productList.value, row.productId)
+}
+
 const handleAdd = () => {
   formData.value.push({
     id: undefined,
@@ -291,6 +315,7 @@ const handleConfirmProduct = ({ row, product, stockCount }: ProductPickerSelecti
     productUnitId: product.productUnitId,
     productUnitName: product.productUnitName,
     productBarCode: product.productBarCode,
+    quantityPrecision: product.quantityPrecision,
     productPrice: product.salePrice,
     stockCount: stockCount ?? 0
   })
@@ -307,7 +332,8 @@ const validate = () => {
 
 defineExpose({ validate })
 
-onMounted(() => {
+onMounted(async () => {
+  productList.value = await ProductApi.getProductSimpleList()
   if (formData.value.length === 0) {
     handleAdd()
   }

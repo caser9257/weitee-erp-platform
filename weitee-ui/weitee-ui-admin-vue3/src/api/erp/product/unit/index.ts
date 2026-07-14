@@ -5,6 +5,7 @@ export interface ProductUnitVO {
   id: number // 单位编号
   name: string // 单位名字
   status: number // 单位状态
+  quantityPrecision: number // 数量精度，0 表示只允许整数
 }
 
 // ERP 产品单位 API

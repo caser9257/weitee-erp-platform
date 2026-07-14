@@ -256,6 +256,8 @@ public interface ErrorCodeConstants {
     // ========== ERP 产品单位 1-030-502-000 ==========
     ErrorCode PRODUCT_UNIT_NOT_EXISTS = new ErrorCode(1_030_502_000, "产品单位不存在");
     ErrorCode PRODUCT_UNIT_NAME_DUPLICATE = new ErrorCode(1_030_502_001, "已存在该名字的产品单位");
+    ErrorCode PRODUCT_QUANTITY_PRECISION_INVALID = new ErrorCode(1_030_502_003,
+            "产品【{}】数量最多允许 {} 位小数");
     ErrorCode PRODUCT_UNIT_EXITS_PRODUCT = new ErrorCode(1_030_502_002, "存在产品使用该单位，无法删除");
 
     // ========== ERP 结算账户 1-030-600-000 ==========

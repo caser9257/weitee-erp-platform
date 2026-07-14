@@ -200,8 +200,9 @@
         <el-form-item label="数量" prop="count">
           <el-input-number
             v-model="formData.count"
-            :min="0.000001"
-            :precision="6"
+            :min="getQuantityStep(formData.productId)"
+            :step="getQuantityStep(formData.productId)"
+            :precision="getQuantityPrecision(formData.productId)"
             controls-position="right"
             class="stock-assemble-form__field"
           />
@@ -511,6 +512,11 @@ const getStatusTagType = (status?: number) => {
   return 'warning'
 }
 const getProductName = (id?: number) => productList.value.find((item) => item.id === id)?.name
+const getQuantityPrecision = (productId?: number) => {
+  const precision = productList.value.find((item) => item.id === productId)?.quantityPrecision
+  return Number.isInteger(precision) && precision! >= 0 && precision! <= 6 ? precision! : 3
+}
+const getQuantityStep = (productId?: number) => 10 ** -getQuantityPrecision(productId)
 const getWarehouseName = (id?: number) => warehouseList.value.find((item) => item.id === id)?.name
 const formatCount = (value?: number) => (value === undefined || value === null ? '-' : Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 6 }))
 const formatCurrency = (value?: number) => (value === undefined || value === null ? '-' : Number(value).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))

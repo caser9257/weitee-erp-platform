@@ -186,7 +186,8 @@
                   controls-position="right"
                   :min="0"
                   :max="Number(row.sampleCount || 0)"
-                  :precision="3"
+                  :step="getQuantityStep(row.productId)"
+                  :precision="getQuantityPrecision(row.productId)"
                   class="!w-100%"
                   @change="syncFirstCheckCounts(row)"
                 />
@@ -199,7 +200,8 @@
                   controls-position="right"
                   :min="0"
                   :max="Number(row.formSampleCount || 0)"
-                  :precision="3"
+                  :step="getQuantityStep(row.productId)"
+                  :precision="getQuantityPrecision(row.productId)"
                   class="!w-100%"
                   @change="syncFirstCheckCounts(row)"
                 />
@@ -286,7 +288,8 @@
                   controls-position="right"
                   :min="0"
                   :max="Number(row.recheckLimit || 0)"
-                  :precision="3"
+                  :step="getQuantityStep(row.productId)"
+                  :precision="getQuantityPrecision(row.productId)"
                   class="!w-100%"
                   @change="syncRecheckCounts(row)"
                 />
@@ -299,7 +302,8 @@
                   controls-position="right"
                   :min="0"
                   :max="Number(row.formSampleCount || 0)"
-                  :precision="3"
+                  :step="getQuantityStep(row.productId)"
+                  :precision="getQuantityPrecision(row.productId)"
                   class="!w-100%"
                   @change="syncRecheckCounts(row)"
                 />
@@ -315,7 +319,8 @@
                   controls-position="right"
                   :min="0"
                   :max="Number(row.count || 0)"
-                  :precision="3"
+                  :step="getQuantityStep(row.productId)"
+                  :precision="getQuantityPrecision(row.productId)"
                   class="!w-100%"
                   @change="syncRecheckFinalCounts(row)"
                 />
@@ -459,7 +464,8 @@
                 controls-position="right"
                 :min="0"
                 :max="getDefectDraftRowMax(row)"
-                :precision="3"
+                :step="getQuantityStep(editingProductId)"
+                :precision="getQuantityPrecision(editingProductId)"
                 class="!w-100%"
               />
             </template>
@@ -534,6 +540,12 @@ import { formatDate } from '@/utils/formatTime'
 import { DICT_TYPE } from '@/utils/dict'
 import { erpCountInputFormatter } from '@/utils'
 import { getSimpleUserList, type UserVO } from '@/api/system/user'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep,
+  roundQuantityByPrecision
+} from '@/utils/erpQuantityPrecision'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { resolvePurchaseInQualityDetailLoadingState } from './loadingState'
 import { deriveRecheckFinalCounts } from './recheckForm'
@@ -598,6 +610,7 @@ const checkerOptionsLoading = ref(false)
 const assignCheckerLoading = ref(false)
 
 const qualityOrder = ref<PurchaseInQualityVO>()
+const productList = ref<ProductVO[]>([])
 const firstCheckRows = ref<FirstCheckRow[]>([])
 const recheckRows = ref<RecheckRow[]>([])
 const recheckReason = ref('')
@@ -837,13 +850,28 @@ const editingRowRejectCount = computed(() => {
   const row = rows.find((item) => item.id === editingRowId.value)
   return toNumber(row?.roundRejectCount)
 })
+const editingProductId = computed(() => {
+  if (!editingRowId.value) return undefined
+  const rows = defectDialogStage.value === 'recheck' ? recheckRows.value : firstCheckRows.value
+  return rows.find((item) => item.id === editingRowId.value)?.productId
+})
 
 const defectDraftTotal = computed(() => sumDefects(defectDraftRows.value))
-const defectDraftRemaining = computed(() => roundCount(Math.max(editingRowRejectCount.value - defectDraftTotal.value, 0)))
+const defectDraftRemaining = computed(() =>
+  roundCount(Math.max(editingRowRejectCount.value - defectDraftTotal.value, 0), editingProductId.value)
+)
 const canSaveDefectDialog = computed(() => validateDefectDraftRows(false))
 
 const toNumber = (value?: number | string | null) => Number(value || 0)
-const roundCount = (value: number) => Number(value.toFixed(3))
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
+}
+const roundCount = (value: number, productId?: number) => {
+  return roundQuantityByPrecision(value, getQuantityPrecision(productId))
+}
 const hasStandardDefectReason = (defectReasonId?: number) => !!defectReasonId && !!defectReasonOptionMap.value[defectReasonId]
 
 const applyDerivedRecheckFinalCounts = (row: RecheckRow) => {
@@ -852,8 +880,8 @@ const applyDerivedRecheckFinalCounts = (row: RecheckRow) => {
     firstRejectCount: toNumber(row.recheckLimit),
     roundPassCount: toNumber(row.roundPassCount)
   })
-  row.finalPassCount = roundCount(finalPassCount)
-  row.finalRejectCount = roundCount(finalRejectCount)
+  row.finalPassCount = roundCount(finalPassCount, row.productId)
+  row.finalRejectCount = roundCount(finalRejectCount, row.productId)
 }
 
 const resolveDefectInputMode = (partial?: Partial<EditableDefect>): DefectInputMode => {
@@ -871,8 +899,8 @@ const createDefectDraft = (partial?: Partial<EditableDefect>): EditableDefect =>
   inputMode: resolveDefectInputMode(partial)
 })
 
-const sumDefects = (defects?: Array<EditableDefect | PurchaseInQualityDefectVO>) => {
-  return roundCount((defects || []).reduce((sum, item) => sum + toNumber(item.defectCount), 0))
+const sumDefects = (defects?: Array<EditableDefect | PurchaseInQualityDefectVO>, productId?: number) => {
+  return roundCount((defects || []).reduce((sum, item) => sum + toNumber(item.defectCount), 0), productId ?? editingProductId.value)
 }
 
 const getItemName = (qualityItemId?: number) => {
@@ -1032,19 +1060,19 @@ const applyQualityOrder = (data?: PurchaseInQualityVO) => {
 
 const syncFirstCheckCounts = (row: FirstCheckRow) => {
   const sample = Math.min(Math.max(toNumber(row.formSampleCount), 0), toNumber(row.sampleCount || 0))
-  row.formSampleCount = roundCount(sample)
+  row.formSampleCount = roundCount(sample, row.productId)
   const pass = Math.min(Math.max(toNumber(row.roundPassCount), 0), sample)
-  row.roundPassCount = roundCount(pass)
-  row.roundRejectCount = roundCount(sample - pass)
+  row.roundPassCount = roundCount(pass, row.productId)
+  row.roundRejectCount = roundCount(sample - pass, row.productId)
   if (row.roundRejectCount <= 0) row.defects = []
 }
 
 const syncRecheckCounts = (row: RecheckRow) => {
   const sample = Math.min(Math.max(toNumber(row.formSampleCount), 0), toNumber(row.recheckLimit))
-  row.formSampleCount = roundCount(sample)
+  row.formSampleCount = roundCount(sample, row.productId)
   const pass = Math.min(Math.max(toNumber(row.roundPassCount), 0), sample)
-  row.roundPassCount = roundCount(pass)
-  row.roundRejectCount = roundCount(sample - pass)
+  row.roundPassCount = roundCount(pass, row.productId)
+  row.roundRejectCount = roundCount(sample - pass, row.productId)
   if (!row.finalCountsManuallyEdited) {
     applyDerivedRecheckFinalCounts(row)
   }
@@ -1055,8 +1083,8 @@ const syncRecheckFinalCounts = (row: RecheckRow) => {
   const count = toNumber(row.count)
   const pass = Math.min(Math.max(toNumber(row.finalPassCount), 0), count)
   row.finalCountsManuallyEdited = true
-  row.finalPassCount = roundCount(pass)
-  row.finalRejectCount = roundCount(count - pass)
+  row.finalPassCount = roundCount(pass, row.productId)
+  row.finalRejectCount = roundCount(count - pass, row.productId)
 }
 
 const validateFirstCheck = (showMessage: boolean) => {
@@ -1070,11 +1098,11 @@ const validateFirstCheck = (showMessage: boolean) => {
       if (showMessage) message.warning(`${rowName} 的本次抽样数必须大于 0 且不能超过计划抽样数。`)
       return false
     }
-    if (roundCount(pass + reject) !== roundCount(sample)) {
+    if (roundCount(pass + reject, row.productId) !== roundCount(sample, row.productId)) {
       if (showMessage) message.warning(`${rowName} 的合格数与不合格数之和必须等于本次抽样数。`)
       return false
     }
-    if (reject > 0 && roundCount(sumDefects(row.defects)) !== roundCount(reject)) {
+    if (reject > 0 && sumDefects(row.defects, row.productId) !== roundCount(reject, row.productId)) {
       if (showMessage) message.warning(`${rowName} 的缺陷数量合计必须等于本次不合格数。`)
       return false
     }
@@ -1095,15 +1123,15 @@ const validateRecheck = (showMessage: boolean) => {
       if (showMessage) message.warning(`${rowName} 的本次复检数必须大于 0 且不能超过可复检数量。`)
       return false
     }
-    if (roundCount(pass + reject) !== roundCount(sample)) {
+    if (roundCount(pass + reject, row.productId) !== roundCount(sample, row.productId)) {
       if (showMessage) message.warning(`${rowName} 的合格数与不合格数之和必须等于本次复检数。`)
       return false
     }
-    if (roundCount(finalPass + finalReject) !== roundCount(count)) {
+    if (roundCount(finalPass + finalReject, row.productId) !== roundCount(count, row.productId)) {
       if (showMessage) message.warning(`${rowName} 的最终合格数与最终不合格数之和必须等于入库数量。`)
       return false
     }
-    if (reject > 0 && roundCount(sumDefects(row.defects)) !== roundCount(reject)) {
+    if (reject > 0 && sumDefects(row.defects, row.productId) !== roundCount(reject, row.productId)) {
       if (showMessage) message.warning(`${rowName} 的缺陷数量合计必须等于本次不合格数。`)
       return false
     }
@@ -1123,7 +1151,7 @@ const getValidDefectDraftRows = () => {
       ...item,
       defectReasonId: resolveSavedDefectReasonId(item),
       defectReasonName: resolveSavedDefectReasonName(item),
-      defectCount: roundCount(toNumber(item.defectCount)),
+      defectCount: roundCount(toNumber(item.defectCount), editingProductId.value),
       defectRemark: item.defectRemark?.trim()
     }))
 }
@@ -1133,13 +1161,14 @@ const getDefectDraftRowMax = (currentRow: EditableDefect) => {
     defectDraftRows.value.reduce((sum, item) => {
       if (item.localId === currentRow.localId) return sum
       return sum + toNumber(item.defectCount)
-    }, 0)
+    }, 0),
+    editingProductId.value
   )
-  return roundCount(Math.max(editingRowRejectCount.value - totalWithoutCurrent, 0))
+  return roundCount(Math.max(editingRowRejectCount.value - totalWithoutCurrent, 0), editingProductId.value)
 }
 
 const validateDefectDraftRows = (showMessage: boolean) => {
-  const rejectCount = roundCount(editingRowRejectCount.value)
+  const rejectCount = roundCount(editingRowRejectCount.value, editingProductId.value)
   const validRows = getValidDefectDraftRows()
   for (const item of validRows) {
     if (!item.defectReasonName) {
@@ -1158,7 +1187,10 @@ const validateDefectDraftRows = (showMessage: boolean) => {
     if (showMessage) message.warning('请维护缺陷明细。')
     return false
   }
-  const total = roundCount(validRows.reduce((sum, item) => sum + toNumber(item.defectCount), 0))
+  const total = roundCount(
+    validRows.reduce((sum, item) => sum + toNumber(item.defectCount), 0),
+    editingProductId.value
+  )
   if (total !== rejectCount) {
     if (showMessage) {
       message.warning(`缺陷数量合计 ${erpCountInputFormatter(total)}，必须等于不合格数量 ${erpCountInputFormatter(rejectCount)}。`)
@@ -1272,10 +1304,18 @@ const loadDefectReasonOptions = async () => {
   }
 }
 
+const ensureProductList = async () => {
+  if (productList.value.length > 0) return
+  productList.value = await ProductApi.getProductSimpleList()
+}
+
 const loadDetail = async (id: number) => {
   detailLoading.value = true
   try {
-    const data = (await PurchaseInQualityApi.getPurchaseInQuality(id)) as PurchaseInQualityVO
+    const [data] = await Promise.all([
+      PurchaseInQualityApi.getPurchaseInQuality(id) as Promise<PurchaseInQualityVO>,
+      ensureProductList()
+    ])
     applyQualityOrder(data)
   } finally {
     detailLoading.value = false
@@ -1353,14 +1393,14 @@ const handleSubmitFirstCheck = async () => {
       remark: qualityOrder.value.remark,
       items: firstCheckRows.value.map((row) => ({
         qualityItemId: Number(row.id),
-        sampleCount: roundCount(toNumber(row.formSampleCount)),
-        roundPassCount: roundCount(toNumber(row.roundPassCount)),
-        roundRejectCount: roundCount(toNumber(row.roundRejectCount)),
+        sampleCount: roundCount(toNumber(row.formSampleCount), row.productId),
+        roundPassCount: roundCount(toNumber(row.roundPassCount), row.productId),
+        roundRejectCount: roundCount(toNumber(row.roundRejectCount), row.productId),
         roundRemark: row.roundRemark,
         defects: row.defects.map((item) => ({
           defectReasonId: Number(item.defectReasonId),
           defectReasonName: item.defectReasonName,
-          defectCount: roundCount(toNumber(item.defectCount)),
+          defectCount: roundCount(toNumber(item.defectCount), row.productId),
           defectRemark: item.defectRemark
         }))
       }))
@@ -1382,16 +1422,16 @@ const handleSubmitRecheck = async () => {
       remark: qualityOrder.value.remark,
       items: recheckRows.value.map((row) => ({
         qualityItemId: Number(row.id),
-        sampleCount: roundCount(toNumber(row.formSampleCount)),
-        roundPassCount: roundCount(toNumber(row.roundPassCount)),
-        roundRejectCount: roundCount(toNumber(row.roundRejectCount)),
-        finalPassCount: roundCount(toNumber(row.finalPassCount)),
-        finalRejectCount: roundCount(toNumber(row.finalRejectCount)),
+        sampleCount: roundCount(toNumber(row.formSampleCount), row.productId),
+        roundPassCount: roundCount(toNumber(row.roundPassCount), row.productId),
+        roundRejectCount: roundCount(toNumber(row.roundRejectCount), row.productId),
+        finalPassCount: roundCount(toNumber(row.finalPassCount), row.productId),
+        finalRejectCount: roundCount(toNumber(row.finalRejectCount), row.productId),
         roundRemark: row.roundRemark,
         defects: row.defects.map((item) => ({
           defectReasonId: Number(item.defectReasonId),
           defectReasonName: item.defectReasonName,
-          defectCount: roundCount(toNumber(item.defectCount)),
+          defectCount: roundCount(toNumber(item.defectCount), row.productId),
           defectRemark: item.defectRemark
         }))
       }))

@@ -46,7 +46,8 @@
                 controls-position="right"
                 :min="0"
                 :max="Number(row.returnableQty || 0)"
-                :precision="3"
+                :step="getQuantityStep(currentMaterial?.materialId)"
+                :precision="getQuantityPrecision(currentMaterial?.materialId)"
                 class="!w-100%"
               />
             </template>
@@ -66,7 +67,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { erpCountInputFormatter } from '@/utils'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { ProductionMaterialVO } from '@/api/erp/mrp/production-material'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep
+} from '@/utils/erpQuantityPrecision'
 import {
   ProductionReturnApi,
   ProductionReturnableBatchVO
@@ -87,6 +93,7 @@ const detailLoading = ref(false)
 const submitLoading = ref(false)
 const currentMaterial = ref<ProductionMaterialVO>()
 const currentOrderId = ref<number>()
+const productList = ref<ProductVO[]>([])
 const batchRows = ref<ReturnBatchRow[]>([])
 const remark = ref('')
 
@@ -100,7 +107,21 @@ const canSubmit = computed(() => {
   return !submitLoading.value && !!currentMaterial.value && !!currentOrderId.value && isBalanced.value
 })
 
+const ensureProductList = async () => {
+  if (productList.value.length > 0) return
+  productList.value = await ProductApi.getProductSimpleList()
+}
+
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
+}
+
 const open = async (material: ProductionMaterialVO, orderId: number) => {
+  await ensureProductList()
   currentMaterial.value = material
   currentOrderId.value = orderId
   remark.value = ''

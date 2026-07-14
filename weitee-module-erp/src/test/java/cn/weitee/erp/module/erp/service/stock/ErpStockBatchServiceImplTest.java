@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.erp.service.stock;
 
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.batch.ErpStockBatchAdjustReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchAdjustmentDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO;
@@ -8,6 +9,7 @@ import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockBatchAdjustmentMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockBatchMapper;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockBatchAdjustTypeEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
+import cn.weitee.erp.module.erp.service.product.ErpProductQuantityPrecisionService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
 import org.junit.jupiter.api.Test;
 
@@ -21,12 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpStockBatchServiceImplTest {
 
     @Test
     void adjustBatch_shouldIncreaseBatchAndWriteAdjustmentRecord() throws Exception {
-        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        ErpStockBatchServiceImpl service = newService();
         AtomicInteger selectTimes = new AtomicInteger();
         AtomicReference<Object[]> updateArgsRef = new AtomicReference<>();
         AtomicReference<ErpStockBatchAdjustmentDO> insertedAdjustmentRef = new AtomicReference<>();
@@ -105,7 +108,7 @@ class ErpStockBatchServiceImplTest {
 
     @Test
     void adjustBatch_shouldDecreaseBatchAndWriteNegativeAdjustmentRecord() throws Exception {
-        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        ErpStockBatchServiceImpl service = newService();
         AtomicInteger selectTimes = new AtomicInteger();
         AtomicReference<Object[]> updateArgsRef = new AtomicReference<>();
         AtomicReference<ErpStockBatchAdjustmentDO> insertedAdjustmentRef = new AtomicReference<>();
@@ -184,7 +187,7 @@ class ErpStockBatchServiceImplTest {
 
     @Test
     void lockBatch_shouldMoveAvailableQtyToLockedQty() throws Exception {
-        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        ErpStockBatchServiceImpl service = newService();
         AtomicInteger selectTimes = new AtomicInteger();
         AtomicReference<Object[]> updateArgsRef = new AtomicReference<>();
 
@@ -217,7 +220,7 @@ class ErpStockBatchServiceImplTest {
 
     @Test
     void releaseLockedBatch_shouldMoveLockedQtyBackToAvailableQty() throws Exception {
-        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        ErpStockBatchServiceImpl service = newService();
         AtomicInteger selectTimes = new AtomicInteger();
         AtomicReference<Object[]> updateArgsRef = new AtomicReference<>();
 
@@ -250,7 +253,7 @@ class ErpStockBatchServiceImplTest {
 
     @Test
     void deductLockedBatch_shouldDeductTotalAndLockedQtyAndWriteNegativeRecord() throws Exception {
-        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        ErpStockBatchServiceImpl service = newService();
         AtomicInteger selectTimes = new AtomicInteger();
         AtomicReference<Object[]> updateArgsRef = new AtomicReference<>();
         List<ErpStockBatchRecordDO> records = new ArrayList<>();
@@ -297,7 +300,7 @@ class ErpStockBatchServiceImplTest {
 
     @Test
     void getStockBatchList_shouldReturnEmptyListWhenIdsBlank() throws Exception {
-        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        ErpStockBatchServiceImpl service = newService();
         AtomicBoolean selectCalled = new AtomicBoolean(false);
 
         setField(service, "stockBatchMapper", createProxy(ErpStockBatchMapper.class, (methodName, args) -> {
@@ -309,6 +312,55 @@ class ErpStockBatchServiceImplTest {
 
         assertThat(service.getStockBatchList(List.of())).isEmpty();
         assertThat(selectCalled).isFalse();
+    }
+
+    @Test
+    void increaseBatch_shouldRejectInvalidQuantityPrecisionBeforeUpdatingBatch() throws Exception {
+        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        AtomicBoolean updateCalled = new AtomicBoolean(false);
+        AtomicBoolean recordCalled = new AtomicBoolean(false);
+
+        setField(service, "stockBatchMapper", createProxy(ErpStockBatchMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockBatchDO().setId(11L).setProductId(1L).setWarehouseId(2L)
+                        .setBatchNo("B001").setAvailableQty(new BigDecimal("5.000"))
+                        .setTotalQty(new BigDecimal("5.000"));
+            }
+            if ("updateQtyIncrement".equals(methodName)) {
+                updateCalled.set(true);
+            }
+            return null;
+        }));
+        setField(service, "productQuantityPrecisionService", createThrowingPrecisionService());
+        setField(service, "stockBatchRecordService", createProxy(ErpStockBatchRecordService.class, (methodName, args) -> {
+            if ("createStockBatchRecord".equals(methodName)) {
+                recordCalled.set(true);
+            }
+            return null;
+        }));
+
+        assertThrows(ServiceException.class, () -> service.increaseBatch(new ErpStockBatchChangeReqBO(
+                11L, new BigDecimal("0.6"), ErpStockRecordBizTypeEnum.BATCH_ADJUST_IN.getType(),
+                100L, null, "TZ202604290003", "小数数量")));
+        assertThat(updateCalled).isFalse();
+        assertThat(recordCalled).isFalse();
+    }
+
+    private ErpStockBatchServiceImpl newService() throws Exception {
+        ErpStockBatchServiceImpl service = new ErpStockBatchServiceImpl();
+        setField(service, "productQuantityPrecisionService", createNoopPrecisionService());
+        return service;
+    }
+
+    private ErpProductQuantityPrecisionService createNoopPrecisionService() {
+        return (productId, quantity) -> {
+        };
+    }
+
+    private ErpProductQuantityPrecisionService createThrowingPrecisionService() {
+        return (productId, quantity) -> {
+            throw new ServiceException(1_030_502_003, "产品【测试产品】数量最多允许 0 位小数");
+        };
     }
 
     @SuppressWarnings("unchecked")

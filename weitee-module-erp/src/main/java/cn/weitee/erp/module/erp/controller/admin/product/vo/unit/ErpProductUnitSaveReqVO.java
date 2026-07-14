@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 @Schema(description = "管理后台 - ERP 产品单位新增/修改 Request VO")
@@ -23,5 +25,11 @@ public class ErpProductUnitSaveReqVO {
     @NotNull(message = "单位状态不能为空")
     @InEnum(CommonStatusEnum.class)
     private Integer status;
+
+    @Schema(description = "数量精度，0 表示只允许整数", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
+    @NotNull(message = "数量精度不能为空")
+    @Min(value = 0, message = "数量精度必须在 0 到 6 之间")
+    @Max(value = 6, message = "数量精度必须在 0 到 6 之间")
+    private Integer quantityPrecision;
 
 }

@@ -254,6 +254,7 @@ interface PickerTreeNode {
   productBarCode?: string
   productUnitId?: number
   productUnitName?: string
+  quantityPrecision?: number
   salePrice?: number
   standard?: string
   bomUsageQty?: number
@@ -271,6 +272,7 @@ interface SelectionProduct {
   productBarCode?: string
   productUnitId?: number
   productUnitName?: string
+  quantityPrecision?: number
   salePrice?: number
   categoryId?: number
   categoryName?: string
@@ -599,6 +601,7 @@ const buildCatalogProductNode = (product: ProductVO, parentKey: string): PickerT
     productBarCode: product.barCode,
     productUnitId: product.unitId,
     productUnitName: product.unitName,
+    quantityPrecision: product.quantityPrecision,
     salePrice: product.salePrice,
     categoryId: product.categoryId,
     categoryName: product.categoryName,
@@ -629,6 +632,7 @@ const buildBomProductNode = (
     productBarCode: product?.barCode,
     productUnitId: product?.unitId,
     productUnitName: product?.unitName || item.unitName,
+    quantityPrecision: product?.quantityPrecision,
     salePrice: product?.salePrice,
     categoryId: product?.categoryId,
     categoryName: product?.categoryName,
@@ -736,6 +740,7 @@ const buildSelectionFromNode = (node: PickerTreeNode): SelectionProduct => {
     productBarCode: node.productBarCode,
     productUnitId: node.productUnitId,
     productUnitName: node.productUnitName,
+    quantityPrecision: node.quantityPrecision,
     salePrice: node.salePrice,
     categoryId: node.categoryId,
     categoryName: node.categoryName,
@@ -757,6 +762,7 @@ const buildSelectionFromRow = (row: SaleOrderItemRow): SelectionProduct | null =
     productBarCode: row.productBarCode,
     productUnitId: row.productUnitId,
     productUnitName: row.productUnitName,
+    quantityPrecision: row.quantityPrecision,
     salePrice: row.productPrice,
     categoryId: row.categoryId,
     categoryName: row.categoryName,
@@ -777,6 +783,7 @@ const buildProductMap = () => {
         categoryName: node.categoryName || '',
         unitId: node.productUnitId || 0,
         unitName: node.productUnitName || '',
+        quantityPrecision: node.quantityPrecision,
         salePrice: node.salePrice || 0,
         standard: node.standard || '',
         status: 1

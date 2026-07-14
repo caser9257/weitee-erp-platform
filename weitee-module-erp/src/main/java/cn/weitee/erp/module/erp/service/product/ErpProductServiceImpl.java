@@ -135,7 +135,10 @@ public class ErpProductServiceImpl implements ErpProductService {
             MapUtils.findAndThen(categoryMap, product.getCategoryId(),
                     category -> product.setCategoryName(category.getName()));
             MapUtils.findAndThen(unitMap, product.getUnitId(),
-                    unit -> product.setUnitName(unit.getName()));
+                    unit -> {
+                        product.setUnitName(unit.getName());
+                        product.setQuantityPrecision(unit.getQuantityPrecision());
+                    });
         });
     }
 

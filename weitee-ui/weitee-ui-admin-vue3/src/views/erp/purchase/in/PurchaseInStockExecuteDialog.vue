@@ -51,7 +51,8 @@
                 controls-position="right"
                 :min="0"
                 :max="Number(row.remainingStockInCount || 0)"
-                :precision="3"
+                :step="getQuantityStep(row.productId)"
+                :precision="getQuantityPrecision(row.productId)"
                 class="!w-100%"
               />
             </template>
@@ -201,8 +202,9 @@
               <el-input-number
                 v-model="row.count"
                 controls-position="right"
-                :min="0"
-                :precision="3"
+                :min="getQuantityStep(currentBatchItem?.productId)"
+                :step="getQuantityStep(currentBatchItem?.productId)"
+                :precision="getQuantityPrecision(currentBatchItem?.productId)"
                 class="!w-100%"
               />
             </template>
@@ -233,6 +235,12 @@
 import { computed, ref } from 'vue'
 import { formatDate } from '@/utils/formatTime'
 import { erpCountInputFormatter } from '@/utils'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep,
+  roundQuantityByPrecision
+} from '@/utils/erpQuantityPrecision'
 import {
   PurchaseInApi,
   PurchaseInBatchVO,
@@ -263,6 +271,7 @@ const batchDraftRows = ref<EditableBatch[]>([])
 
 const formData = ref<PurchaseInVO>({ items: [] } as PurchaseInVO)
 const editableItems = ref<EditableItem[]>([])
+const productList = ref<ProductVO[]>([])
 const remark = ref('')
 
 const currentBatchItem = computed(() =>
@@ -297,7 +306,8 @@ const submitDisabled = computed(() => {
 
 const currentBatchBalanced = computed(() => {
   if (!currentBatchItem.value) return false
-  return getSafeCount(getBatchTotalCount(batchDraftRows.value)) === getSafeCount(Number(currentBatchItem.value.executeCount || 0))
+  const precision = getQuantityPrecision(currentBatchItem.value.productId)
+  return getSafeCount(getBatchTotalCount(batchDraftRows.value), precision) === getSafeCount(Number(currentBatchItem.value.executeCount || 0), precision)
 })
 
 const createBatchRow = (): EditableBatch => ({
@@ -310,7 +320,15 @@ const createBatchRow = (): EditableBatch => ({
   remark: ''
 })
 
-const getSafeCount = (value?: number) => Number(Number(value || 0).toFixed(3))
+const getSafeCount = (value?: number, precision = 3) => roundQuantityByPrecision(value, precision)
+
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
+}
 
 const getPurchaseSourceBatchLabel = (value?: string) => value?.trim() || '未关联来源批次'
 
@@ -320,7 +338,8 @@ const getBatchTotalCount = (batches: Array<PurchaseInBatchVO | EditableBatch> = 
 
 const isBatchCountBalanced = (item: EditableItem) => {
   if (!item.batchControlFlag || Number(item.executeCount || 0) <= 0) return true
-  return getSafeCount(getBatchTotalCount(item.batches)) === getSafeCount(Number(item.executeCount || 0))
+  const precision = getQuantityPrecision(item.productId)
+  return getSafeCount(getBatchTotalCount(item.batches), precision) === getSafeCount(Number(item.executeCount || 0), precision)
 }
 
 const buildEditableItems = (items: PurchaseInItemVO[] = []) => {
@@ -335,7 +354,11 @@ const buildEditableItems = (items: PurchaseInItemVO[] = []) => {
 const loadDetail = async (id: number) => {
   detailLoading.value = true
   try {
-    const data = await PurchaseInApi.getPurchaseIn(id)
+    const [data, products] = await Promise.all([
+      PurchaseInApi.getPurchaseIn(id),
+      productList.value.length ? Promise.resolve(productList.value) : ProductApi.getProductSimpleList()
+    ])
+    productList.value = products
     formData.value = data
     remark.value = ''
     buildEditableItems(data.items || [])

@@ -9,6 +9,7 @@ export interface ProductVO {
   categoryName?: string // 产品类型名称
   unitId: number // 单位编号
   unitName?: string // 单位名字
+  quantityPrecision?: number // 数量精度，继承自产品单位
   status: number // 产品状态
   standard: string // 产品规格
   remark: string // 产品备注

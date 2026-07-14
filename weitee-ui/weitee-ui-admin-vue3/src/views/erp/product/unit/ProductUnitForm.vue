@@ -21,6 +21,17 @@
           </el-radio>
         </el-radio-group>
       </el-form-item>
+      <el-form-item label="数量精度" prop="quantityPrecision">
+        <el-input-number
+          v-model="formData.quantityPrecision"
+          :min="0"
+          :max="6"
+          :step="1"
+          :precision="0"
+          placeholder="请输入数量精度"
+          class="w-full"
+        />
+      </el-form-item>
     </el-form>
     <template #footer>
       <el-button @click="submitForm" type="primary" :disabled="formLoading">确 定</el-button>
@@ -46,11 +57,13 @@ const formType = ref('') // 表单的类型：create - 新增；update - 修改
 const formData = ref({
   id: undefined,
   name: undefined,
-  status: undefined
+  status: undefined,
+  quantityPrecision: undefined
 })
 const formRules = reactive({
   name: [{ required: true, message: '单位名字不能为空', trigger: 'blur' }],
-  status: [{ required: true, message: '单位状态不能为空', trigger: 'blur' }]
+  status: [{ required: true, message: '单位状态不能为空', trigger: 'blur' }],
+  quantityPrecision: [{ required: true, message: '数量精度不能为空', trigger: 'change' }]
 })
 const formRef = ref() // 表单 Ref
 
@@ -101,7 +114,8 @@ const resetForm = () => {
   formData.value = {
     id: undefined,
     name: undefined,
-    status: CommonStatusEnum.ENABLE
+    status: CommonStatusEnum.ENABLE,
+    quantityPrecision: 0
   }
   formRef.value?.resetFields()
 }

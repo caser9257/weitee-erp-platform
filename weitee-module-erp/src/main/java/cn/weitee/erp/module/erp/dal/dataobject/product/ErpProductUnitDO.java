@@ -36,4 +36,9 @@ public class ErpProductUnitDO extends BaseDO {
      */
     private Integer status;
 
+    /**
+     * 数量精度，0 表示只允许整数
+     */
+    private Integer quantityPrecision;
+
 }

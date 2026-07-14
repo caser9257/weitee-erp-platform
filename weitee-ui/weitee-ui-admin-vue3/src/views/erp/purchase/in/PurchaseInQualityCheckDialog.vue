@@ -43,7 +43,8 @@
               controls-position="right"
               :min="0"
               :max="Number(row.count || 0)"
-              :precision="3"
+              :step="getQuantityStep(row.productId)"
+              :precision="getQuantityPrecision(row.productId)"
               class="!w-100%"
               @change="handlePassCountChange(row)"
             />
@@ -74,7 +75,13 @@ import {
   PurchaseInQualityCheckReqVO,
   PurchaseInVO
 } from '@/api/erp/purchase/in'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { erpCountInputFormatter } from '@/utils'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep,
+  roundQuantityByPrecision
+} from '@/utils/erpQuantityPrecision'
 
 defineOptions({ name: 'PurchaseInQualityCheckDialog' })
 
@@ -87,6 +94,7 @@ type PurchaseInQualityCheckForm = {
   remark?: string
   items: Array<{
     id?: number
+    productId?: number
     productName?: string
     productBarCode?: string
     productUnitName?: string
@@ -102,6 +110,7 @@ const dialogVisible = ref(false)
 const loading = ref(false)
 const submitLoading = ref(false)
 const formRef = ref()
+const productList = ref<ProductVO[]>([])
 const formData = ref<PurchaseInQualityCheckForm>({
   items: []
 })
@@ -118,6 +127,18 @@ const normalizeCount = (value: number | undefined) => {
   return Number(value || 0)
 }
 
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
+}
+
+const roundCount = (value: number, productId?: number) => {
+  return roundQuantityByPrecision(value, getQuantityPrecision(productId))
+}
+
 const handlePassCountChange = (row: PurchaseInQualityCheckForm['items'][number]) => {
   const totalCount = normalizeCount(row.count)
   let qaPassCount = normalizeCount(row.qaPassCount)
@@ -127,8 +148,8 @@ const handlePassCountChange = (row: PurchaseInQualityCheckForm['items'][number])
   if (qaPassCount > totalCount) {
     qaPassCount = totalCount
   }
-  row.qaPassCount = qaPassCount
-  row.qaRejectCount = Number((totalCount - qaPassCount).toFixed(3))
+  row.qaPassCount = roundCount(qaPassCount, row.productId)
+  row.qaRejectCount = roundCount(totalCount - qaPassCount, row.productId)
 }
 
 const open = async (id: number) => {
@@ -136,7 +157,10 @@ const open = async (id: number) => {
   loading.value = true
   resetForm()
   try {
-    const data = (await PurchaseInApi.getPurchaseIn(id)) as PurchaseInVO
+    const [data] = await Promise.all([
+      PurchaseInApi.getPurchaseIn(id) as Promise<PurchaseInVO>,
+      ensureProductList()
+    ])
     formData.value = {
       id: data.id,
       no: data.no,
@@ -146,6 +170,7 @@ const open = async (id: number) => {
       remark: data.qaRemark,
       items: (data.items || []).map((item) => ({
         id: item.id,
+        productId: item.productId,
         productName: item.productName,
         productBarCode: item.productBarCode,
         productUnitName: item.productUnitName,
@@ -169,10 +194,12 @@ const submit = async () => {
     const totalCount = normalizeCount(item.count)
     const qaPassCount = normalizeCount(item.qaPassCount)
     const qaRejectCount = normalizeCount(item.qaRejectCount)
+    const totalPrecision = getQuantityPrecision(item.productId)
     return (
       qaPassCount < 0 ||
       qaRejectCount < 0 ||
-      Number((qaPassCount + qaRejectCount).toFixed(3)) !== Number(totalCount.toFixed(3))
+      roundQuantityByPrecision(qaPassCount + qaRejectCount, totalPrecision) !==
+        roundQuantityByPrecision(totalCount, totalPrecision)
     )
   })
   if (invalidItem) {
@@ -186,8 +213,8 @@ const submit = async () => {
       remark: formData.value.remark,
       items: formData.value.items.map((item) => ({
         id: item.id!,
-        qaPassCount: normalizeCount(item.qaPassCount),
-        qaRejectCount: normalizeCount(item.qaRejectCount),
+        qaPassCount: roundCount(normalizeCount(item.qaPassCount), item.productId),
+        qaRejectCount: roundCount(normalizeCount(item.qaRejectCount), item.productId),
         qaRemark: item.qaRemark
       }))
     }
@@ -198,6 +225,13 @@ const submit = async () => {
   } finally {
     submitLoading.value = false
   }
+}
+
+const ensureProductList = async () => {
+  if (productList.value.length) {
+    return
+  }
+  productList.value = await ProductApi.getProductSimpleList()
 }
 
 defineExpose({ open })

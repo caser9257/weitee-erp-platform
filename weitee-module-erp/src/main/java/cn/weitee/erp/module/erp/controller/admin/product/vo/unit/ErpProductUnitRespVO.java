@@ -27,6 +27,10 @@ public class ErpProductUnitRespVO {
     @DictFormat(DictTypeConstants.COMMON_STATUS)
     private Integer status;
 
+    @Schema(description = "数量精度，0 表示只允许整数", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
+    @ExcelProperty("数量精度")
+    private Integer quantityPrecision;
+
     @Schema(description = "创建时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("创建时间")
     private LocalDateTime createTime;

@@ -20,6 +20,7 @@ import cn.weitee.erp.module.erp.enums.stock.ErpStockAssembleActionTypeEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.mrp.ErpBomService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductQuantityPrecisionService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.springframework.stereotype.Service;
@@ -55,6 +56,8 @@ public class ErpStockAssembleServiceImpl implements ErpStockAssembleService {
     private ErpNoRedisDAO noRedisDAO;
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductQuantityPrecisionService productQuantityPrecisionService;
     @Resource
     private ErpWarehouseService warehouseService;
     @Resource
@@ -196,6 +199,7 @@ public class ErpStockAssembleServiceImpl implements ErpStockAssembleService {
         if (!ErpStockAssembleActionTypeEnum.isValid(reqVO.getActionType())) {
             throw exception(STOCK_ASSEMBLE_ACTION_TYPE_INVALID);
         }
+        productQuantityPrecisionService.validateProductQuantity(reqVO.getProductId(), reqVO.getCount());
         productService.validProductList(List.of(reqVO.getProductId()));
         warehouseService.validWarehouseList(List.of(reqVO.getWarehouseId()));
         ErpBomDO bom = bomService.getEffectiveBom(reqVO.getProductId());
@@ -228,6 +232,7 @@ public class ErpStockAssembleServiceImpl implements ErpStockAssembleService {
             items.add(new ErpStockAssembleItemDO().setProductId(reqVO.getProductId())
                     .setCount(reqVO.getCount()).setUnitCost(outputUnitCost).setStockDirection(1)
                     .setRemark("组装成品"));
+            validateItemQuantities(items);
             return new PreparedAssemble(bom, items, totalCost.setScale(2, RoundingMode.HALF_UP));
         }
 
@@ -251,6 +256,7 @@ public class ErpStockAssembleServiceImpl implements ErpStockAssembleService {
                     .setCount(count).setUnitCost(unitCost).setStockDirection(1)
                     .setRemark("拆卸组件"));
         }
+        validateItemQuantities(items);
         return new PreparedAssemble(bom, items, totalCost.setScale(2, RoundingMode.HALF_UP));
     }
 
@@ -285,6 +291,10 @@ public class ErpStockAssembleServiceImpl implements ErpStockAssembleService {
     private void saveItems(Long assembleId, List<ErpStockAssembleItemDO> items) {
         items.forEach(item -> item.setId(null).setAssembleId(assembleId));
         assembleItemMapper.insertBatch(items);
+    }
+
+    private void validateItemQuantities(List<ErpStockAssembleItemDO> items) {
+        items.forEach(item -> productQuantityPrecisionService.validateProductQuantity(item.getProductId(), item.getCount()));
     }
 
     private ErpStockAssembleDO validateExists(Long id) {

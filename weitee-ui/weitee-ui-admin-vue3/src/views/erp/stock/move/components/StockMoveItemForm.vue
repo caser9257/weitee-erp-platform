@@ -102,8 +102,9 @@
                 <el-input-number
                   v-model="row.count"
                   controls-position="right"
-                  :min="0.001"
-                  :precision="3"
+                  :min="getQuantityStep(row.productId)"
+                  :step="getQuantityStep(row.productId)"
+                  :precision="getQuantityPrecision(row.productId)"
                   class="stock-move-item__number-input"
                 />
               </el-form-item>
@@ -309,6 +310,13 @@ const onChangeProduct = async (productId: number | undefined, row: StockMoveItem
   }
   await setStockCount(row)
 }
+
+const getQuantityPrecision = (productId?: number) => {
+  const precision = productList.value.find((item) => item.id === productId)?.quantityPrecision
+  return Number.isInteger(precision) && precision! >= 0 && precision! <= 6 ? precision! : 3
+}
+
+const getQuantityStep = (productId?: number) => 10 ** -getQuantityPrecision(productId)
 
 const validate = () => formRef.value?.validate()
 

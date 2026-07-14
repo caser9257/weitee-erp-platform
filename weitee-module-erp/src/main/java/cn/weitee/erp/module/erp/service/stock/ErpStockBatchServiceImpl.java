@@ -14,6 +14,7 @@ import cn.weitee.erp.module.erp.enums.stock.ErpStockBatchAdjustTypeEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchInboundReqBO;
+import cn.weitee.erp.module.erp.service.product.ErpProductQuantityPrecisionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -42,6 +43,8 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     private ErpStockBatchAdjustmentMapper erpStockBatchAdjustmentMapper;
     @Resource
     private ErpStockBatchRecordService stockBatchRecordService;
+    @Resource
+    private ErpProductQuantityPrecisionService productQuantityPrecisionService;
 
     @Override
     public ErpStockBatchDO getStockBatch(Long id) {
@@ -78,6 +81,7 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ErpStockBatchDO createOrIncreaseBatch(ErpStockBatchInboundReqBO reqBO) {
+        productQuantityPrecisionService.validateProductQuantity(reqBO.getProductId(), reqBO.getCount());
         ErpStockBatchDO stockBatch = erpStockBatchMapper.selectByProductWarehouseAndBatchNo(
                 reqBO.getProductId(), reqBO.getWarehouseId(), reqBO.getBatchNo());
         if (stockBatch == null) {
@@ -147,6 +151,7 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     @Transactional(rollbackFor = Exception.class)
     public ErpStockBatchDO increaseBatch(ErpStockBatchChangeReqBO reqBO) {
         ErpStockBatchDO stockBatch = validateStockBatch(reqBO.getStockBatchId());
+        productQuantityPrecisionService.validateProductQuantity(stockBatch.getProductId(), reqBO.getCount());
         erpStockBatchMapper.updateQtyIncrement(stockBatch.getId(), reqBO.getCount());
         stockBatch = erpStockBatchMapper.selectById(stockBatch.getId());
         createRecord(stockBatch, reqBO.getCount(), reqBO.getBizType(), reqBO.getBizId(),
@@ -158,6 +163,7 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     @Transactional(rollbackFor = Exception.class)
     public ErpStockBatchDO decreaseBatch(ErpStockBatchChangeReqBO reqBO) {
         ErpStockBatchDO stockBatch = validateStockBatch(reqBO.getStockBatchId());
+        productQuantityPrecisionService.validateProductQuantity(stockBatch.getProductId(), reqBO.getCount());
         if (erpStockBatchMapper.updateQtyDecrement(stockBatch.getId(), reqBO.getCount()) == 0) {
             throw exception(STOCK_BATCH_INSUFFICIENT, stockBatch.getBatchNo(), stockBatch.getAvailableQty());
         }
@@ -171,6 +177,7 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     @Transactional(rollbackFor = Exception.class)
     public ErpStockBatchDO lockBatch(ErpStockBatchChangeReqBO reqBO) {
         ErpStockBatchDO stockBatch = validateStockBatch(reqBO.getStockBatchId());
+        productQuantityPrecisionService.validateProductQuantity(stockBatch.getProductId(), reqBO.getCount());
         if (erpStockBatchMapper.updateLockIncrement(stockBatch.getId(), reqBO.getCount()) == 0) {
             throw exception(STOCK_BATCH_LOCK_INSUFFICIENT, stockBatch.getBatchNo(), stockBatch.getAvailableQty());
         }
@@ -181,6 +188,7 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     @Transactional(rollbackFor = Exception.class)
     public ErpStockBatchDO releaseLockedBatch(ErpStockBatchChangeReqBO reqBO) {
         ErpStockBatchDO stockBatch = validateStockBatch(reqBO.getStockBatchId());
+        productQuantityPrecisionService.validateProductQuantity(stockBatch.getProductId(), reqBO.getCount());
         if (erpStockBatchMapper.updateLockRelease(stockBatch.getId(), reqBO.getCount()) == 0) {
             throw exception(STOCK_BATCH_LOCKED_INSUFFICIENT, stockBatch.getBatchNo(), stockBatch.getLockedQty());
         }
@@ -191,6 +199,7 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     @Transactional(rollbackFor = Exception.class)
     public ErpStockBatchDO deductLockedBatch(ErpStockBatchChangeReqBO reqBO) {
         ErpStockBatchDO stockBatch = validateStockBatch(reqBO.getStockBatchId());
+        productQuantityPrecisionService.validateProductQuantity(stockBatch.getProductId(), reqBO.getCount());
         if (erpStockBatchMapper.updateLockedDeduct(stockBatch.getId(), reqBO.getCount()) == 0) {
             throw exception(STOCK_BATCH_LOCKED_INSUFFICIENT, stockBatch.getBatchNo(), stockBatch.getLockedQty());
         }

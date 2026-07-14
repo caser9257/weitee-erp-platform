@@ -7,6 +7,7 @@ import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper;
 import cn.weitee.erp.module.erp.framework.event.StockBelowSafetyEvent;
 import cn.weitee.erp.module.erp.service.mrp.ErpMaterialPlanRuleService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductQuantityPrecisionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -45,6 +46,8 @@ public class ErpStockServiceImpl implements ErpStockService {
 
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductQuantityPrecisionService productQuantityPrecisionService;
     @Resource
     private ErpWarehouseService warehouseService;
     @Resource
@@ -112,6 +115,7 @@ public class ErpStockServiceImpl implements ErpStockService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BigDecimal updateStockCountIncrement(Long productId, Long warehouseId, BigDecimal count, BigDecimal price) {
+        productQuantityPrecisionService.validateProductQuantity(productId, count);
         // 1.1 查询当前库存
         ErpStockDO stock = erpStockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
         if (stock == null) {

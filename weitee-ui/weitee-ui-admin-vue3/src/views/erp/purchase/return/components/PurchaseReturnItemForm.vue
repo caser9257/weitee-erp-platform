@@ -92,8 +92,9 @@
             <el-input-number
               v-model="row.count"
               controls-position="right"
-              :min="0.001"
-              :precision="3"
+              :min="getQuantityStep(row.productId)"
+              :step="getQuantityStep(row.productId)"
+              :precision="getQuantityPrecision(row.productId)"
               class="!w-100%"
             />
           </el-form-item>
@@ -172,6 +173,7 @@
 <script setup lang="ts">
 import type { SummaryMethod } from 'element-plus'
 import { StockApi } from '@/api/erp/stock/stock'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import {
   erpCountInputFormatter,
   erpPriceInputFormatter,
@@ -179,6 +181,10 @@ import {
   getSumValue
 } from '@/utils'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep
+} from '@/utils/erpQuantityPrecision'
 
 const props = defineProps<{
   items: any[]
@@ -194,6 +200,7 @@ const formRules = reactive({
 const formRef = ref<any>() // 表单 Ref
 const warehouseList = ref<WarehouseVO[]>([]) // 仓库列表
 const defaultWarehouse = ref<WarehouseVO>(undefined) // 默认仓库
+const productList = ref<ProductVO[]>([]) // 产品列表
 
 /** 初始化设置出库项 */
 watch(
@@ -292,6 +299,14 @@ const setStockCount = async (row: any) => {
   row.stockCount = count || 0
 }
 
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
+}
+
 /** 表单校验 */
 const validate = () => {
   return formRef.value.validate()
@@ -300,7 +315,12 @@ defineExpose({ validate })
 
 /** 初始化 */
 onMounted(async () => {
-  warehouseList.value = await WarehouseApi.getWarehouseSimpleList()
+  const [warehouses, products] = await Promise.all([
+    WarehouseApi.getWarehouseSimpleList(),
+    ProductApi.getProductSimpleList()
+  ])
+  warehouseList.value = warehouses
+  productList.value = products
   defaultWarehouse.value = warehouseList.value.find((item) => item.defaultStatus)
 })
 </script>

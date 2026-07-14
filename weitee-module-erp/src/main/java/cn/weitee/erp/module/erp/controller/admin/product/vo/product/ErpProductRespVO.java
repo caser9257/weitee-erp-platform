@@ -43,6 +43,9 @@ public class ErpProductRespVO {
     @ExcelProperty("Unit Name")
     private String unitName;
 
+    @Schema(description = "数量精度，继承自产品单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
+    private Integer quantityPrecision;
+
     @Schema(description = "Status", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @ExcelProperty("Status")
     private Integer status;

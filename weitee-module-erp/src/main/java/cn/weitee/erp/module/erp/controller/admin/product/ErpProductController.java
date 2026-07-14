@@ -74,8 +74,7 @@ public class ErpProductController {
     @Parameter(name = "id", description = "编号", required = true, example = "1024")
     @PreAuthorize("@ss.hasPermission('erp:product:query')")
     public CommonResult<ErpProductRespVO> getProduct(@RequestParam("id") Long id) {
-        ErpProductDO product = productService.getProduct(id);
-        return success(BeanUtils.toBean(product, ErpProductRespVO.class));
+        return success(productService.getProductVOList(List.of(id)).stream().findFirst().orElse(null));
     }
 
     @GetMapping("/page")
@@ -93,6 +92,7 @@ public class ErpProductController {
                 .setName(product.getName()).setMaterialCode(product.getMaterialCode()).setBarCode(product.getBarCode())
                 .setCategoryId(product.getCategoryId()).setCategoryName(product.getCategoryName())
                 .setUnitId(product.getUnitId()).setUnitName(product.getUnitName())
+                .setQuantityPrecision(product.getQuantityPrecision())
                 .setBatchControlFlag(product.getBatchControlFlag())
                 .setInspectionRequiredFlag(product.getInspectionRequiredFlag())
                 .setPurchasePrice(product.getPurchasePrice()).setSalePrice(product.getSalePrice()).setMinPrice(product.getMinPrice())));

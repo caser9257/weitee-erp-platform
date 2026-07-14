@@ -82,8 +82,9 @@
             <el-input-number
               v-model="row.count"
               controls-position="right"
-              :min="0.001"
-              :precision="3"
+              :min="getQuantityStep(row.productId)"
+              :step="getQuantityStep(row.productId)"
+              :precision="getQuantityPrecision(row.productId)"
               class="!w-100%"
             />
           </el-form-item>
@@ -167,7 +168,12 @@
 
 <script setup lang="ts">
 import { StockApi } from '@/api/erp/stock/stock'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep
+} from '@/utils/erpQuantityPrecision'
 import {
   erpCountInputFormatter,
   erpPriceInputFormatter,
@@ -190,6 +196,7 @@ const formRules = reactive({
 const formRef = ref()
 const warehouseList = ref<WarehouseVO[]>([])
 const defaultWarehouse = ref<WarehouseVO>(undefined)
+const productList = ref<ProductVO[]>([])
 
 const calculateRowPrice = (item: any) => {
   const materialTotalPrice = erpPriceMultiply(item.productPrice, item.count)
@@ -271,6 +278,14 @@ const setStockCount = async (row: any) => {
   row.stockCount = count || 0
 }
 
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
+}
+
 const validate = () => {
   return formRef.value.validate()
 }
@@ -278,7 +293,12 @@ const validate = () => {
 defineExpose({ validate })
 
 onMounted(async () => {
-  warehouseList.value = await WarehouseApi.getWarehouseSimpleList()
+  const [warehouses, products] = await Promise.all([
+    WarehouseApi.getWarehouseSimpleList(),
+    ProductApi.getProductSimpleList()
+  ])
+  warehouseList.value = warehouses
+  productList.value = products
   defaultWarehouse.value = warehouseList.value.find((item) => item.defaultStatus)
 })
 </script>

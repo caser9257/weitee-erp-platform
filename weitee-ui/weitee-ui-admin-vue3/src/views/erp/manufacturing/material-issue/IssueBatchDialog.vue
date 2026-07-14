@@ -50,7 +50,8 @@
                   v-model="issueQty"
                   controls-position="right"
                   :min="0"
-                  :precision="3"
+                  :step="getQuantityStep(currentMaterial.materialId)"
+                  :precision="getQuantityPrecision(currentMaterial.materialId)"
                   :max="Number(currentMaterial.remainingIssueQty || 0)"
                   class="!w-100%"
                 />
@@ -101,7 +102,8 @@
                 controls-position="right"
                 :min="0"
                 :max="Number(row.availableQty || 0)"
-                :precision="3"
+                :step="getQuantityStep(currentMaterial?.materialId)"
+                :precision="getQuantityPrecision(currentMaterial?.materialId)"
                 class="!w-100%"
               />
             </template>
@@ -122,7 +124,13 @@
 import { computed, ref } from 'vue'
 import { formatDate } from '@/utils/formatTime'
 import { erpCountInputFormatter } from '@/utils'
+import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
+import {
+  getProductQuantityPrecision,
+  getProductQuantityStep,
+  roundQuantityByPrecision
+} from '@/utils/erpQuantityPrecision'
 import {
   ProductionMaterialApi,
   ProductionMaterialBatchCandidateVO,
@@ -148,6 +156,7 @@ const candidateLoading = ref(false)
 const recommendLoading = ref(false)
 const submitLoading = ref(false)
 const warehouseList = ref<WarehouseVO[]>([])
+const productList = ref<ProductVO[]>([])
 const currentMaterial = ref<ProductionMaterialVO>()
 const currentOrderId = ref<number>()
 const warehouseId = ref<number>()
@@ -159,7 +168,10 @@ const totalAssignedQty = computed(() =>
   batchRows.value.reduce((sum, row) => sum + Number(row.issueQty || 0), 0)
 )
 
-const isBalanced = computed(() => Number(totalAssignedQty.value.toFixed(3)) === Number((issueQty.value || 0).toFixed(3)))
+const isBalanced = computed(() => {
+  const precision = getQuantityPrecision(currentMaterial.value?.materialId)
+  return roundQuantityByPrecision(totalAssignedQty.value, precision) === roundQuantityByPrecision(issueQty.value, precision)
+})
 
 const canRecommend = computed(() => Number(issueQty.value || 0) > 0 && Number(warehouseId.value || 0) > 0)
 
@@ -172,6 +184,19 @@ const canSubmit = computed(() => {
 const ensureWarehouseList = async () => {
   if (warehouseList.value.length > 0) return
   warehouseList.value = await WarehouseApi.getWarehouseSimpleList()
+}
+
+const ensureProductList = async () => {
+  if (productList.value.length > 0) return
+  productList.value = await ProductApi.getProductSimpleList()
+}
+
+const getQuantityPrecision = (productId?: number) => {
+  return getProductQuantityPrecision(productList.value, productId)
+}
+
+const getQuantityStep = (productId?: number) => {
+  return getProductQuantityStep(productList.value, productId)
 }
 
 const loadBatchCandidates = async () => {
@@ -193,7 +218,7 @@ const loadBatchCandidates = async () => {
 }
 
 const open = async (material: ProductionMaterialVO, orderId: number) => {
-  await ensureWarehouseList()
+  await Promise.all([ensureWarehouseList(), ensureProductList()])
   currentMaterial.value = material
   currentOrderId.value = orderId
   warehouseId.value = material.supplyWarehouseId
