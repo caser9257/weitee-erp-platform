@@ -25,7 +25,6 @@ class ErpFinanceBizHookServiceImplTest {
         ErpFinanceBizHookServiceImpl service = new ErpFinanceBizHookServiceImpl();
         AtomicReference<LocalDate> validatedDateRef = new AtomicReference<>();
         AtomicReference<Integer> generatedBizTypeRef = new AtomicReference<>();
-        AtomicReference<Long> syncVoucherIdRef = new AtomicReference<>();
 
         setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> {
             if ("getDefaultFinanceLedger".equals(methodName)) {
@@ -46,12 +45,6 @@ class ErpFinanceBizHookServiceImplTest {
             }
             return null;
         }));
-        setField(service, "dualWriteService", createProxy(ErpFinanceDualWriteService.class, (methodName, args) -> {
-            if ("syncDualWriteBySourceVoucherId".equals(methodName)) {
-                syncVoucherIdRef.set((Long) args[0]);
-            }
-            return null;
-        }));
 
         Long result = service.handleApprovedBiz(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), 100L,
                 LocalDate.of(2026, 4, 29));
@@ -59,17 +52,15 @@ class ErpFinanceBizHookServiceImplTest {
         assertNull(result);
         assertNull(validatedDateRef.get());
         assertEquals(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), generatedBizTypeRef.get());
-        assertNull(syncVoucherIdRef.get());
     }
 
     @Test
-    void handleApprovedBiz_shouldValidatePeriodAndAutoGenerateWhenDefaultLedgerExists() throws Exception {
+    void handleApprovedBiz_shouldNotDependOnDualWriteAfterAutoGeneratingVoucher() throws Exception {
         ErpFinanceBizHookServiceImpl service = new ErpFinanceBizHookServiceImpl();
         AtomicLong validatedLedgerIdRef = new AtomicLong();
         AtomicReference<LocalDate> validatedDateRef = new AtomicReference<>();
         AtomicReference<Integer> generatedBizTypeRef = new AtomicReference<>();
         AtomicReference<Long> generatedBizIdRef = new AtomicReference<>();
-        AtomicReference<Long> syncVoucherIdRef = new AtomicReference<>();
 
         setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> {
             if ("getDefaultFinanceLedger".equals(methodName)) {
@@ -94,12 +85,6 @@ class ErpFinanceBizHookServiceImplTest {
             }
             return null;
         }));
-        setField(service, "dualWriteService", createProxy(ErpFinanceDualWriteService.class, (methodName, args) -> {
-            if ("syncDualWriteBySourceVoucherId".equals(methodName)) {
-                syncVoucherIdRef.set((Long) args[0]);
-            }
-            return null;
-        }));
 
         Long result = service.handleApprovedBiz(ErpBizTypeEnum.PURCHASE_IN.getType(), 11L,
                 LocalDate.of(2026, 4, 30));
@@ -109,14 +94,14 @@ class ErpFinanceBizHookServiceImplTest {
         assertEquals(LocalDate.of(2026, 4, 30), validatedDateRef.get());
         assertEquals(ErpBizTypeEnum.PURCHASE_IN.getType(), generatedBizTypeRef.get());
         assertEquals(11L, generatedBizIdRef.get());
-        assertEquals(88L, syncVoucherIdRef.get());
+        assertThrows(NoSuchFieldException.class,
+                () -> ErpFinanceBizHookServiceImpl.class.getDeclaredField("dualWriteService"));
     }
 
     @Test
     void handleApprovedBiz_shouldUseCurrentDateWhenBizDateMissing() throws Exception {
         ErpFinanceBizHookServiceImpl service = new ErpFinanceBizHookServiceImpl();
         AtomicReference<LocalDate> validatedDateRef = new AtomicReference<>();
-        AtomicReference<Long> syncVoucherIdRef = new AtomicReference<>();
 
         setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> {
             if ("getDefaultFinanceLedger".equals(methodName)) {
@@ -133,17 +118,10 @@ class ErpFinanceBizHookServiceImplTest {
             return null;
         }));
         setField(service, "financeVoucherService", createProxy(ErpFinanceVoucherService.class, (methodName, args) -> 1L));
-        setField(service, "dualWriteService", createProxy(ErpFinanceDualWriteService.class, (methodName, args) -> {
-            if ("syncDualWriteBySourceVoucherId".equals(methodName)) {
-                syncVoucherIdRef.set((Long) args[0]);
-            }
-            return null;
-        }));
 
         service.handleApprovedBiz(ErpBizTypeEnum.SALE_OUT.getType(), 12L, null);
 
         assertEquals(LocalDate.now(), validatedDateRef.get());
-        assertEquals(1L, syncVoucherIdRef.get());
     }
 
     @Test
@@ -151,7 +129,6 @@ class ErpFinanceBizHookServiceImplTest {
         ErpFinanceBizHookServiceImpl service = new ErpFinanceBizHookServiceImpl();
         AtomicReference<Integer> generatedBizTypeRef = new AtomicReference<>();
         AtomicReference<Long> generatedBizIdRef = new AtomicReference<>();
-        AtomicReference<Long> syncVoucherIdRef = new AtomicReference<>();
 
         setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> {
             if ("getDefaultFinanceLedger".equals(methodName)) {
@@ -173,12 +150,6 @@ class ErpFinanceBizHookServiceImplTest {
             }
             return null;
         }));
-        setField(service, "dualWriteService", createProxy(ErpFinanceDualWriteService.class, (methodName, args) -> {
-            if ("syncDualWriteBySourceVoucherId".equals(methodName)) {
-                syncVoucherIdRef.set((Long) args[0]);
-            }
-            return null;
-        }));
 
         Long result = service.handleApprovedBiz(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), 100L,
                 LocalDate.of(2026, 4, 29));
@@ -186,7 +157,6 @@ class ErpFinanceBizHookServiceImplTest {
         assertEquals(99L, result);
         assertEquals(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), generatedBizTypeRef.get());
         assertEquals(100L, generatedBizIdRef.get());
-        assertEquals(99L, syncVoucherIdRef.get());
     }
 
     @Test
