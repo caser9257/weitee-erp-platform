@@ -11,6 +11,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInItemDO;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetCandidateMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetCandidateStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetSourceTypeEnum;
@@ -38,6 +39,8 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
     @Resource
     private ErpFinanceAssetCandidateMapper financeAssetCandidateMapper;
     @Resource
+    private ErpFinanceAssetMapper financeAssetMapper;
+    @Resource
     private ErpFinanceAssetService financeAssetService;
     @Resource
     private ErpFinanceExpenseService financeExpenseService;
@@ -58,6 +61,18 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
         if (!ErpFinanceAssetCandidateStatusEnum.PENDING_CONFIRM.getStatus().equals(candidate.getStatus())) {
             throw exception(ASSET_CANDIDATE_CONFIRM_FAIL);
         }
+        if (financeAssetMapper.selectByCandidateId(candidate.getId()) != null) {
+            throw exception(ASSET_CANDIDATE_CONFIRM_FAIL);
+        }
+        int updated = financeAssetCandidateMapper.updateByIdAndStatus(candidate.getId(),
+                ErpFinanceAssetCandidateStatusEnum.PENDING_CONFIRM.getStatus(),
+                new ErpFinanceAssetCandidateDO()
+                        .setId(candidate.getId())
+                        .setStatus(ErpFinanceAssetCandidateStatusEnum.CONFIRMED.getStatus())
+                        .setRemark(reqVO.getRemark()));
+        if (updated == 0) {
+            throw exception(ASSET_CANDIDATE_CONFIRM_FAIL);
+        }
         ErpFinanceAssetSaveReqVO saveReqVO = BeanUtils.toBean(reqVO, ErpFinanceAssetSaveReqVO.class, in -> in
                 .setCandidateId(candidate.getId())
                 .setSourceType(candidate.getSourceType() == null
@@ -65,12 +80,7 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
                 .setSourceBizId(candidate.getSourceBizId())
                 .setSourceBizNo(candidate.getSourceBizNo())
                 .setSourceItemId(candidate.getSourceItemId()));
-        Long assetId = financeAssetService.createFinanceAsset(saveReqVO);
-        financeAssetCandidateMapper.updateById(new ErpFinanceAssetCandidateDO()
-                .setId(candidate.getId())
-                .setStatus(ErpFinanceAssetCandidateStatusEnum.CONFIRMED.getStatus())
-                .setRemark(reqVO.getRemark()));
-        return assetId;
+        return financeAssetService.createFinanceAsset(saveReqVO);
     }
 
     @Override

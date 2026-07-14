@@ -25,6 +25,13 @@ public interface ErpFinanceAssetMapper extends BaseMapperX<ErpFinanceAssetDO> {
         return selectOne(ErpFinanceAssetDO::getNo, no);
     }
 
+    default ErpFinanceAssetDO selectByCandidateId(Long candidateId) {
+        return selectOne(new LambdaQueryWrapperX<ErpFinanceAssetDO>()
+                .eq(ErpFinanceAssetDO::getCandidateId, candidateId)
+                .orderByDesc(ErpFinanceAssetDO::getId)
+                .last("LIMIT 1"));
+    }
+
     default int updateByIdAndStatus(Long id, Integer status, ErpFinanceAssetDO updateObj) {
         return update(updateObj, new LambdaUpdateWrapper<ErpFinanceAssetDO>()
                 .eq(ErpFinanceAssetDO::getId, id)

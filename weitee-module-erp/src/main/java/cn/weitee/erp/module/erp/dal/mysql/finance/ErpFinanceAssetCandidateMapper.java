@@ -5,6 +5,7 @@ import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.asset.ErpFinanceAssetCandidatePageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetCandidateDO;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
@@ -24,5 +25,11 @@ public interface ErpFinanceAssetCandidateMapper extends BaseMapperX<ErpFinanceAs
                 .eqIfPresent(ErpFinanceAssetCandidateDO::getSourceItemId, sourceItemId)
                 .orderByDesc(ErpFinanceAssetCandidateDO::getId)
                 .last("LIMIT 1"));
+    }
+
+    default int updateByIdAndStatus(Long id, Integer status, ErpFinanceAssetCandidateDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpFinanceAssetCandidateDO>()
+                .eq(ErpFinanceAssetCandidateDO::getId, id)
+                .eq(ErpFinanceAssetCandidateDO::getStatus, status));
     }
 }
