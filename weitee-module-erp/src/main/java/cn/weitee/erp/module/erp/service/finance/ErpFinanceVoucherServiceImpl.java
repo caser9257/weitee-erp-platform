@@ -25,8 +25,10 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualLedgerAmountDiffLogMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
@@ -134,6 +136,8 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     private ErpFinanceVoucherLogService voucherLogService;
     @Resource
     private ErpFinanceDualLedgerAmountDiffLogMapper dualLedgerAmountDiffLogMapper;
+    @Resource
+    private ErpStockCheckMapper stockCheckMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -676,10 +680,22 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.RESEARCH_EXPENSE.getType())) {
             return financeExpenseService.getFinanceExpense(bizId) != null;
         }
+        if (ObjectUtil.equal(bizType, ErpBizTypeEnum.STOCK_CHECK.getType())) {
+            return stockCheckMapper.selectById(bizId) != null;
+        }
         return false;
     }
 
     private VoucherSource resolveVoucherSource(Integer bizType, Long bizId) {
+        if (ObjectUtil.equal(bizType, ErpBizTypeEnum.STOCK_CHECK.getType())) {
+            ErpStockCheckDO stockCheck = stockCheckMapper.selectById(bizId);
+            if (stockCheck == null) {
+                throw exception(FINANCE_VOUCHER_NOT_EXISTS);
+            }
+            return new VoucherSource(stockCheck.getNo(),
+                    defaultTime(stockCheck.getSnapshotTime(), stockCheck.getCreateTime(), stockCheck.getUpdateTime()),
+                    defaultAmount(stockCheck.getTotalPrice()).abs(), stockCheck.getRemark());
+        }
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.PURCHASE_IN.getType())) {
             ErpPurchaseInDO purchaseIn = purchaseInService.getPurchaseIn(bizId);
             if (purchaseIn == null) {

@@ -21,8 +21,10 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
@@ -276,6 +278,31 @@ class ErpFinanceVoucherServiceImplTest {
         assertEquals("CGTH20260429000001", insertedVoucherRef.get().getBizNo());
         assertEquals(new BigDecimal("180.00"), insertedVoucherRef.get().getTotalDebitAmount());
         assertEquals(new BigDecimal("180.00"), insertedVoucherRef.get().getTotalCreditAmount());
+    }
+
+    @Test
+    void generateVoucher_shouldUseAbsoluteAmountForStockCheckLoss() throws Exception {
+        ErpFinanceVoucherServiceImpl service = newService();
+        AtomicReference<ErpFinanceVoucherDO> insertedVoucherRef = new AtomicReference<>();
+
+        mockValidatedLedger(service, 1L);
+        mockTemplate(service, template(22L, 1L, ErpBizTypeEnum.STOCK_CHECK.getType(), true, "STOCK_CHECK_SUMMARY"),
+                amountItems(ErpFinanceVoucherAmountSourceEnum.BIZ_AMOUNT.getType(), null));
+        mockStockCheck(service, 301L, "PD202607150001", LocalDateTime.of(2026, 7, 15, 10, 0),
+                new BigDecimal("-850.00"), "stock check loss");
+        mockOpenPeriod(service, 23L, 1L, LocalDate.of(2026, 7, 15));
+        mockVoucherPersistence(service, "CWPZ202607150001", 93L, insertedVoucherRef, new AtomicReference<>(), null);
+        mockOutsourceOrderService(service, null);
+
+        Long id = service.generateVoucher(new ErpFinanceVoucherGenerateReqVO()
+                .setLedgerId(1L)
+                .setBizType(ErpBizTypeEnum.STOCK_CHECK.getType())
+                .setBizId(301L)
+                .setTemplateId(22L));
+
+        assertEquals(93L, id);
+        assertEquals(new BigDecimal("850.00"), insertedVoucherRef.get().getTotalDebitAmount());
+        assertEquals(new BigDecimal("850.00"), insertedVoucherRef.get().getTotalCreditAmount());
     }
 
     @Test
@@ -1295,6 +1322,21 @@ class ErpFinanceVoucherServiceImplTest {
                         .setRemark(remark);
                 purchaseReturn.setCreateTime(createTime);
                 return purchaseReturn;
+            }
+            return null;
+        }));
+    }
+
+    private void mockStockCheck(ErpFinanceVoucherServiceImpl service, Long id, String no, LocalDateTime snapshotTime,
+                                BigDecimal totalPrice, String remark) throws Exception {
+        setField(service, "stockCheckMapper", createProxy(ErpStockCheckMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                ErpStockCheckDO stockCheck = new ErpStockCheckDO().setId(id).setNo(no)
+                        .setSnapshotTime(snapshotTime)
+                        .setTotalPrice(totalPrice)
+                        .setRemark(remark);
+                stockCheck.setCreateTime(snapshotTime);
+                return stockCheck;
             }
             return null;
         }));
