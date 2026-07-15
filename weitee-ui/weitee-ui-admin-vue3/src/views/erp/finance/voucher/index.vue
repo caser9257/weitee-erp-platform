@@ -480,6 +480,7 @@ import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinancePeriodVO, FinancePeriodApi } from '@/api/erp/finance/period'
 import { FinanceVoucherTemplateApi, ErpFinanceVoucherTemplateVO } from '@/api/erp/finance/voucher-template'
 import { ErpFinanceVoucherPageReqVO, ErpFinanceVoucherVO, FinanceVoucherApi } from '@/api/erp/finance/voucher'
+import { canRecomputeVoucher } from './voucherStatus.helpers'
 
 defineOptions({ name: 'ErpFinanceVoucher' })
 
@@ -760,13 +761,18 @@ const handleBatchAction = async (action: 'approve' | 'cancelApprove' | 'post' | 
 }
 
 const canRecompute = (row: ErpFinanceVoucherVO) =>
-  row.id != null && row.bizType != null && row.bizId != null && [10, 20, 30].includes(row.status || 0)
+  row.id != null && canRecomputeVoucher(row) && [10, 20, 30].includes(row.status || 0)
 
 const canReverse = (row: ErpFinanceVoucherVO) => row.status === 30 && !row.reverseFromVoucherId && !row.reverseVoucherId
 
 const handleRecompute = async (row: ErpFinanceVoucherVO) => {
   if (!canRecompute(row) || rowActionLoadingId.value) return
-  await message.confirm('确认重算当前凭证吗？')
+  try {
+    await message.confirm('重算将根据当前业务单据更新自动凭证，是否继续？')
+  } catch (error) {
+    if (isActionCanceled(error)) return
+    throw error
+  }
   rowActionLoadingId.value = row.id
   rowActionLoadingType.value = 'recompute'
   try {
