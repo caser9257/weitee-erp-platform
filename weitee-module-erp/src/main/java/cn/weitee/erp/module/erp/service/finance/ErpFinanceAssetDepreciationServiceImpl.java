@@ -203,6 +203,13 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
     }
 
     @Override
+    public void bindVoucher(Long id, Long voucherId) {
+        financeAssetDepreciationMapper.updateById(new ErpFinanceAssetDepreciationDO()
+                .setId(id)
+                .setVoucherId(voucherId));
+    }
+
+    @Override
     public PageResult<ErpFinanceAssetDepreciationDO> getFinanceAssetDepreciationPage(ErpFinanceAssetDepreciationPageReqVO pageReqVO) {
         return financeAssetDepreciationMapper.selectPage(pageReqVO);
     }
