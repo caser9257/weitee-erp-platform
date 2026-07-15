@@ -16,6 +16,8 @@ class SupplyChainBpmnResourceSmokeTest {
     void shouldContainSupplyChainApprovalBpmnResources() {
         assertTrue(new ClassPathResource("bpmn/erp_purchase_return_approval.bpmn").exists(),
                 "缺少采购退货审批 BPMN 资源: bpmn/erp_purchase_return_approval.bpmn");
+        assertTrue(new ClassPathResource("bpmn/erp_sale_order_approval.bpmn").exists(),
+                "缺少销售订单审批 BPMN 资源: bpmn/erp_sale_order_approval.bpmn");
         assertTrue(new ClassPathResource("bpmn/erp_stock_in_approval.bpmn").exists(),
                 "缺少其它入库审批 BPMN 资源: bpmn/erp_stock_in_approval.bpmn");
         assertTrue(new ClassPathResource("bpmn/erp_stock_out_approval.bpmn").exists(),
@@ -26,6 +28,16 @@ class SupplyChainBpmnResourceSmokeTest {
     void stockApprovalBpmnShouldDeclareCandidateStrategy() throws Exception {
         assertStockApprovalCandidateConfig("bpmn/erp_stock_in_approval.bpmn");
         assertStockApprovalCandidateConfig("bpmn/erp_stock_out_approval.bpmn");
+    }
+
+    @Test
+    void purchaseReturnApprovalBpmnShouldDeclareCandidateStrategy() throws Exception {
+        assertStockApprovalCandidateConfig("bpmn/erp_purchase_return_approval.bpmn");
+    }
+
+    @Test
+    void saleOrderApprovalBpmnShouldDeclareCandidateStrategy() throws Exception {
+        assertStockApprovalCandidateConfig("bpmn/erp_sale_order_approval.bpmn");
     }
 
     private static void assertStockApprovalCandidateConfig(String classpath) throws Exception {

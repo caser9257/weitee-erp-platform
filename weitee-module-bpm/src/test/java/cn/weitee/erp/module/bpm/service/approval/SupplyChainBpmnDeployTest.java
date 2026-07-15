@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * 采购退货 / 其它入库 / 其它出库 — 3 个 BPMN 流程定义自动部署工具
+ * 销售订单、采购入库、采购退货、其它入库、其它出库 — BPMN 流程定义自动部署工具
  *
  * 使用方式：运行此测试即可自动部署 3 个 BPMN 流程定义到 Flowable 引擎，
  * 同时在 bpm_process_definition_info 表中插入扩展元数据。
@@ -39,6 +39,8 @@ class SupplyChainBpmnDeployTest extends BaseDbUnitTest {
     private BpmProcessDefinitionInfoMapper processDefinitionInfoMapper;
 
     private static final String[][] BPMN_FILES = {
+            {"erp_sale_order", "销售订单审批", "bpmn/erp_sale_order_approval.bpmn"},
+            {"erp_purchase_in_approval", "采购入库审批", "bpmn/erp_purchase_in_approval.bpmn"},
             {"erp_purchase_return_approval", "采购退货审批", "bpmn/erp_purchase_return_approval.bpmn"},
             {"erp_stock_in_approval", "其它入库审批", "bpmn/erp_stock_in_approval.bpmn"},
             {"erp_stock_out_approval", "其它出库审批", "bpmn/erp_stock_out_approval.bpmn"},

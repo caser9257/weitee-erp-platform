@@ -24,6 +24,7 @@ export type PurchaseInMainControlRowInput = {
   items?: Array<{
     productId?: number | null
     warehouseId?: number | null
+    purchaseSourceBatchId?: number | null
     purchaseSourceBatchNo?: string | null
   }> | null
 }
@@ -38,7 +39,11 @@ export type PurchaseInMainControlActionDescriptor = {
   key: PurchaseInMainControlActionKey
   label: '查看采购订单' | '查看库存' | '批次追溯' | '库存流水'
   disabled: boolean
-  reason?: 'missing-order' | 'missing-stock-context' | 'missing-flow-context'
+  reason?:
+    | 'missing-order'
+    | 'missing-stock-context'
+    | 'missing-source-batch'
+    | 'missing-flow-context'
 }
 
 export const PURCHASE_IN_STATUS = {
@@ -112,6 +117,11 @@ export const PURCHASE_IN_MAIN_CONTROL_STAGES: PurchaseInMainControlStageDescript
 const firstUsableItem = (row: PurchaseInMainControlRowInput) =>
   (row.items || []).find((item) => !!item.productId && !!item.warehouseId)
 
+const firstSourceBatchItem = (row: PurchaseInMainControlRowInput) =>
+  (row.items || []).find(
+    (item) => !!item.productId && !!item.warehouseId && !!item.purchaseSourceBatchId
+  )
+
 export function resolvePurchaseInMainControlStage(
   key?: string | null
 ): PurchaseInMainControlStageDescriptor {
@@ -131,6 +141,7 @@ export function getPurchaseInMainControlActions(
   row: PurchaseInMainControlRowInput
 ): PurchaseInMainControlActionDescriptor[] {
   const item = firstUsableItem(row)
+  const sourceBatchItem = firstSourceBatchItem(row)
   const hasOrder = !!row.orderNo || !!row.orderId
   const hasStockContext = !!item
   const hasFlowContext = !!row.no || !!row.id || hasStockContext
@@ -151,8 +162,10 @@ export function getPurchaseInMainControlActions(
     {
       key: 'traceBatch',
       label: '批次追溯',
-      disabled: !hasStockContext,
-      ...(!hasStockContext ? { reason: 'missing-stock-context' as const } : {})
+      disabled: !sourceBatchItem?.purchaseSourceBatchId,
+      ...(!sourceBatchItem?.purchaseSourceBatchId
+        ? { reason: 'missing-source-batch' as const }
+        : {})
     },
     {
       key: 'viewStockFlow',
@@ -173,4 +186,8 @@ export function getPurchaseInPrimaryStockContext(row: PurchaseInMainControlRowIn
     warehouseId: item.warehouseId!,
     batchNo: item.purchaseSourceBatchNo || undefined
   }
+}
+
+export function getPurchaseInPrimarySourceBatchId(row: PurchaseInMainControlRowInput) {
+  return firstSourceBatchItem(row)?.purchaseSourceBatchId || undefined
 }

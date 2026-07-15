@@ -10,6 +10,9 @@ services:
       - ./initdb/03-weitee-post-import-fixes.sql:/docker-entrypoint-initdb.d/03-weitee-post-import-fixes.sql:ro
       - ../../sql/mysql/stock/143-erp-stock-assemble.sql:/docker-entrypoint-initdb.d/05-erp-stock-assemble.sql:ro
       - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/06-demo-accounts.sql:ro
+      - ../../sql/mysql/purchase/166-erp-purchase-in-bpm-platform.sql:/docker-entrypoint-initdb.d/07-erp-purchase-in-bpm-platform.sql:ro
+      - ../../sql/mysql/purchase/167-erp-purchase-return-bpm-platform.sql:/docker-entrypoint-initdb.d/08-erp-purchase-return-bpm-platform.sql:ro
+      - ../../sql/mysql/sale/168-erp-sale-order-bpm-platform.sql:/docker-entrypoint-initdb.d/09-erp-sale-order-bpm-platform.sql:ro
 
   redis:
     container_name: weitee-p0-verify-redis

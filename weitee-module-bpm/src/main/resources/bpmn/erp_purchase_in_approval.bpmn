@@ -8,12 +8,10 @@
              typeLanguage="http://www.w3.org/2001/XMLSchema"
              expressionLanguage="http://www.w3.org/1999/XPath">
 
-  <process id="erp_purchase_return_approval" name="采购退货审批" isExecutable="true">
-    <documentation>采购退货单 BPM 审批流程（2级审批）</documentation>
+  <process id="erp_purchase_in_approval" name="采购入库审批" isExecutable="true">
+    <documentation>采购入库单 BPM 审批流程（两级审批）</documentation>
 
-    <startEvent id="start" name="开始"
-                flowable:formFieldValidation="true">
-    </startEvent>
+    <startEvent id="start" name="开始" flowable:formFieldValidation="true"/>
 
     <userTask id="task_approve_level1" name="部门经理审批"
               flowable:assignee="${#task.getAssignee()}"
@@ -37,8 +35,7 @@
       </extensionElements>
     </userTask>
 
-    <endEvent id="end" name="结束">
-    </endEvent>
+    <endEvent id="end" name="结束"/>
 
     <sequenceFlow id="flow_start_to_level1" sourceRef="start" targetRef="task_approve_level1"/>
     <sequenceFlow id="flow_level1_to_level2" sourceRef="task_approve_level1" targetRef="task_approve_level2"/>
@@ -46,7 +43,7 @@
 
   </process>
 
-  <bpmndi:BPMNDiagram id="BPMNDiagram_erp_purchase_return_approval">
+  <bpmndi:BPMNDiagram id="BPMNDiagram_erp_purchase_in_approval">
     <bpmndi:BPMNShape bpmnElement="start" id="BPMNShape_start">
       <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0"/>
     </bpmndi:BPMNShape>
