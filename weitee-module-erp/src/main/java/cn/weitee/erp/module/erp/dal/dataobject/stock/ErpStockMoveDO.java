@@ -52,6 +52,10 @@ public class ErpStockMoveDO extends BaseDO {
      */
     private Integer status;
     /**
+     * BPM 流程实例 ID
+     */
+    private String processInstanceId;
+    /**
      * 备注
      */
     private String remark;
