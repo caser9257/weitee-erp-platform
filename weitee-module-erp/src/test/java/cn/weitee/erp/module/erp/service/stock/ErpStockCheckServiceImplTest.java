@@ -1,8 +1,10 @@
 package cn.weitee.erp.module.erp.service.stock;
 
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.ErpWarehouseSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
@@ -56,7 +58,7 @@ class ErpStockCheckServiceImplTest {
             return null;
         }));
         setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
-            if ("getStockListByProductIds".equals(methodName)) {
+            if ("getStockListByProductAndWarehouseIds".equals(methodName)) {
                 return List.of();
             }
             return null;
@@ -77,6 +79,52 @@ class ErpStockCheckServiceImplTest {
 
         assertEquals(STOCK_CHECK_VOUCHER_GENERATE_FAIL.getCode(), ex.getCode());
         assertEquals(ErpStockCheckStatusEnum.APPROVED.getStatus(), lastWrittenStatus.get());
+    }
+
+    @Test
+    void startCounting_shouldFreezeWarehouseWithCompleteSaveRequest() throws Exception {
+        ErpStockCheckServiceImpl service = new ErpStockCheckServiceImpl();
+        Long checkId = 1002L;
+        Long warehouseId = 4002L;
+        AtomicReference<ErpWarehouseSaveReqVO> frozenRequest = new AtomicReference<>();
+
+        setField(service, "erpStockCheckMapper", createProxy(ErpStockCheckMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockCheckDO().setId(checkId)
+                        .setStatus(ErpStockCheckStatusEnum.DRAFT.getStatus());
+            }
+            if ("updateById".equals(methodName)) {
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpStockCheckItemMapper", createProxy(ErpStockCheckItemMapper.class, (methodName, args) -> {
+            if ("selectListByCheckId".equals(methodName)) {
+                return List.of(new ErpStockCheckItemDO().setWarehouseId(warehouseId));
+            }
+            return null;
+        }));
+        setField(service, "stockCheckSnapshotService", createProxy(ErpStockCheckSnapshotService.class,
+                (methodName, args) -> "createSnapshot".equals(methodName) ? 1 : null));
+        setField(service, "warehouseService", createProxy(ErpWarehouseService.class, (methodName, args) -> {
+            if ("getWarehouse".equals(methodName)) {
+                return ErpWarehouseDO.builder().id(warehouseId).name("验收仓")
+                        .categoryId(10L).sort(1L).status(0).frozen(false).build();
+            }
+            if ("updateWarehouse".equals(methodName)) {
+                frozenRequest.set((ErpWarehouseSaveReqVO) args[0]);
+            }
+            return null;
+        }));
+
+        service.startCounting(checkId);
+
+        assertEquals(warehouseId, frozenRequest.get().getId());
+        assertEquals("验收仓", frozenRequest.get().getName());
+        assertEquals(10L, frozenRequest.get().getCategoryId());
+        assertEquals(1L, frozenRequest.get().getSort());
+        assertEquals(0, frozenRequest.get().getStatus());
+        assertEquals(true, frozenRequest.get().getFrozen());
     }
 
     @SuppressWarnings("unchecked")
