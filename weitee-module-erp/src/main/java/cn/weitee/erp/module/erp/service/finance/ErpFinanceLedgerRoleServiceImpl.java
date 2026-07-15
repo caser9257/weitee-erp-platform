@@ -82,7 +82,10 @@ public class ErpFinanceLedgerRoleServiceImpl implements ErpFinanceLedgerRoleServ
 
     @Override
     public void clearUserLedgerPermissionCache(Long userId) {
-        // TODO: 实现 Redis 缓存清除逻辑
+        if (userId == null) {
+            return;
+        }
+        userLedgerPermissionCacheService.clearCache(userId);
         log.info("清除用户账簿权限缓存。userId={}", userId);
     }
 

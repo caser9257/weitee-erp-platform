@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /**
  * 账簿角色关联服务单元测试
@@ -90,6 +93,28 @@ class ErpFinanceLedgerRoleServiceTest {
 
         // 不应抛出异常
         assertDoesNotThrow(() -> service.setLedgerRoles(100L, Arrays.asList(1L, 2L, 3L)));
+    }
+
+    @Test
+    void clearUserLedgerPermissionCache_shouldEvictSpecifiedUserCache() throws Exception {
+        ErpFinanceLedgerRoleServiceImpl service = new ErpFinanceLedgerRoleServiceImpl();
+        UserLedgerPermissionCacheService cacheService = mock(UserLedgerPermissionCacheService.class);
+        setField(service, "userLedgerPermissionCacheService", cacheService);
+
+        service.clearUserLedgerPermissionCache(100L);
+
+        verify(cacheService).clearCache(100L);
+    }
+
+    @Test
+    void clearUserLedgerPermissionCache_shouldIgnoreNullUserId() throws Exception {
+        ErpFinanceLedgerRoleServiceImpl service = new ErpFinanceLedgerRoleServiceImpl();
+        UserLedgerPermissionCacheService cacheService = mock(UserLedgerPermissionCacheService.class);
+        setField(service, "userLedgerPermissionCacheService", cacheService);
+
+        service.clearUserLedgerPermissionCache(null);
+
+        verify(cacheService, never()).clearCache(null);
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {
