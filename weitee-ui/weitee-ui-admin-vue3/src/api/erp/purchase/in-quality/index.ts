@@ -220,6 +220,10 @@ export const PurchaseInQualityApi = {
     return await request.post({ url: `/erp/purchase-in-quality/start-recheck`, data })
   },
 
+  createReturnFromQuality: async (qualityId: number) => {
+    return await request.post({ url: '/erp/purchase-in-quality/create-return', params: { qualityId } })
+  },
+
   submitRecheck: async (data: PurchaseInQualitySubmitRecheckReqVO) => {
     return await request.post({ url: `/erp/purchase-in-quality/submit-recheck`, data })
   }

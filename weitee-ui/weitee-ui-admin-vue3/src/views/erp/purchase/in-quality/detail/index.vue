@@ -65,6 +65,14 @@
             >
               去执行入库
             </el-button>
+            <el-button
+              v-if="showCreateReturnAction"
+              type="danger"
+              :loading="createReturnLoading"
+              @click="handleCreateReturn"
+            >
+              创建退货
+            </el-button>
           </div>
         </div>
       </ContentWrap>
@@ -766,6 +774,10 @@ const canNavigateToStockExecute = computed(() => {
 })
 
 const showNavigateStockExecuteAction = computed(() => canNavigateToStockExecute.value)
+const showCreateReturnAction = computed(() =>
+  qualityOrder.value?.status === PURCHASE_IN_QUALITY_STATUS.DONE && Number(qualityOrder.value?.rejectCount || 0) > 0
+)
+const createReturnLoading = ref(false)
 
 const stockExecuteAlertMessage = computed(() => {
   const order = qualityOrder.value
@@ -1450,6 +1462,17 @@ const goBack = () => {
     return
   }
   router.push({ path: '/erp/purchase/in' })
+}
+
+const handleCreateReturn = async () => {
+  if (!qualityOrder.value?.id || createReturnLoading.value) return
+  createReturnLoading.value = true
+  try {
+    await PurchaseInQualityApi.createReturnFromQuality(qualityOrder.value.id)
+    await loadDetail(qualityOrder.value.id)
+  } finally {
+    createReturnLoading.value = false
+  }
 }
 
 const goToStockExecute = () => {
