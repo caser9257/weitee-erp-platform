@@ -133,6 +133,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
         if (!ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_CHECK_FAIL_STATUS);
         }
+        validationHelper.validatePurchaseInCanCheck(purchaseIn);
         ErpPurchaseInQualityDO existed = erpPurchaseInQualityMapper.selectByPurchaseInId(purchaseInId);
         if (existed != null) {
             return existed.getId();
