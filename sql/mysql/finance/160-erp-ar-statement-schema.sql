@@ -1,0 +1,56 @@
+-- ERP 应收台账与明细表。
+-- 前向迁移：可安全应用于尚未创建应收台账表的环境。
+
+CREATE TABLE IF NOT EXISTS `erp_ar_statement` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `statement_no` VARCHAR(64) NOT NULL COMMENT 'statement no',
+    `biz_type` INT NOT NULL COMMENT 'biz type',
+    `biz_id` BIGINT NOT NULL COMMENT 'biz id',
+    `biz_no` VARCHAR(64) NOT NULL COMMENT 'biz no',
+    `source_order_id` BIGINT NULL COMMENT 'source order id',
+    `source_order_no` VARCHAR(64) NULL COMMENT 'source order no',
+    `customer_id` BIGINT NOT NULL COMMENT 'customer id',
+    `account_id` BIGINT NULL COMMENT 'account id',
+    `amount` DECIMAL(24, 6) NOT NULL COMMENT 'statement amount',
+    `received_amount` DECIMAL(24, 6) NOT NULL DEFAULT 0 COMMENT 'received amount',
+    `remain_amount` DECIMAL(24, 6) NOT NULL COMMENT 'remain amount',
+    `currency_code` VARCHAR(16) NOT NULL DEFAULT 'CNY' COMMENT 'currency code',
+    `biz_date` DATE NOT NULL COMMENT 'biz date',
+    `due_date` DATE NOT NULL COMMENT 'due date',
+    `invoice_status` INT NOT NULL DEFAULT 0 COMMENT 'invoice status',
+    `invoice_no` VARCHAR(64) NULL COMMENT 'invoice no',
+    `invoice_amount` DECIMAL(24, 6) NULL COMMENT 'invoice amount',
+    `status` INT NOT NULL DEFAULT 0 COMMENT 'statement status',
+    `remark` VARCHAR(255) NULL COMMENT 'remark',
+    `creator` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'creator',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+    `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+    `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_ar_statement_biz` (`biz_type`, `biz_id`, `deleted`),
+    UNIQUE KEY `uk_ar_statement_no` (`statement_no`, `deleted`),
+    KEY `idx_ar_statement_customer_status` (`customer_id`, `status`, `deleted`),
+    KEY `idx_ar_statement_due_date` (`due_date`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AR statement';
+
+CREATE TABLE IF NOT EXISTS `erp_ar_statement_item` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `statement_id` BIGINT NOT NULL COMMENT 'statement id',
+    `item_type` INT NOT NULL COMMENT 'item type',
+    `ref_type` INT NULL COMMENT 'ref type',
+    `ref_id` BIGINT NULL COMMENT 'ref id',
+    `ref_no` VARCHAR(64) NULL COMMENT 'ref no',
+    `amount` DECIMAL(24, 6) NOT NULL COMMENT 'change amount',
+    `after_received_amount` DECIMAL(24, 6) NOT NULL COMMENT 'after received amount',
+    `after_remain_amount` DECIMAL(24, 6) NOT NULL COMMENT 'after remain amount',
+    `remark` VARCHAR(255) NULL COMMENT 'remark',
+    `creator` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'creator',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'create time',
+    `updater` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'updater',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'update time',
+    `deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT 'deleted',
+    PRIMARY KEY (`id`),
+    KEY `idx_ar_statement_item_statement_id` (`statement_id`, `deleted`),
+    KEY `idx_ar_statement_item_ref` (`ref_type`, `ref_id`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AR statement item';

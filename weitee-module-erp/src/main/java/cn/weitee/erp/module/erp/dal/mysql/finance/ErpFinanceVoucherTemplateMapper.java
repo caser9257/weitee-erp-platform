@@ -22,6 +22,17 @@ public interface ErpFinanceVoucherTemplateMapper extends BaseMapperX<ErpFinanceV
                 .orderByDesc(ErpFinanceVoucherTemplateDO::getId));
     }
 
+    default PageResult<ErpFinanceVoucherTemplateDO> selectPageByVisibleLedgerIds(ErpFinanceVoucherTemplatePageReqVO reqVO, List<Long> ledgerIds) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceVoucherTemplateDO>()
+                .in(ErpFinanceVoucherTemplateDO::getLedgerId, ledgerIds)
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getLedgerId, reqVO.getLedgerId())
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getBizType, reqVO.getBizType())
+                .likeIfPresent(ErpFinanceVoucherTemplateDO::getName, reqVO.getName())
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getStatus, reqVO.getStatus())
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getAutoGenerate, reqVO.getAutoGenerate())
+                .orderByDesc(ErpFinanceVoucherTemplateDO::getId));
+    }
+
     default List<ErpFinanceVoucherTemplateDO> selectListByLedgerIdAndBizType(Long ledgerId, Integer bizType) {
         return selectList(new LambdaQueryWrapperX<ErpFinanceVoucherTemplateDO>()
                 .eq(ErpFinanceVoucherTemplateDO::getLedgerId, ledgerId)

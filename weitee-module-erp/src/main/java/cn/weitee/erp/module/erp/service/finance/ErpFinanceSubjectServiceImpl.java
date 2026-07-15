@@ -36,6 +36,8 @@ public class ErpFinanceSubjectServiceImpl implements ErpFinanceSubjectService {
     @Resource
     private ErpFinanceSubjectMapper erpFinanceSubjectMapper;
     @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
+    @Resource
     private ErpFinanceReportItemMapper erpFinanceReportItemMapper;
     @Resource
     private ErpFinanceReportItemSubjectMapper erpFinanceReportItemSubjectMapper;
@@ -83,7 +85,14 @@ public class ErpFinanceSubjectServiceImpl implements ErpFinanceSubjectService {
 
     @Override
     public PageResult<ErpFinanceSubjectDO> getFinanceSubjectPage(ErpFinanceSubjectPageReqVO pageReqVO) {
-        return erpFinanceSubjectMapper.selectPage(pageReqVO);
+        List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        if (visibleLedgerIds == null) {
+            return erpFinanceSubjectMapper.selectPage(pageReqVO);
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return erpFinanceSubjectMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
     }
 
     @Override

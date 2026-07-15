@@ -376,6 +376,17 @@ const financeMenuDecorations = new Map<string, MenuDecoration>([
     }
   ],
   [
+    'ar-statement',
+    {
+      menuGroupKey: '/finance/__group__/receivables-payables',
+      menuGroupTitle: '往来与收付',
+      menuGroupIcon: 'ep:wallet',
+      menuGroupOrder: 20,
+      menuOrder: 15,
+      routeName: '应收台账'
+    }
+  ],
+  [
     'receipt',
     {
       menuGroupKey: '/finance/__group__/receivables-payables',
@@ -767,6 +778,23 @@ const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
               menuGroupIcon: 'ep:wallet',
               menuGroupOrder: 20,
               menuOrder: 10
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'ar-statement',
+            name: '应收台账',
+            icon: 'ep:money',
+            component: 'erp/finance/ar-statement/index',
+            componentName: 'ErpArStatement',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/receivables-payables',
+              menuGroupTitle: '往来与收付',
+              menuGroupIcon: 'ep:wallet',
+              menuGroupOrder: 20,
+              menuOrder: 15
             },
             visible: true,
             keepAlive: false

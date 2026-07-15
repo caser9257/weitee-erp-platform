@@ -49,7 +49,7 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:query')")
     public CommonResult<PageResult<ErpFinanceDualLedgerResultRespVO>> getDualLedgerResultPage(
             @Valid ErpFinanceDualLedgerResultPageReqVO pageReqVO) {
-        validateDualLedgerAccess();
+        validateDualLedgerAccess(pageReqVO.getBizType());
         return success(dualLedgerResultService.getDualLedgerResultPage(pageReqVO));
     }
 
@@ -60,7 +60,7 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:query')")
     public CommonResult<ErpFinanceDualLedgerResultRespVO> getDualLedgerResult(@RequestParam("bizType") Integer bizType,
                                                                                @RequestParam("bizId") Long bizId) {
-        validateDualLedgerAccess();
+        validateDualLedgerAccess(bizType);
         return success(dualLedgerResultService.getDualLedgerResult(bizType, bizId));
     }
 
@@ -69,7 +69,7 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:recompute')")
     public CommonResult<ErpFinanceDualLedgerResultRespVO> recomputeDualLedgerResult(
             @Valid @RequestBody ErpFinanceDualLedgerRecomputeReqVO reqVO) {
-        validateDualLedgerAccess();
+        validateDualLedgerAccess(reqVO.getBizType());
         return success(dualLedgerResultService.recomputeDualLedgerResult(getLoginUserId(), reqVO));
     }
 
@@ -78,7 +78,7 @@ public class ErpFinanceDualLedgerResultController {
     @Parameter(name = "bizType", required = true, description = "业务类型")
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:recompute')")
     public CommonResult<Integer> recomputeDualLedgerVouchers(@RequestParam("bizType") Integer bizType) {
-        validateDualLedgerAccess();
+        validateDualLedgerAccess(bizType);
         return success(dualWriteService.recomputeDualLedgerVouchers(bizType));
     }
 
@@ -89,7 +89,7 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:recompute')")
     public CommonResult<Boolean> recomputeByBizId(@RequestParam("bizType") Integer bizType,
                                                   @RequestParam("bizId") Long bizId) {
-        validateDualLedgerAccess();
+        validateDualLedgerAccess(bizType);
         return success(dualWriteService.recomputeByBizId(bizType, bizId));
     }
 
@@ -103,12 +103,12 @@ public class ErpFinanceDualLedgerResultController {
                                    @RequestParam("bizId") Long bizId,
                                    @RequestParam("ledgerSide") String ledgerSide,
                                    HttpServletResponse response) throws IOException {
-        validateDualLedgerAccess();
+        validateDualLedgerAccess(bizType);
         dualLedgerResultService.exportSingleLedger(bizType, bizId, ledgerSide, response);
     }
 
-    private void validateDualLedgerAccess() {
-        if (financeDataPermissionService.isAuditRole()) {
+    private void validateDualLedgerAccess(Integer bizType) {
+        if (!financeDataPermissionService.canAccessDualLedger(getLoginUserId(), bizType)) {
             throw exception(FORBIDDEN);
         }
     }

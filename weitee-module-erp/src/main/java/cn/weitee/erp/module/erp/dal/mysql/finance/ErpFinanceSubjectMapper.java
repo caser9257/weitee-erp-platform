@@ -27,6 +27,20 @@ public interface ErpFinanceSubjectMapper extends BaseMapperX<ErpFinanceSubjectDO
                 .orderByAsc(ErpFinanceSubjectDO::getId));
     }
 
+    default PageResult<ErpFinanceSubjectDO> selectPageByVisibleLedgerIds(ErpFinanceSubjectPageReqVO reqVO, List<Long> ledgerIds) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceSubjectDO>()
+                .in(ErpFinanceSubjectDO::getLedgerId, ledgerIds)
+                .eqIfPresent(ErpFinanceSubjectDO::getLedgerId, reqVO.getLedgerId())
+                .eqIfPresent(ErpFinanceSubjectDO::getParentId, reqVO.getParentId())
+                .likeIfPresent(ErpFinanceSubjectDO::getSubjectCode, reqVO.getSubjectCode())
+                .likeIfPresent(ErpFinanceSubjectDO::getSubjectName, reqVO.getSubjectName())
+                .eqIfPresent(ErpFinanceSubjectDO::getSubjectType, reqVO.getSubjectType())
+                .eqIfPresent(ErpFinanceSubjectDO::getStatus, reqVO.getStatus())
+                .orderByAsc(ErpFinanceSubjectDO::getSort)
+                .orderByAsc(ErpFinanceSubjectDO::getSubjectCode)
+                .orderByAsc(ErpFinanceSubjectDO::getId));
+    }
+
     default ErpFinanceSubjectDO selectByLedgerIdAndSubjectCode(Long ledgerId, String subjectCode) {
         return selectOne(new LambdaQueryWrapperX<ErpFinanceSubjectDO>()
                 .eq(ErpFinanceSubjectDO::getLedgerId, ledgerId)

@@ -51,6 +51,8 @@ public class ErpFinanceReportItemServiceImpl implements ErpFinanceReportItemServ
     @Resource
     private ErpFinanceReportItemMapper erpFinanceReportItemMapper;
     @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
+    @Resource
     private ErpFinanceReportItemSubjectMapper erpFinanceReportItemSubjectMapper;
     @Resource
     private ErpFinanceSubjectMapper erpFinanceSubjectMapper;
@@ -101,7 +103,14 @@ public class ErpFinanceReportItemServiceImpl implements ErpFinanceReportItemServ
 
     @Override
     public PageResult<ErpFinanceReportItemDO> getFinanceReportItemPage(ErpFinanceReportItemPageReqVO pageReqVO) {
-        return erpFinanceReportItemMapper.selectPage(pageReqVO);
+        List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        if (visibleLedgerIds == null) {
+            return erpFinanceReportItemMapper.selectPage(pageReqVO);
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return erpFinanceReportItemMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
     }
 
     @Override

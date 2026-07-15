@@ -13,6 +13,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePeriodMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinancePeriodStatusEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockCheckStatusEnum;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -42,6 +43,8 @@ public class ErpFinancePeriodServiceImpl implements ErpFinancePeriodService {
 
     @Resource
     private ErpFinancePeriodMapper erpFinancePeriodMapper;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
     @Resource
     private ErpFinanceLedgerService financeLedgerService;
     @Resource
@@ -119,11 +122,11 @@ public class ErpFinancePeriodServiceImpl implements ErpFinancePeriodService {
         if (erpFinancePeriodMapper.selectLaterClosedCount(period.getLedgerId(), period.getPeriodSort()) > 0) {
             throw exception(FINANCE_PERIOD_REOPEN_FAIL_LATER_CLOSED, period.getPeriodCode());
         }
-        erpFinancePeriodMapper.updateById(new ErpFinancePeriodDO()
-                .setId(id)
-                .setStatus(ErpFinancePeriodStatusEnum.OPEN.getStatus())
-                .setCloseTime(null)
-                .setCloseUserId(null));
+        erpFinancePeriodMapper.update(null, new LambdaUpdateWrapper<ErpFinancePeriodDO>()
+                .eq(ErpFinancePeriodDO::getId, id)
+                .set(ErpFinancePeriodDO::getStatus, ErpFinancePeriodStatusEnum.OPEN.getStatus())
+                .set(ErpFinancePeriodDO::getCloseTime, null)
+                .set(ErpFinancePeriodDO::getCloseUserId, null));
     }
 
     @Override
@@ -133,7 +136,14 @@ public class ErpFinancePeriodServiceImpl implements ErpFinancePeriodService {
 
     @Override
     public PageResult<ErpFinancePeriodDO> getFinancePeriodPage(ErpFinancePeriodPageReqVO pageReqVO) {
-        return erpFinancePeriodMapper.selectPage(pageReqVO);
+        List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        if (visibleLedgerIds == null) {
+            return erpFinancePeriodMapper.selectPage(pageReqVO);
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return erpFinancePeriodMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
     }
 
     @Override

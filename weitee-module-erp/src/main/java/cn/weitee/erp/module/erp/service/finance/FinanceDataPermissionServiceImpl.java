@@ -1,6 +1,8 @@
 package cn.weitee.erp.module.erp.service.finance;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerConfigDO;
 import cn.weitee.erp.module.system.dal.dataobject.permission.RoleDO;
 import cn.weitee.erp.module.system.enums.permission.RoleCodeEnum;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
@@ -12,8 +14,11 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 财务数据权限服务实现
@@ -34,6 +39,8 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
     private PermissionService permissionService;
     @Resource
     private RoleService roleService;
+    @Resource
+    private ErpFinanceDualLedgerConfigService dualLedgerConfigService;
 
     @Override
     public List<Long> getVisibleLedgerIds() {
@@ -64,12 +71,27 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
             // 注意：如果需要"未配置时默认可见所有"的逻辑，这里应该返回null
             return Collections.emptyList();
         }
+        if (isAuditRole(userId)) {
+            Set<Long> internalLedgerIds = getInternalLedgerIds();
+            ledgerIds = ledgerIds.stream()
+                    .filter(ledgerId -> !internalLedgerIds.contains(ledgerId))
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
         return ledgerIds;
     }
 
     @Override
     public boolean canAccessLedger(Long ledgerId) {
-        List<Long> visibleLedgerIds = getVisibleLedgerIds();
+        return canAccessLedger(SecurityFrameworkUtils.getLoginUserId(), ledgerId);
+    }
+
+    @Override
+    public boolean canAccessLedger(Long userId, Long ledgerId) {
+        if (userId == null || ledgerId == null) {
+            return false;
+        }
+        List<Long> visibleLedgerIds = getVisibleLedgerIds(userId);
         // null表示不限制
         if (visibleLedgerIds == null) {
             return true;
@@ -78,11 +100,36 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
     }
 
     @Override
+    public boolean canAccessDualLedger(Long userId, Integer bizType) {
+        if (userId == null || isAuditRole(userId)) {
+            return false;
+        }
+        List<ErpFinanceDualLedgerConfigDO> configs = bizType == null
+                ? dualLedgerConfigService.getDualLedgerConfigListByStatus(CommonStatusEnum.ENABLE.getStatus())
+                : Collections.singletonList(dualLedgerConfigService.getEnabledDualLedgerConfig(bizType));
+        if (CollUtil.isEmpty(configs) || configs.stream().anyMatch(Objects::isNull)) {
+            return false;
+        }
+        List<Long> visibleLedgerIds = getVisibleLedgerIds(userId);
+        if (visibleLedgerIds == null) {
+            return true;
+        }
+        Set<Long> visible = new HashSet<>(visibleLedgerIds);
+        return configs.stream()
+                .allMatch(config -> visible.contains(config.getExternalLedgerId())
+                        && visible.contains(config.getInternalLedgerId()));
+    }
+
+    @Override
     public boolean isAuditRole() {
         Long userId = SecurityFrameworkUtils.getLoginUserId();
         if (userId == null) {
             return false;
         }
+        return isAuditRole(userId);
+    }
+
+    private boolean isAuditRole(Long userId) {
         return permissionService.hasAnyRoles(userId, AUDIT_ROLE_CODE);
     }
 
@@ -119,6 +166,19 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
         List<RoleDO> roles = roleService.getRoleListFromCache(roleIds);
         return roles.stream().anyMatch(role -> role != null
                 && RoleCodeEnum.isSuperAdmin(role.getCode()));
+    }
+
+    private Set<Long> getInternalLedgerIds() {
+        List<ErpFinanceDualLedgerConfigDO> configs = dualLedgerConfigService
+                .getDualLedgerConfigListByStatus(CommonStatusEnum.ENABLE.getStatus());
+        if (CollUtil.isEmpty(configs)) {
+            return Collections.emptySet();
+        }
+        return configs.stream()
+                .filter(Objects::nonNull)
+                .map(ErpFinanceDualLedgerConfigDO::getInternalLedgerId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 
 }

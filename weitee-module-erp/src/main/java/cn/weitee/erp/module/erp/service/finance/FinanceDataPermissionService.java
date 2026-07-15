@@ -32,6 +32,16 @@ public interface FinanceDataPermissionService {
     boolean canAccessLedger(Long ledgerId);
 
     /**
+     * 检查指定用户是否可以访问指定账簿
+     */
+    boolean canAccessLedger(Long userId, Long ledgerId);
+
+    /**
+     * 检查指定用户是否可以访问双账套
+     */
+    boolean canAccessDualLedger(Long userId, Integer bizType);
+
+    /**
      * 检查当前用户是否为审计角色
      *
      * @return 是否为审计角色

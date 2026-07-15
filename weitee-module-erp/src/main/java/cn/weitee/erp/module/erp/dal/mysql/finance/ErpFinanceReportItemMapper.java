@@ -26,6 +26,19 @@ public interface ErpFinanceReportItemMapper extends BaseMapperX<ErpFinanceReport
                 .orderByAsc(ErpFinanceReportItemDO::getId));
     }
 
+    default PageResult<ErpFinanceReportItemDO> selectPageByVisibleLedgerIds(ErpFinanceReportItemPageReqVO reqVO, List<Long> ledgerIds) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceReportItemDO>()
+                .in(ErpFinanceReportItemDO::getLedgerId, ledgerIds)
+                .eqIfPresent(ErpFinanceReportItemDO::getLedgerId, reqVO.getLedgerId())
+                .eqIfPresent(ErpFinanceReportItemDO::getReportType, reqVO.getReportType())
+                .eqIfPresent(ErpFinanceReportItemDO::getItemCategory, reqVO.getItemCategory())
+                .likeIfPresent(ErpFinanceReportItemDO::getItemCode, reqVO.getItemCode())
+                .likeIfPresent(ErpFinanceReportItemDO::getItemName, reqVO.getItemName())
+                .eqIfPresent(ErpFinanceReportItemDO::getStatus, reqVO.getStatus())
+                .orderByAsc(ErpFinanceReportItemDO::getSort)
+                .orderByAsc(ErpFinanceReportItemDO::getId));
+    }
+
     default ErpFinanceReportItemDO selectByLedgerIdAndReportTypeAndItemCode(Long ledgerId, Integer reportType, String itemCode) {
         return selectOne(new LambdaQueryWrapperX<ErpFinanceReportItemDO>()
                 .eq(ErpFinanceReportItemDO::getLedgerId, ledgerId)

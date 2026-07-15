@@ -23,6 +23,8 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.Assert;
@@ -53,6 +55,7 @@ import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeCons
  * @author WeTai
  */
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @AllArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {

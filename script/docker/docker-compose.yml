@@ -30,6 +30,7 @@ services:
       - ../../sql/mysql/manufacturing/169-erp-production-return-page-permission.sql:/docker-entrypoint-initdb.d/13-erp-production-return-page-permission.sql:ro
       - ../../sql/mysql/system/170-finance-voucher-experience-permission.sql:/docker-entrypoint-initdb.d/14-finance-voucher-experience-permission.sql:ro
       - ../../sql/mysql/system/171-stock-out-bpm-experience-permission.sql:/docker-entrypoint-initdb.d/15-stock-out-bpm-experience-permission.sql:ro
+      - ../../sql/mysql/finance/160-erp-ar-statement-schema.sql:/docker-entrypoint-initdb.d/16-erp-ar-statement-schema.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent" ]
       interval: 10s

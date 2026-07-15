@@ -24,6 +24,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpFinancePeriodService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceVoucherIntegrityService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceVoucherService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceVoucherTemplateService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -47,6 +48,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
@@ -60,6 +63,8 @@ public class ErpFinanceVoucherController {
 
     @Resource
     private ErpFinanceVoucherService financeVoucherService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
     @Resource
     private ErpFinanceVoucherTemplateService voucherTemplateService;
     @Resource
@@ -153,6 +158,7 @@ public class ErpFinanceVoucherController {
         if (voucher == null) {
             return success(null);
         }
+        validateLedgerAccess(voucher.getLedgerId());
         List<ErpFinanceVoucherEntryDO> entries = financeVoucherService.getVoucherEntryListByVoucherId(id);
         return success(buildVoucherResp(voucher, entries,
                 financeLedgerService.getFinanceLedgerMap(Collections.singleton(voucher.getLedgerId())),
@@ -172,6 +178,7 @@ public class ErpFinanceVoucherController {
     public CommonResult<ErpFinanceVoucherRespVO> getVoucherByBiz(@RequestParam("ledgerId") Long ledgerId,
                                                                  @RequestParam("bizType") Integer bizType,
                                                                  @RequestParam("bizId") Long bizId) {
+        validateLedgerAccess(ledgerId);
         ErpFinanceVoucherDO voucher = financeVoucherService.getVoucherByLedgerAndBiz(ledgerId, bizType, bizId);
         if (voucher == null) {
             return success(null);
@@ -205,6 +212,12 @@ public class ErpFinanceVoucherController {
         List<ErpFinanceVoucherRespVO> respList = convertList(pageResult.getList(),
                 voucher -> buildVoucherResp(voucher, entryMap.get(voucher.getId()), ledgerMap, periodMap, templateMap, relatedVoucherMap));
         return success(new PageResult<>(respList, pageResult.getTotal()));
+    }
+
+    private void validateLedgerAccess(Long ledgerId) {
+        if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
+            throw exception(FORBIDDEN);
+        }
     }
 
     private Map<Long, List<ErpFinanceVoucherEntryDO>> convertMapToEntries(List<ErpFinanceVoucherEntryDO> entries) {

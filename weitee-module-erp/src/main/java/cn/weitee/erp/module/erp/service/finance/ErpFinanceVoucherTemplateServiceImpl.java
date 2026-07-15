@@ -41,6 +41,8 @@ public class ErpFinanceVoucherTemplateServiceImpl implements ErpFinanceVoucherTe
     @Resource
     private ErpFinanceVoucherTemplateMapper erpFinanceVoucherTemplateMapper;
     @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
+    @Resource
     private ErpFinanceVoucherTemplateItemMapper erpFinanceVoucherTemplateItemMapper;
     @Resource
     private ErpFinanceLedgerService financeLedgerService;
@@ -93,7 +95,14 @@ public class ErpFinanceVoucherTemplateServiceImpl implements ErpFinanceVoucherTe
 
     @Override
     public PageResult<ErpFinanceVoucherTemplateDO> getVoucherTemplatePage(ErpFinanceVoucherTemplatePageReqVO pageReqVO) {
-        return erpFinanceVoucherTemplateMapper.selectPage(pageReqVO);
+        List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        if (visibleLedgerIds == null) {
+            return erpFinanceVoucherTemplateMapper.selectPage(pageReqVO);
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return erpFinanceVoucherTemplateMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
     }
 
     @Override
