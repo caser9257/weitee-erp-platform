@@ -29,6 +29,7 @@ import cn.weitee.erp.module.erp.service.sale.ErpCustomerService;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import cn.weitee.erp.module.system.api.user.dto.AdminUserRespDTO;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -41,6 +42,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ErpFinancePageSmokeTest {
+
+    @Test
+    void accountController_shouldKeepLegacyFinanceAccountPath() {
+        RequestMapping mapping = ErpAccountController.class.getAnnotation(RequestMapping.class);
+
+        assertThat(mapping.value()).contains("/erp/account", "/erp/finance-account");
+    }
 
     @Test
     void getFinancePaymentPage_shouldKeepPageOrderAndIgnoreBlankCreatorLookup() throws Exception {
