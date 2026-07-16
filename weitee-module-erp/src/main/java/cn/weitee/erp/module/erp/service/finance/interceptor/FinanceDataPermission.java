@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
  * 财务数据权限注解
  * 标注在需要数据权限过滤的方法上
  */
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FinanceDataPermission {
 

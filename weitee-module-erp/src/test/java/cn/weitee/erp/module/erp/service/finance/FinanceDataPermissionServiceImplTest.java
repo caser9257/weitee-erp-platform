@@ -1,6 +1,11 @@
 package cn.weitee.erp.module.erp.service.finance;
 
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerConfigDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleDeptDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleSubjectDO;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleDeptMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleSubjectMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
 import cn.weitee.erp.module.system.service.permission.RoleService;
 import org.junit.jupiter.api.Test;
@@ -14,6 +19,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
@@ -33,6 +40,10 @@ class FinanceDataPermissionServiceImplTest {
     private RoleService roleService;
     @Mock
     private ErpFinanceDualLedgerConfigService dualLedgerConfigService;
+    @Mock
+    private ErpFinanceRoleDeptMapper roleDeptMapper;
+    @Mock
+    private ErpFinanceRoleSubjectMapper roleSubjectMapper;
 
     @InjectMocks
     private FinanceDataPermissionServiceImpl service;
@@ -70,6 +81,56 @@ class FinanceDataPermissionServiceImplTest {
         givenEnabledDualLedgerConfig();
 
         assertTrue(service.canAccessDualLedger(USER_ID, 11));
+    }
+
+    @Test
+    void regularUser_withoutLedgerMapping_shouldResolveNoneLedgerScope() throws Exception {
+        givenRegularUser();
+        when(ledgerRoleService.getVisibleLedgerIdsByRoleIds(List.of(10L))).thenReturn(List.of());
+
+        java.lang.reflect.Method getPermissionScope = assertDoesNotThrow(
+                () -> FinanceDataPermissionServiceImpl.class.getMethod("getPermissionScope", Long.class));
+        Object scope = getPermissionScope.invoke(service, USER_ID);
+        Object ledgerScope = scope.getClass().getMethod("ledgerScope").invoke(scope);
+        Object mode = ledgerScope.getClass().getMethod("mode").invoke(ledgerScope);
+
+        assertEquals("NONE", ((Enum<?>) mode).name());
+    }
+
+    @Test
+    void regularUser_withDeptMapping_shouldOnlyAccessMappedDept() {
+        givenRegularUser();
+        when(roleDeptMapper.selectListByRoleIds(List.of(10L)))
+                .thenReturn(List.of(new ErpFinanceRoleDeptDO().setRoleId(10L).setDeptId(20L)));
+
+        FinancePermissionScope.Scope<Long> deptScope = service.getPermissionScope(USER_ID).deptScope();
+        assertTrue(deptScope.values().contains(20L));
+        assertFalse(deptScope.values().contains(21L));
+    }
+
+    @Test
+    void regularUser_withSubjectMapping_shouldOnlyAccessMappedSubjectInVisibleLedger() {
+        givenRegularUser();
+        when(ledgerRoleService.getVisibleLedgerIdsByRoleIds(List.of(10L))).thenReturn(List.of(EXTERNAL_LEDGER_ID));
+        when(roleSubjectMapper.selectListByRoleIds(List.of(10L))).thenReturn(List.of(
+                new ErpFinanceRoleSubjectDO().setRoleId(10L).setLedgerId(EXTERNAL_LEDGER_ID).setSubjectCode("1001")));
+
+        FinancePermissionScope permissionScope = service.getPermissionScope(USER_ID);
+        assertTrue(permissionScope.subjectScopesByLedger().get(EXTERNAL_LEDGER_ID).values().contains("1001"));
+        assertFalse(permissionScope.subjectScopesByLedger().get(EXTERNAL_LEDGER_ID).values().contains("6601"));
+        assertFalse(permissionScope.subjectScopesByLedger().containsKey(INTERNAL_LEDGER_ID));
+    }
+
+    @Test
+    void regularUser_withoutDeptOrSubjectMapping_shouldResolveNoneScopes() {
+        givenRegularUser();
+        when(ledgerRoleService.getVisibleLedgerIdsByRoleIds(List.of(10L))).thenReturn(List.of(EXTERNAL_LEDGER_ID));
+
+        FinancePermissionScope permissionScope = service.getPermissionScope(USER_ID);
+
+        assertEquals(FinancePermissionScope.ScopeMode.NONE, permissionScope.deptScope().mode());
+        assertEquals(FinancePermissionScope.ScopeMode.NONE,
+                permissionScope.subjectScopesByLedger().get(EXTERNAL_LEDGER_ID).mode());
     }
 
     private void givenAuditUser() {

@@ -3,6 +3,11 @@ package cn.weitee.erp.module.erp.service.finance;
 import cn.hutool.core.collection.CollUtil;
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerConfigDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleDeptDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleSubjectDO;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleDeptMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleSubjectMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.system.dal.dataobject.permission.RoleDO;
 import cn.weitee.erp.module.system.enums.permission.RoleCodeEnum;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
@@ -16,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,6 +47,51 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
     private RoleService roleService;
     @Resource
     private ErpFinanceDualLedgerConfigService dualLedgerConfigService;
+    @Resource
+    private ErpFinanceRoleDeptMapper roleDeptMapper;
+    @Resource
+    private ErpFinanceRoleSubjectMapper roleSubjectMapper;
+
+    @Override
+    public FinancePermissionScope getPermissionScope() {
+        return getPermissionScope(SecurityFrameworkUtils.getLoginUserId());
+    }
+
+    @Override
+    public FinancePermissionScope getPermissionScope(Long userId) {
+        if (userId == null) {
+            return FinancePermissionScope.ofLedgerScope(FinancePermissionScope.Scope.none(), false);
+        }
+        boolean auditOnly = userId != null && isAuditRole(userId);
+        List<Long> roleIds = getUserRoleIds(userId);
+        boolean unrestrictedDataScope = auditOnly || isAdminRole(roleIds);
+        List<Long> visibleLedgerIds = getVisibleLedgerIds(userId);
+        FinancePermissionScope.Scope<Long> ledgerScope;
+        if (visibleLedgerIds == null) {
+            ledgerScope = FinancePermissionScope.Scope.all();
+        } else if (visibleLedgerIds.isEmpty()) {
+            ledgerScope = FinancePermissionScope.Scope.none();
+        } else {
+            ledgerScope = FinancePermissionScope.Scope.limited(new HashSet<>(visibleLedgerIds));
+        }
+        return new FinancePermissionScope(ledgerScope, resolveDeptScope(roleIds, unrestrictedDataScope),
+                resolveSubjectScopes(roleIds, ledgerScope, unrestrictedDataScope), auditOnly, auditOnly);
+    }
+
+    @Override
+    public boolean canAccessDept(Long deptId) {
+        return canAccess(getPermissionScope().deptScope(), deptId);
+    }
+
+    @Override
+    public boolean canAccessSubject(Long ledgerId, String subjectCode) {
+        if (ledgerId == null || subjectCode == null || !canAccessLedger(ledgerId)) {
+            return false;
+        }
+        FinancePermissionScope.Scope<String> subjectScope = getPermissionScope()
+                .subjectScopesByLedger().getOrDefault(ledgerId, FinancePermissionScope.Scope.all());
+        return canAccess(subjectScope, subjectCode);
+    }
 
     @Override
     public List<Long> getVisibleLedgerIds() {
@@ -135,14 +186,22 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
 
     @Override
     public List<Long> getVisibleDeptIds() {
-        // TODO: 实现部门级数据权限
-        return null;
+        FinancePermissionScope.Scope<Long> deptScope = getPermissionScope().deptScope();
+        return toLegacyList(deptScope);
     }
 
     @Override
     public List<String> getVisibleSubjectCodes() {
-        // TODO: 实现科目级数据权限
-        return null;
+        Map<Long, FinancePermissionScope.Scope<String>> subjectScopes = getPermissionScope().subjectScopesByLedger();
+        if (subjectScopes.isEmpty() || subjectScopes.values().stream()
+                .anyMatch(scope -> scope.mode() == FinancePermissionScope.ScopeMode.ALL)) {
+            return null;
+        }
+        return subjectScopes.values().stream()
+                .filter(scope -> scope.mode() == FinancePermissionScope.ScopeMode.LIMITED)
+                .flatMap(scope -> scope.values().stream())
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     /**
@@ -179,6 +238,58 @@ public class FinanceDataPermissionServiceImpl implements FinanceDataPermissionSe
                 .map(ErpFinanceDualLedgerConfigDO::getInternalLedgerId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    private <T> List<T> toLegacyList(FinancePermissionScope.Scope<T> scope) {
+        if (scope.mode() == FinancePermissionScope.ScopeMode.ALL) {
+            return null;
+        }
+        return new ArrayList<>(scope.values());
+    }
+
+    private FinancePermissionScope.Scope<Long> resolveDeptScope(List<Long> roleIds, boolean unrestrictedDataScope) {
+        if (unrestrictedDataScope) {
+            return FinancePermissionScope.Scope.all();
+        }
+        if (roleDeptMapper == null || CollUtil.isEmpty(roleIds)) {
+            return FinancePermissionScope.Scope.none();
+        }
+        List<ErpFinanceRoleDeptDO> mappings = roleDeptMapper.selectListByRoleIds(roleIds);
+        if (CollUtil.isEmpty(mappings)) {
+            return FinancePermissionScope.Scope.none();
+        }
+        return FinancePermissionScope.Scope.limited(mappings.stream()
+                .map(ErpFinanceRoleDeptDO::getDeptId).filter(Objects::nonNull).collect(Collectors.toSet()));
+    }
+
+    private Map<Long, FinancePermissionScope.Scope<String>> resolveSubjectScopes(List<Long> roleIds,
+                                                                                   FinancePermissionScope.Scope<Long> ledgerScope,
+                                                                                   boolean unrestrictedDataScope) {
+        if (unrestrictedDataScope || ledgerScope.mode() != FinancePermissionScope.ScopeMode.LIMITED) {
+            return Collections.emptyMap();
+        }
+        Map<Long, FinancePermissionScope.Scope<String>> scopes = ledgerScope.values().stream()
+                .collect(Collectors.toMap(ledgerId -> ledgerId, ledgerId -> FinancePermissionScope.Scope.none()));
+        if (roleSubjectMapper == null || CollUtil.isEmpty(roleIds)) {
+            return scopes;
+        }
+        List<ErpFinanceRoleSubjectDO> mappings = roleSubjectMapper.selectListByRoleIds(roleIds);
+        if (CollUtil.isEmpty(mappings)) {
+            return scopes;
+        }
+        Map<Long, FinancePermissionScope.Scope<String>> mappedScopes = mappings.stream()
+                .filter(mapping -> mapping.getLedgerId() != null && mapping.getSubjectCode() != null)
+                .filter(mapping -> ledgerScope.values().contains(mapping.getLedgerId()))
+                .collect(Collectors.groupingBy(ErpFinanceRoleSubjectDO::getLedgerId,
+                        Collectors.collectingAndThen(Collectors.mapping(ErpFinanceRoleSubjectDO::getSubjectCode,
+                                Collectors.toSet()), FinancePermissionScope.Scope::limited)));
+        scopes.putAll(mappedScopes);
+        return scopes;
+    }
+
+    private <T> boolean canAccess(FinancePermissionScope.Scope<T> scope, T value) {
+        return scope.mode() == FinancePermissionScope.ScopeMode.ALL
+                || scope.mode() == FinancePermissionScope.ScopeMode.LIMITED && scope.values().contains(value);
     }
 
 }
