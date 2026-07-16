@@ -9,12 +9,13 @@ services:
       - ../../production/ruoyi-vue-pro/weitee-erp_backup_20260709.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
       - ./initdb/03-weitee-post-import-fixes.sql:/docker-entrypoint-initdb.d/03-weitee-post-import-fixes.sql:ro
       - ../../sql/mysql/stock/143-erp-stock-assemble.sql:/docker-entrypoint-initdb.d/05-erp-stock-assemble.sql:ro
-      - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/06-demo-accounts.sql:ro
-      - ../../sql/mysql/purchase/164-erp-purchase-source-batch-query-permission.sql:/docker-entrypoint-initdb.d/07-erp-purchase-source-batch-query-permission.sql:ro
-      - ../../sql/mysql/system/165-purchase-approval-task-permission.sql:/docker-entrypoint-initdb.d/08-purchase-approval-task-permission.sql:ro
-      - ../../sql/mysql/purchase/166-erp-purchase-in-bpm-platform.sql:/docker-entrypoint-initdb.d/09-erp-purchase-in-bpm-platform.sql:ro
-      - ../../sql/mysql/purchase/167-erp-purchase-return-bpm-platform.sql:/docker-entrypoint-initdb.d/10-erp-purchase-return-bpm-platform.sql:ro
-      - ../../sql/mysql/sale/168-erp-sale-order-bpm-platform.sql:/docker-entrypoint-initdb.d/11-erp-sale-order-bpm-platform.sql:ro
+      - ../../sql/mysql/stock/160-erp-stock-move-bpm.sql:/docker-entrypoint-initdb.d/06-erp-stock-move-bpm.sql:ro
+      - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/07-demo-accounts.sql:ro
+      - ../../sql/mysql/purchase/164-erp-purchase-source-batch-query-permission.sql:/docker-entrypoint-initdb.d/08-erp-purchase-source-batch-query-permission.sql:ro
+      - ../../sql/mysql/system/165-purchase-approval-task-permission.sql:/docker-entrypoint-initdb.d/09-purchase-approval-task-permission.sql:ro
+      - ../../sql/mysql/purchase/166-erp-purchase-in-bpm-platform.sql:/docker-entrypoint-initdb.d/10-erp-purchase-in-bpm-platform.sql:ro
+      - ../../sql/mysql/purchase/167-erp-purchase-return-bpm-platform.sql:/docker-entrypoint-initdb.d/11-erp-purchase-return-bpm-platform.sql:ro
+      - ../../sql/mysql/sale/168-erp-sale-order-bpm-platform.sql:/docker-entrypoint-initdb.d/12-erp-sale-order-bpm-platform.sql:ro
 
   redis:
     container_name: weitee-p0-verify-redis
