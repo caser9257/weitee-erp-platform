@@ -10,6 +10,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetDepreciationStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.system.api.dept.DeptApi;
 import cn.weitee.erp.module.system.api.dept.dto.DeptRespDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,8 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
     private ErpFinanceVoucherService voucherService;
     @Resource
     private DeptApi deptApi;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @Override
     public Integer generateDepreciation(String period) {
@@ -211,6 +214,22 @@ public class ErpFinanceAssetDepreciationServiceImpl implements ErpFinanceAssetDe
 
     @Override
     public PageResult<ErpFinanceAssetDepreciationDO> getFinanceAssetDepreciationPage(ErpFinanceAssetDepreciationPageReqVO pageReqVO) {
+        FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService.getPermissionScope().deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            List<ErpFinanceAssetDO> assets = financeAssetMapper.selectList(new cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX<ErpFinanceAssetDO>()
+                    .in(ErpFinanceAssetDO::getDeptId, deptScope.values()));
+            if (CollUtil.isEmpty(assets)) {
+                return PageResult.empty(0L);
+            }
+            List<Long> assetIds = assets.stream().map(ErpFinanceAssetDO::getId).filter(Objects::nonNull).toList();
+            if (CollUtil.isEmpty(assetIds)) {
+                return PageResult.empty(0L);
+            }
+            return financeAssetDepreciationMapper.selectPageByAssetIds(pageReqVO, assetIds);
+        }
         return financeAssetDepreciationMapper.selectPage(pageReqVO);
     }
 

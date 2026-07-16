@@ -17,10 +17,19 @@ import java.util.stream.Collectors;
 public interface ErpFinanceAssetDepreciationMapper extends BaseMapperX<ErpFinanceAssetDepreciationDO> {
 
     default PageResult<ErpFinanceAssetDepreciationDO> selectPage(ErpFinanceAssetDepreciationPageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceAssetDepreciationDO>()
+        return selectPage(reqVO, buildPageQuery(reqVO));
+    }
+
+    default PageResult<ErpFinanceAssetDepreciationDO> selectPageByAssetIds(ErpFinanceAssetDepreciationPageReqVO reqVO,
+                                                                            Collection<Long> assetIds) {
+        return selectPage(reqVO, buildPageQuery(reqVO).in(ErpFinanceAssetDepreciationDO::getAssetId, assetIds));
+    }
+
+    private LambdaQueryWrapperX<ErpFinanceAssetDepreciationDO> buildPageQuery(ErpFinanceAssetDepreciationPageReqVO reqVO) {
+        return new LambdaQueryWrapperX<ErpFinanceAssetDepreciationDO>()
                 .eqIfPresent(ErpFinanceAssetDepreciationDO::getAssetId, reqVO.getAssetId())
                 .eqIfPresent(ErpFinanceAssetDepreciationDO::getPeriod, reqVO.getPeriod())
-                .orderByDesc(ErpFinanceAssetDepreciationDO::getId));
+                .orderByDesc(ErpFinanceAssetDepreciationDO::getId);
     }
 
     default List<ErpFinanceAssetDepreciationDO> selectListByPeriod(String period) {
