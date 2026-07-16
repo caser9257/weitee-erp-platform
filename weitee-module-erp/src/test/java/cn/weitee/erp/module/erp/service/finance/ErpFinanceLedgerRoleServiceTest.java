@@ -2,13 +2,17 @@ package cn.weitee.erp.module.erp.service.finance;
 
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerRoleDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleDeptDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceLedgerRoleMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleDeptMapper;
+import cn.weitee.erp.module.system.service.permission.PermissionService;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -96,6 +100,30 @@ class ErpFinanceLedgerRoleServiceTest {
     }
 
     @Test
+    void setLedgerRoles_shouldEvictUsersOfRemovedRoles() throws Exception {
+        ErpFinanceLedgerRoleServiceImpl service = new ErpFinanceLedgerRoleServiceImpl();
+        setField(service, "ledgerRoleMapper", createProxy(ErpFinanceLedgerRoleMapper.class, (methodName, args) -> {
+            if ("selectRoleIdsByLedgerId".equals(methodName)) {
+                return List.of(10L);
+            }
+            if ("delete".equals(methodName) || "insert".equals(methodName)) {
+                return 1;
+            }
+            return null;
+        }));
+        PermissionService permissionService = mock(PermissionService.class);
+        org.mockito.Mockito.when(permissionService.getUserRoleIdListByRoleId(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(Set.of(100L));
+        setField(service, "permissionService", permissionService);
+        UserLedgerPermissionCacheService cacheService = mock(UserLedgerPermissionCacheService.class);
+        setField(service, "userLedgerPermissionCacheService", cacheService);
+
+        service.setLedgerRoles(100L, List.of(20L));
+
+        verify(cacheService).clearCache(100L);
+    }
+
+    @Test
     void clearUserLedgerPermissionCache_shouldEvictSpecifiedUserCache() throws Exception {
         ErpFinanceLedgerRoleServiceImpl service = new ErpFinanceLedgerRoleServiceImpl();
         UserLedgerPermissionCacheService cacheService = mock(UserLedgerPermissionCacheService.class);
@@ -115,6 +143,34 @@ class ErpFinanceLedgerRoleServiceTest {
         service.clearUserLedgerPermissionCache(null);
 
         verify(cacheService, never()).clearCache(null);
+    }
+
+    @Test
+    void setRoleDeptIds_shouldReplaceMappingsAndEvictAffectedUserCaches() throws Exception {
+        ErpFinanceLedgerRoleServiceImpl service = new ErpFinanceLedgerRoleServiceImpl();
+        AtomicReference<List<ErpFinanceRoleDeptDO>> insertedRef = new AtomicReference<>();
+        setField(service, "roleDeptMapper", createProxy(ErpFinanceRoleDeptMapper.class, (methodName, args) -> {
+            if ("delete".equals(methodName)) {
+                return 1;
+            }
+            if ("insertBatch".equals(methodName)) {
+                insertedRef.set((List<ErpFinanceRoleDeptDO>) args[0]);
+                return true;
+            }
+            return null;
+        }));
+        PermissionService permissionService = mock(PermissionService.class);
+        org.mockito.Mockito.when(permissionService.getUserRoleIdListByRoleId(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(Set.of(100L));
+        setField(service, "permissionService", permissionService);
+        UserLedgerPermissionCacheService cacheService = mock(UserLedgerPermissionCacheService.class);
+        setField(service, "userLedgerPermissionCacheService", cacheService);
+
+        service.setRoleDeptIds(200L, List.of(10L, 20L));
+
+        assertEquals(2, insertedRef.get().size());
+        assertTrue(insertedRef.get().stream().allMatch(item -> item.getRoleId().equals(200L)));
+        verify(cacheService).clearCache(100L);
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {

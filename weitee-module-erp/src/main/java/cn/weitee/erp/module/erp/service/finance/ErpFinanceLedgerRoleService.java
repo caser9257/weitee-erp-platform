@@ -32,6 +32,14 @@ public interface ErpFinanceLedgerRoleService {
      */
     void setLedgerRoles(Long ledgerId, List<Long> roleIds);
 
+    void setRoleDeptIds(Long roleId, List<Long> deptIds);
+
+    List<Long> getRoleDeptIds(Long roleId);
+
+    void setRoleSubjectCodes(Long roleId, Long ledgerId, List<String> subjectCodes);
+
+    List<String> getRoleSubjectCodes(Long roleId, Long ledgerId);
+
     /**
      * 获取指定角色可见的账簿ID列表
      *
