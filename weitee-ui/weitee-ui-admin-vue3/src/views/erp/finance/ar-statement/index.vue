@@ -152,7 +152,14 @@
       </div>
     </ContentWrap>
 
-    <el-drawer v-model="detailDrawerOpen" size="520px" :with-header="false" destroy-on-close>
+    <el-drawer
+      v-model="detailDrawerOpen"
+      size="520px"
+      :with-header="false"
+      append-to-body
+      :z-index="3000"
+      destroy-on-close
+    >
       <div v-if="detailData" class="finance-ar-statement-page__drawer">
         <div class="finance-ar-statement-page__drawer-context">
           <div class="finance-ar-statement-page__drawer-title">{{ detailData.statementNo || '-' }}</div>
