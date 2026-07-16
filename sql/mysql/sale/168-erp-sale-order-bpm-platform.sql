@@ -4,20 +4,36 @@
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET FOREIGN_KEY_CHECKS = 0;
 USE `weitee-erp`;
+START TRANSACTION;
 
 -- 历史数据库中的销售订单 BPM 定义曾按租户 1 部署。Flowable 的实际唯一键不含租户，
 -- 先统一到无租户值，避免初始化器按无租户查询为空后从版本 1 重复部署。
 UPDATE ACT_RE_DEPLOYMENT d
+INNER JOIN ACT_RE_PROCDEF legacy
+        ON legacy.DEPLOYMENT_ID_ = d.ID_
+       AND legacy.KEY_ = 'erp_sale_order'
+       AND legacy.TENANT_ID_ = '1'
+LEFT JOIN ACT_RE_PROCDEF tenantless
+       ON tenantless.KEY_ = legacy.KEY_
+      AND tenantless.VERSION_ = legacy.VERSION_
+      AND tenantless.DERIVED_VERSION_ = legacy.DERIVED_VERSION_
+      AND tenantless.TENANT_ID_ = ''
+      AND tenantless.ID_ <> legacy.ID_
 SET d.TENANT_ID_ = ''
 WHERE d.TENANT_ID_ = '1'
-  AND EXISTS (
-      SELECT 1 FROM ACT_RE_PROCDEF p
-      WHERE p.DEPLOYMENT_ID_ = d.ID_ AND p.KEY_ = 'erp_sale_order'
-  );
+  AND tenantless.ID_ IS NULL;
 
-UPDATE ACT_RE_PROCDEF
-SET TENANT_ID_ = ''
-WHERE KEY_ = 'erp_sale_order' AND TENANT_ID_ = '1';
+UPDATE ACT_RE_PROCDEF legacy
+LEFT JOIN ACT_RE_PROCDEF tenantless
+       ON tenantless.KEY_ = legacy.KEY_
+      AND tenantless.VERSION_ = legacy.VERSION_
+      AND tenantless.DERIVED_VERSION_ = legacy.DERIVED_VERSION_
+      AND tenantless.TENANT_ID_ = ''
+      AND tenantless.ID_ <> legacy.ID_
+SET legacy.TENANT_ID_ = ''
+WHERE legacy.KEY_ = 'erp_sale_order'
+  AND legacy.TENANT_ID_ = '1'
+  AND tenantless.ID_ IS NULL;
 
 UPDATE bpm_approval_scene
 SET name = '销售订单审批', module_code = 'erp_sale', biz_type = 'sale_order', action_code = 'submit',
@@ -118,4 +134,5 @@ SET active_scheme_id = @sale_order_scheme_id,
     updater = 'admin', update_time = NOW()
 WHERE id = @sale_order_scene_id;
 
+COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
