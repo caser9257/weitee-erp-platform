@@ -74,6 +74,11 @@ public class ErpArStatementDO extends BaseDO {
     private Long customerId;
 
     /**
+     * 所属账簿编号；历史无法确定归属时允许为空。
+     */
+    private Long ledgerId;
+
+    /**
      * 结算账户ID
      */
     private Long accountId;

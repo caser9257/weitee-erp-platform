@@ -14,8 +14,10 @@ import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpArStatementItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpArStatementMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualLedgerConfigMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
 import cn.weitee.erp.module.erp.service.sale.ErpCustomerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Set;
+
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AR_STATEMENT_NOT_EXISTS;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -70,6 +76,8 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
     private ErpNoRedisDAO erpNoRedisDAO;
     @Resource
     private ErpCustomerService erpCustomerService;
+    @Resource
+    private ErpFinanceDualLedgerConfigMapper dualLedgerConfigMapper;
 
     // ==================== 创建台账 ====================
 
@@ -92,6 +100,7 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
                 .setBizNo(saleOut.getNo())
                 .setSourceOrderId(saleOut.getOrderId())
                 .setCustomerId(saleOut.getCustomerId())
+                .setLedgerId(resolveExternalLedgerId(ErpBizTypeEnum.SALE_OUT.getType()))
                 .setAccountId(saleOut.getAccountId())
                 .setAmount(amount)
                 .setReceivedAmount(BigDecimal.ZERO)
@@ -137,6 +146,7 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
                 .setBizNo(saleReturn.getNo())
                 .setSourceOrderId(saleReturn.getOrderId())
                 .setCustomerId(saleReturn.getCustomerId())
+                .setLedgerId(resolveExternalLedgerId(ErpBizTypeEnum.SALE_RETURN.getType()))
                 .setAccountId(saleReturn.getAccountId())
                 .setAmount(amount)
                 .setReceivedAmount(BigDecimal.ZERO)
@@ -219,7 +229,13 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
 
     @Override
     public PageResult<ErpArStatementRespVO> getStatementPage(ErpArStatementPageReqVO reqVO) {
-        PageResult<ErpArStatementDO> pageResult = erpArStatementMapper.selectPage(reqVO);
+        Set<Long> visibleLedgerIds = getVisibleLedgerIds();
+        if (visibleLedgerIds != null && visibleLedgerIds.isEmpty()) {
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+        PageResult<ErpArStatementDO> pageResult = visibleLedgerIds == null
+                ? erpArStatementMapper.selectPage(reqVO)
+                : erpArStatementMapper.selectPageByVisibleLedgerIds(reqVO, visibleLedgerIds);
         if (CollUtil.isEmpty(pageResult.getList())) {
             return new PageResult<>(Collections.emptyList(), pageResult.getTotal());
         }
@@ -245,6 +261,7 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
         if (statement == null) {
             return null;
         }
+        ensureLedgerVisible(statement.getLedgerId());
         // 获取客户信息
         Map<Long, ErpCustomerDO> customerMap = Collections.emptyMap();
         if (statement.getCustomerId() != null) {
@@ -265,11 +282,12 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
     @Override
     public List<ErpArStatementSummaryRespVO> getStatementSummary(Long customerId) {
         // 构建查询条件：排除已关闭的台账
-        List<ErpArStatementDO> statements = erpArStatementMapper.selectList(
-                new LambdaQueryWrapperX<ErpArStatementDO>()
-                        .eqIfPresent(ErpArStatementDO::getCustomerId, customerId)
-                        .ne(ErpArStatementDO::getStatus, STATUS_CLOSED)
-        );
+        Set<Long> visibleLedgerIds = getVisibleLedgerIds();
+        List<ErpArStatementDO> statements = visibleLedgerIds == null
+                ? erpArStatementMapper.selectList(new LambdaQueryWrapperX<ErpArStatementDO>()
+                .eqIfPresent(ErpArStatementDO::getCustomerId, customerId)
+                .ne(ErpArStatementDO::getStatus, STATUS_CLOSED))
+                : erpArStatementMapper.selectListByVisibleLedgerIds(customerId, visibleLedgerIds);
         if (CollUtil.isEmpty(statements)) {
             return Collections.emptyList();
         }
@@ -341,6 +359,26 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
             return STATUS_UNRECEIVED;
         }
         return STATUS_PARTIAL_RECEIVED;
+    }
+
+    private Set<Long> getVisibleLedgerIds() {
+        List<Long> visibleLedgerIds = FinanceDataPermissionContext.getVisibleLedgerIds();
+        return visibleLedgerIds == null ? null : Set.copyOf(visibleLedgerIds);
+    }
+
+    private void ensureLedgerVisible(Long ledgerId) {
+        Set<Long> visibleLedgerIds = getVisibleLedgerIds();
+        if (visibleLedgerIds != null && (ledgerId == null || !visibleLedgerIds.contains(ledgerId))) {
+            throw exception(FORBIDDEN);
+        }
+    }
+
+    private Long resolveExternalLedgerId(Integer bizType) {
+        if (dualLedgerConfigMapper == null) {
+            return null;
+        }
+        var config = dualLedgerConfigMapper.selectByBizType(bizType);
+        return config == null ? null : config.getExternalLedgerId();
     }
 
     /**

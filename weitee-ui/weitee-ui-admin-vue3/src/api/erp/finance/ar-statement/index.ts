@@ -95,7 +95,7 @@ export const ArStatementApi = {
     request.get<{ list: ArStatementVO[]; total: number }>({ url: '/erp/ar-statement/page', params }),
   get: (id: number) => request.get<ArStatementVO>({ url: '/erp/ar-statement/get', params: { id } }),
   getSummary: (customerId?: number) =>
-    request.get<ArStatementSummaryVO[]>({
+    request.get<ArStatementSummaryVO[] | ArStatementSummaryVO>({
       url: '/erp/ar-statement/summary',
       params: customerId == null ? undefined : { customerId }
     }),

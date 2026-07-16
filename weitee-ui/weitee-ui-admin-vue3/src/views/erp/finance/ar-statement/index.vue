@@ -218,6 +218,7 @@ import {
   type ArStatementSummaryVO,
   type ArStatementVO
 } from '@/api/erp/finance/ar-statement'
+import { normalizeArStatementSummary } from './arStatement.helpers'
 
 defineOptions({ name: 'ErpArStatement' })
 
@@ -268,7 +269,7 @@ const loadSummary = async () => {
   if (summaryLoading.value) return
   summaryLoading.value = true
   try {
-    summaryData.value = (await ArStatementApi.getSummary(queryParams.customerId)) || []
+    summaryData.value = normalizeArStatementSummary(await ArStatementApi.getSummary(queryParams.customerId))
   } catch {
     ElMessage.error('应收汇总加载失败')
   } finally {
@@ -456,7 +457,17 @@ onMounted(handleRefresh)
   &__detail-grid { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px 12px; color: var(--erp-slate-500); font-size: 13px; }
   &__detail-grid strong { color: var(--erp-slate-800); font-weight: 500; text-align: right; word-break: break-word; }
   &__item-line { justify-content: space-between; color: var(--erp-slate-800); }
-  &__drawer-footer { justify-content: flex-end; padding: 12px 16px; border-top: 1px solid var(--erp-slate-200); }
+  &__drawer-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1001;
+    flex-shrink: 0;
+    justify-content: flex-end;
+    padding: 12px 64px 12px 16px;
+    border-top: 1px solid var(--erp-slate-200);
+    background: var(--erp-surface-white);
+    pointer-events: auto;
+  }
 
   @media (max-width: 1200px) {
     &__form-grid,

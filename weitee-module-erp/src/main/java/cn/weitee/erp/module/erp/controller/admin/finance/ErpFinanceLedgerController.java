@@ -12,6 +12,7 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.ledger.ErpFinanceLed
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.ledger.ErpFinanceLedgerSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceLedgerService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -77,6 +78,7 @@ public class ErpFinanceLedgerController {
     }
 
     @GetMapping("/get")
+    @FinanceDataPermission
     @Operation(summary = "获得财务账簿")
     @Parameter(name = "id", description = "编号", required = true, example = "1")
     @PreAuthorize("@ss.hasPermission('erp:finance-ledger:query')")
@@ -86,6 +88,7 @@ public class ErpFinanceLedgerController {
     }
 
     @GetMapping("/simple-list")
+    @FinanceDataPermission
     @Operation(summary = "获得启用账簿精简列表")
     @PreAuthorize("@ss.hasPermission('erp:finance-ledger:query')")
     public CommonResult<List<ErpFinanceLedgerRespVO>> getFinanceLedgerSimpleList() {
@@ -98,6 +101,7 @@ public class ErpFinanceLedgerController {
     }
 
     @GetMapping("/page")
+    @FinanceDataPermission
     @Operation(summary = "获得财务账簿分页")
     @PreAuthorize("@ss.hasPermission('erp:finance-ledger:query')")
     public CommonResult<PageResult<ErpFinanceLedgerRespVO>> getFinanceLedgerPage(@Valid ErpFinanceLedgerPageReqVO pageReqVO) {
@@ -106,6 +110,7 @@ public class ErpFinanceLedgerController {
     }
 
     @GetMapping("/export-excel")
+    @FinanceDataPermission
     @Operation(summary = "导出财务账簿 Excel")
     @PreAuthorize("@ss.hasPermission('erp:finance-ledger:export')")
     @ApiAccessLog(operateType = EXPORT)
