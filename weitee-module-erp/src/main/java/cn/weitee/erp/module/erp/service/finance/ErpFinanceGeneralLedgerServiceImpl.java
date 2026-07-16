@@ -18,6 +18,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -34,6 +35,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_PERIOD_NOT_EXISTS;
 
@@ -51,6 +53,8 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
     private ErpFinanceLedgerService financeLedgerService;
     @Resource
     private ErpFinancePeriodService financePeriodService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -74,17 +78,36 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
     public PageResult<ErpFinanceSubjectBalanceDO> getSubjectBalancePage(ErpFinanceSubjectBalancePageReqVO reqVO) {
         financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
+        FinancePermissionScope.Scope<String> subjectScope = financeDataPermissionService.getPermissionScope()
+                .subjectScopesByLedger().getOrDefault(reqVO.getLedgerId(), FinancePermissionScope.Scope.all());
+        if (subjectScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
+        if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            return erpFinanceSubjectBalanceMapper.selectPageBySubjectCodes(reqVO, subjectScope.values());
+        }
         return erpFinanceSubjectBalanceMapper.selectPage(reqVO);
     }
 
     @Override
     public ErpFinanceGeneralLedgerDetailRespVO getGeneralLedgerDetail(ErpFinanceGeneralLedgerDetailReqVO reqVO) {
+        if (financeDataPermissionService != null
+                && !financeDataPermissionService.canAccessSubject(reqVO.getLedgerId(), reqVO.getSubjectCode())) {
+            throw exception(FORBIDDEN);
+        }
         ErpFinanceLedgerDO ledger = financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         ErpFinancePeriodDO period = validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
         ErpFinanceSubjectBalanceDO balance = erpFinanceSubjectBalanceMapper.selectByLedgerIdAndPeriodIdAndSubjectCode(
                 reqVO.getLedgerId(), reqVO.getPeriodId(), reqVO.getSubjectCode());
-        List<ErpFinanceVoucherDO> voucherList = erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodId(
-                reqVO.getLedgerId(), reqVO.getPeriodId());
+        FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService == null
+                ? FinancePermissionScope.Scope.all() : financeDataPermissionService.getPermissionScope().deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            throw exception(FORBIDDEN);
+        }
+        List<ErpFinanceVoucherDO> voucherList = deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED
+                ? erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodIdAndDeptIds(
+                reqVO.getLedgerId(), reqVO.getPeriodId(), deptScope.values())
+                : erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodId(reqVO.getLedgerId(), reqVO.getPeriodId());
         List<LedgerEntryRow> rows = buildLedgerEntryRows(voucherList, reqVO.getSubjectCode());
 
         BalanceSnapshot openingSnapshot = new BalanceSnapshot(

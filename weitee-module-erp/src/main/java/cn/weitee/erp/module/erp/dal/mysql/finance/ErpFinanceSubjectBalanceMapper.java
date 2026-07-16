@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 
 @Mapper
@@ -19,6 +20,21 @@ public interface ErpFinanceSubjectBalanceMapper extends BaseMapperX<ErpFinanceSu
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceSubjectBalanceDO>()
                 .eq(ErpFinanceSubjectBalanceDO::getLedgerId, reqVO.getLedgerId())
                 .eq(ErpFinanceSubjectBalanceDO::getPeriodId, reqVO.getPeriodId())
+                .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectCode, reqVO.getSubjectCode())
+                .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectName, reqVO.getSubjectName())
+                .orderByAsc(ErpFinanceSubjectBalanceDO::getSubjectCode)
+                .orderByAsc(ErpFinanceSubjectBalanceDO::getId));
+    }
+
+    default PageResult<ErpFinanceSubjectBalanceDO> selectPageBySubjectCodes(
+            ErpFinanceSubjectBalancePageReqVO reqVO, Collection<String> subjectCodes) {
+        if (subjectCodes == null || subjectCodes.isEmpty()) {
+            return PageResult.empty(0L);
+        }
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceSubjectBalanceDO>()
+                .eq(ErpFinanceSubjectBalanceDO::getLedgerId, reqVO.getLedgerId())
+                .eq(ErpFinanceSubjectBalanceDO::getPeriodId, reqVO.getPeriodId())
+                .in(ErpFinanceSubjectBalanceDO::getSubjectCode, subjectCodes)
                 .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectCode, reqVO.getSubjectCode())
                 .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectName, reqVO.getSubjectName())
                 .orderByAsc(ErpFinanceSubjectBalanceDO::getSubjectCode)
@@ -55,6 +71,22 @@ public interface ErpFinanceSubjectBalanceMapper extends BaseMapperX<ErpFinanceSu
         List<ErpFinanceSubjectBalanceDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceSubjectBalanceDO>()
                 .eq(ErpFinanceSubjectBalanceDO::getLedgerId, reqVO.getLedgerId())
                 .eq(ErpFinanceSubjectBalanceDO::getPeriodId, reqVO.getPeriodId())
+                .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectCode, reqVO.getSubjectCode())
+                .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectName, reqVO.getSubjectName())
+                .orderByAsc(ErpFinanceSubjectBalanceDO::getSubjectCode)
+                .orderByAsc(ErpFinanceSubjectBalanceDO::getId));
+        return list == null ? Collections.emptyList() : list;
+    }
+
+    default List<ErpFinanceSubjectBalanceDO> selectListByReportReqAndSubjectCodes(
+            ErpFinanceReportReqVO reqVO, Collection<String> subjectCodes) {
+        if (subjectCodes == null || subjectCodes.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ErpFinanceSubjectBalanceDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceSubjectBalanceDO>()
+                .eq(ErpFinanceSubjectBalanceDO::getLedgerId, reqVO.getLedgerId())
+                .eq(ErpFinanceSubjectBalanceDO::getPeriodId, reqVO.getPeriodId())
+                .in(ErpFinanceSubjectBalanceDO::getSubjectCode, subjectCodes)
                 .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectCode, reqVO.getSubjectCode())
                 .likeIfPresent(ErpFinanceSubjectBalanceDO::getSubjectName, reqVO.getSubjectName())
                 .orderByAsc(ErpFinanceSubjectBalanceDO::getSubjectCode)
