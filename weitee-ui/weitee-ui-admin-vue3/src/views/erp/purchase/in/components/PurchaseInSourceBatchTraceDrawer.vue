@@ -102,6 +102,7 @@ import {
   type PurchaseSourceBatchTraceItemVO,
   type PurchaseSourceBatchTraceVO
 } from '@/api/erp/purchase/sourceBatch'
+import { isCurrentPurchaseInSourceBatchTraceRequest } from '../purchaseInSourceBatchTrace.helpers'
 
 defineOptions({ name: 'PurchaseInSourceBatchTraceDrawer' })
 
@@ -109,6 +110,7 @@ const visible = ref(false)
 const loading = ref(false)
 const error = ref(false)
 const sourceBatchId = ref<number>()
+const requestToken = ref(0)
 const traceData = ref<PurchaseSourceBatchTraceVO>()
 const sourceBatch = computed(() => traceData.value?.sourceBatch)
 const traceItems = computed<PurchaseSourceBatchTraceItemVO[]>(
@@ -116,21 +118,53 @@ const traceItems = computed<PurchaseSourceBatchTraceItemVO[]>(
 )
 
 const loadTrace = async () => {
-  if (!sourceBatchId.value || loading.value) return
+  const id = sourceBatchId.value
+  if (!id) return
+  const currentRequestToken = ++requestToken.value
   loading.value = true
   error.value = false
   try {
-    traceData.value = (await PurchaseSourceBatchApi.getTrace(sourceBatchId.value)) || {
+    const nextTraceData = (await PurchaseSourceBatchApi.getTrace(id)) || {
       traceItems: []
     }
+    if (
+      !isCurrentPurchaseInSourceBatchTraceRequest({
+        requestToken: currentRequestToken,
+        activeRequestToken: requestToken.value,
+        requestSourceBatchId: id,
+        activeSourceBatchId: sourceBatchId.value
+      })
+    ) {
+      return
+    }
+    traceData.value = nextTraceData
   } catch {
-    error.value = true
+    if (
+      isCurrentPurchaseInSourceBatchTraceRequest({
+        requestToken: currentRequestToken,
+        activeRequestToken: requestToken.value,
+        requestSourceBatchId: id,
+        activeSourceBatchId: sourceBatchId.value
+      })
+    ) {
+      error.value = true
+    }
   } finally {
-    loading.value = false
+    if (
+      isCurrentPurchaseInSourceBatchTraceRequest({
+        requestToken: currentRequestToken,
+        activeRequestToken: requestToken.value,
+        requestSourceBatchId: id,
+        activeSourceBatchId: sourceBatchId.value
+      })
+    ) {
+      loading.value = false
+    }
   }
 }
 
 const open = async (id: number) => {
+  requestToken.value += 1
   sourceBatchId.value = id
   traceData.value = undefined
   error.value = false
@@ -139,6 +173,7 @@ const open = async (id: number) => {
 }
 
 const handleClosed = () => {
+  requestToken.value += 1
   sourceBatchId.value = undefined
   traceData.value = undefined
   error.value = false
