@@ -17,6 +17,7 @@ import cn.weitee.erp.module.erp.enums.ErpResearchExpenseCategoryEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceLedgerService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceVoucherTemplateService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,11 +27,14 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
@@ -46,11 +50,15 @@ public class ErpFinanceVoucherTemplateController {
     private ErpFinanceVoucherTemplateService voucherTemplateService;
     @Resource
     private ErpFinanceLedgerService financeLedgerService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @PostMapping("/create")
     @Operation(summary = "创建财务凭证模板")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher-template:create')")
     public CommonResult<Long> createVoucherTemplate(@Valid @RequestBody ErpFinanceVoucherTemplateSaveReqVO createReqVO) {
+        validateLedgerAccess(createReqVO.getLedgerId());
+        validateSubjectAccess(createReqVO.getLedgerId(), createReqVO.getItems());
         return success(voucherTemplateService.createVoucherTemplate(createReqVO));
     }
 
@@ -58,6 +66,9 @@ public class ErpFinanceVoucherTemplateController {
     @Operation(summary = "更新财务凭证模板")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher-template:update')")
     public CommonResult<Boolean> updateVoucherTemplate(@Valid @RequestBody ErpFinanceVoucherTemplateSaveReqVO updateReqVO) {
+        validateLedgerAccess(updateReqVO.getLedgerId());
+        validateExistingTemplateAccess(updateReqVO.getId());
+        validateSubjectAccess(updateReqVO.getLedgerId(), updateReqVO.getItems());
         voucherTemplateService.updateVoucherTemplate(updateReqVO);
         return success(true);
     }
@@ -67,6 +78,7 @@ public class ErpFinanceVoucherTemplateController {
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher-template:delete')")
     public CommonResult<Boolean> deleteVoucherTemplate(@RequestParam("id") Long id) {
+        validateExistingTemplateAccess(id);
         voucherTemplateService.deleteVoucherTemplate(id);
         return success(true);
     }
@@ -79,7 +91,9 @@ public class ErpFinanceVoucherTemplateController {
         if (template == null) {
             return success(null);
         }
+        validateLedgerAccess(template.getLedgerId());
         List<ErpFinanceVoucherTemplateItemDO> items = voucherTemplateService.getVoucherTemplateItemListByTemplateId(id);
+        validateSubjectAccess(template.getLedgerId(), items);
         Map<Long, ErpFinanceLedgerDO> ledgerMap = financeLedgerService.getFinanceLedgerMap(Collections.singleton(template.getLedgerId()));
         return success(buildTemplateResp(template, items, ledgerMap));
     }
@@ -88,8 +102,14 @@ public class ErpFinanceVoucherTemplateController {
     @Operation(summary = "获得财务凭证模板精简列表")
     public CommonResult<List<ErpFinanceVoucherTemplateRespVO>> getVoucherTemplateSimpleList(@RequestParam("ledgerId") Long ledgerId,
                                                                                            @RequestParam("bizType") Integer bizType) {
+        validateLedgerAccess(ledgerId);
         List<ErpFinanceVoucherTemplateDO> list = voucherTemplateService.getVoucherTemplateListByLedgerAndBizType(ledgerId, bizType)
                 .stream().filter(item -> CommonStatusEnum.ENABLE.getStatus().equals(item.getStatus())).toList();
+        Map<Long, List<ErpFinanceVoucherTemplateItemDO>> itemMap = convertMultiMap(
+                voucherTemplateService.getVoucherTemplateItemListByTemplateIds(convertSet(list, ErpFinanceVoucherTemplateDO::getId)),
+                ErpFinanceVoucherTemplateItemDO::getTemplateId);
+        list = list.stream().filter(template -> itemMap.getOrDefault(template.getId(), Collections.emptyList()).stream()
+                .allMatch(item -> financeDataPermissionService.canAccessSubject(ledgerId, item.getSubjectCode()))).toList();
         return success(convertList(list, item -> new ErpFinanceVoucherTemplateRespVO()
                 .setId(item.getId())
                 .setLedgerId(item.getLedgerId())
@@ -163,5 +183,44 @@ public class ErpFinanceVoucherTemplateController {
             }
         }
         return null;
+    }
+
+    private void validateExistingTemplateAccess(Long id) {
+        if (id == null) {
+            return;
+        }
+        ErpFinanceVoucherTemplateDO template = voucherTemplateService.getVoucherTemplate(id);
+        if (template != null) {
+            validateLedgerAccess(template.getLedgerId());
+            validateSubjectAccess(template.getLedgerId(), voucherTemplateService.getVoucherTemplateItemListByTemplateId(id));
+        }
+    }
+
+    private void validateLedgerAccess(Long ledgerId) {
+        if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
+            throw exception(FORBIDDEN);
+        }
+    }
+
+    private void validateSubjectAccess(Long ledgerId, List<ErpFinanceVoucherTemplateSaveReqVO.Item> items) {
+        if (CollUtil.isEmpty(items)) {
+            return;
+        }
+        for (ErpFinanceVoucherTemplateSaveReqVO.Item item : items) {
+            if (!financeDataPermissionService.canAccessSubject(ledgerId, item.getSubjectCode())) {
+                throw exception(FORBIDDEN);
+            }
+        }
+    }
+
+    private void validateSubjectAccess(Long ledgerId, Collection<ErpFinanceVoucherTemplateItemDO> items) {
+        if (CollUtil.isEmpty(items)) {
+            return;
+        }
+        for (ErpFinanceVoucherTemplateItemDO item : items) {
+            if (!financeDataPermissionService.canAccessSubject(ledgerId, item.getSubjectCode())) {
+                throw exception(FORBIDDEN);
+            }
+        }
     }
 }

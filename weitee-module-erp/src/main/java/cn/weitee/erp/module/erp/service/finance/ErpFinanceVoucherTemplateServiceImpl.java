@@ -10,6 +10,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherTemplate
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherTemplateItemDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherTemplateItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherTemplateMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,8 @@ import jakarta.annotation.Resource;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.LinkedHashMap;
 
 import static cn.weitee.erp.framework.common.enums.CommonStatusEnum.isDisable;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
@@ -102,7 +105,23 @@ public class ErpFinanceVoucherTemplateServiceImpl implements ErpFinanceVoucherTe
         if (CollUtil.isEmpty(visibleLedgerIds)) {
             return PageResult.empty(0L);
         }
-        return erpFinanceVoucherTemplateMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
+        FinancePermissionScope permissionScope = financeDataPermissionService.getPermissionScope();
+        Map<Long, Set<String>> subjectCodesByLedger = new LinkedHashMap<>();
+        List<Long> scopedLedgerIds = visibleLedgerIds.stream().filter(ledgerId -> {
+            FinancePermissionScope.Scope<String> subjectScope = permissionScope == null ? FinancePermissionScope.Scope.all()
+                    : permissionScope.subjectScopesByLedger().getOrDefault(ledgerId, FinancePermissionScope.Scope.all());
+            if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+                subjectCodesByLedger.put(ledgerId, subjectScope.values());
+            }
+            return subjectScope.mode() != FinancePermissionScope.ScopeMode.NONE;
+        }).toList();
+        if (CollUtil.isEmpty(scopedLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return subjectCodesByLedger.isEmpty()
+                ? erpFinanceVoucherTemplateMapper.selectPageByVisibleLedgerIds(pageReqVO, scopedLedgerIds)
+                : erpFinanceVoucherTemplateMapper.selectPageByVisibleLedgerIdsAndSubjectCodes(
+                pageReqVO, scopedLedgerIds, subjectCodesByLedger);
     }
 
     @Override
