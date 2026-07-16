@@ -3,13 +3,18 @@ package cn.weitee.erp.module.erp.dal.mysql.finance;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.weitee.erp.framework.mybatis.core.util.MyBatisUtils;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherPageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Mapper
@@ -57,6 +62,21 @@ public interface ErpFinanceVoucherMapper extends BaseMapperX<ErpFinanceVoucherDO
         return list == null ? Collections.emptyList() : list;
     }
 
+    default List<ErpFinanceVoucherDO> selectPostedListByLedgerIdAndPeriodIdAndDeptIds(
+            Long ledgerId, Long periodId, Collection<Long> deptIds) {
+        if (deptIds == null || deptIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ErpFinanceVoucherDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
+                .eq(ErpFinanceVoucherDO::getLedgerId, ledgerId)
+                .eq(ErpFinanceVoucherDO::getPeriodId, periodId)
+                .in(ErpFinanceVoucherDO::getDeptId, deptIds)
+                .isNotNull(ErpFinanceVoucherDO::getPostTime)
+                .orderByAsc(ErpFinanceVoucherDO::getVoucherTime)
+                .orderByAsc(ErpFinanceVoucherDO::getId));
+        return list == null ? Collections.emptyList() : list;
+    }
+
     default List<ErpFinanceVoucherDO> selectPostedListByLedgerId(Long ledgerId) {
         List<ErpFinanceVoucherDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
                 .eq(ErpFinanceVoucherDO::getLedgerId, ledgerId)
@@ -83,6 +103,38 @@ public interface ErpFinanceVoucherMapper extends BaseMapperX<ErpFinanceVoucherDO
                 .betweenIfPresent(ErpFinanceVoucherDO::getVoucherTime, reqVO.getVoucherTime())
                 .orderByDesc(ErpFinanceVoucherDO::getId));
     }
+
+    default PageResult<ErpFinanceVoucherDO> selectPageByVisibleLedgerIdsAndDeptIds(
+            ErpFinanceVoucherPageReqVO reqVO, List<Long> visibleLedgerIds, java.util.Collection<Long> deptIds) {
+        if (deptIds == null || deptIds.isEmpty()) {
+            return PageResult.empty(0L);
+        }
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceVoucherDO>()
+                .inIfPresent(ErpFinanceVoucherDO::getLedgerId, visibleLedgerIds)
+                .in(ErpFinanceVoucherDO::getDeptId, deptIds)
+                .eqIfPresent(ErpFinanceVoucherDO::getLedgerId, reqVO.getLedgerId())
+                .eqIfPresent(ErpFinanceVoucherDO::getPeriodId, reqVO.getPeriodId())
+                .eqIfPresent(ErpFinanceVoucherDO::getBizType, reqVO.getBizType())
+                .likeIfPresent(ErpFinanceVoucherDO::getBizNo, reqVO.getBizNo())
+                .likeIfPresent(ErpFinanceVoucherDO::getVoucherNo, reqVO.getVoucherNo())
+                .eqIfPresent(ErpFinanceVoucherDO::getStatus, reqVO.getStatus())
+                .betweenIfPresent(ErpFinanceVoucherDO::getVoucherTime, reqVO.getVoucherTime())
+                .orderByDesc(ErpFinanceVoucherDO::getId));
+    }
+
+    default PageResult<ErpFinanceVoucherDO> selectPageByVisibleLedgerIdsAndDeptIdsAndSubjectCodes(
+            ErpFinanceVoucherPageReqVO reqVO, List<Long> visibleLedgerIds, Collection<Long> deptIds,
+            Map<Long, Set<String>> subjectCodesByLedger) {
+        Page<ErpFinanceVoucherDO> page = MyBatisUtils.buildPage(reqVO);
+        selectPageByVisibleLedgerIdsAndDeptIdsAndSubjectCodes(page, reqVO, visibleLedgerIds, deptIds,
+                subjectCodesByLedger);
+        return new PageResult<>(page.getRecords(), page.getTotal());
+    }
+
+    Page<ErpFinanceVoucherDO> selectPageByVisibleLedgerIdsAndDeptIdsAndSubjectCodes(
+            Page<ErpFinanceVoucherDO> page, @Param("reqVO") ErpFinanceVoucherPageReqVO reqVO,
+            @Param("ledgerIds") Collection<Long> ledgerIds, @Param("deptIds") Collection<Long> deptIds,
+            @Param("subjectCodesByLedger") Map<Long, Set<String>> subjectCodesByLedger);
 
     /**
      * 按可见账簿ID列表查询凭证列表

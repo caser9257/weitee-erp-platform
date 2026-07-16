@@ -10,6 +10,7 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVo
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherReverseReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetDepreciationDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerConfigDO;
@@ -38,6 +39,7 @@ import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherEntryDirectionEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseInService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionInboundService;
@@ -131,6 +133,9 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     @Lazy
     private ErpFinanceAssetDepreciationService financeAssetDepreciationService;
     @Resource
+    @Lazy
+    private ErpFinanceAssetService financeAssetService;
+    @Resource
     private ErpFinanceGeneralLedgerService financeGeneralLedgerService;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
@@ -182,6 +187,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         ErpFinanceVoucherDO voucher = new ErpFinanceVoucherDO()
                 .setVoucherNo(voucherNo)
                 .setLedgerId(reqVO.getLedgerId())
+                .setDeptId(source.deptId)
                 .setPeriodId(period.getId())
                 .setTemplateId(template.getId())
                 .setBizType(reqVO.getBizType())
@@ -316,6 +322,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
                 .setTotalDebitAmount(totalDebit)
                 .setTotalCreditAmount(totalCredit)
                 .setBizNo(source.bizNo)
+                .setDeptId(source.deptId)
                 .setRemark(ObjectUtil.defaultIfBlank(voucher.getRemark(), source.remark)));
     }
 
@@ -595,6 +602,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         ErpFinanceVoucherDO reverseVoucher = new ErpFinanceVoucherDO()
                 .setVoucherNo(noRedisDAO.generate(ErpNoRedisDAO.FINANCE_VOUCHER_NO_PREFIX))
                 .setLedgerId(sourceVoucher.getLedgerId())
+                .setDeptId(sourceVoucher.getDeptId())
                 .setPeriodId(reversePeriod.getId())
                 .setTemplateId(sourceVoucher.getTemplateId())
                 .setBizType(sourceVoucher.getBizType())
@@ -657,11 +665,46 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     @Override
     public PageResult<ErpFinanceVoucherDO> getVoucherPage(ErpFinanceVoucherPageReqVO pageReqVO) {
         List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        FinancePermissionScope permissionScope = financeDataPermissionService.getPermissionScope();
+        FinancePermissionScope.Scope<Long> deptScope = permissionScope == null
+                ? FinancePermissionScope.Scope.all() : permissionScope.deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
         if (visibleLedgerIds == null) {
+            if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+                return erpFinanceVoucherMapper.selectPageByVisibleLedgerIdsAndDeptIds(pageReqVO, null, deptScope.values());
+            }
             return erpFinanceVoucherMapper.selectPage(pageReqVO);
         }
         if (CollUtil.isEmpty(visibleLedgerIds)) {
             return PageResult.empty(0L);
+        }
+        Map<Long, java.util.Set<String>> subjectCodesByLedger = new LinkedHashMap<>();
+        for (Long ledgerId : visibleLedgerIds) {
+            FinancePermissionScope.Scope<String> subjectScope = permissionScope == null
+                    ? FinancePermissionScope.Scope.all()
+                    : permissionScope.subjectScopesByLedger().getOrDefault(ledgerId, FinancePermissionScope.Scope.all());
+            if (subjectScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+                visibleLedgerIds = visibleLedgerIds.stream()
+                        .filter(visibleLedgerId -> !ObjectUtil.equal(visibleLedgerId, ledgerId)).toList();
+                continue;
+            }
+            if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+                subjectCodesByLedger.put(ledgerId, subjectScope.values());
+            }
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        if (!subjectCodesByLedger.isEmpty()) {
+            return erpFinanceVoucherMapper.selectPageByVisibleLedgerIdsAndDeptIdsAndSubjectCodes(pageReqVO,
+                    visibleLedgerIds, deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED ? deptScope.values() : null,
+                    subjectCodesByLedger);
+        }
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            return erpFinanceVoucherMapper.selectPageByVisibleLedgerIdsAndDeptIds(
+                    pageReqVO, visibleLedgerIds, deptScope.values());
         }
         return erpFinanceVoucherMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
     }
@@ -755,7 +798,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             validateFinanceExpenseVoucherBizType(expense, bizType);
             return new VoucherSource(expense.getNo(),
                     defaultTime(expense.getExpenseTime(), expense.getCreateTime(), expense.getUpdateTime()),
-                    defaultAmount(expense.getExpensePrice()), expense.getRemark());
+                    defaultAmount(expense.getExpensePrice()), expense.getRemark(), expense.getDeptId());
         }
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.SALE_OUT.getType())) {
             ErpSaleOutDO saleOut = saleOutService.getSaleOut(bizId);
@@ -803,7 +846,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             }
             return new VoucherSource(expense.getNo(),
                     defaultTime(expense.getExpenseTime(), expense.getCreateTime(), expense.getUpdateTime()),
-                    defaultAmount(expense.getExpensePrice()), expense.getRemark());
+                    defaultAmount(expense.getExpensePrice()), expense.getRemark(), expense.getDeptId());
         }
         // 固定资产折旧 / 无形资产摊销 / 研发无形资产摊销
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_DEPRECIATION.getType())
@@ -824,10 +867,12 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             // 凭证时间使用摊销期间的最后一天，确保落在正确的财务期间内
             YearMonth yearMonth = YearMonth.parse(depreciation.getPeriod());
             LocalDateTime voucherTime = yearMonth.atEndOfMonth().atTime(23, 59, 59);
+            ErpFinanceAssetDO asset = depreciation.getAssetId() == null
+                    ? null : financeAssetService.getFinanceAsset(depreciation.getAssetId());
             return new VoucherSource(depreciation.getAssetNo() + "/" + depreciation.getPeriod(),
                     voucherTime,
                     defaultAmount(depreciation.getDepreciationAmount()),
-                    bizName + " " + depreciation.getPeriod());
+                    bizName + " " + depreciation.getPeriod(), asset == null ? null : asset.getDeptId());
         }
         throw exception(FINANCE_VOUCHER_SOURCE_NOT_SUPPORTED);
     }
@@ -1014,12 +1059,18 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         private final LocalDateTime bizTime;
         private final BigDecimal amount;
         private final String remark;
+        private final Long deptId;
 
         private VoucherSource(String bizNo, LocalDateTime bizTime, BigDecimal amount, String remark) {
+            this(bizNo, bizTime, amount, remark, null);
+        }
+
+        private VoucherSource(String bizNo, LocalDateTime bizTime, BigDecimal amount, String remark, Long deptId) {
             this.bizNo = bizNo;
             this.bizTime = bizTime;
             this.amount = amount;
             this.remark = remark;
+            this.deptId = deptId;
         }
     }
 }
