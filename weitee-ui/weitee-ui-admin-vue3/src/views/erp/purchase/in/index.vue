@@ -405,6 +405,7 @@
             </template>
             <el-dropdown
               v-if="getOverflowActionDescriptors(row).length"
+              trigger="click"
               @command="(command) => handleCommand(command, row)"
             >
               <el-button link type="primary" class="ledger-actions__more" title="更多操作">
@@ -555,6 +556,7 @@
             </template>
             <el-dropdown
               v-if="getOverflowActionDescriptors(row).length"
+              trigger="click"
               @command="(command) => handleCommand(command, row)"
             >
               <el-button link type="primary" class="purchase-in-mobile-card__more" title="更多操作">
