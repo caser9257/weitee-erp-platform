@@ -3,7 +3,10 @@ package cn.weitee.erp.module.erp.controller.admin.finance;
 import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.framework.common.pojo.CommonResult;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherRespVO;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherGenerateReqVO;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherActionReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherEntryDO;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceLedgerService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinancePeriodService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceVoucherService;
@@ -63,5 +66,65 @@ class ErpFinanceVoucherControllerPermissionTest {
         when(financeDataPermissionService.canAccessLedger(99604L)).thenReturn(false);
 
         assertThrows(ServiceException.class, () -> controller.getVoucher(100L));
+    }
+
+    @Test
+    void getVoucher_whenVoucherBelongsToHiddenDept_throwsForbidden() {
+        when(financeVoucherService.getVoucher(100L)).thenReturn(new ErpFinanceVoucherDO()
+                .setId(100L).setLedgerId(99603L).setDeptId(200L));
+        when(financeDataPermissionService.canAccessLedger(99603L)).thenReturn(true);
+        when(financeDataPermissionService.canAccessDept(200L)).thenReturn(false);
+
+        assertThrows(ServiceException.class, () -> controller.getVoucher(100L));
+    }
+
+    @Test
+    void getVoucher_whenAnyEntrySubjectIsHidden_throwsForbiddenBeforeResponse() {
+        when(financeVoucherService.getVoucher(100L)).thenReturn(new ErpFinanceVoucherDO().setId(100L).setLedgerId(99603L));
+        when(financeVoucherService.getVoucherEntryListByVoucherId(100L))
+                .thenReturn(java.util.List.of(new ErpFinanceVoucherEntryDO().setSubjectCode("660201")));
+        when(financeDataPermissionService.canAccessLedger(99603L)).thenReturn(true);
+        when(financeDataPermissionService.canAccessSubject(99603L, "660201")).thenReturn(false);
+
+        assertThrows(ServiceException.class, () -> controller.getVoucher(100L));
+    }
+
+    @Test
+    void generateVoucher_whenLedgerIsHidden_throwsForbiddenBeforeWrite() {
+        when(financeDataPermissionService.canAccessLedger(99604L)).thenReturn(false);
+
+        assertThrows(ServiceException.class, () -> controller.generateVoucher(
+                new ErpFinanceVoucherGenerateReqVO().setLedgerId(99604L)));
+
+        verify(financeVoucherService, org.mockito.Mockito.never()).generateVoucher(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void approveVoucher_whenAnyVoucherBelongsToHiddenLedger_throwsForbiddenBeforeWrite() {
+        when(financeVoucherService.getVoucherListByIds(java.util.List.of(100L)))
+                .thenReturn(java.util.List.of(new ErpFinanceVoucherDO().setId(100L).setLedgerId(99604L)));
+        when(financeDataPermissionService.canAccessLedger(99604L)).thenReturn(false);
+
+        assertThrows(ServiceException.class, () -> controller.approveVoucher(
+                new ErpFinanceVoucherActionReqVO().setIds(java.util.List.of(100L))));
+
+        verify(financeVoucherService, org.mockito.Mockito.never()).approveVoucher(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void approveVoucher_whenAnyEntrySubjectIsHidden_throwsForbiddenBeforeWrite() {
+        when(financeVoucherService.getVoucherListByIds(java.util.List.of(100L)))
+                .thenReturn(java.util.List.of(new ErpFinanceVoucherDO().setId(100L).setLedgerId(99603L)));
+        when(financeVoucherService.getVoucherEntryListByVoucherId(100L))
+                .thenReturn(java.util.List.of(new ErpFinanceVoucherEntryDO().setSubjectCode("660201")));
+        when(financeDataPermissionService.canAccessLedger(99603L)).thenReturn(true);
+        when(financeDataPermissionService.canAccessSubject(99603L, "660201")).thenReturn(false);
+
+        assertThrows(ServiceException.class, () -> controller.approveVoucher(
+                new ErpFinanceVoucherActionReqVO().setIds(java.util.List.of(100L))));
+
+        verify(financeVoucherService, org.mockito.Mockito.never()).approveVoucher(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 }

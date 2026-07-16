@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "生成财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:create')")
     public CommonResult<Long> generateVoucher(@Valid @RequestBody ErpFinanceVoucherGenerateReqVO reqVO) {
+        validateLedgerAccess(reqVO.getLedgerId());
         return success(financeVoucherService.generateVoucher(reqVO));
     }
 
@@ -85,6 +87,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "审核财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Boolean> approveVoucher(@Valid @RequestBody ErpFinanceVoucherActionReqVO reqVO) {
+        validateVoucherIdsAccess(reqVO.getIds());
         financeVoucherService.approveVoucher(getLoginUserId(), reqVO);
         return success(true);
     }
@@ -93,6 +96,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "反审核财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Boolean> cancelApproveVoucher(@Valid @RequestBody ErpFinanceVoucherActionReqVO reqVO) {
+        validateVoucherIdsAccess(reqVO.getIds());
         financeVoucherService.cancelApproveVoucher(getLoginUserId(), reqVO);
         return success(true);
     }
@@ -101,6 +105,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "过账财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Boolean> postVoucher(@Valid @RequestBody ErpFinanceVoucherActionReqVO reqVO) {
+        validateVoucherIdsAccess(reqVO.getIds());
         financeVoucherService.postVoucher(getLoginUserId(), reqVO);
         return success(true);
     }
@@ -109,6 +114,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "反过账财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Boolean> cancelPostVoucher(@Valid @RequestBody ErpFinanceVoucherActionReqVO reqVO) {
+        validateVoucherIdsAccess(reqVO.getIds());
         financeVoucherService.cancelPostVoucher(getLoginUserId(), reqVO);
         return success(true);
     }
@@ -117,6 +123,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "冲销财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Long> reverseVoucher(@Valid @RequestBody ErpFinanceVoucherReverseReqVO reqVO) {
+        validateVoucherAccess(reqVO.getId());
         return success(financeVoucherService.reverseVoucher(getLoginUserId(), reqVO));
     }
 
@@ -133,6 +140,7 @@ public class ErpFinanceVoucherController {
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:query')")
     public CommonResult<ErpFinanceVoucherIntegrityCheckRespVO> checkVoucherIntegrity(
             @Valid @RequestBody ErpFinanceVoucherIntegrityCheckReqVO reqVO) {
+        validateLedgerAccess(reqVO.getLedgerId());
         return success(financeVoucherIntegrityService.checkIntegrity(
                 reqVO.getBizType(), reqVO.getLedgerId(),
                 reqVO.getStartDate(), reqVO.getEndDate()));
@@ -143,6 +151,7 @@ public class ErpFinanceVoucherController {
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Integer> batchRecomputeVouchers(
             @Valid @RequestBody ErpFinanceVoucherIntegrityCheckReqVO reqVO) {
+        validateLedgerAccess(reqVO.getLedgerId());
         return success(financeVoucherIntegrityService.batchRecomputeVouchers(
                 reqVO.getBizType(), reqVO.getLedgerId(),
                 reqVO.getStartDate(), reqVO.getEndDate(),
@@ -159,7 +168,9 @@ public class ErpFinanceVoucherController {
             return success(null);
         }
         validateLedgerAccess(voucher.getLedgerId());
+        validateDeptAccess(voucher.getDeptId());
         List<ErpFinanceVoucherEntryDO> entries = financeVoucherService.getVoucherEntryListByVoucherId(id);
+        validateSubjectAccess(voucher.getLedgerId(), entries);
         return success(buildVoucherResp(voucher, entries,
                 financeLedgerService.getFinanceLedgerMap(Collections.singleton(voucher.getLedgerId())),
                 Collections.singletonMap(voucher.getPeriodId(), financePeriodService.getFinancePeriod(voucher.getPeriodId())),
@@ -184,6 +195,7 @@ public class ErpFinanceVoucherController {
             return success(null);
         }
         List<ErpFinanceVoucherEntryDO> entries = financeVoucherService.getVoucherEntryListByVoucherId(voucher.getId());
+        validateSubjectAccess(voucher.getLedgerId(), entries);
         return success(buildVoucherResp(voucher, entries,
                 financeLedgerService.getFinanceLedgerMap(Collections.singleton(voucher.getLedgerId())),
                 Collections.singletonMap(voucher.getPeriodId(), financePeriodService.getFinancePeriod(voucher.getPeriodId())),
@@ -220,6 +232,49 @@ public class ErpFinanceVoucherController {
         }
     }
 
+    private void validateVoucherAccess(Long voucherId) {
+        if (voucherId == null) {
+            return;
+        }
+        validateVoucherListAccess(financeVoucherService.getVoucherListByIds(Collections.singleton(voucherId)));
+    }
+
+    private void validateVoucherIdsAccess(List<Long> voucherIds) {
+        if (CollUtil.isEmpty(voucherIds)) {
+            return;
+        }
+        validateVoucherListAccess(financeVoucherService.getVoucherListByIds(voucherIds));
+    }
+
+    private void validateVoucherListAccess(List<ErpFinanceVoucherDO> vouchers) {
+        if (CollUtil.isEmpty(vouchers)) {
+            return;
+        }
+        vouchers.forEach(voucher -> {
+            validateLedgerAccess(voucher.getLedgerId());
+            validateDeptAccess(voucher.getDeptId());
+            validateSubjectAccess(voucher.getLedgerId(),
+                    financeVoucherService.getVoucherEntryListByVoucherId(voucher.getId()));
+        });
+    }
+
+    private void validateSubjectAccess(Long ledgerId, Collection<ErpFinanceVoucherEntryDO> entries) {
+        if (CollUtil.isEmpty(entries)) {
+            return;
+        }
+        for (ErpFinanceVoucherEntryDO entry : entries) {
+            if (!financeDataPermissionService.canAccessSubject(ledgerId, entry.getSubjectCode())) {
+                throw exception(FORBIDDEN);
+            }
+        }
+    }
+
+    private void validateDeptAccess(Long deptId) {
+        if (deptId != null && !financeDataPermissionService.canAccessDept(deptId)) {
+            throw exception(FORBIDDEN);
+        }
+    }
+
     private Map<Long, List<ErpFinanceVoucherEntryDO>> convertMapToEntries(List<ErpFinanceVoucherEntryDO> entries) {
         return entries.stream().collect(Collectors.groupingBy(ErpFinanceVoucherEntryDO::getVoucherId));
     }
@@ -232,7 +287,13 @@ public class ErpFinanceVoucherController {
         if (CollUtil.isEmpty(relatedIds)) {
             return Collections.emptyMap();
         }
-        return convertMap(financeVoucherService.getVoucherListByIds(relatedIds), ErpFinanceVoucherDO::getId);
+        List<ErpFinanceVoucherDO> relatedVouchers = financeVoucherService.getVoucherListByIds(relatedIds);
+        if (CollUtil.isEmpty(relatedVouchers)) {
+            return Collections.emptyMap();
+        }
+        return convertMap(relatedVouchers.stream()
+                .filter(voucher -> financeDataPermissionService.canAccessLedger(voucher.getLedgerId()))
+                .collect(Collectors.toList()), ErpFinanceVoucherDO::getId);
     }
 
     private ErpFinanceVoucherRespVO buildVoucherResp(ErpFinanceVoucherDO voucher,
