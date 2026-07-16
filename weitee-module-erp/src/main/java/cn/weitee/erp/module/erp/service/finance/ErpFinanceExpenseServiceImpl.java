@@ -23,6 +23,8 @@ import cn.weitee.erp.module.erp.enums.ErrorCodeConstantsExpense;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.project.ErpProjectService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
 import cn.weitee.erp.module.system.api.dept.DeptApi;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.diffList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.getSumValue;
 
@@ -80,10 +83,13 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
     private ErpFinanceAssetCandidateService financeAssetCandidateService;
     @Resource
     private ErpFinanceExpenseTypeService financeExpenseTypeService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createFinanceExpense(ErpFinanceExpenseSaveReqVO createReqVO) {
+        validateDeptAccess(createReqVO.getDeptId());
         validateRefs(createReqVO.getExpenseType(), createReqVO.getRdAccountingType(),
                 createReqVO.getDeptId(), createReqVO.getProjectId(),
                 createReqVO.getSupplierId(), createReqVO.getAccountId(), createReqVO.getFinanceUserId(),
@@ -107,6 +113,8 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
     @Transactional(rollbackFor = Exception.class)
     public void updateFinanceExpense(ErpFinanceExpenseSaveReqVO updateReqVO) {
         ErpFinanceExpenseDO expense = validateExpenseExists(updateReqVO.getId());
+        validateDeptAccess(expense.getDeptId());
+        validateDeptAccess(updateReqVO.getDeptId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(expense.getStatus())) {
             throw exception(ErrorCodeConstantsExpense.EXPENSE_UPDATE_FAIL_APPROVE, expense.getNo());
         }
@@ -127,6 +135,7 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
     public void updateFinanceExpenseStatus(Long id, Integer status) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         ErpFinanceExpenseDO expense = validateExpenseExists(id);
+        validateDeptAccess(expense.getDeptId());
         validateStatusTransition(expense, approve);
         if (approve) {
             validateExpenseBeforeApprove(expense);
@@ -216,6 +225,7 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
             return;
         }
         expenses.forEach(expense -> {
+            validateDeptAccess(expense.getDeptId());
             if (ErpAuditStatus.APPROVE.getStatus().equals(expense.getStatus())) {
                 throw exception(ErrorCodeConstantsExpense.EXPENSE_DELETE_FAIL_APPROVE, expense.getNo());
             }
@@ -231,34 +241,57 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
 
     @Override
     public ErpFinanceExpenseDO getFinanceExpense(Long id) {
-        return erpFinanceExpenseMapper.selectById(id);
+        ErpFinanceExpenseDO expense = erpFinanceExpenseMapper.selectById(id);
+        if (expense != null) {
+            validateDeptAccess(expense.getDeptId());
+        }
+        return expense;
     }
 
     @Override
     public PageResult<ErpFinanceExpenseDO> getFinanceExpensePage(ErpFinanceExpensePageReqVO pageReqVO) {
+        FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService.getPermissionScope().deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            return erpFinanceExpenseMapper.selectPageByDeptIds(pageReqVO, deptScope.values());
+        }
         return erpFinanceExpenseMapper.selectPage(pageReqVO);
     }
 
     @Override
     public List<ErpFinanceExpenseItemDO> getFinanceExpenseItemListByExpenseId(Long expenseId) {
+        validateExpenseDeptAccess(expenseId);
         return erpFinanceExpenseItemMapper.selectListByExpenseId(expenseId);
     }
 
     @Override
     public List<ErpFinanceExpenseItemDO> getFinanceExpenseItemListByExpenseIds(Collection<Long> expenseIds) {
+        if (CollUtil.isNotEmpty(expenseIds)) {
+            erpFinanceExpenseMapper.selectByIds(expenseIds).forEach(expense -> validateDeptAccess(expense.getDeptId()));
+        }
         return erpFinanceExpenseItemMapper.selectListByExpenseIds(expenseIds);
     }
 
     @Override
     public List<ErpFinanceExpenseProjectSummaryRespVO> getFinanceExpenseProjectSummary(ErpFinanceExpenseProjectSummaryReqVO reqVO) {
-        List<ErpFinanceExpenseDO> expenses = erpFinanceExpenseMapper.selectList(new LambdaQueryWrapperX<ErpFinanceExpenseDO>()
+        FinancePermissionScope.Scope<Long> deptScope = getContextDeptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return Collections.emptyList();
+        }
+        LambdaQueryWrapperX<ErpFinanceExpenseDO> query = new LambdaQueryWrapperX<ErpFinanceExpenseDO>()
                 .betweenIfPresent(ErpFinanceExpenseDO::getExpenseTime, reqVO.getExpenseTime())
                 .eqIfPresent(ErpFinanceExpenseDO::getProjectId, reqVO.getProjectId())
                 .eqIfPresent(ErpFinanceExpenseDO::getDeptId, reqVO.getDeptId())
                 .eqIfPresent(ErpFinanceExpenseDO::getExpenseType, reqVO.getExpenseType())
                 .eqIfPresent(ErpFinanceExpenseDO::getRdAccountingType, reqVO.getRdAccountingType())
                 .eqIfPresent(ErpFinanceExpenseDO::getStatus, reqVO.getStatus())
-                .orderByDesc(ErpFinanceExpenseDO::getId));
+                .orderByDesc(ErpFinanceExpenseDO::getId);
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            query.in(ErpFinanceExpenseDO::getDeptId, deptScope.values());
+        }
+        List<ErpFinanceExpenseDO> expenses = erpFinanceExpenseMapper.selectList(query);
         if (CollUtil.isEmpty(expenses)) {
             return Collections.emptyList();
         }
@@ -438,6 +471,26 @@ public class ErpFinanceExpenseServiceImpl implements ErpFinanceExpenseService {
             throw exception(ErrorCodeConstantsExpense.EXPENSE_NOT_EXISTS);
         }
         return expense;
+    }
+
+    private void validateExpenseDeptAccess(Long expenseId) {
+        ErpFinanceExpenseDO expense = erpFinanceExpenseMapper.selectById(expenseId);
+        if (expense != null) {
+            validateDeptAccess(expense.getDeptId());
+        }
+    }
+
+    private FinancePermissionScope.Scope<Long> getContextDeptScope() {
+        FinancePermissionScope permissionScope = FinanceDataPermissionContext.getPermissionScope();
+        return permissionScope == null ? FinancePermissionScope.Scope.all() : permissionScope.deptScope();
+    }
+
+    private void validateDeptAccess(Long deptId) {
+        FinancePermissionScope.Scope<Long> deptScope = getContextDeptScope();
+        if (deptScope.mode() != FinancePermissionScope.ScopeMode.ALL
+                && (deptId == null || !deptScope.values().contains(deptId))) {
+            throw exception(FORBIDDEN);
+        }
     }
 
     private BigDecimal defaultAmount(BigDecimal amount) {
