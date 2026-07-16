@@ -2,6 +2,8 @@ package cn.weitee.erp.module.erp.service.finance;
 
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.reportitem.ErpFinanceReportItemPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.reportitem.ErpFinanceReportItemSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.reportitem.ErpFinanceReportTemplateInitReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.reportitem.ErpFinanceReportTemplateInitRespVO;
@@ -15,11 +17,15 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceSubjectMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportAmountRuleEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportItemCategoryEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceReport.FINANCE_REPORT_ITEM_SUBJECT_NOT_EXISTS;
@@ -27,6 +33,37 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinanceReportItemServiceImplTest {
+
+    @Test
+    void getFinanceReportItemPage_shouldExcludeItemContainingUnauthorizedSubject() throws Exception {
+        ErpFinanceReportItemServiceImpl service = new ErpFinanceReportItemServiceImpl();
+        AtomicBoolean scopedQueryCalled = new AtomicBoolean(false);
+        PageResult<ErpFinanceReportItemDO> expected = PageResult.empty(0L);
+        setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class, (methodName, args) -> {
+            if ("getVisibleLedgerIds".equals(methodName)) {
+                return List.of(1L);
+            }
+            if ("getPermissionScope".equals(methodName)) {
+                return new FinancePermissionScope(FinancePermissionScope.Scope.limited(Set.of(1L)),
+                        FinancePermissionScope.Scope.all(),
+                        Map.of(1L, FinancePermissionScope.Scope.limited(Set.of("1001"))), false, false);
+            }
+            return null;
+        }));
+        setField(service, "financeReportItemMapper", createProxy(ErpFinanceReportItemMapper.class, (methodName, args) -> {
+            if ("selectPageByVisibleLedgerIdsAndSubjectCodes".equals(methodName)) {
+                scopedQueryCalled.set(true);
+                return expected;
+            }
+            return null;
+        }));
+
+        PageResult<ErpFinanceReportItemDO> result = service.getFinanceReportItemPage(
+                new ErpFinanceReportItemPageReqVO());
+
+        assertEquals(expected, result);
+        assertEquals(true, scopedQueryCalled.get());
+    }
 
     @Test
     void createFinanceReportItem_shouldRejectMissingMappedSubject() throws Exception {

@@ -15,6 +15,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceSubjectDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemSubjectMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceSubjectMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportAmountRuleEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportItemCategoryEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportTypeEnum;
@@ -110,7 +111,23 @@ public class ErpFinanceReportItemServiceImpl implements ErpFinanceReportItemServ
         if (CollUtil.isEmpty(visibleLedgerIds)) {
             return PageResult.empty(0L);
         }
-        return erpFinanceReportItemMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
+        Map<Long, Set<String>> subjectCodesByLedger = new LinkedHashMap<>();
+        FinancePermissionScope permissionScope = financeDataPermissionService.getPermissionScope();
+        List<Long> scopedLedgerIds = visibleLedgerIds.stream().filter(ledgerId -> {
+            FinancePermissionScope.Scope<String> subjectScope = permissionScope == null ? FinancePermissionScope.Scope.all()
+                    : permissionScope.subjectScopesByLedger().getOrDefault(ledgerId, FinancePermissionScope.Scope.all());
+            if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+                subjectCodesByLedger.put(ledgerId, subjectScope.values());
+            }
+            return subjectScope.mode() != FinancePermissionScope.ScopeMode.NONE;
+        }).toList();
+        if (CollUtil.isEmpty(scopedLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return subjectCodesByLedger.isEmpty()
+                ? erpFinanceReportItemMapper.selectPageByVisibleLedgerIds(pageReqVO, scopedLedgerIds)
+                : erpFinanceReportItemMapper.selectPageByVisibleLedgerIdsAndSubjectCodes(
+                pageReqVO, scopedLedgerIds, subjectCodesByLedger);
     }
 
     @Override
