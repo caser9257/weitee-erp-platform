@@ -18,6 +18,7 @@ services:
       - ../../production/ruoyi-vue-pro/weitee-erp_backup_20260709.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
       - ./initdb/03-weitee-post-import-fixes.sql:/docker-entrypoint-initdb.d/03-weitee-post-import-fixes.sql:ro
       - ../../sql/mysql/stock/143-erp-stock-assemble.sql:/docker-entrypoint-initdb.d/05-erp-stock-assemble.sql:ro
+      - ../../sql/mysql/stock/144-erp-product-unit-quantity-precision.sql:/docker-entrypoint-initdb.d/06-erp-product-unit-quantity-precision.sql:ro
       - ../../sql/mysql/stock/160-erp-stock-move-bpm.sql:/docker-entrypoint-initdb.d/06-erp-stock-move-bpm.sql:ro
       - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/07-demo-accounts.sql:ro
       - ../../sql/mysql/purchase/164-erp-purchase-source-batch-query-permission.sql:/docker-entrypoint-initdb.d/08-erp-purchase-source-batch-query-permission.sql:ro
