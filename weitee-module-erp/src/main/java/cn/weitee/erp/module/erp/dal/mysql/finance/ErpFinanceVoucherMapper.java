@@ -100,4 +100,18 @@ public interface ErpFinanceVoucherMapper extends BaseMapperX<ErpFinanceVoucherDO
                 .eq(ErpFinanceVoucherDO::getId, id)
                 .set(ErpFinanceVoucherDO::getBizId, null));
     }
+
+    default int clearApprovalMetadataById(Long id) {
+        return update(null, new LambdaUpdateWrapper<ErpFinanceVoucherDO>()
+                .eq(ErpFinanceVoucherDO::getId, id)
+                .set(ErpFinanceVoucherDO::getApproveUserId, null)
+                .set(ErpFinanceVoucherDO::getApproveTime, null));
+    }
+
+    default int clearPostingMetadataById(Long id) {
+        return update(null, new LambdaUpdateWrapper<ErpFinanceVoucherDO>()
+                .eq(ErpFinanceVoucherDO::getId, id)
+                .set(ErpFinanceVoucherDO::getPostUserId, null)
+                .set(ErpFinanceVoucherDO::getPostTime, null));
+    }
 }

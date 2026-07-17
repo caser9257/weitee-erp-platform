@@ -502,6 +502,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
                     .setStatus(ErpFinanceVoucherStatusEnum.GENERATED.getStatus())
                     .setApproveUserId(null)
                     .setApproveTime(null));
+            erpFinanceVoucherMapper.clearApprovalMetadataById(voucher.getId());
         });
     }
 
@@ -553,6 +554,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
                     .setStatus(ErpFinanceVoucherStatusEnum.APPROVED.getStatus())
                     .setPostUserId(null)
                     .setPostTime(null));
+            erpFinanceVoucherMapper.clearPostingMetadataById(voucher.getId());
         });
     }
 
