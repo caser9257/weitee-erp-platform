@@ -3,8 +3,10 @@ package cn.weitee.erp.module.erp.service.finance;
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerRoleDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleDeptDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceRoleSubjectDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceLedgerRoleMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleDeptMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceRoleSubjectMapper;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
 import org.junit.jupiter.api.Test;
 
@@ -170,6 +172,35 @@ class ErpFinanceLedgerRoleServiceTest {
 
         assertEquals(2, insertedRef.get().size());
         assertTrue(insertedRef.get().stream().allMatch(item -> item.getRoleId().equals(200L)));
+        verify(cacheService).clearCache(100L);
+    }
+
+    @Test
+    void setRoleSubjectCodes_shouldReplaceMappingsAndEvictAffectedUserCaches() throws Exception {
+        ErpFinanceLedgerRoleServiceImpl service = new ErpFinanceLedgerRoleServiceImpl();
+        AtomicReference<List<ErpFinanceRoleSubjectDO>> insertedRef = new AtomicReference<>();
+        setField(service, "roleSubjectMapper", createProxy(ErpFinanceRoleSubjectMapper.class, (methodName, args) -> {
+            if ("delete".equals(methodName)) {
+                return 1;
+            }
+            if ("insertBatch".equals(methodName)) {
+                insertedRef.set((List<ErpFinanceRoleSubjectDO>) args[0]);
+                return true;
+            }
+            return null;
+        }));
+        PermissionService permissionService = mock(PermissionService.class);
+        org.mockito.Mockito.when(permissionService.getUserRoleIdListByRoleId(org.mockito.ArgumentMatchers.anyCollection()))
+                .thenReturn(Set.of(100L));
+        setField(service, "permissionService", permissionService);
+        UserLedgerPermissionCacheService cacheService = mock(UserLedgerPermissionCacheService.class);
+        setField(service, "userLedgerPermissionCacheService", cacheService);
+
+        service.setRoleSubjectCodes(200L, 99603L, List.of("1001", "1001", "6601"));
+
+        assertEquals(2, insertedRef.get().size());
+        assertTrue(insertedRef.get().stream().allMatch(item -> item.getRoleId().equals(200L)));
+        assertTrue(insertedRef.get().stream().allMatch(item -> item.getLedgerId().equals(99603L)));
         verify(cacheService).clearCache(100L);
     }
 

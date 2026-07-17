@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -119,6 +120,29 @@ class FinanceDataPermissionServiceImplTest {
         assertTrue(permissionScope.subjectScopesByLedger().get(EXTERNAL_LEDGER_ID).values().contains("1001"));
         assertFalse(permissionScope.subjectScopesByLedger().get(EXTERNAL_LEDGER_ID).values().contains("6601"));
         assertFalse(permissionScope.subjectScopesByLedger().containsKey(INTERNAL_LEDGER_ID));
+    }
+
+    @Test
+    void regularUser_withMultipleRoles_shouldUnionDeptAndSubjectScopes() {
+        givenRegularUser();
+        when(permissionService.getUserRoleIdListByUserIdFromCache(USER_ID)).thenReturn(Set.of(10L, 20L));
+        when(ledgerRoleService.getVisibleLedgerIdsByRoleIds(anyList()))
+                .thenReturn(List.of(EXTERNAL_LEDGER_ID, INTERNAL_LEDGER_ID));
+        when(roleDeptMapper.selectListByRoleIds(anyCollection())).thenReturn(List.of(
+                new ErpFinanceRoleDeptDO().setRoleId(10L).setDeptId(20L),
+                new ErpFinanceRoleDeptDO().setRoleId(20L).setDeptId(21L)));
+        when(roleSubjectMapper.selectListByRoleIds(anyCollection())).thenReturn(List.of(
+                new ErpFinanceRoleSubjectDO().setRoleId(10L).setLedgerId(EXTERNAL_LEDGER_ID).setSubjectCode("1001"),
+                new ErpFinanceRoleSubjectDO().setRoleId(20L).setLedgerId(EXTERNAL_LEDGER_ID).setSubjectCode("6601"),
+                new ErpFinanceRoleSubjectDO().setRoleId(20L).setLedgerId(INTERNAL_LEDGER_ID).setSubjectCode("2202")));
+
+        FinancePermissionScope permissionScope = service.getPermissionScope(USER_ID);
+
+        assertEquals(Set.of(20L, 21L), permissionScope.deptScope().values());
+        assertEquals(Set.of("1001", "6601"),
+                permissionScope.subjectScopesByLedger().get(EXTERNAL_LEDGER_ID).values());
+        assertEquals(Set.of("2202"),
+                permissionScope.subjectScopesByLedger().get(INTERNAL_LEDGER_ID).values());
     }
 
     @Test
