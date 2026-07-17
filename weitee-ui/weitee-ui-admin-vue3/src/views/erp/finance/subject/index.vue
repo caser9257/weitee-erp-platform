@@ -5,7 +5,7 @@
         <div class="finance-subject-page__query-grid">
           <el-form-item label="账簿" prop="ledgerId">
             <el-select v-model="queryParams.ledgerId" placeholder="请选择账簿" clearable filterable :loading="ledgerLoading" class="!w-full">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="科目编码" prop="subjectCode">
@@ -68,7 +68,7 @@
               </template>
             </el-table-column>
             <el-table-column label="账簿" min-width="160">
-              <template #default="{ row }">{{ row.ledgerName || '-' }}</template>
+              <template #default="{ row }">{{ displayLedgerName(row.ledgerName) }}</template>
             </el-table-column>
             <el-table-column label="科目类型" width="120">
               <template #default="{ row }">{{ row.subjectTypeName || getSubjectTypeLabel(row.subjectType) }}</template>
@@ -136,6 +136,7 @@ import {
   FinanceSubjectApi
 } from '@/api/erp/finance/subject'
 import SubjectForm from './SubjectForm.vue'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceSubject' })
 

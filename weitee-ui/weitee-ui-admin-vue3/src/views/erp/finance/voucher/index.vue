@@ -48,7 +48,7 @@
               class="!w-full"
               @change="handleLedgerChange"
             >
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="期间" prop="periodId">
@@ -225,7 +225,7 @@
               </template>
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
-                  <span class="finance-shell__primary-text">{{ row.ledgerName || '-' }}</span>
+                  <span class="finance-shell__primary-text">{{ displayLedgerName(row.ledgerName) }}</span>
                   <span class="finance-shell__muted-text">{{ row.periodCode || '-' }}</span>
                 </div>
               </template>
@@ -325,7 +325,7 @@
         <div class="finance-shell__dialog-grid">
           <el-form-item label="账簿" prop="ledgerId">
             <el-select v-model="generateForm.ledgerId" placeholder="请选择账簿" filterable class="!w-full" @change="handleGenerateLedgerChange">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="业务类型" prop="bizType">
@@ -403,7 +403,7 @@
             </div>
             <div class="finance-shell__context-meta-item">
               <span>账簿</span>
-              <span>{{ detailData.ledgerName || '-' }}</span>
+              <span>{{ displayLedgerName(detailData.ledgerName) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
               <span>期间</span>
@@ -481,6 +481,7 @@ import { ErpFinancePeriodVO, FinancePeriodApi } from '@/api/erp/finance/period'
 import { FinanceVoucherTemplateApi, ErpFinanceVoucherTemplateVO } from '@/api/erp/finance/voucher-template'
 import { ErpFinanceVoucherPageReqVO, ErpFinanceVoucherVO, FinanceVoucherApi } from '@/api/erp/finance/voucher'
 import { canRecomputeVoucher } from './voucherStatus.helpers'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceVoucher' })
 

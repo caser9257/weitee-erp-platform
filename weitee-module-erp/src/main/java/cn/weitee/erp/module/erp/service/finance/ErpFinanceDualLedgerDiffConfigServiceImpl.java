@@ -7,6 +7,7 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.dualledger.ErpFinanc
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.dualledger.ErpFinanceDualLedgerDiffConfigSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerDiffConfigDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualLedgerDiffConfigMapper;
+import cn.weitee.erp.module.erp.enums.ErpFinanceDiffCalculationTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceDualLedgerDiffItemTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceDualLedgerDiffSourceTypeEnum;
 import org.springframework.stereotype.Service;
@@ -18,8 +19,11 @@ import java.util.List;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_BIZ_ITEM_DUPLICATE;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_CALCULATION_TYPE_UNSUPPORTED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_DEPRECIATION_SOURCE_ITEM_INVALID;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_FIXED_AMOUNT_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_RATIO_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_SOURCE_VALUE_FORBIDDEN;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_SOURCE_VALUE_REQUIRED;
 
@@ -72,8 +76,25 @@ public class ErpFinanceDualLedgerDiffConfigServiceImpl implements ErpFinanceDual
     }
 
     private void validateSourceConfig(ErpFinanceDualLedgerDiffConfigSaveReqVO reqVO) {
+        validateCalculationConfig(reqVO);
         validateSingleSource(reqVO.getDiffItemType(), reqVO.getExternalSourceType(), reqVO.getExternalSourceValue());
         validateSingleSource(reqVO.getDiffItemType(), reqVO.getInternalSourceType(), reqVO.getInternalSourceValue());
+    }
+
+    private void validateCalculationConfig(ErpFinanceDualLedgerDiffConfigSaveReqVO reqVO) {
+        if (!ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType().equals(reqVO.getCalculationType())
+                && !ErpFinanceDiffCalculationTypeEnum.FIXED_VARIANCE.getType().equals(reqVO.getCalculationType())) {
+            throw exception(FINANCE_DUAL_LEDGER_DIFF_CONFIG_CALCULATION_TYPE_UNSUPPORTED);
+        }
+        if (ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType().equals(reqVO.getCalculationType())
+                && (reqVO.getRatio() == null || reqVO.getRatio().compareTo(java.math.BigDecimal.ONE) <= 0)) {
+            throw exception(FINANCE_DUAL_LEDGER_DIFF_CONFIG_RATIO_INVALID);
+        }
+        if (ErpFinanceDiffCalculationTypeEnum.FIXED_VARIANCE.getType().equals(reqVO.getCalculationType())
+                && (reqVO.getFixedAmount() == null
+                || reqVO.getFixedAmount().compareTo(java.math.BigDecimal.ZERO) >= 0)) {
+            throw exception(FINANCE_DUAL_LEDGER_DIFF_CONFIG_FIXED_AMOUNT_INVALID);
+        }
     }
 
     private void validateSingleSource(Integer diffItemType, Integer sourceType, Integer sourceValue) {

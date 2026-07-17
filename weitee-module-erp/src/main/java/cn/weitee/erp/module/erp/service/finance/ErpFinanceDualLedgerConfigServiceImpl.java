@@ -80,6 +80,12 @@ public class ErpFinanceDualLedgerConfigServiceImpl implements ErpFinanceDualLedg
         return erpFinanceDualLedgerConfigMapper.selectPage(pageReqVO);
     }
 
+    @Override
+    public PageResult<ErpFinanceDualLedgerConfigDO> getDualLedgerConfigPage(
+            ErpFinanceDualLedgerConfigPageReqVO pageReqVO, List<Long> visibleLedgerIds) {
+        return erpFinanceDualLedgerConfigMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
+    }
+
     private ErpFinanceDualLedgerConfigDO validateDualLedgerConfigExists(Long id) {
         ErpFinanceDualLedgerConfigDO config = erpFinanceDualLedgerConfigMapper.selectById(id);
         if (config == null) {

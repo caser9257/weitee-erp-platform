@@ -111,12 +111,15 @@ SET @role_audit_id := (SELECT id FROM system_role WHERE code = 'finance_audit' A
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
 SELECT role_id, menu_id, '1', NOW(), '1', NOW(), b'0'
 FROM (
-    SELECT @role_manager_id AS role_id, @ar_menu_id AS menu_id
+    SELECT @role_manager_id AS role_id, @finance_root_id AS menu_id
+    UNION ALL SELECT @role_manager_id, @ar_menu_id
+    UNION ALL SELECT @role_clerk_id, @finance_root_id
     UNION ALL SELECT @role_manager_id, @ar_query_menu_id
     UNION ALL SELECT @role_manager_id, @ar_export_menu_id
     UNION ALL SELECT @role_clerk_id, @ar_menu_id
     UNION ALL SELECT @role_clerk_id, @ar_query_menu_id
     UNION ALL SELECT @role_clerk_id, @ar_export_menu_id
+    UNION ALL SELECT @role_audit_id, @finance_root_id
     UNION ALL SELECT @role_audit_id, @ar_menu_id
     UNION ALL SELECT @role_audit_id, @ar_query_menu_id
 ) role_menu

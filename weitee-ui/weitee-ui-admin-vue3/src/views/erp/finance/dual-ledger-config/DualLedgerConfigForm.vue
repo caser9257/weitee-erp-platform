@@ -29,34 +29,34 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="外部账账簿" prop="externalLedgerId">
+        <el-form-item :label="financeDisplayLabel('外部账账簿', '账目一账簿')" prop="externalLedgerId">
           <el-select
             v-model="formData.externalLedgerId"
             class="!w-full"
             clearable
             filterable
-            placeholder="请选择外部账账簿"
+            :placeholder="financeDisplayLabel('请选择外部账账簿', '请选择账目一账簿')"
           >
             <el-option
               v-for="item in ledgerOptions"
               :key="item.id"
-              :label="item.name"
+              :label="displayLedgerName(item.name)"
               :value="item.id"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="内部账账簿" prop="internalLedgerId">
+        <el-form-item :label="financeDisplayLabel('内部账账簿', '账目二账簿')" prop="internalLedgerId">
           <el-select
             v-model="formData.internalLedgerId"
             class="!w-full"
             clearable
             filterable
-            placeholder="请选择内部账账簿"
+            :placeholder="financeDisplayLabel('请选择内部账账簿', '请选择账目二账簿')"
           >
             <el-option
               v-for="item in ledgerOptions"
               :key="item.id"
-              :label="item.name"
+              :label="displayLedgerName(item.name)"
               :value="item.id"
             />
           </el-select>
@@ -85,6 +85,7 @@ import {
   type ErpFinanceDualLedgerConfigVO
 } from '@/api/erp/finance/dual-ledger-config'
 import { COMMON_STATUS_OPTIONS } from '@/views/erp/finance/shared/accounting'
+import { displayLedgerName, financeDisplayLabel } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'DualLedgerConfigForm' })
 
@@ -122,8 +123,8 @@ const ledgerOptions = ref<ErpFinanceLedgerVO[]>([])
 const formDisabled = computed(() => dialogLoading.value || submitLoading.value)
 const formRules: FormRules<ErpFinanceDualLedgerConfigSaveReqVO> = {
   bizType: [{ required: true, message: '业务类型不能为空', trigger: 'change' }],
-  externalLedgerId: [{ required: true, message: '外部账账簿不能为空', trigger: 'change' }],
-  internalLedgerId: [{ required: true, message: '内部账账簿不能为空', trigger: 'change' }],
+  externalLedgerId: [{ required: true, message: financeDisplayLabel('外部账账簿不能为空', '账目一账簿不能为空'), trigger: 'change' }],
+  internalLedgerId: [{ required: true, message: financeDisplayLabel('内部账账簿不能为空', '账目二账簿不能为空'), trigger: 'change' }],
   status: [{ required: true, message: '状态不能为空', trigger: 'change' }]
 }
 

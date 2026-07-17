@@ -35,7 +35,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_PERIOD_NOT_EXISTS;
 
@@ -76,6 +75,10 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
 
     @Override
     public PageResult<ErpFinanceSubjectBalanceDO> getSubjectBalancePage(ErpFinanceSubjectBalancePageReqVO reqVO) {
+        if (financeDataPermissionService != null
+                && !financeDataPermissionService.canAccessLedger(reqVO.getLedgerId())) {
+            return PageResult.empty(0L);
+        }
         financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
         FinancePermissionScope.Scope<String> subjectScope = financeDataPermissionService.getPermissionScope()
@@ -92,8 +95,9 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
     @Override
     public ErpFinanceGeneralLedgerDetailRespVO getGeneralLedgerDetail(ErpFinanceGeneralLedgerDetailReqVO reqVO) {
         if (financeDataPermissionService != null
-                && !financeDataPermissionService.canAccessSubject(reqVO.getLedgerId(), reqVO.getSubjectCode())) {
-            throw exception(FORBIDDEN);
+                && (!financeDataPermissionService.canAccessLedger(reqVO.getLedgerId())
+                || !financeDataPermissionService.canAccessSubject(reqVO.getLedgerId(), reqVO.getSubjectCode()))) {
+            return null;
         }
         ErpFinanceLedgerDO ledger = financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         ErpFinancePeriodDO period = validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
@@ -102,7 +106,7 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
         FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService == null
                 ? FinancePermissionScope.Scope.all() : financeDataPermissionService.getPermissionScope().deptScope();
         if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
-            throw exception(FORBIDDEN);
+            return null;
         }
         List<ErpFinanceVoucherDO> voucherList = deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED
                 ? erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodIdAndDeptIds(

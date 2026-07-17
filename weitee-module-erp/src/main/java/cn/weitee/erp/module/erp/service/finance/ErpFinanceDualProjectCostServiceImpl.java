@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.finance;
 
 import cn.hutool.core.util.ObjectUtil;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.projectdualcost.ErpFinanceDualProjectCostPageReqVO;
@@ -152,7 +153,7 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
             //    costType 使用同一套枚举值，可直接复用
             final Integer PROJECT_COST_BIZ_TYPE = 60;
             List<ErpFinanceDualLedgerDiffConfigDO> diffConfigs = dualLedgerDiffConfigService
-                    .getDualLedgerDiffConfigList(PROJECT_COST_BIZ_TYPE, null);
+                    .getDualLedgerDiffConfigList(PROJECT_COST_BIZ_TYPE, CommonStatusEnum.ENABLE.getStatus());
             Map<Integer, ErpFinanceDualLedgerDiffConfigDO> diffConfigMap = new HashMap<>();
             if (diffConfigs != null) {
                 for (ErpFinanceDualLedgerDiffConfigDO cfg : diffConfigs) {
@@ -179,7 +180,7 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
                     // 根据差异配置计算外部账金额
                     BigDecimal itemExternalAmount;
                     if (diffConfig != null && diffConfig.getCalculationType() != null) {
-                        itemExternalAmount = amountDiffCalculatorFactory.calculate(
+                        itemExternalAmount = amountDiffCalculatorFactory.calculateExternalAmount(
                                 diffConfig.getCalculationType(), amount,
                                 diffConfig.getRatio(), diffConfig.getFixedAmount());
                     } else {

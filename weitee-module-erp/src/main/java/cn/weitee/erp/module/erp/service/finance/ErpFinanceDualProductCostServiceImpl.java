@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.finance;
 
 import cn.hutool.core.util.ObjectUtil;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.productdualcost.ErpFinanceDualProductCostPageReqVO;
@@ -154,7 +155,7 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
             //    加载产品成本差异配置（bizType=70 表示产品成本归集）
             final Integer PRODUCT_COST_BIZ_TYPE = 70;
             List<ErpFinanceDualLedgerDiffConfigDO> diffConfigs = dualLedgerDiffConfigService
-                    .getDualLedgerDiffConfigList(PRODUCT_COST_BIZ_TYPE, null);
+                    .getDualLedgerDiffConfigList(PRODUCT_COST_BIZ_TYPE, CommonStatusEnum.ENABLE.getStatus());
             Map<Integer, ErpFinanceDualLedgerDiffConfigDO> diffConfigMap = new java.util.HashMap<>();
             if (diffConfigs != null) {
                 for (ErpFinanceDualLedgerDiffConfigDO cfg : diffConfigs) {
@@ -190,7 +191,7 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
                     ErpFinanceDualLedgerDiffConfigDO diffConfig = diffConfigMap.get(costComponentType);
                     BigDecimal itemExternalAmount;
                     if (diffConfig != null && diffConfig.getCalculationType() != null) {
-                        itemExternalAmount = amountDiffCalculatorFactory.calculate(
+                        itemExternalAmount = amountDiffCalculatorFactory.calculateExternalAmount(
                                 diffConfig.getCalculationType(), amount,
                                 diffConfig.getRatio(), diffConfig.getFixedAmount());
                     } else {

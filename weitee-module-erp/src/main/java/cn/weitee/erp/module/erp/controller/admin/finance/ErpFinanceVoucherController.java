@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
-import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
@@ -79,7 +79,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "生成财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:create')")
     public CommonResult<Long> generateVoucher(@Valid @RequestBody ErpFinanceVoucherGenerateReqVO reqVO) {
-        validateLedgerAccess(reqVO.getLedgerId());
+        requireLedgerAccessForWrite(reqVO.getLedgerId());
         return success(financeVoucherService.generateVoucher(reqVO));
     }
 
@@ -123,7 +123,7 @@ public class ErpFinanceVoucherController {
     @Operation(summary = "冲销财务凭证")
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Long> reverseVoucher(@Valid @RequestBody ErpFinanceVoucherReverseReqVO reqVO) {
-        validateVoucherAccess(reqVO.getId());
+        validateVoucherAccessForWrite(reqVO.getId());
         return success(financeVoucherService.reverseVoucher(getLoginUserId(), reqVO));
     }
 
@@ -140,7 +140,9 @@ public class ErpFinanceVoucherController {
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:query')")
     public CommonResult<ErpFinanceVoucherIntegrityCheckRespVO> checkVoucherIntegrity(
             @Valid @RequestBody ErpFinanceVoucherIntegrityCheckReqVO reqVO) {
-        validateLedgerAccess(reqVO.getLedgerId());
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return success(null);
+        }
         return success(financeVoucherIntegrityService.checkIntegrity(
                 reqVO.getBizType(), reqVO.getLedgerId(),
                 reqVO.getStartDate(), reqVO.getEndDate()));
@@ -151,7 +153,7 @@ public class ErpFinanceVoucherController {
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<Integer> batchRecomputeVouchers(
             @Valid @RequestBody ErpFinanceVoucherIntegrityCheckReqVO reqVO) {
-        validateLedgerAccess(reqVO.getLedgerId());
+        requireLedgerAccessForWrite(reqVO.getLedgerId());
         return success(financeVoucherIntegrityService.batchRecomputeVouchers(
                 reqVO.getBizType(), reqVO.getLedgerId(),
                 reqVO.getStartDate(), reqVO.getEndDate(),
@@ -167,10 +169,10 @@ public class ErpFinanceVoucherController {
         if (voucher == null) {
             return success(null);
         }
-        validateLedgerAccess(voucher.getLedgerId());
-        validateDeptAccess(voucher.getDeptId());
         List<ErpFinanceVoucherEntryDO> entries = financeVoucherService.getVoucherEntryListByVoucherId(id);
-        validateSubjectAccess(voucher.getLedgerId(), entries);
+        if (!isVoucherVisible(voucher, entries)) {
+            return success(null);
+        }
         return success(buildVoucherResp(voucher, entries,
                 financeLedgerService.getFinanceLedgerMap(Collections.singleton(voucher.getLedgerId())),
                 Collections.singletonMap(voucher.getPeriodId(), financePeriodService.getFinancePeriod(voucher.getPeriodId())),
@@ -189,13 +191,17 @@ public class ErpFinanceVoucherController {
     public CommonResult<ErpFinanceVoucherRespVO> getVoucherByBiz(@RequestParam("ledgerId") Long ledgerId,
                                                                  @RequestParam("bizType") Integer bizType,
                                                                  @RequestParam("bizId") Long bizId) {
-        validateLedgerAccess(ledgerId);
+        if (!canAccessLedger(ledgerId)) {
+            return success(null);
+        }
         ErpFinanceVoucherDO voucher = financeVoucherService.getVoucherByLedgerAndBiz(ledgerId, bizType, bizId);
         if (voucher == null) {
             return success(null);
         }
         List<ErpFinanceVoucherEntryDO> entries = financeVoucherService.getVoucherEntryListByVoucherId(voucher.getId());
-        validateSubjectAccess(voucher.getLedgerId(), entries);
+        if (!isVoucherVisible(voucher, entries)) {
+            return success(null);
+        }
         return success(buildVoucherResp(voucher, entries,
                 financeLedgerService.getFinanceLedgerMap(Collections.singleton(voucher.getLedgerId())),
                 Collections.singletonMap(voucher.getPeriodId(), financePeriodService.getFinancePeriod(voucher.getPeriodId())),
@@ -226,52 +232,74 @@ public class ErpFinanceVoucherController {
         return success(new PageResult<>(respList, pageResult.getTotal()));
     }
 
-    private void validateLedgerAccess(Long ledgerId) {
-        if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
-            throw exception(FORBIDDEN);
-        }
-    }
-
-    private void validateVoucherAccess(Long voucherId) {
+    private void validateVoucherAccessForWrite(Long voucherId) {
         if (voucherId == null) {
             return;
         }
-        validateVoucherListAccess(financeVoucherService.getVoucherListByIds(Collections.singleton(voucherId)));
+        validateVoucherListAccessForWrite(financeVoucherService.getVoucherListByIds(Collections.singleton(voucherId)));
     }
 
     private void validateVoucherIdsAccess(List<Long> voucherIds) {
         if (CollUtil.isEmpty(voucherIds)) {
             return;
         }
-        validateVoucherListAccess(financeVoucherService.getVoucherListByIds(voucherIds));
+        validateVoucherListAccessForWrite(financeVoucherService.getVoucherListByIds(voucherIds));
     }
 
-    private void validateVoucherListAccess(List<ErpFinanceVoucherDO> vouchers) {
+    private void validateVoucherListAccessForWrite(List<ErpFinanceVoucherDO> vouchers) {
         if (CollUtil.isEmpty(vouchers)) {
             return;
         }
+        Map<Long, List<ErpFinanceVoucherEntryDO>> entryMap = convertMapToEntries(
+                financeVoucherService.getVoucherEntryListByVoucherIds(
+                        convertSet(vouchers, ErpFinanceVoucherDO::getId)));
         vouchers.forEach(voucher -> {
-            validateLedgerAccess(voucher.getLedgerId());
-            validateDeptAccess(voucher.getDeptId());
-            validateSubjectAccess(voucher.getLedgerId(),
-                    financeVoucherService.getVoucherEntryListByVoucherId(voucher.getId()));
+            requireLedgerAccessForWrite(voucher.getLedgerId());
+            requireDeptAccessForWrite(voucher.getDeptId());
+            validateSubjectAccessForWrite(voucher.getLedgerId(), entryMap.get(voucher.getId()));
         });
     }
 
-    private void validateSubjectAccess(Long ledgerId, Collection<ErpFinanceVoucherEntryDO> entries) {
+    private boolean isVoucherVisible(ErpFinanceVoucherDO voucher, Collection<ErpFinanceVoucherEntryDO> entries) {
+        if (!canAccessLedger(voucher.getLedgerId()) || !canAccessDept(voucher.getDeptId())) {
+            return false;
+        }
+        return entries == null || entries.stream()
+                .allMatch(entry -> canAccessSubject(voucher.getLedgerId(), entry.getSubjectCode()));
+    }
+
+    private void validateSubjectAccessForWrite(Long ledgerId, Collection<ErpFinanceVoucherEntryDO> entries) {
         if (CollUtil.isEmpty(entries)) {
             return;
         }
         for (ErpFinanceVoucherEntryDO entry : entries) {
-            if (!financeDataPermissionService.canAccessSubject(ledgerId, entry.getSubjectCode())) {
-                throw exception(FORBIDDEN);
+            if (!canAccessSubject(ledgerId, entry.getSubjectCode())) {
+                throw exception(NOT_FOUND);
             }
         }
     }
 
-    private void validateDeptAccess(Long deptId) {
-        if (deptId != null && !financeDataPermissionService.canAccessDept(deptId)) {
-            throw exception(FORBIDDEN);
+    private boolean canAccessLedger(Long ledgerId) {
+        return financeDataPermissionService.canAccessLedger(ledgerId);
+    }
+
+    private boolean canAccessSubject(Long ledgerId, String subjectCode) {
+        return financeDataPermissionService.canAccessSubject(ledgerId, subjectCode);
+    }
+
+    private boolean canAccessDept(Long deptId) {
+        return deptId == null || financeDataPermissionService.canAccessDept(deptId);
+    }
+
+    private void requireLedgerAccessForWrite(Long ledgerId) {
+        if (!canAccessLedger(ledgerId)) {
+            throw exception(NOT_FOUND);
+        }
+    }
+
+    private void requireDeptAccessForWrite(Long deptId) {
+        if (!canAccessDept(deptId)) {
+            throw exception(NOT_FOUND);
         }
     }
 

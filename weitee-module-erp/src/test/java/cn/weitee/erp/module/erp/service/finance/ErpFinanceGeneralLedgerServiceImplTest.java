@@ -33,8 +33,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ErpFinanceGeneralLedgerServiceImplTest {
 
@@ -48,7 +47,12 @@ class ErpFinanceGeneralLedgerServiceImplTest {
                 "getFinancePeriod".equals(methodName)
                         ? new ErpFinancePeriodDO().setId(20L).setLedgerId(1L) : null));
         setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class,
-                (methodName, args) -> "canAccessSubject".equals(methodName) ? false : null));
+                (methodName, args) -> {
+                    if ("canAccessLedger".equals(methodName) || "canAccessSubject".equals(methodName)) {
+                        return false;
+                    }
+                    return null;
+                }));
         setField(service, "financeSubjectBalanceMapper", createProxy(ErpFinanceSubjectBalanceMapper.class,
                 (methodName, args) -> new ErpFinanceSubjectBalanceDO().setSubjectCode("660201")));
         setField(service, "financeVoucherMapper", createProxy(ErpFinanceVoucherMapper.class,
@@ -59,11 +63,7 @@ class ErpFinanceGeneralLedgerServiceImplTest {
         reqVO.setPeriodId(20L);
         reqVO.setSubjectCode("660201");
 
-        cn.weitee.erp.framework.common.exception.ServiceException ex = assertThrows(
-                cn.weitee.erp.framework.common.exception.ServiceException.class,
-                () -> service.getGeneralLedgerDetail(reqVO));
-
-        assertEquals(FORBIDDEN.getCode(), ex.getCode());
+        assertNull(service.getGeneralLedgerDetail(reqVO));
     }
 
     @Test
@@ -75,7 +75,7 @@ class ErpFinanceGeneralLedgerServiceImplTest {
         setField(service, "financePeriodService", createProxy(ErpFinancePeriodService.class, (methodName, args) ->
                 "getFinancePeriod".equals(methodName) ? new ErpFinancePeriodDO().setId(20L).setLedgerId(1L) : null));
         setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class, (methodName, args) -> {
-            if ("canAccessSubject".equals(methodName)) {
+            if ("canAccessLedger".equals(methodName) || "canAccessSubject".equals(methodName)) {
                 return true;
             }
             if ("getPermissionScope".equals(methodName)) {

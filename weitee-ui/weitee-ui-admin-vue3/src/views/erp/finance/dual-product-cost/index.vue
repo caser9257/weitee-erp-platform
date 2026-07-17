@@ -4,11 +4,11 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">产品双账套成本</div>
+          <div class="finance-shell__page-title">{{ financeDisplayLabel('产品双账套成本', '产品账目成本') }}</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip">结果 {{ total }}</span>
-            <span class="finance-shell__metric-chip">外部金额{{ formatAmount(totalExternal) }}</span>
-            <span class="finance-shell__metric-chip">内部金额{{ formatAmount(totalInternal) }}</span>
+            <span class="finance-shell__metric-chip">{{ financeDisplayLabel('外部金额', '金额一') }}{{ formatAmount(totalExternal) }}</span>
+            <span class="finance-shell__metric-chip">{{ financeDisplayLabel('内部金额', '金额二') }}{{ formatAmount(totalInternal) }}</span>
             <span class="finance-shell__metric-chip">差异 {{ formatAmount(totalDiff) }}</span>
           </div>
         </div>
@@ -58,7 +58,7 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">产品双账套成本列表</div>
+          <div class="finance-shell__section-title">{{ financeDisplayLabel('产品双账套成本列表', '产品账目成本列表') }}</div>
           <div class="finance-shell__toolbar-count">当前共 <strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
@@ -68,11 +68,11 @@
           </el-button>
           <el-button plain :disabled="!total" @click="handleExportExternal">
             <Icon icon="ep:download" class="mr-5px" />
-            导出外部账
+            {{ financeDisplayLabel('导出外部账', '导出账目一') }}
           </el-button>
           <el-button plain :disabled="!total" @click="handleExportInternal">
             <Icon icon="ep:download" class="mr-5px" />
-            导出内部账
+            {{ financeDisplayLabel('导出内部账', '导出账目二') }}
           </el-button>
         </div>
       </div>
@@ -117,7 +117,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  外部账总成本
+                  {{ financeDisplayLabel('外部账总成本', '账目一总成本') }}
                 </span>
               </template>
               <template #default="{ row }">
@@ -128,7 +128,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  内部账总成本
+                  {{ financeDisplayLabel('内部账总成本', '账目二总成本') }}
                 </span>
               </template>
               <template #default="{ row }">
@@ -162,7 +162,7 @@
         <Pagination v-if="total > 0" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
       </template>
       <div v-else class="product-dual-cost-page__empty">
-        <el-empty description="暂无产品双账套成本数据">
+        <el-empty :description="financeDisplayLabel('暂无产品双账套成本数据', '暂无产品账目成本数据')">
           <template #image>
             <div class="finance-shell__empty-icon">
               <Icon icon="ep:files" />
@@ -185,7 +185,7 @@
         <div class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ detailData?.productName || '-' }}</div>
-            <div class="finance-shell__context-subtitle">{{ detailData?.productNo || '产品双账套成本明细' }}</div>
+            <div class="finance-shell__context-subtitle">{{ detailData?.productNo || financeDisplayLabel('产品双账套成本明细', '产品账目成本明细') }}</div>
           </div>
           <div class="finance-shell__context-meta">
             <span class="finance-shell__page-chip">{{ detailData?.period || '-' }}</span>
@@ -241,12 +241,12 @@
                     <span>{{ row.costTypeName || '-' }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="外部金额" min-width="120" align="right">
+                <el-table-column :label="financeDisplayLabel('外部金额', '金额一')" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalAmount) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="内部金额" min-width="120" align="right">
+                <el-table-column :label="financeDisplayLabel('内部金额', '金额二')" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalAmount) }}</span>
                   </template>
@@ -302,6 +302,7 @@ import {
   type DualProductCostVO,
   type DualProductCostPageReqVO
 } from '@/api/erp/finance/product-dual-cost'
+import { financeDisplayLabel } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceDualProductCost' })
 
@@ -359,7 +360,7 @@ const getList = async () => {
   } catch {
     list.value = []
     total.value = 0
-    listError.value = '产品双账套成本数据加载失败'
+    listError.value = financeDisplayLabel('产品双账套成本数据加载失败', '产品账目成本数据加载失败')
   } finally {
     loadingList.value = false
   }
@@ -438,7 +439,7 @@ const confirmRebuild = async () => {
 const handleExportExternal = async () => {
   try {
     const data = await DualProductCostApi.exportExternalProductCost(queryParams)
-    download.excel(data, '产品外部账成本.xlsx')
+    download.excel(data, financeDisplayLabel('产品外部账成本.xlsx', '产品账目一成本.xlsx'))
   } catch {
     // 导出失败
   }
@@ -447,7 +448,7 @@ const handleExportExternal = async () => {
 const handleExportInternal = async () => {
   try {
     const data = await DualProductCostApi.exportInternalProductCost(queryParams)
-    download.excel(data, '产品内部账成本.xlsx')
+    download.excel(data, financeDisplayLabel('产品内部账成本.xlsx', '产品账目二成本.xlsx'))
   } catch {
     // 导出失败
   }

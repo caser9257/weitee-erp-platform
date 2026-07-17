@@ -22,4 +22,7 @@ public interface ErpFinanceDualLedgerConfigService {
     List<ErpFinanceDualLedgerConfigDO> getDualLedgerConfigListByStatus(Integer status);
 
     PageResult<ErpFinanceDualLedgerConfigDO> getDualLedgerConfigPage(ErpFinanceDualLedgerConfigPageReqVO pageReqVO);
+
+    PageResult<ErpFinanceDualLedgerConfigDO> getDualLedgerConfigPage(
+            ErpFinanceDualLedgerConfigPageReqVO pageReqVO, List<Long> visibleLedgerIds);
 }

@@ -51,6 +51,9 @@ public class ErpFinanceReportServiceImpl implements ErpFinanceReportService {
 
     @Override
     public ErpFinanceTrialBalanceRespVO getTrialBalance(ErpFinanceReportReqVO reqVO) {
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return null;
+        }
         ErpFinanceLedgerDO ledger = financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         ErpFinancePeriodDO period = validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
         List<ErpFinanceSubjectBalanceDO> balances = selectTrialBalanceBySubjectScope(reqVO);
@@ -82,13 +85,18 @@ public class ErpFinanceReportServiceImpl implements ErpFinanceReportService {
     }
 
     private ErpFinanceStatementRespVO getStatement(ErpFinanceReportReqVO reqVO, ErpFinanceReportTypeEnum reportType) {
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return null;
+        }
         ErpFinanceLedgerDO ledger = financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         ErpFinancePeriodDO period = validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
         List<ErpFinanceReportItemDO> reportItems = erpFinanceReportItemMapper.selectListByReportReq(reqVO, reportType.getType());
         Map<Long, List<ErpFinanceReportItemSubjectDO>> mappingMap = convertMultiMap(
                 erpFinanceReportItemSubjectMapper.selectListByItemIds(convertSet(reportItems, ErpFinanceReportItemDO::getId)),
                 ErpFinanceReportItemSubjectDO::getItemId);
-        validateReportSubjectAccess(reqVO.getLedgerId(), mappingMap);
+        if (!hasReportSubjectAccess(reqVO.getLedgerId(), mappingMap)) {
+            return null;
+        }
         Map<String, ErpFinanceSubjectBalanceDO> balanceMap = convertMap(
                 erpFinanceSubjectBalanceMapper.selectListByLedgerIdAndPeriodId(reqVO.getLedgerId(), reqVO.getPeriodId()),
                 ErpFinanceSubjectBalanceDO::getSubjectCode);
@@ -213,18 +221,23 @@ public class ErpFinanceReportServiceImpl implements ErpFinanceReportService {
         return erpFinanceSubjectBalanceMapper.selectListByReportReq(reqVO);
     }
 
-    private void validateReportSubjectAccess(Long ledgerId,
-                                             Map<Long, List<ErpFinanceReportItemSubjectDO>> mappingMap) {
+    private boolean canAccessLedger(Long ledgerId) {
+        return financeDataPermissionService == null || financeDataPermissionService.canAccessLedger(ledgerId);
+    }
+
+    private boolean hasReportSubjectAccess(Long ledgerId,
+                                           Map<Long, List<ErpFinanceReportItemSubjectDO>> mappingMap) {
         if (financeDataPermissionService == null) {
-            return;
+            return true;
         }
         for (List<ErpFinanceReportItemSubjectDO> mappings : mappingMap.values()) {
             for (ErpFinanceReportItemSubjectDO mapping : mappings) {
                 if (!financeDataPermissionService.canAccessSubject(ledgerId, mapping.getSubjectCode())) {
-                    throw exception(cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN);
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     private BigDecimal defaultAmount(BigDecimal amount) {

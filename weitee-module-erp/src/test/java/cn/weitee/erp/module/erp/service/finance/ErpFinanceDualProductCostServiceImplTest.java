@@ -240,7 +240,7 @@ class ErpFinanceDualProductCostServiceImplTest {
                 }));
         mockProductionInboundSource(service, 88L, 1L, null);
 
-        // Mock diffConfigService：材料 costComponentType=10 配置 ratio=0.80
+        // Mock diffConfigService：材料 costComponentType=10 配置 ratio=1.20
         setField(service, "dualLedgerDiffConfigService", createProxy(
                 ErpFinanceDualLedgerDiffConfigService.class,
                 (methodName, args) -> {
@@ -248,7 +248,7 @@ class ErpFinanceDualProductCostServiceImplTest {
                         return List.of(new ErpFinanceDualLedgerDiffConfigDO()
                                 .setBizType(70).setDiffItemType(10)
                                 .setCalculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .setRatio(new BigDecimal("0.80")));
+                                .setRatio(new BigDecimal("1.20")));
                     }
                     return List.of();
                 }));
@@ -267,18 +267,18 @@ class ErpFinanceDualProductCostServiceImplTest {
         reqVO.setPeriod("2026-05");
         service.rebuildProductDualCost(1L, reqVO);
 
-        // 验证：内部材料 10000，外部材料 = 10000 × 0.80 = 8000
+        // 验证：内部材料 10000，外部材料 = 10000 × 1.20 = 12000
         assertEquals(1, insertedResults.size());
         ErpFinanceDualProductCostResultDO result = insertedResults.get(0);
         assertEquals(new BigDecimal("10000.00"), result.getInternalMaterialAmount());
-        assertEquals(new BigDecimal("8000.00"), result.getExternalMaterialAmount(), "外部材料 = 内部材料 × 0.80");
+        assertEquals(new BigDecimal("12000.00"), result.getExternalMaterialAmount(), "外部材料 = 内部材料 × 1.20");
         assertEquals(new BigDecimal("10000.00"), result.getInternalTotalAmount());
-        assertEquals(new BigDecimal("8000.00"), result.getExternalTotalAmount());
-        assertEquals(new BigDecimal("2000.00"), result.getDiffAmount(), "差异 = 10000 - 8000");
+        assertEquals(new BigDecimal("12000.00"), result.getExternalTotalAmount());
+        assertEquals(new BigDecimal("-2000.00"), result.getDiffAmount(), "差异 = 10000 - 12000");
 
         // 验证明细
         assertEquals(1, insertedItems.size());
-        assertEquals(new BigDecimal("2000.00"), insertedItems.get(0).getDiffAmount());
+        assertEquals(new BigDecimal("-2000.00"), insertedItems.get(0).getDiffAmount());
     }
 
     // ========== resolveCostComponentType 测试 ==========

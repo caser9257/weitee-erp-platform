@@ -29,8 +29,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="外部账来源" prop="externalSourceType">
-          <el-select v-model="formData.externalSourceType" class="!w-full" clearable placeholder="请选择外部账来源">
+        <el-form-item :label="financeDisplayLabel('外部账来源', '账目一来源')" prop="externalSourceType">
+          <el-select v-model="formData.externalSourceType" class="!w-full" clearable :placeholder="financeDisplayLabel('请选择外部账来源', '请选择账目一来源')">
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
               :key="item.value"
@@ -41,10 +41,10 @@
         </el-form-item>
         <el-form-item
           v-if="requiresExternalSourceValue"
-          label="外部账来源值"
+          :label="financeDisplayLabel('外部账来源值', '账目一来源值')"
           prop="externalSourceValue"
         >
-          <el-select v-model="formData.externalSourceValue" class="!w-full" clearable placeholder="请选择外部账来源值">
+          <el-select v-model="formData.externalSourceValue" class="!w-full" clearable :placeholder="financeDisplayLabel('请选择外部账来源值', '请选择账目一来源值')">
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_ITEM_OPTIONS"
               :key="item.value"
@@ -53,8 +53,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="内部账来源" prop="internalSourceType">
-          <el-select v-model="formData.internalSourceType" class="!w-full" clearable placeholder="请选择内部账来源">
+        <el-form-item :label="financeDisplayLabel('内部账来源', '账目二来源')" prop="internalSourceType">
+          <el-select v-model="formData.internalSourceType" class="!w-full" clearable :placeholder="financeDisplayLabel('请选择内部账来源', '请选择账目二来源')">
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
               :key="item.value"
@@ -65,10 +65,10 @@
         </el-form-item>
         <el-form-item
           v-if="requiresInternalSourceValue"
-          label="内部账来源值"
+          :label="financeDisplayLabel('内部账来源值', '账目二来源值')"
           prop="internalSourceValue"
         >
-          <el-select v-model="formData.internalSourceValue" class="!w-full" clearable placeholder="请选择内部账来源值">
+          <el-select v-model="formData.internalSourceValue" class="!w-full" clearable :placeholder="financeDisplayLabel('请选择内部账来源值', '请选择账目二来源值')">
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_ITEM_OPTIONS"
               :key="item.value"
@@ -139,6 +139,7 @@ import {
   type ErpFinanceDualLedgerDiffConfigVO
 } from '@/api/erp/finance/dual-ledger-diff-config'
 import { COMMON_STATUS_OPTIONS } from '@/views/erp/finance/shared/accounting'
+import { financeDisplayLabel } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'DualLedgerDiffConfigForm' })
 
@@ -191,12 +192,22 @@ const createSourceValueValidator = (
   }
 }
 
-const createNumberValidator = (
+const createDirectionValidator = (
   shouldRequire: () => boolean,
+  isValid: (value: number) => boolean,
   messageText: string
 ): FormItemRule['validator'] => {
   return (_rule, value, callback) => {
-    if (shouldRequire() && (value === undefined || value === null || value === '')) {
+    if (!shouldRequire()) {
+      callback()
+      return
+    }
+    const numberValue = Number(value)
+    if (value === undefined || value === null || value === '' || !Number.isFinite(numberValue)) {
+      callback(new Error(messageText))
+      return
+    }
+    if (!isValid(numberValue)) {
       callback(new Error(messageText))
       return
     }
@@ -223,22 +234,22 @@ const formDisabled = computed(() => dialogLoading.value || submitLoading.value)
 const formRules: FormRules<ErpFinanceDualLedgerDiffConfigSaveReqVO> = {
   bizType: [{ required: true, message: '业务类型不能为空', trigger: 'change' }],
   diffItemType: [{ required: true, message: '差异项不能为空', trigger: 'change' }],
-  externalSourceType: [{ required: true, message: '外部账来源不能为空', trigger: 'change' }],
+  externalSourceType: [{ required: true, message: financeDisplayLabel('外部账来源不能为空', '账目一来源不能为空'), trigger: 'change' }],
   externalSourceValue: [
     {
       validator: createSourceValueValidator(
         () => requiresExternalSourceValue.value,
-        '外部账来源值不能为空'
+        financeDisplayLabel('外部账来源值不能为空', '账目一来源值不能为空')
       ),
       trigger: 'change'
     }
   ],
-  internalSourceType: [{ required: true, message: '内部账来源不能为空', trigger: 'change' }],
+  internalSourceType: [{ required: true, message: financeDisplayLabel('内部账来源不能为空', '账目二来源不能为空'), trigger: 'change' }],
   internalSourceValue: [
     {
       validator: createSourceValueValidator(
         () => requiresInternalSourceValue.value,
-        '内部账来源值不能为空'
+        financeDisplayLabel('内部账来源值不能为空', '账目二来源值不能为空')
       ),
       trigger: 'change'
     }
@@ -246,13 +257,21 @@ const formRules: FormRules<ErpFinanceDualLedgerDiffConfigSaveReqVO> = {
   calculationType: [{ required: true, message: '计算类型不能为空', trigger: 'change' }],
   ratio: [
     {
-      validator: createNumberValidator(() => requiresRatio.value, '比例系数不能为空'),
+      validator: createDirectionValidator(
+        () => requiresRatio.value,
+        (value) => value > 1,
+        '比例系数必须大于 1，才能保证内账金额小于外账金额'
+      ),
       trigger: 'change'
     }
   ],
   fixedAmount: [
     {
-      validator: createNumberValidator(() => requiresFixedAmount.value, '固定差额不能为空'),
+      validator: createDirectionValidator(
+        () => requiresFixedAmount.value,
+        (value) => value < 0,
+        '固定差额必须小于 0，才能保证内账金额小于外账金额'
+      ),
       trigger: 'change'
     }
   ],

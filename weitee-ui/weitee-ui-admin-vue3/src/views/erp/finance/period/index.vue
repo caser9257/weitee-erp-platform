@@ -5,7 +5,7 @@
         <div class="finance-period-page__query-grid">
           <el-form-item label="账簿" prop="ledgerId">
             <el-select v-model="queryParams.ledgerId" placeholder="请选择账簿" clearable filterable :loading="ledgerLoading" class="!w-full">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="期间编码" prop="periodCode">
@@ -76,7 +76,7 @@
               <template #default="{ row }">
                 <div class="finance-period-page__primary-cell">
                   <span class="finance-period-page__primary-text font-mono">{{ row.periodCode || '-' }}</span>
-                  <span class="finance-period-page__muted-text">{{ row.ledgerName || '-' }}</span>
+                  <span class="finance-period-page__muted-text">{{ displayLedgerName(row.ledgerName) }}</span>
                 </div>
               </template>
             </el-table-column>
@@ -155,6 +155,7 @@ import {
 } from '@/api/erp/finance/period'
 import PeriodForm from './PeriodForm.vue'
 import PeriodCreateYearForm from './PeriodCreateYearForm.vue'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinancePeriod' })
 

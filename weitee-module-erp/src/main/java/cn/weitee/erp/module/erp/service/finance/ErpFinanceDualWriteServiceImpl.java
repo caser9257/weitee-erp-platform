@@ -2,6 +2,7 @@ package cn.weitee.erp.module.erp.service.finance;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.dualwrite.ErpFinanceDualWriteLogPageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerDiffConfigDO;
@@ -188,7 +189,7 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
                                        List<ErpFinanceVoucherEntryDO> sourceEntries) {
         // 查询该业务类型的差异配置
         List<ErpFinanceDualLedgerDiffConfigDO> diffConfigs = dualLedgerDiffConfigService
-                .getDualLedgerDiffConfigList(sourceVoucher.getBizType(), null);
+                .getDualLedgerDiffConfigList(sourceVoucher.getBizType(), CommonStatusEnum.ENABLE.getStatus());
         if (CollUtil.isEmpty(diffConfigs)) {
             log.debug("未找到差异配置，跳过金额重算。bizType={}", sourceVoucher.getBizType());
             return;
@@ -220,6 +221,10 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
             } catch (Exception e) {
                 log.error("金额差异重算失败。diffConfigId={}, targetVoucherId={}",
                         diffConfig.getId(), targetVoucherId, e);
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                }
+                throw new IllegalStateException(e);
             }
         }
 
@@ -254,12 +259,7 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
             if (internalAmount.compareTo(BigDecimal.ZERO) == 0) {
                 continue;
             }
-            BigDecimal externalAmount = amountDiffCalculatorFactory.calculate(
-                    diffConfig.getCalculationType(),
-                    internalAmount,
-                    diffConfig.getRatio(),
-                    diffConfig.getFixedAmount());
-            externalAmount = defaultAmount(externalAmount).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal externalAmount = calculateExternalAmount(diffConfig, internalAmount);
             if (externalAmount.compareTo(internalAmount.setScale(2, RoundingMode.HALF_UP)) == 0) {
                 continue;
             }
@@ -421,11 +421,7 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
             // 计算外部账金额
             BigDecimal internalAmount = sourceEntry.getDebitAmount() != null
                     ? sourceEntry.getDebitAmount() : sourceEntry.getCreditAmount();
-            BigDecimal externalAmount = amountDiffCalculatorFactory.calculate(
-                    diffConfig.getCalculationType(),
-                    internalAmount,
-                    diffConfig.getRatio(),
-                    diffConfig.getFixedAmount());
+            BigDecimal externalAmount = calculateExternalAmount(diffConfig, internalAmount);
 
             // 更新目标分录金额
             if (externalAmount != null && externalAmount.compareTo(internalAmount) != 0) {
@@ -435,6 +431,13 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
                         diffConfig.getDiffItemType(), internalAmount, externalAmount);
             }
         }
+    }
+
+    private BigDecimal calculateExternalAmount(ErpFinanceDualLedgerDiffConfigDO diffConfig,
+                                               BigDecimal internalAmount) {
+        return amountDiffCalculatorFactory.calculateExternalAmount(
+                diffConfig.getCalculationType(), internalAmount,
+                diffConfig.getRatio(), diffConfig.getFixedAmount());
     }
 
     /**

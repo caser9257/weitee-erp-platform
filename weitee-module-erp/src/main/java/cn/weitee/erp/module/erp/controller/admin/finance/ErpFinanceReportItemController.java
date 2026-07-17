@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
-import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
@@ -64,8 +64,8 @@ public class ErpFinanceReportItemController {
     @Operation(summary = "创建财务报表项目")
     @PreAuthorize("@ss.hasPermission('erp:finance-report-item:create')")
     public CommonResult<Long> createFinanceReportItem(@Valid @RequestBody ErpFinanceReportItemSaveReqVO createReqVO) {
-        validateLedgerAccess(createReqVO.getLedgerId());
-        validateSubjectAccess(createReqVO.getLedgerId(), createReqVO.getSubjects());
+        requireLedgerAccessForWrite(createReqVO.getLedgerId());
+        requireSubjectAccessForWrite(createReqVO.getLedgerId(), createReqVO.getSubjects());
         return success(financeReportItemService.createFinanceReportItem(createReqVO));
     }
 
@@ -73,9 +73,9 @@ public class ErpFinanceReportItemController {
     @Operation(summary = "更新财务报表项目")
     @PreAuthorize("@ss.hasPermission('erp:finance-report-item:update')")
     public CommonResult<Boolean> updateFinanceReportItem(@Valid @RequestBody ErpFinanceReportItemSaveReqVO updateReqVO) {
-        validateLedgerAccess(updateReqVO.getLedgerId());
-        validateExistingReportItemAccess(updateReqVO.getId());
-        validateSubjectAccess(updateReqVO.getLedgerId(), updateReqVO.getSubjects());
+        requireLedgerAccessForWrite(updateReqVO.getLedgerId());
+        requireExistingReportItemAccess(updateReqVO.getId());
+        requireSubjectAccessForWrite(updateReqVO.getLedgerId(), updateReqVO.getSubjects());
         financeReportItemService.updateFinanceReportItem(updateReqVO);
         return success(true);
     }
@@ -85,7 +85,7 @@ public class ErpFinanceReportItemController {
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('erp:finance-report-item:delete')")
     public CommonResult<Boolean> deleteFinanceReportItem(@RequestParam("id") Long id) {
-        validateExistingReportItemAccess(id);
+        requireExistingReportItemAccess(id);
         financeReportItemService.deleteFinanceReportItem(id);
         return success(true);
     }
@@ -95,7 +95,7 @@ public class ErpFinanceReportItemController {
     @PreAuthorize("@ss.hasPermission('erp:finance-report-item:create')")
     public CommonResult<ErpFinanceReportTemplateInitRespVO> initStandardTemplate(
             @Valid @RequestBody ErpFinanceReportTemplateInitReqVO reqVO) {
-        validateLedgerAccess(reqVO.getLedgerId());
+        requireLedgerAccessForWrite(reqVO.getLedgerId());
         return success(financeReportItemService.initStandardTemplate(reqVO));
     }
 
@@ -107,9 +107,13 @@ public class ErpFinanceReportItemController {
         if (item == null) {
             return success(null);
         }
-        validateLedgerAccess(item.getLedgerId());
+        if (!canAccessLedger(item.getLedgerId())) {
+            return success(null);
+        }
         List<ErpFinanceReportItemSubjectDO> subjects = financeReportItemService.getFinanceReportItemSubjectListByItemId(id);
-        validateSubjectAccess(item.getLedgerId(), subjects);
+        if (!hasSubjectAccess(item.getLedgerId(), subjects)) {
+            return success(null);
+        }
         Map<Long, ErpFinanceLedgerDO> ledgerMap = financeLedgerService.getFinanceLedgerMap(Collections.singleton(item.getLedgerId()));
         Map<String, ErpFinanceSubjectDO> subjectMap = financeSubjectService.getFinanceSubjectMapByLedgerIdAndSubjectCodes(
                 item.getLedgerId(), convertSet(subjects, ErpFinanceReportItemSubjectDO::getSubjectCode));
@@ -207,45 +211,54 @@ public class ErpFinanceReportItemController {
         return null;
     }
 
-    private void validateExistingReportItemAccess(Long id) {
+    private void requireExistingReportItemAccess(Long id) {
         if (id == null) {
             return;
         }
         ErpFinanceReportItemDO item = financeReportItemService.getFinanceReportItem(id);
         if (item != null) {
-            validateLedgerAccess(item.getLedgerId());
-            validateSubjectAccess(item.getLedgerId(),
+            requireLedgerAccessForWrite(item.getLedgerId());
+            requireSubjectAccessForWrite(item.getLedgerId(),
                     financeReportItemService.getFinanceReportItemSubjectListByItemId(id));
         }
     }
 
-    private void validateLedgerAccess(Long ledgerId) {
-        if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
-            throw exception(FORBIDDEN);
+    private boolean canAccessLedger(Long ledgerId) {
+        return financeDataPermissionService.canAccessLedger(ledgerId);
+    }
+
+    private boolean hasSubjectAccess(Long ledgerId, Collection<ErpFinanceReportItemSubjectDO> subjects) {
+        return CollUtil.isEmpty(subjects) || subjects.stream()
+                .allMatch(subject -> financeDataPermissionService.canAccessSubject(ledgerId, subject.getSubjectCode()));
+    }
+
+    private void requireLedgerAccessForWrite(Long ledgerId) {
+        if (!canAccessLedger(ledgerId)) {
+            throw exception(NOT_FOUND);
         }
     }
 
-    private void validateSubjectAccess(Long ledgerId, List<ErpFinanceReportItemSaveReqVO.SubjectMapping> subjects) {
+    private void requireSubjectAccessForWrite(Long ledgerId, List<ErpFinanceReportItemSaveReqVO.SubjectMapping> subjects) {
         if (CollUtil.isEmpty(subjects)) {
             return;
         }
         for (ErpFinanceReportItemSaveReqVO.SubjectMapping subject : subjects) {
-            validateSubjectAccess(ledgerId, subject.getSubjectCode());
+            requireSubjectAccessForWrite(ledgerId, subject.getSubjectCode());
         }
     }
 
-    private void validateSubjectAccess(Long ledgerId, Collection<ErpFinanceReportItemSubjectDO> subjects) {
+    private void requireSubjectAccessForWrite(Long ledgerId, Collection<ErpFinanceReportItemSubjectDO> subjects) {
         if (CollUtil.isEmpty(subjects)) {
             return;
         }
         for (ErpFinanceReportItemSubjectDO subject : subjects) {
-            validateSubjectAccess(ledgerId, subject.getSubjectCode());
+            requireSubjectAccessForWrite(ledgerId, subject.getSubjectCode());
         }
     }
 
-    private void validateSubjectAccess(Long ledgerId, String subjectCode) {
+    private void requireSubjectAccessForWrite(Long ledgerId, String subjectCode) {
         if (!financeDataPermissionService.canAccessSubject(ledgerId, subjectCode)) {
-            throw exception(FORBIDDEN);
+            throw exception(NOT_FOUND);
         }
     }
 }

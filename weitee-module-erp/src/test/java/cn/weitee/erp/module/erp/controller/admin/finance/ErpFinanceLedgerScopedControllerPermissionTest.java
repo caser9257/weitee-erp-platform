@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -57,12 +58,12 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     private ErpFinanceVoucherTemplateController voucherTemplateController;
 
     @Test
-    void periodGet_whenLedgerIsHidden_throwsForbiddenBeforeBuildingResponse() {
+    void periodGet_whenLedgerIsHidden_returnsNull() {
         when(financePeriodService.getFinancePeriod(RECORD_ID))
                 .thenReturn(new ErpFinancePeriodDO().setId(RECORD_ID).setLedgerId(HIDDEN_LEDGER_ID));
         when(financeDataPermissionService.canAccessLedger(HIDDEN_LEDGER_ID)).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> periodController.getFinancePeriod(RECORD_ID));
+        assertNull(periodController.getFinancePeriod(RECORD_ID).getData());
     }
 
     @Test
@@ -87,22 +88,22 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     }
 
     @Test
-    void subjectGet_whenLedgerIsHidden_throwsForbiddenBeforeResponse() {
+    void subjectGet_whenLedgerIsHidden_returnsNull() {
         when(financeSubjectService.getFinanceSubject(RECORD_ID))
                 .thenReturn(new ErpFinanceSubjectDO().setId(RECORD_ID).setLedgerId(HIDDEN_LEDGER_ID));
         when(financeDataPermissionService.canAccessLedger(HIDDEN_LEDGER_ID)).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> subjectController.getFinanceSubject(RECORD_ID));
+        assertNull(subjectController.getFinanceSubject(RECORD_ID).getData());
     }
 
     @Test
-    void subjectGet_whenSubjectIsHidden_throwsForbiddenBeforeResponse() {
+    void subjectGet_whenSubjectIsHidden_returnsNull() {
         when(financeSubjectService.getFinanceSubject(RECORD_ID))
                 .thenReturn(new ErpFinanceSubjectDO().setId(RECORD_ID).setLedgerId(99603L).setSubjectCode("660201"));
         when(financeDataPermissionService.canAccessLedger(99603L)).thenReturn(true);
         when(financeDataPermissionService.canAccessSubject(99603L, "660201")).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> subjectController.getFinanceSubject(RECORD_ID));
+        assertNull(subjectController.getFinanceSubject(RECORD_ID).getData());
     }
 
     @Test
@@ -151,21 +152,21 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     }
 
     @Test
-    void subjectSimpleList_whenLedgerIsHidden_throwsForbiddenBeforeQuery() {
+    void subjectSimpleList_whenLedgerIsHidden_returnsEmptyWithoutQuery() {
         when(financeDataPermissionService.canAccessLedger(HIDDEN_LEDGER_ID)).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> subjectController.getFinanceSubjectSimpleList(HIDDEN_LEDGER_ID));
+        assertTrue(subjectController.getFinanceSubjectSimpleList(HIDDEN_LEDGER_ID).getData().isEmpty());
 
         verify(financeSubjectService, never()).getFinanceSubjectListByLedgerId(HIDDEN_LEDGER_ID);
     }
 
     @Test
-    void reportItemGet_whenLedgerIsHidden_throwsForbiddenBeforeResponse() {
+    void reportItemGet_whenLedgerIsHidden_returnsNull() {
         when(financeReportItemService.getFinanceReportItem(RECORD_ID))
                 .thenReturn(new ErpFinanceReportItemDO().setId(RECORD_ID).setLedgerId(HIDDEN_LEDGER_ID));
         when(financeDataPermissionService.canAccessLedger(HIDDEN_LEDGER_ID)).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> reportItemController.getFinanceReportItem(RECORD_ID));
+        assertNull(reportItemController.getFinanceReportItem(RECORD_ID).getData());
     }
 
     @Test
@@ -192,7 +193,7 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     }
 
     @Test
-    void reportItemGet_whenMappedSubjectIsHidden_throwsForbiddenBeforeResponse() {
+    void reportItemGet_whenMappedSubjectIsHidden_returnsNull() {
         when(financeReportItemService.getFinanceReportItem(RECORD_ID))
                 .thenReturn(new ErpFinanceReportItemDO().setId(RECORD_ID).setLedgerId(99603L));
         when(financeReportItemService.getFinanceReportItemSubjectListByItemId(RECORD_ID))
@@ -201,7 +202,7 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
         when(financeDataPermissionService.canAccessLedger(99603L)).thenReturn(true);
         when(financeDataPermissionService.canAccessSubject(99603L, "660201")).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> reportItemController.getFinanceReportItem(RECORD_ID));
+        assertNull(reportItemController.getFinanceReportItem(RECORD_ID).getData());
     }
 
     @Test
@@ -229,12 +230,12 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     }
 
     @Test
-    void voucherTemplateGet_whenLedgerIsHidden_throwsForbiddenBeforeResponse() {
+    void voucherTemplateGet_whenLedgerIsHidden_returnsNull() {
         when(voucherTemplateService.getVoucherTemplate(RECORD_ID))
                 .thenReturn(new ErpFinanceVoucherTemplateDO().setId(RECORD_ID).setLedgerId(HIDDEN_LEDGER_ID));
         when(financeDataPermissionService.canAccessLedger(HIDDEN_LEDGER_ID)).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> voucherTemplateController.getVoucherTemplate(RECORD_ID));
+        assertNull(voucherTemplateController.getVoucherTemplate(RECORD_ID).getData());
     }
 
     @Test
@@ -261,7 +262,7 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     }
 
     @Test
-    void voucherTemplateGet_whenAnySubjectIsHidden_throwsForbiddenBeforeResponse() {
+    void voucherTemplateGet_whenAnySubjectIsHidden_returnsNull() {
         when(voucherTemplateService.getVoucherTemplate(RECORD_ID))
                 .thenReturn(new ErpFinanceVoucherTemplateDO().setId(RECORD_ID).setLedgerId(99603L));
         when(voucherTemplateService.getVoucherTemplateItemListByTemplateId(RECORD_ID))
@@ -270,7 +271,7 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
         when(financeDataPermissionService.canAccessLedger(99603L)).thenReturn(true);
         when(financeDataPermissionService.canAccessSubject(99603L, "660201")).thenReturn(false);
 
-        assertThrows(ServiceException.class, () -> voucherTemplateController.getVoucherTemplate(RECORD_ID));
+        assertNull(voucherTemplateController.getVoucherTemplate(RECORD_ID).getData());
     }
 
     @Test
@@ -298,11 +299,10 @@ class ErpFinanceLedgerScopedControllerPermissionTest {
     }
 
     @Test
-    void voucherTemplateSimpleList_whenLedgerIsHidden_throwsForbiddenBeforeQuery() {
+    void voucherTemplateSimpleList_whenLedgerIsHidden_returnsEmptyWithoutQuery() {
         when(financeDataPermissionService.canAccessLedger(HIDDEN_LEDGER_ID)).thenReturn(false);
 
-        assertThrows(ServiceException.class,
-                () -> voucherTemplateController.getVoucherTemplateSimpleList(HIDDEN_LEDGER_ID, 11));
+        assertTrue(voucherTemplateController.getVoucherTemplateSimpleList(HIDDEN_LEDGER_ID, 11).getData().isEmpty());
 
         verify(voucherTemplateService, never()).getVoucherTemplateListByLedgerAndBizType(HIDDEN_LEDGER_ID, 11);
     }
