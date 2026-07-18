@@ -11,11 +11,12 @@ services:
       - ../../sql/mysql/stock/143-erp-stock-assemble.sql:/docker-entrypoint-initdb.d/05-erp-stock-assemble.sql:ro
       - ../../sql/mysql/stock/144-erp-product-unit-quantity-precision.sql:/docker-entrypoint-initdb.d/06-erp-product-unit-quantity-precision.sql:ro
       - ../../sql/mysql/stock/160-erp-stock-move-bpm.sql:/docker-entrypoint-initdb.d/06-erp-stock-move-bpm.sql:ro
-      - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/07-demo-accounts.sql:ro
-      - ../../sql/mysql/purchase/164-erp-purchase-source-batch-query-permission.sql:/docker-entrypoint-initdb.d/08-erp-purchase-source-batch-query-permission.sql:ro
-      - ../../sql/mysql/system/165-purchase-approval-task-permission.sql:/docker-entrypoint-initdb.d/09-purchase-approval-task-permission.sql:ro
-      - ../../sql/mysql/purchase/166-erp-purchase-in-bpm-platform.sql:/docker-entrypoint-initdb.d/10-erp-purchase-in-bpm-platform.sql:ro
-      - ../../sql/mysql/purchase/167-erp-purchase-return-bpm-platform.sql:/docker-entrypoint-initdb.d/11-erp-purchase-return-bpm-platform.sql:ro
+      - ../../sql/mysql/purchase/161-erp-purchase-in-quality-return-permission.sql:/docker-entrypoint-initdb.d/07-erp-purchase-in-quality-return-permission.sql:ro
+      - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/08-demo-accounts.sql:ro
+      - ../../sql/mysql/purchase/164-erp-purchase-source-batch-query-permission.sql:/docker-entrypoint-initdb.d/09-erp-purchase-source-batch-query-permission.sql:ro
+      - ../../sql/mysql/system/165-purchase-approval-task-permission.sql:/docker-entrypoint-initdb.d/10-purchase-approval-task-permission.sql:ro
+      - ../../sql/mysql/purchase/166-erp-purchase-in-bpm-platform.sql:/docker-entrypoint-initdb.d/11-erp-purchase-in-bpm-platform.sql:ro
+      - ../../sql/mysql/purchase/167-erp-purchase-return-bpm-platform.sql:/docker-entrypoint-initdb.d/12-erp-purchase-return-bpm-platform.sql:ro
       - ../../sql/mysql/sale/168-erp-sale-order-bpm-platform.sql:/docker-entrypoint-initdb.d/12-erp-sale-order-bpm-platform.sql:ro
       - ../../sql/mysql/manufacturing/169-erp-production-return-page-permission.sql:/docker-entrypoint-initdb.d/13-erp-production-return-page-permission.sql:ro
 

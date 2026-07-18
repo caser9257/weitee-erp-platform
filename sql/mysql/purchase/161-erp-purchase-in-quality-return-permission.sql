@@ -6,6 +6,11 @@ SET @iqc_menu_id = (
   WHERE component_name = 'ErpPurchaseInQuality' AND deleted = b'0'
   ORDER BY id ASC LIMIT 1
 );
+SET @iqc_menu_id = COALESCE(@iqc_menu_id, (
+  SELECT parent_id FROM system_menu
+  WHERE permission = 'erp:purchase-in-quality:query' AND deleted = b'0'
+  ORDER BY id ASC LIMIT 1
+));
 SET @update_menu_id = (
   SELECT id FROM system_menu
   WHERE permission = 'erp:purchase-in-quality:update' AND deleted = b'0'
@@ -17,7 +22,8 @@ INSERT INTO system_menu
 SELECT COALESCE(@update_menu_id, 920570), '质检不合格退货', 'erp:purchase-in-quality:update', 3, 8, @iqc_menu_id,
        '', '', '', '', 0, b'1', b'0', b'0', '1', NOW(), '1', NOW(), b'0'
 WHERE @iqc_menu_id IS NOT NULL
-ON DUPLICATE KEY UPDATE parent_id = VALUES(parent_id), deleted = b'0', updater = '1', update_time = NOW();
+ON DUPLICATE KEY UPDATE name = VALUES(name), permission = VALUES(permission), parent_id = VALUES(parent_id),
+                        deleted = b'0', updater = '1', update_time = NOW();
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
 SELECT 1, COALESCE(@update_menu_id, 920570), '1', NOW(), '1', NOW(), b'0'
