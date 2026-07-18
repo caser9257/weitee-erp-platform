@@ -1,5 +1,23 @@
 import request from '@/config/axios'
 
+export interface ProductionReturnPageReqVO {
+  pageNo: number
+  pageSize: number
+  returnNo?: string
+  productionOrderId?: number
+  status?: number
+  returnTime?: [string, string]
+}
+
+export interface ProductionReturnVO {
+  id: number
+  returnNo: string
+  productionOrderId: number
+  returnTime?: string | number
+  status?: number
+  remark?: string
+}
+
 export interface ProductionReturnableBatchVO {
   issueBatchId: number
   stockBatchId: number
@@ -40,6 +58,12 @@ export interface ProductionReturnCreateReqVO {
 }
 
 export const ProductionReturnApi = {
+  getProductionReturnPage: async (params: ProductionReturnPageReqVO) => {
+    return await request.get<PageResult<ProductionReturnVO[]>>({
+      url: `/erp/production-material-return/page`,
+      params
+    })
+  },
   getReturnableBatches: async (productionMaterialId: number) => {
     return await request.get({
       url: `/erp/production-material-return/returnable-batches`,
