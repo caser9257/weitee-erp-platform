@@ -108,6 +108,26 @@ class ErpStockOutBpmServiceImplTest {
                 () -> method.invoke(service, 9527L, reqVO));
     }
 
+    @Test
+    void submitStockOut_shouldThrowWhenDraftIsAlreadyClaimedByAnotherRequest() throws Exception {
+        Object service = createService();
+        AtomicReference<ErpStockOutDO> entityRef = new AtomicReference<>(
+                new ErpStockOutDO().setId(9L).setNo("SO-009")
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus()));
+        AtomicReference<String> submittedSceneCode = new AtomicReference<>();
+
+        injectField(service, "erpStockOutMapper", createMapperClaimConflictProxy(entityRef));
+        injectField(service, "stockOutService", createServiceProxy());
+        injectField(service, "approvalRuntimeService", createApprovalProxy(submittedSceneCode));
+
+        Object reqVO = createSubmitReqVO(9L, Map.of());
+        Method method = service.getClass().getMethod("submitStockOut", Long.class, reqVO.getClass());
+
+        assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(service, 9527L, reqVO));
+        assertNull(submittedSceneCode.get());
+    }
+
     // ========== cancel tests ==========
 
     @Test
@@ -227,6 +247,10 @@ class ErpStockOutBpmServiceImplTest {
                 updates.add(new int[]{doObj.getId().intValue()});
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updates.add(new int[]{((Long) args[0]).intValue()});
+                return 1;
+            }
             if ("clearProcessInstanceId".equals(methodName)) return 1;
             return null;
         });
@@ -239,7 +263,19 @@ class ErpStockOutBpmServiceImplTest {
                 updates.add((ErpStockOutDO) args[0]);
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updates.add((ErpStockOutDO) args[2]);
+                return 1;
+            }
             if ("clearProcessInstanceId".equals(methodName)) return 1;
+            return null;
+        });
+    }
+
+    private Object createMapperClaimConflictProxy(AtomicReference<ErpStockOutDO> entityRef) {
+        return createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) return entityRef.get();
+            if ("updateByIdAndStatus".equals(methodName)) return 0;
             return null;
         });
     }

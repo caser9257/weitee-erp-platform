@@ -46,10 +46,13 @@ public class ErpStockOutBpmServiceImpl implements ErpStockOutBpmService {
         }
         // 事务内：只写本地状态
         Long stockOutId = stockOut.getId();
-        erpStockOutMapper.updateById(new ErpStockOutDO()
+        int updated = erpStockOutMapper.updateByIdAndStatus(stockOutId, ErpAuditStatus.DRAFT.getStatus(), new ErpStockOutDO()
                 .setId(stockOutId)
                 .setStatus(ErpAuditStatus.PROCESS.getStatus())
                 .setProcessInstanceId(null));
+        if (updated == 0) {
+            throw exception(STOCK_OUT_BPM_SUBMIT_FAIL);
+        }
 
         // 事务外：调 BPM 创建流程
         ErpTransactionUtils.afterCommit(() -> {
