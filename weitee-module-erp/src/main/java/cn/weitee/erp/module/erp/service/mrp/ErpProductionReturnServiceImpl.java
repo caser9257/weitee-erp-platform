@@ -127,14 +127,12 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                 ErpProductionMaterialDO::getId);
         List<Long> issueBatchIds = reqVO.getItems().stream().flatMap(item -> item.getBatches().stream())
                 .map(ErpProductionReturnCreateReqVO.Batch::getIssueBatchId).distinct().toList();
-        Map<Long, ErpProductionIssueBatchDO> issueBatchMap = convertMap(
-                erpProductionIssueBatchMapper.selectListByIssueItemIds(
-                        erpProductionIssueItemMapper.selectListByProductionMaterialIds(materialMap.keySet()).stream()
-                                .map(ErpProductionIssueItemDO::getId).toList()),
-                ErpProductionIssueBatchDO::getId);
         Map<Long, ErpProductionIssueItemDO> issueItemMap = convertMap(
                 erpProductionIssueItemMapper.selectListByProductionMaterialIds(materialMap.keySet()),
                 ErpProductionIssueItemDO::getId);
+        Map<Long, ErpProductionIssueBatchDO> issueBatchMap = convertMap(
+                erpProductionIssueBatchMapper.selectListForUpdateByIds(issueBatchIds),
+                ErpProductionIssueBatchDO::getId);
         Map<Long, BigDecimal> existingReturnedQtyMap = CollectionUtils.convertMap(
                 erpProductionReturnBatchMapper.selectListByIssueBatchIds(issueBatchIds),
                 ErpProductionReturnBatchDO::getIssueBatchId,
@@ -202,7 +200,9 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                         .setBatchNo(batch.getBatchNo())
                         .setReturnQty(batch.getReturnQty()));
             }
-            erpProductionMaterialMapper.updateReturnedQtyIncrement(material.getId(), item.getReturnQty());
+            if (erpProductionMaterialMapper.updateReturnedQtyIncrement(material.getId(), item.getReturnQty()) == 0) {
+                throw exception(PRODUCTION_MATERIAL_QTY_INVALID);
+            }
         }
         return productionReturn.getId();
     }

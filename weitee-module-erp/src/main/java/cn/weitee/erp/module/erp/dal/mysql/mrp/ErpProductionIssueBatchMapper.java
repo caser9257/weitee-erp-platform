@@ -22,4 +22,14 @@ public interface ErpProductionIssueBatchMapper extends BaseMapperX<ErpProduction
                 .orderByAsc(ErpProductionIssueBatchDO::getId));
     }
 
+    default List<ErpProductionIssueBatchDO> selectListForUpdateByIds(Collection<Long> ids) {
+        if (CollUtil.isEmpty(ids)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapper<ErpProductionIssueBatchDO>()
+                .in(ErpProductionIssueBatchDO::getId, ids)
+                .orderByAsc(ErpProductionIssueBatchDO::getId)
+                .last("FOR UPDATE"));
+    }
+
 }
