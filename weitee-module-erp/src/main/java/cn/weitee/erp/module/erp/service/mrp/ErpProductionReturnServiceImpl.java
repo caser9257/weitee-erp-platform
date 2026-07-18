@@ -3,7 +3,9 @@ package cn.weitee.erp.module.erp.service.mrp;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.weitee.erp.framework.common.util.collection.CollectionUtils;
+import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnCreateReqVO;
+import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnableBatchesRespVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionIssueBatchDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionIssueItemDO;
@@ -112,6 +114,11 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
             return batch;
         }).filter(java.util.Objects::nonNull).toList());
         return respVO;
+    }
+
+    @Override
+    public PageResult<ErpProductionReturnDO> getProductionReturnPage(ErpProductionReturnPageReqVO pageReqVO) {
+        return erpProductionReturnMapper.selectPage(pageReqVO);
     }
 
     @Override

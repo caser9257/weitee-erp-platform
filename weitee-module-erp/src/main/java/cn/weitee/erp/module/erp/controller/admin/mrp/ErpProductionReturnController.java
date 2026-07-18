@@ -1,7 +1,11 @@
 package cn.weitee.erp.module.erp.controller.admin.mrp;
 
 import cn.weitee.erp.framework.common.pojo.CommonResult;
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnCreateReqVO;
+import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnPageReqVO;
+import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnRespVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnableBatchesRespVO;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionReturnService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,10 +37,20 @@ public class ErpProductionReturnController {
     @GetMapping("/returnable-batches")
     @Operation(summary = "获得可退批次")
     @Parameter(name = "productionMaterialId", required = true)
-    @PreAuthorize("@ss.hasPermission('erp:production-material-issue:query')")
+    @PreAuthorize("@ss.hasPermission('erp:production-material-return:query')")
     public CommonResult<ErpProductionReturnableBatchesRespVO> getReturnableBatches(
             @RequestParam("productionMaterialId") Long productionMaterialId) {
         return success(productionReturnService.getReturnableBatches(productionMaterialId));
+    }
+
+    @GetMapping("/page")
+    @PreAuthorize("@ss.hasPermission('erp:production-material-return:query')")
+    public CommonResult<PageResult<ErpProductionReturnRespVO>> getProductionReturnPage(
+            @Valid ErpProductionReturnPageReqVO pageReqVO) {
+        PageResult<cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionReturnDO> pageResult =
+                productionReturnService.getProductionReturnPage(pageReqVO);
+        return success(new PageResult<>(BeanUtils.toBean(pageResult.getList(), ErpProductionReturnRespVO.class),
+                pageResult.getTotal()));
     }
 
     @PostMapping("/create")

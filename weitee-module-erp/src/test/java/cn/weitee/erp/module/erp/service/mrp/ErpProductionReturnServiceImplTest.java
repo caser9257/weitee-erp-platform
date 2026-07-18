@@ -1,6 +1,8 @@
 package cn.weitee.erp.module.erp.service.mrp;
 
+import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnCreateReqVO;
+import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnPageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.*;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.*;
@@ -17,9 +19,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpProductionReturnServiceImplTest {
+
+    @Test
+    void getProductionReturnPage_shouldDelegateToMapper() throws Exception {
+        ErpProductionReturnServiceImpl service = new ErpProductionReturnServiceImpl();
+        ErpProductionReturnPageReqVO reqVO = new ErpProductionReturnPageReqVO().setProductionOrderId(1L);
+        PageResult<ErpProductionReturnDO> expected = new PageResult<>(List.of(
+                new ErpProductionReturnDO().setId(100L)), 1L);
+        setField(service, "erpProductionReturnMapper", proxy(ErpProductionReturnMapper.class,
+                (name, args) -> "selectPage".equals(name) ? expected : null));
+
+        assertSame(expected, service.getProductionReturnPage(reqVO));
+    }
 
     @Test
     void createProductionReturn_shouldRejectWhenAtomicReturnedQtyUpdateLosesRace() throws Exception {
