@@ -24,6 +24,7 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -109,6 +110,10 @@ class ErpProductionIssueServiceImplTest {
         setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
             if ("getStock".equals(methodName)) {
                 return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            if ("getStockMapByProductAndWarehouseIds".equals(methodName)) {
+                return Map.of(ErpStockService.buildProductWarehouseKey(1001L, 2001L),
+                        new ErpStockDO().setAverageCost(new BigDecimal("10.00")));
             }
             return null;
         }));

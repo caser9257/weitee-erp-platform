@@ -23,12 +23,14 @@ public interface ErpProductionMaterialMapper extends BaseMapperX<ErpProductionMa
     default int updateIssuedQtyIncrement(Long id, BigDecimal qty) {
         return update(null, new LambdaUpdateWrapper<ErpProductionMaterialDO>()
                 .eq(ErpProductionMaterialDO::getId, id)
+                .apply("issued_qty + {0} <= required_qty", qty)
                 .setSql("issued_qty = issued_qty + " + qty.toPlainString()));
     }
 
     default int updateReturnedQtyIncrement(Long id, BigDecimal qty) {
         return update(null, new LambdaUpdateWrapper<ErpProductionMaterialDO>()
                 .eq(ErpProductionMaterialDO::getId, id)
+                .apply("returned_qty + {0} <= issued_qty", qty)
                 .setSql("returned_qty = returned_qty + " + qty.toPlainString()));
     }
 
