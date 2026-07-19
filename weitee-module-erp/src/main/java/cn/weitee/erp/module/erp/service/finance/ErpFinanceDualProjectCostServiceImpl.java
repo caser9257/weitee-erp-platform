@@ -132,8 +132,7 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
                         .collect(Collectors.toList());
                 projectCostItemMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostItemDO>()
                         .in(ErpFinanceDualProjectCostItemDO::getResultId, oldResultIds));
-                projectCostResultMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
-                        .in(ErpFinanceDualProjectCostResultDO::getId, oldResultIds));
+                projectCostResultMapper.hardDeleteByIds(oldResultIds);
             }
 
             // 3. 查询该期间已审核的费用报销单（绑定该项目）
