@@ -28,6 +28,8 @@ services:
       - ../../sql/mysql/purchase/167-erp-purchase-return-bpm-platform.sql:/docker-entrypoint-initdb.d/12-erp-purchase-return-bpm-platform.sql:ro
       - ../../sql/mysql/sale/168-erp-sale-order-bpm-platform.sql:/docker-entrypoint-initdb.d/12-erp-sale-order-bpm-platform.sql:ro
       - ../../sql/mysql/manufacturing/169-erp-production-return-page-permission.sql:/docker-entrypoint-initdb.d/13-erp-production-return-page-permission.sql:ro
+      - ../../sql/mysql/system/170-finance-voucher-experience-permission.sql:/docker-entrypoint-initdb.d/14-finance-voucher-experience-permission.sql:ro
+      - ../../sql/mysql/system/171-stock-out-bpm-experience-permission.sql:/docker-entrypoint-initdb.d/15-stock-out-bpm-experience-permission.sql:ro
     healthcheck:
       test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent" ]
       interval: 10s
