@@ -2,6 +2,7 @@ package cn.weitee.erp.module.erp.service.stock;
 
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.batch.ErpStockBatchAdjustReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchAdjustmentDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockBatchAdjustmentMapper;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockBatchAdjustTypeEnum;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,42 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class ErpStockBatchAdjustmentServiceImplTest {
+
+    @Test
+    void adjustBatch_shouldSynchronizeStockSummaryWithBatchAdjustment() throws Exception {
+        ErpStockBatchAdjustmentServiceImpl service = new ErpStockBatchAdjustmentServiceImpl();
+        AtomicReference<Object[]> stockIncrementArgs = new AtomicReference<>();
+
+        setField(service, "stockBatchAdjustmentMapper", createProxy(ErpStockBatchAdjustmentMapper.class, (methodName, args) -> {
+            if ("selectByAdjustNo".equals(methodName)) {
+                return new ErpStockBatchAdjustmentDO().setId(501L).setAdjustNo("TZ202604290004");
+            }
+            return null;
+        }));
+        setField(service, "stockBatchService", createProxy(ErpStockBatchService.class, (methodName, args) -> {
+            if ("adjustBatch".equals(methodName)) {
+                return new ErpStockBatchDO().setId(11L).setProductId(1L).setWarehouseId(2L);
+            }
+            return null;
+        }));
+        trySetField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("updateStockCountIncrement".equals(methodName)) {
+                stockIncrementArgs.set(args);
+                return BigDecimal.ZERO;
+            }
+            return null;
+        }));
+
+        ErpStockBatchAdjustReqVO reqVO = new ErpStockBatchAdjustReqVO();
+        reqVO.setStockBatchId(11L);
+        reqVO.setAdjustType(ErpStockBatchAdjustTypeEnum.INCREASE.getType());
+        reqVO.setCount(new BigDecimal("3.000"));
+        reqVO.setAdjustNo("TZ202604290004");
+
+        service.adjustBatch(reqVO);
+
+        assertThat(stockIncrementArgs.get()).containsExactly(1L, 2L, new BigDecimal("3.000"));
+    }
 
     @Test
     void adjustBatch_shouldCreateAdjustmentMasterAndUseAdjustmentIdAsRecordBizId() throws Exception {
@@ -32,6 +69,13 @@ class ErpStockBatchAdjustmentServiceImplTest {
         setField(service, "stockBatchService", createProxy(ErpStockBatchService.class, (methodName, args) -> {
             if ("adjustBatch".equals(methodName)) {
                 delegatedReqRef.set((ErpStockBatchAdjustReqVO) args[0]);
+                return new ErpStockBatchDO().setId(11L).setProductId(1L).setWarehouseId(2L);
+            }
+            return null;
+        }));
+        setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
+            if ("updateStockCountIncrement".equals(methodName)) {
+                return BigDecimal.ZERO;
             }
             return null;
         }));
@@ -81,6 +125,16 @@ class ErpStockBatchAdjustmentServiceImplTest {
         Field field = findField(target.getClass(), fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private void trySetField(Object target, String fieldName, Object value) throws IllegalAccessException {
+        try {
+            Field field = findField(target.getClass(), fieldName);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (NoSuchFieldException ignored) {
+            // The red test keeps the dependency optional until production code adds it.
+        }
     }
 
     private Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
