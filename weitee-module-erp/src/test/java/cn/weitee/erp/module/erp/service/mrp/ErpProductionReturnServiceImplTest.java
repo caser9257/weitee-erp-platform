@@ -17,10 +17,12 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ErpProductionReturnServiceImplTest {
 
@@ -40,6 +42,7 @@ class ErpProductionReturnServiceImplTest {
     void createProductionReturn_shouldRejectWhenAtomicReturnedQtyUpdateLosesRace() throws Exception {
         ErpProductionReturnServiceImpl service = new ErpProductionReturnServiceImpl();
         AtomicLong id = new AtomicLong(100L);
+        AtomicBoolean returnedQtyReadAfterBatchLock = new AtomicBoolean();
         setField(service, "productionOrderService", proxy(ErpProductionOrderService.class,
                 (name, args) -> "getProductionOrder".equals(name) ? new ErpProductionOrderDO().setId(1L) : null));
         setField(service, "erpProductionMaterialMapper", proxy(ErpProductionMaterialMapper.class, (name, args) -> {
@@ -59,7 +62,13 @@ class ErpProductionReturnServiceImplTest {
                         ? List.of(new ErpProductionIssueBatchDO().setId(31L).setIssueItemId(21L)
                         .setStockBatchId(3001L).setBatchNo("B-001").setIssueQty(BigDecimal.ONE)) : null));
         setField(service, "erpProductionReturnBatchMapper", proxy(ErpProductionReturnBatchMapper.class,
-                (name, args) -> "selectListByIssueBatchIds".equals(name) ? List.of() : null));
+                (name, args) -> {
+                    if ("selectListByIssueBatchIdsForUpdate".equals(name)) {
+                        returnedQtyReadAfterBatchLock.set(true);
+                        return List.of();
+                    }
+                    return "selectListByIssueBatchIds".equals(name) ? List.of() : null;
+                }));
         setField(service, "erpProductionReturnMapper", proxy(ErpProductionReturnMapper.class, (name, args) -> {
             if ("insert".equals(name)) ((ErpProductionReturnDO) args[0]).setId(id.getAndIncrement());
             return 1;
@@ -83,6 +92,7 @@ class ErpProductionReturnServiceImplTest {
                         .setReturnQty(BigDecimal.ONE).setBatches(List.of(new ErpProductionReturnCreateReqVO.Batch()
                                 .setIssueBatchId(31L).setStockBatchId(3001L).setBatchNo("B-001")
                                 .setReturnQty(BigDecimal.ONE)))))));
+        assertTrue(returnedQtyReadAfterBatchLock.get());
     }
 
     @SuppressWarnings("unchecked")

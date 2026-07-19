@@ -141,7 +141,7 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                 erpProductionIssueBatchMapper.selectListForUpdateByIds(issueBatchIds),
                 ErpProductionIssueBatchDO::getId);
         Map<Long, BigDecimal> existingReturnedQtyMap = CollectionUtils.convertMap(
-                erpProductionReturnBatchMapper.selectListByIssueBatchIds(issueBatchIds),
+                erpProductionReturnBatchMapper.selectListByIssueBatchIdsForUpdate(issueBatchIds),
                 ErpProductionReturnBatchDO::getIssueBatchId,
                 item -> ObjectUtil.defaultIfNull(item.getReturnQty(), BigDecimal.ZERO),
                 BigDecimal::add);
