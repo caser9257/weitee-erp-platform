@@ -36,6 +36,24 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ErpPurchaseReturnServiceImplTest {
 
     @Test
+    void calculateTotalPrice_shouldTreatOtherPriceAsZeroWhenMissing() throws Exception {
+        ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
+        ErpPurchaseReturnDO purchaseReturn = new ErpPurchaseReturnDO()
+                .setDiscountPercent(BigDecimal.ZERO);
+        List<ErpPurchaseReturnItemDO> items = List.of(new ErpPurchaseReturnItemDO()
+                .setCount(new BigDecimal("2"))
+                .setTotalPrice(new BigDecimal("116.00"))
+                .setTaxPrice(new BigDecimal("15.08")));
+
+        var method = ErpPurchaseReturnServiceImpl.class.getDeclaredMethod(
+                "calculateTotalPrice", ErpPurchaseReturnDO.class, List.class);
+        method.setAccessible(true);
+        method.invoke(service, purchaseReturn, items);
+
+        assertEquals(new BigDecimal("131.08"), purchaseReturn.getTotalPrice());
+    }
+
+    @Test
     void updatePurchaseReturnStatus_shouldRefreshOrderReturnCountAndCreateApStatementWhenApproved() throws Exception {
         ErpPurchaseReturnServiceImpl service = new ErpPurchaseReturnServiceImpl();
         ErpPurchaseReturnDO purchaseReturn = new ErpPurchaseReturnDO()
