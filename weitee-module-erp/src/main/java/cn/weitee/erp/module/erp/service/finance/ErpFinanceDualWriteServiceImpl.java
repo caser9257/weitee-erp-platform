@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceDualWrite.*;
 
 /**
@@ -435,9 +436,16 @@ public class ErpFinanceDualWriteServiceImpl implements ErpFinanceDualWriteServic
 
     private BigDecimal calculateExternalAmount(ErpFinanceDualLedgerDiffConfigDO diffConfig,
                                                BigDecimal internalAmount) {
-        return amountDiffCalculatorFactory.calculateExternalAmount(
+        BigDecimal externalAmount = amountDiffCalculatorFactory.calculate(
                 diffConfig.getCalculationType(), internalAmount,
                 diffConfig.getRatio(), diffConfig.getFixedAmount());
+        externalAmount = defaultAmount(externalAmount).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal normalizedInternalAmount = defaultAmount(internalAmount).setScale(2, RoundingMode.HALF_UP);
+        if (externalAmount.compareTo(normalizedInternalAmount) <= 0) {
+            throw exception(FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID,
+                    normalizedInternalAmount, externalAmount);
+        }
+        return externalAmount;
     }
 
     /**

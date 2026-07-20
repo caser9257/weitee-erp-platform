@@ -25,7 +25,6 @@ public interface ErrorCodeConstantsFinanceLedger {
     ErrorCode FINANCE_DUAL_LEDGER_DIFF_CONFIG_RATIO_INVALID = new ErrorCode(1_030_607_015, "比例系数必须大于 1，才能保证内账金额小于外账金额");
     ErrorCode FINANCE_DUAL_LEDGER_DIFF_CONFIG_FIXED_AMOUNT_INVALID = new ErrorCode(1_030_607_016, "固定差额必须小于 0，才能保证内账金额小于外账金额");
     ErrorCode FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID = new ErrorCode(1_030_607_017, "规则计算结果不符合约束：内账金额({})必须小于外账金额({})");
-    ErrorCode FINANCE_DUAL_LEDGER_DIFF_CONFIG_CALCULATION_TYPE_UNSUPPORTED = new ErrorCode(1_030_607_018, "当前计算类型尚未实现，不能启用双账套差异规则");
 
     ErrorCode FINANCE_PERIOD_NOT_EXISTS = new ErrorCode(1_030_608_000, "会计期间不存在");
     ErrorCode FINANCE_PERIOD_ALREADY_EXISTS = new ErrorCode(1_030_608_001, "账簿({})下会计期间({})已存在");

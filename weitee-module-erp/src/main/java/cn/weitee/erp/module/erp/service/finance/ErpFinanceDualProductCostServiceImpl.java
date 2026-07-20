@@ -13,17 +13,11 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualProductCost
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerDiffConfigDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherEntryDO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceInboundDO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceOrderDO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionInboundDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProductCostResultMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProductCostItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProductCostRebuildLogMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
-import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper;
-import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper;
-import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionInboundMapper;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,7 +29,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,12 +52,6 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
     private ErpFinanceVoucherMapper voucherMapper;
     @Resource
     private ErpFinanceVoucherEntryMapper voucherEntryMapper;
-    @Resource
-    private ErpProductionInboundMapper productionInboundMapper;
-    @Resource
-    private ErpOutsourceInboundMapper outsourceInboundMapper;
-    @Resource
-    private ErpOutsourceOrderMapper outsourceOrderMapper;
     @Resource
     private ErpFinanceDualLedgerConfigService dualLedgerConfigService;
     @Resource
@@ -149,7 +136,6 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
                                     ErpBizTypeEnum.OUTSOURCE_INBOUND.getType())
                             .ge(ErpFinanceVoucherDO::getVoucherTime, parsePeriodStart(period))
                             .le(ErpFinanceVoucherDO::getVoucherTime, parsePeriodEnd(period)));
-            vouchers = filterProductSourceVouchers(vouchers, reqVO);
 
             // 4. 按料/工/费归集（基于凭证分录科目判断）
             //    加载产品成本差异配置（bizType=70 表示产品成本归集）
@@ -191,7 +177,7 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
                     ErpFinanceDualLedgerDiffConfigDO diffConfig = diffConfigMap.get(costComponentType);
                     BigDecimal itemExternalAmount;
                     if (diffConfig != null && diffConfig.getCalculationType() != null) {
-                        itemExternalAmount = amountDiffCalculatorFactory.calculateExternalAmount(
+                        itemExternalAmount = amountDiffCalculatorFactory.calculate(
                                 diffConfig.getCalculationType(), amount,
                                 diffConfig.getRatio(), diffConfig.getFixedAmount());
                     } else {
@@ -278,48 +264,6 @@ public class ErpFinanceDualProductCostServiceImpl implements ErpFinanceDualProdu
             rebuildLogMapper.updateById(rebuildLog);
             throw e;
         }
-    }
-
-    private List<ErpFinanceVoucherDO> filterProductSourceVouchers(List<ErpFinanceVoucherDO> vouchers,
-                                                                    ErpFinanceDualProductCostRebuildReqVO reqVO) {
-        if (vouchers == null || vouchers.isEmpty()) {
-            return List.of();
-        }
-        Set<Long> productionInboundIds = vouchers.stream()
-                .filter(voucher -> ObjectUtil.equal(voucher.getBizType(), ErpBizTypeEnum.PRODUCTION_INBOUND.getType()))
-                .map(ErpFinanceVoucherDO::getBizId).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
-        Set<Long> outsourceInboundIds = vouchers.stream()
-                .filter(voucher -> ObjectUtil.equal(voucher.getBizType(), ErpBizTypeEnum.OUTSOURCE_INBOUND.getType()))
-                .map(ErpFinanceVoucherDO::getBizId).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, ErpProductionInboundDO> productionInboundMap = (productionInboundIds.isEmpty()
-                ? Collections.<ErpProductionInboundDO>emptyList() : productionInboundMapper.selectBatchIds(productionInboundIds))
-                .stream().collect(Collectors.toMap(ErpProductionInboundDO::getId, item -> item));
-        Map<Long, ErpOutsourceInboundDO> outsourceInboundMap = (outsourceInboundIds.isEmpty()
-                ? Collections.<ErpOutsourceInboundDO>emptyList() : outsourceInboundMapper.selectBatchIds(outsourceInboundIds))
-                .stream().collect(Collectors.toMap(ErpOutsourceInboundDO::getId, item -> item));
-        Set<Long> outsourceOrderIds = outsourceInboundMap.values().stream().map(ErpOutsourceInboundDO::getOrderId)
-                .filter(java.util.Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, ErpOutsourceOrderDO> outsourceOrderMap = (outsourceOrderIds.isEmpty()
-                ? Collections.<ErpOutsourceOrderDO>emptyList() : outsourceOrderMapper.selectBatchIds(outsourceOrderIds))
-                .stream().collect(Collectors.toMap(ErpOutsourceOrderDO::getId, item -> item));
-        return vouchers.stream().filter(voucher -> matchesProductSource(voucher, reqVO, productionInboundMap,
-                outsourceInboundMap, outsourceOrderMap)).collect(Collectors.toList());
-    }
-
-    private boolean matchesProductSource(ErpFinanceVoucherDO voucher, ErpFinanceDualProductCostRebuildReqVO reqVO,
-                                         Map<Long, ErpProductionInboundDO> productionInboundMap,
-                                         Map<Long, ErpOutsourceInboundDO> outsourceInboundMap,
-                                         Map<Long, ErpOutsourceOrderDO> outsourceOrderMap) {
-        if (ObjectUtil.equal(voucher.getBizType(), ErpBizTypeEnum.PRODUCTION_INBOUND.getType())) {
-            ErpProductionInboundDO inbound = productionInboundMap.get(voucher.getBizId());
-            return inbound != null && ObjectUtil.equal(inbound.getProductId(), reqVO.getProductId())
-                    && (reqVO.getProductionOrderId() == null || ObjectUtil.equal(inbound.getProductionOrderId(), reqVO.getProductionOrderId()))
-                    && reqVO.getProductBatchNo() == null;
-        }
-        ErpOutsourceInboundDO inbound = outsourceInboundMap.get(voucher.getBizId());
-        ErpOutsourceOrderDO order = inbound == null ? null : outsourceOrderMap.get(inbound.getOrderId());
-        return inbound != null && order != null && ObjectUtil.equal(order.getProductId(), reqVO.getProductId())
-                && (reqVO.getProductBatchNo() == null || ObjectUtil.equal(inbound.getBatchNo(), reqVO.getProductBatchNo()));
     }
 
     @Override

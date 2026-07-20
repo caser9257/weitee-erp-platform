@@ -132,7 +132,8 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
                         .collect(Collectors.toList());
                 projectCostItemMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostItemDO>()
                         .in(ErpFinanceDualProjectCostItemDO::getResultId, oldResultIds));
-                projectCostResultMapper.hardDeleteByIds(oldResultIds);
+                projectCostResultMapper.delete(new LambdaQueryWrapperX<ErpFinanceDualProjectCostResultDO>()
+                        .in(ErpFinanceDualProjectCostResultDO::getId, oldResultIds));
             }
 
             // 3. 查询该期间已审核的费用报销单（绑定该项目）
@@ -179,7 +180,7 @@ public class ErpFinanceDualProjectCostServiceImpl implements ErpFinanceDualProje
                     // 根据差异配置计算外部账金额
                     BigDecimal itemExternalAmount;
                     if (diffConfig != null && diffConfig.getCalculationType() != null) {
-                        itemExternalAmount = amountDiffCalculatorFactory.calculateExternalAmount(
+                        itemExternalAmount = amountDiffCalculatorFactory.calculate(
                                 diffConfig.getCalculationType(), amount,
                                 diffConfig.getRatio(), diffConfig.getFixedAmount());
                     } else {

@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_BIZ_ITEM_DUPLICATE;
-import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_CALCULATION_TYPE_UNSUPPORTED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_DEPRECIATION_SOURCE_ITEM_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_FIXED_AMOUNT_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_RATIO_INVALID;
@@ -50,8 +49,6 @@ class ErpFinanceDualLedgerDiffConfigServiceImplTest {
         reqVO.setExternalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.LABOR.getType());
         reqVO.setInternalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType());
         reqVO.setInternalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.MANUFACTURING_OVERHEAD.getType());
-        reqVO.setCalculationType(1);
-        reqVO.setRatio(new BigDecimal("1.20"));
         reqVO.setStatus(CommonStatusEnum.ENABLE.getStatus());
         reqVO.setRemark("人工成本双账套差异口径");
 
@@ -192,20 +189,6 @@ class ErpFinanceDualLedgerDiffConfigServiceImplTest {
     }
 
     @Test
-    void createDualLedgerDiffConfig_shouldRejectUnsupportedSourceMapping() throws Exception {
-        ErpFinanceDualLedgerDiffConfigServiceImpl service = new ErpFinanceDualLedgerDiffConfigServiceImpl();
-        setField(service, "erpFinanceDualLedgerDiffConfigMapper",
-                createProxy(ErpFinanceDualLedgerDiffConfigMapper.class, (methodName, args) -> null));
-
-        ErpFinanceDualLedgerDiffConfigSaveReqVO reqVO = buildBaseReqVO();
-        reqVO.setCalculationType(3);
-
-        ServiceException ex = assertThrows(ServiceException.class, () -> service.createDualLedgerDiffConfig(reqVO));
-
-        assertEquals(FINANCE_DUAL_LEDGER_DIFF_CONFIG_CALCULATION_TYPE_UNSUPPORTED.getCode(), ex.getCode());
-    }
-
-    @Test
     void createDualLedgerDiffConfig_shouldRejectAssetDepreciationSourceForNonDepreciationItem() throws Exception {
         ErpFinanceDualLedgerDiffConfigServiceImpl service = new ErpFinanceDualLedgerDiffConfigServiceImpl();
         setField(service, "erpFinanceDualLedgerDiffConfigMapper",
@@ -229,8 +212,6 @@ class ErpFinanceDualLedgerDiffConfigServiceImplTest {
         reqVO.setExternalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.DEPRECIATION.getType());
         reqVO.setInternalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.ASSET_DEPRECIATION.getType());
         reqVO.setInternalSourceValue(null);
-        reqVO.setCalculationType(1);
-        reqVO.setRatio(new BigDecimal("1.20"));
         reqVO.setStatus(CommonStatusEnum.ENABLE.getStatus());
         reqVO.setRemark("折旧双账套差异口径");
         return reqVO;
