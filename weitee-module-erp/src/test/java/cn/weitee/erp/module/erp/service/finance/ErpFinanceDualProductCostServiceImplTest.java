@@ -7,8 +7,10 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualProductCost
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerDiffConfigDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherEntryDO;
+import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionInboundDO;
 import cn.weitee.erp.module.erp.enums.ErpFinanceDiffCalculationTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
+import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.diffcalc.AmountDiffCalculator;
 import cn.weitee.erp.module.erp.service.finance.diffcalc.AmountDiffCalculatorFactory;
 import cn.weitee.erp.module.erp.service.finance.diffcalc.ProRataAmountDiffCalculator;
@@ -327,6 +329,41 @@ class ErpFinanceDualProductCostServiceImplTest {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private void mockProductionInboundSource(ErpFinanceDualProductCostServiceImpl service, Long inboundId,
+                                             Long productId, Long productionOrderId) throws Exception {
+        mockProductionInboundSource(service, inboundId, productId, productionOrderId, null, null, null, null);
+    }
+
+    private void mockProductionInboundSource(ErpFinanceDualProductCostServiceImpl service, Long firstInboundId,
+                                             Long firstProductId, Long firstOrderId, Long secondInboundId,
+                                             Long secondProductId, Long secondOrderId) throws Exception {
+        mockProductionInboundSource(service, firstInboundId, firstProductId, firstOrderId, secondInboundId,
+                secondProductId, secondOrderId, null);
+    }
+
+    private void mockProductionInboundSource(ErpFinanceDualProductCostServiceImpl service, Long firstInboundId,
+                                             Long firstProductId, Long firstOrderId, Long secondInboundId,
+                                             Long secondProductId, Long secondOrderId, Object ignored) throws Exception {
+        setField(service, "productionInboundMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionInboundMapper.class, (methodName, args) -> {
+                    if ("selectBatchIds".equals(methodName)) {
+                        List<ErpProductionInboundDO> list = new ArrayList<>();
+                        list.add(new ErpProductionInboundDO().setId(firstInboundId).setProductId(firstProductId)
+                                .setProductionOrderId(firstOrderId));
+                        if (secondInboundId != null) {
+                            list.add(new ErpProductionInboundDO().setId(secondInboundId).setProductId(secondProductId)
+                                    .setProductionOrderId(secondOrderId));
+                        }
+                        return list;
+                    }
+                    return null;
+                }));
+        setField(service, "outsourceInboundMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.mrp.ErpOutsourceInboundMapper.class, (methodName, args) -> List.of()));
+        setField(service, "outsourceOrderMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.mrp.ErpOutsourceOrderMapper.class, (methodName, args) -> List.of()));
     }
 
     @FunctionalInterface
