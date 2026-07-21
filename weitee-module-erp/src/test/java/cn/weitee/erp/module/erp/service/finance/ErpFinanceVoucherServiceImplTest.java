@@ -21,9 +21,11 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherEntryDirectionEnum;
@@ -87,6 +89,48 @@ class ErpFinanceVoucherServiceImplTest {
         assertEquals(2, insertedEntriesRef.get().size());
         assertEquals(new BigDecimal("300.00"), insertedEntriesRef.get().get(0).getDebitAmount());
         assertEquals(new BigDecimal("300.00"), insertedEntriesRef.get().get(1).getCreditAmount());
+    }
+
+    @Test
+    void generateVoucher_shouldCreateVoucherForStockCheckUsingAbsoluteDifferenceAmount() throws Exception {
+        ErpFinanceVoucherServiceImpl service = newService();
+        AtomicReference<ErpFinanceVoucherDO> insertedVoucherRef = new AtomicReference<>();
+        AtomicReference<List<ErpFinanceVoucherEntryDO>> insertedEntriesRef = new AtomicReference<>();
+
+        mockValidatedLedger(service, 1L);
+        mockTemplate(service, template(60L, 1L, ErpBizTypeEnum.STOCK_CHECK.getType(), true, "STOCK_CHECK"),
+                amountItems(ErpFinanceVoucherAmountSourceEnum.BIZ_AMOUNT.getType(), null));
+        setField(service, "stockCheckMapper", createProxy(ErpStockCheckMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockCheckDO()
+                        .setId(1001L)
+                        .setNo("PD202605200001")
+                        .setCheckTime(LocalDateTime.of(2026, 5, 20, 10, 0))
+                        .setStatus(30)
+                        .setTotalPrice(new BigDecimal("-120.00"))
+                        .setRemark("盘亏差异");
+            }
+            return null;
+        }));
+        mockOpenPeriod(service, 20L, 1L, LocalDate.of(2026, 5, 20));
+        mockVoucherPersistence(service, "CWPZ20260520000001", 88L,
+                insertedVoucherRef, insertedEntriesRef, null);
+        setField(service, "voucherLogService", createProxy(ErpFinanceVoucherLogService.class,
+                (methodName, args) -> null));
+
+        Long id = service.generateVoucher(new ErpFinanceVoucherGenerateReqVO()
+                .setLedgerId(1L)
+                .setBizType(ErpBizTypeEnum.STOCK_CHECK.getType())
+                .setBizId(1001L)
+                .setTemplateId(60L));
+
+        assertEquals(88L, id);
+        assertEquals("PD202605200001", insertedVoucherRef.get().getBizNo());
+        assertEquals(new BigDecimal("120.00"), insertedVoucherRef.get().getTotalDebitAmount());
+        assertEquals(new BigDecimal("120.00"), insertedVoucherRef.get().getTotalCreditAmount());
+        assertEquals("盘亏差异", insertedVoucherRef.get().getRemark());
+        assertEquals(new BigDecimal("120.00"), insertedEntriesRef.get().get(0).getDebitAmount());
+        assertEquals(new BigDecimal("120.00"), insertedEntriesRef.get().get(1).getCreditAmount());
     }
 
     @Test
@@ -521,6 +565,59 @@ class ErpFinanceVoucherServiceImplTest {
         assertEquals(10L, insertedVoucherRef.get().getTemplateId());
         assertEquals(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), insertedVoucherRef.get().getBizType());
         assertEquals(100L, insertedVoucherRef.get().getBizId());
+    }
+
+    @Test
+    void autoGenerateVoucher_shouldUseFallbackTemplateLedgerWhenDefaultLedgerHasNoTemplate() throws Exception {
+        ErpFinanceVoucherServiceImpl service = newService();
+        AtomicReference<ErpFinanceVoucherDO> insertedVoucherRef = new AtomicReference<>();
+        ErpFinanceVoucherTemplateDO fallbackTemplate = template(60L, 1L,
+                ErpBizTypeEnum.STOCK_CHECK.getType(), true, "STOCK_CHECK");
+
+        setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> {
+            if ("getDefaultFinanceLedger".equals(methodName)) {
+                return new ErpFinanceLedgerDO().setId(99601L).setName("DEFAULT_LEDGER")
+                        .setStatus(CommonStatusEnum.ENABLE.getStatus()).setDefaultStatus(true);
+            }
+            if ("validateFinanceLedger".equals(methodName)) {
+                Long ledgerId = (Long) args[0];
+                return new ErpFinanceLedgerDO().setId(ledgerId).setName("LEDGER-" + ledgerId)
+                        .setStatus(CommonStatusEnum.ENABLE.getStatus());
+            }
+            return null;
+        }));
+        setField(service, "voucherTemplateService", createProxy(ErpFinanceVoucherTemplateService.class,
+                (methodName, args) -> {
+                    if ("getVoucherTemplateListByLedgerAndBizType".equals(methodName)) {
+                        return ObjectUtil.equal(args[0], 1L) ? List.of(fallbackTemplate) : List.of();
+                    }
+                    if ("validateVoucherTemplate".equals(methodName)) {
+                        return fallbackTemplate;
+                    }
+                    if ("getVoucherTemplateItemListByTemplateId".equals(methodName)) {
+                        return amountItems(ErpFinanceVoucherAmountSourceEnum.BIZ_AMOUNT.getType(), null);
+                    }
+                    return null;
+                }));
+        setField(service, "stockCheckMapper", createProxy(ErpStockCheckMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockCheckDO().setId(1001L).setNo("PD202607200001")
+                        .setCheckTime(LocalDateTime.of(2026, 7, 20, 18, 0))
+                        .setStatus(40).setTotalPrice(new BigDecimal("-280.00"));
+            }
+            return null;
+        }));
+        mockOpenPeriod(service, 20L, 1L, LocalDate.of(2026, 7, 20));
+        mockVoucherPersistence(service, "CWPZ20260720000001", 77L,
+                insertedVoucherRef, new AtomicReference<>(), null);
+        setField(service, "voucherLogService", createProxy(ErpFinanceVoucherLogService.class,
+                (methodName, args) -> null));
+
+        Long id = service.autoGenerateVoucher(ErpBizTypeEnum.STOCK_CHECK.getType(), 1001L);
+
+        assertEquals(77L, id);
+        assertEquals(1L, insertedVoucherRef.get().getLedgerId());
+        assertEquals(60L, insertedVoucherRef.get().getTemplateId());
     }
 
     @Test

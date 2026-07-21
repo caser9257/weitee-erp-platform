@@ -25,8 +25,10 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockCheckMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualLedgerAmountDiffLogMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
@@ -36,6 +38,7 @@ import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherEntryDirectionEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.enums.stock.ErpStockCheckStatusEnum;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseInService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionInboundService;
@@ -48,7 +51,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -127,6 +129,8 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     @Lazy
     private ErpFinanceAssetDepreciationService financeAssetDepreciationService;
     @Resource
+    private ErpStockCheckMapper stockCheckMapper;
+    @Resource
     private ErpFinanceGeneralLedgerService financeGeneralLedgerService;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
@@ -201,7 +205,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
+    @Transactional(rollbackFor = Exception.class)
     public Long autoGenerateVoucher(Integer bizType, Long bizId) {
         List<Long> ledgerIds = resolveAutoGenerateLedgerIds(bizType);
         if (CollUtil.isEmpty(ledgerIds)) {
@@ -383,12 +387,14 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
     }
 
     private Long autoGenerateVoucherForLedger(Long ledgerId, Integer sourceBizType, Integer actualBizType, Long bizId) {
+        Long templateLedgerId = ledgerId;
         List<ErpFinanceVoucherTemplateDO> templates = voucherTemplateService
                 .getVoucherTemplateListByLedgerAndBizType(ledgerId, actualBizType);
         // 容错：如果在当前账簿找不到模板，尝试查找 ledger_id=1 的模板（兼容旧数据）
         if (CollUtil.isEmpty(templates) && !ObjectUtil.equal(ledgerId, 1L)) {
+            templateLedgerId = 1L;
             templates = voucherTemplateService
-                    .getVoucherTemplateListByLedgerAndBizType(1L, actualBizType);
+                    .getVoucherTemplateListByLedgerAndBizType(templateLedgerId, actualBizType);
             if (CollUtil.isNotEmpty(templates)) {
                 log.warn("[autoGenerateVoucherForLedger] 在账簿 {} 未找到 bizType={} 的模板，回退使用 ledger_id=1 的模板", ledgerId, actualBizType);
             }
@@ -414,12 +420,12 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         if (template == null) {
             return null;
         }
-        ErpFinanceVoucherDO existedVoucher = findExistingAutoVoucher(ledgerId, sourceBizType, actualBizType, bizId);
+        ErpFinanceVoucherDO existedVoucher = findExistingAutoVoucher(templateLedgerId, sourceBizType, actualBizType, bizId);
         if (existedVoucher != null) {
             return existedVoucher.getId();
         }
         ErpFinanceVoucherGenerateReqVO reqVO = new ErpFinanceVoucherGenerateReqVO();
-        reqVO.setLedgerId(ledgerId);
+        reqVO.setLedgerId(templateLedgerId);
         reqVO.setTemplateId(template.getId());
         reqVO.setBizType(actualBizType);
         reqVO.setBizId(bizId);
@@ -676,6 +682,9 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.RESEARCH_EXPENSE.getType())) {
             return financeExpenseService.getFinanceExpense(bizId) != null;
         }
+        if (ObjectUtil.equal(bizType, ErpBizTypeEnum.STOCK_CHECK.getType())) {
+            return stockCheckMapper.selectById(bizId) != null;
+        }
         return false;
     }
 
@@ -758,6 +767,19 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             return new VoucherSource(expense.getNo(),
                     defaultTime(expense.getExpenseTime(), expense.getCreateTime(), expense.getUpdateTime()),
                     defaultAmount(expense.getExpensePrice()), expense.getRemark());
+        }
+        if (ObjectUtil.equal(bizType, ErpBizTypeEnum.STOCK_CHECK.getType())) {
+            ErpStockCheckDO stockCheck = stockCheckMapper.selectById(bizId);
+            if (stockCheck == null) {
+                throw exception(FINANCE_VOUCHER_NOT_EXISTS);
+            }
+            if (!ObjectUtil.equal(stockCheck.getStatus(), ErpStockCheckStatusEnum.APPROVED.getStatus())
+                    && !ObjectUtil.equal(stockCheck.getStatus(), ErpStockCheckStatusEnum.CLOSED.getStatus())) {
+                throw exception(FINANCE_VOUCHER_SOURCE_STATUS_INVALID, stockCheck.getNo());
+            }
+            return new VoucherSource(stockCheck.getNo(),
+                    defaultTime(stockCheck.getCheckTime(), stockCheck.getCreateTime(), stockCheck.getUpdateTime()),
+                    defaultAmount(stockCheck.getTotalPrice()).abs(), stockCheck.getRemark());
         }
         // 固定资产折旧 / 无形资产摊销 / 研发无形资产摊销
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_DEPRECIATION.getType())
