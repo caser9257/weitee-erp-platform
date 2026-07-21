@@ -36,7 +36,8 @@ services:
   server:
     container_name: weitee-smoke-server
     build:
-      context: ../weitee-server
+      context: ..
+      dockerfile: weitee-server/Dockerfile
     image: weitee-server:smoke
     restart: unless-stopped
     ports:

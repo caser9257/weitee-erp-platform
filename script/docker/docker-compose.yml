@@ -17,6 +17,7 @@ services:
       - ../../sql/mysql/base/quartz.sql:/docker-entrypoint-initdb.d/01-quartz.sql:ro
       - ../../production/ruoyi-vue-pro/weitee-erp_backup_20260709.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
       - ./initdb/03-weitee-post-import-fixes.sql:/docker-entrypoint-initdb.d/03-weitee-post-import-fixes.sql:ro
+      - ../../sql/mysql/stock/142-erp-stock-check-year-end-close.sql:/docker-entrypoint-initdb.d/04-erp-stock-check-year-end-close.sql:ro
       - ../../sql/mysql/stock/143-erp-stock-assemble.sql:/docker-entrypoint-initdb.d/05-erp-stock-assemble.sql:ro
       - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/06-demo-accounts.sql:ro
     healthcheck:
