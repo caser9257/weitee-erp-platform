@@ -13,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,10 +66,9 @@ public class FilePermissionServiceImpl implements FilePermissionService {
 
     @Override
     public boolean hasPermission(Long fileId, Long userId, String permission) {
-        // 获取用户的所有权限
-        // NOTE: LoginUser does not expose roleIds/deptId directly in weitee framework.
-        // Using empty roleIds and deptId from SecurityFrameworkUtils as fallback.
-        List<Long> roleIds = java.util.Collections.emptyList();
+        // 获取用户角色列表（当前框架 LoginUser 未直接暴露 roleIds，
+        // 传空列表时角色权限维度无法匹配，仅支持 USER 和 DEPT 维度的权限检查）
+        List<Long> roleIds = Collections.emptyList();
         Long deptId = SecurityFrameworkUtils.getLoginUserDeptId();
 
         List<FilePermissionDO> permissions = filePermissionMapper.selectListByFileIdAndUserId(fileId, userId, roleIds, deptId);

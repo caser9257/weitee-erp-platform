@@ -69,7 +69,7 @@
                 </el-select>
               </el-form-item>
               <div class="flex items-end justify-end gap-2 md:col-span-2 xl:col-span-4">
-                <el-button type="primary" :loading="loadingList" @click="handleQuery">
+                <el-button type="primary" :loading="loadingList" @click="handleQuery" v-hasPermi="['erp:outsource-issue:query']">
                   <Icon icon="ep:search" class="mr-5px" /> 搜索
                 </el-button>
                 <el-button :disabled="loadingList" @click="resetQuery">

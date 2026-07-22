@@ -6,6 +6,7 @@ import cn.weitee.erp.module.infra.dal.dataobject.file.FileFolderDO;
 import cn.weitee.erp.module.infra.dal.mysql.file.FileFolderMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -55,6 +56,7 @@ public class FileFolderServiceImpl implements FileFolderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateFileFolder(FileFolderSaveReqVO reqVO) {
         FileFolderDO folder = fileFolderMapper.selectById(reqVO.getId());
         if (folder == null) {
@@ -69,7 +71,15 @@ public class FileFolderServiceImpl implements FileFolderService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteFileFolder(Long id) {
+        // 检查是否存在子文件夹
+        Long childCount = fileFolderMapper.selectCount(
+                new cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX<FileFolderDO>()
+                        .eq(FileFolderDO::getParentId, id));
+        if (childCount != null && childCount > 0) {
+            throw new RuntimeException("请先删除子文件夹");
+        }
         fileFolderMapper.deleteById(id);
     }
 

@@ -1,4 +1,4 @@
-﻿﻿<template>
+﻿<template>
   <div class="finance-shell finance-shell__stack finance-dual-ledger-page">
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
@@ -47,7 +47,7 @@
         </div>
 
         <div class="finance-shell__query-actions">
-          <el-button type="primary" :loading="loadingList" @click="handleQuery">
+          <el-button type="primary" :loading="loadingList" @click="handleQuery" v-hasPermi="['erp:dual-ledger-result:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>

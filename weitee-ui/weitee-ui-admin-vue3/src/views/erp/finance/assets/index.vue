@@ -58,7 +58,7 @@
           </el-form-item>
         </div>
         <div class="finance-asset-page__query-actions">
-          <el-button :loading="loadingList" @click="handleQuery">
+          <el-button :loading="loadingList" @click="handleQuery" v-hasPermi="['erp:assets:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>
@@ -74,7 +74,7 @@
       <div class="finance-asset-page__toolbar">
         <div class="finance-asset-page__toolbar-title">资产列表</div>
         <div class="finance-asset-page__toolbar-actions">
-          <el-button type="primary" plain :disabled="savingAsset" @click="openCreateDialog">
+          <el-button type="primary" plain :disabled="savingAsset" @click="openCreateDialog" v-hasPermi="['erp:assets:create']">
             <Icon icon="ep:plus" class="mr-5px" />
             新增资产
           </el-button>
@@ -176,6 +176,7 @@
                   type="primary"
                   :disabled="savingAsset || !canEdit(row)"
                   @click="openEditDialog(row.id!)"
+                  v-hasPermi="['erp:assets:update']"
                 >
                   编辑
                 </el-button>
@@ -192,6 +193,7 @@
                   type="danger"
                   :disabled="deletingAsset || !canDelete(row)"
                   @click="handleDelete(row)"
+                  v-hasPermi="['erp:assets:delete']"
                 >
                   删除
                 </el-button>

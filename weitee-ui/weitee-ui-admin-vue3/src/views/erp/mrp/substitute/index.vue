@@ -78,7 +78,7 @@
             <Icon icon="ep:refresh" class="mr-5px" />
             重置
           </el-button>
-          <el-button type="primary" :loading="loadingList" :disabled="!canSearch" @click="handleQuery">
+          <el-button type="primary" :loading="loadingList" :disabled="!canSearch" @click="handleQuery" v-hasPermi="['erp:mrp:substitute:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>

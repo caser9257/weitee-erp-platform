@@ -17,6 +17,8 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import java.util.List;
 
+import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
+
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 
 @Tag(name = "管理后台 - 文件权限管理")
@@ -61,8 +63,10 @@ public class FilePermissionController {
     public CommonResult<Boolean> checkPermission(
             @RequestParam("fileId") Long fileId,
             @RequestParam("permission") String permission) {
-        // TODO: 从SecurityContext获取当前用户ID
-        Long userId = 1L; // 临时硬编码
+        Long userId = SecurityFrameworkUtils.getLoginUserId();
+        if (userId == null) {
+            return success(false);
+        }
         return success(filePermissionService.hasPermission(fileId, userId, permission));
     }
 

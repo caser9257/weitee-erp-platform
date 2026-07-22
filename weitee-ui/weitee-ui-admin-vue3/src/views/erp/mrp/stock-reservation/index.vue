@@ -33,7 +33,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button :disabled="!canSearchSummary" @click="handleSummaryQuery">
+          <el-button :disabled="!canSearchSummary" @click="handleSummaryQuery" v-hasPermi="['erp:stock-reservation:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>
@@ -217,7 +217,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button :disabled="!canSearchDetail" @click="handleDetailQuery">
+          <el-button :disabled="!canSearchDetail" @click="handleDetailQuery" v-hasPermi="['erp:stock-reservation:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>

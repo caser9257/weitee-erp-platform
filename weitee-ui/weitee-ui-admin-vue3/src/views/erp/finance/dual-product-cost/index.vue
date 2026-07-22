@@ -42,7 +42,7 @@
           </el-form-item>
         </div>
         <div class="finance-shell__query-actions">
-          <el-button type="primary" :loading="loadingList" @click="handleQuery">
+          <el-button type="primary" :loading="loadingList" @click="handleQuery" v-hasPermi="['erp:dual-product-cost:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>

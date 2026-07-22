@@ -20,7 +20,9 @@ import com.google.common.annotations.VisibleForTesting;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
@@ -61,6 +63,15 @@ public class FileServiceImpl implements FileService {
     @Resource
     private FileOperationLogService fileOperationLogService;
 
+    @Resource
+    private FileVersionService fileVersionService;
+
+    @Resource
+    private FileCleanupCompensationService fileCleanupCompensationService;
+
+    @Resource
+    private PlatformTransactionManager transactionManager;
+
     @Override
     public PageResult<FileDO> getFilePage(FilePageReqVO pageReqVO) {
         return fileMapper.selectPage(pageReqVO);
@@ -90,21 +101,54 @@ public class FileServiceImpl implements FileService {
             }
         }
 
+        final String uploadName = name;
+        final String uploadType = type;
+
         // 2.1 生成上传的 path，需要保证唯一
-        String path = generateUploadPath(name, directory);
-        // 2.2 上传到文件存储器
+        String path = generateUploadPath(uploadName, directory);
+        // 2.2 上传到远端存储（事务外执行，避免事务回滚后远端文件成为孤文件）
         FileClient client = fileConfigService.getMasterFileClient();
         Assert.notNull(client, "客户端(master) 不能为空");
-        String url = client.upload(content, path, type);
+        String url = client.upload(content, path, uploadType);
 
-        // 3. 保存到数据库
-        FileDO file = new FileDO().setConfigId(client.getId())
-                .setName(name).setPath(path).setUrl(url)
-                .setType(type).setSize((long) content.length);
-        fileMapper.insert(file);
+        // 3. 事务内保存数据库记录
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        FileDO file;
+        try {
+            file = transactionTemplate.execute(status -> {
+                FileDO fileRecord = new FileDO().setConfigId(client.getId())
+                        .setName(uploadName).setPath(path).setUrl(url)
+                        .setType(uploadType).setSize((long) content.length);
+                fileMapper.insert(fileRecord);
 
-        // 4. 记录操作日志
-        fileOperationLogService.logSuccess(file.getId(), name, "UPLOAD", "上传文件成功");
+                // 4. 记录操作日志
+                fileOperationLogService.logSuccess(fileRecord.getId(), uploadName, "UPLOAD", "上传文件成功");
+
+                // 5. 保存文件版本
+                fileVersionService.saveFileVersion(fileRecord.getId(), uploadName, url,
+                        fileRecord.getSize(), uploadType, "初始版本");
+
+                return fileRecord;
+            });
+        } catch (Exception e) {
+            try {
+                client.delete(path);
+            } catch (Exception cleanupException) {
+                log.error("[createFile] 文件数据库保存失败且远端文件清理失败，configId={}, path={}, url={}",
+                        client.getId(), path, url, cleanupException);
+                try {
+                    fileCleanupCompensationService.record(client.getId(), path, url,
+                            cleanupException.getMessage());
+                } catch (Exception compensationException) {
+                    log.error("[createFile] 远端文件清理补偿记录写入失败，configId={}, path={}, url={}",
+                            client.getId(), path, url, compensationException);
+                }
+            }
+            log.error("[createFile] 文件数据库保存失败，已尝试清理远端文件，configId={}, path={}, url={}",
+                    client.getId(), path, url, e);
+            throw e;
+        }
+        Assert.notNull(file, "文件记录保存失败");
 
         return url;
     }
@@ -234,47 +278,56 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @SneakyThrows
-    @Transactional(rollbackFor = Exception.class)
     public void permanentDeleteFile(Long id) {
         FileDO file = fileMapper.selectById(id);
         if (file == null) {
             throw exception(FILE_NOT_EXISTS);
         }
 
-        // 从文件存储器中删除
-        FileClient client = fileConfigService.getFileClient(file.getConfigId());
-        Assert.notNull(client, "客户端({}) 不能为空", file.getConfigId());
-        client.delete(file.getPath());
+        // 事务内删除数据库记录
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.execute(status -> {
+            fileMapper.deleteById(id);
+            fileOperationLogService.logSuccess(id, file.getName(), "PERMANENT_DELETE", "从回收站永久删除");
+            return null;
+        });
 
-        // 删除记录
-        fileMapper.deleteById(id);
-
-        // 记录操作日志
-        fileOperationLogService.logSuccess(id, file.getName(), "PERMANENT_DELETE", "从回收站永久删除");
+        // 事务外删除远端文件，失败时写入补偿记录供重试
+        try {
+            FileClient client = fileConfigService.getFileClient(file.getConfigId());
+            Assert.notNull(client, "客户端({}) 不能为空", file.getConfigId());
+            client.delete(file.getPath());
+        } catch (Exception e) {
+            log.error("[permanentDeleteFile] 远端文件删除失败，configId={}, path={}", file.getConfigId(), file.getPath(), e);
+            try {
+                fileCleanupCompensationService.record(file.getConfigId(), file.getPath(), file.getUrl(),
+                        e.getMessage());
+            } catch (Exception ce) {
+                log.error("[permanentDeleteFile] 写入清理补偿记录失败，fileId={}", id, ce);
+            }
+        }
 
         log.info("[permanentDeleteFile] 文件永久删除，fileId={}, fileName={}", id, file.getName());
     }
 
     @Override
     @SneakyThrows
-    @Transactional(rollbackFor = Exception.class)
     public void permanentDeleteFileList(List<Long> ids) {
         for (Long id : ids) {
             permanentDeleteFile(id);
         }
     }
 
-    @Override
+@Override
     @SneakyThrows
-    @Transactional(rollbackFor = Exception.class)
     public void emptyRecycleBin() {
-        // 获取所有回收站文件
+        // 1. 获取所有回收站文件（事务外，避免长事务）
         List<FileDO> recycleFiles = fileMapper.selectRecycleFiles();
         if (recycleFiles.isEmpty()) {
             return;
         }
 
-        // 批量删除
+        // 2. 先删除远端文件（事务外），即使部分失败也不影响 DB 清理
         Map<Long, FileClient> clientMap = new HashMap<>();
         for (FileDO file : recycleFiles) {
             try {
@@ -283,15 +336,25 @@ public class FileServiceImpl implements FileService {
                     client.delete(file.getPath());
                 }
             } catch (Exception e) {
-                log.error("[emptyRecycleBin] 删除文件存储失败，fileId={}, path={}", file.getId(), file.getPath(), e);
+                log.error("[emptyRecycleBin] 删除远端文件失败，fileId={}, path={}", file.getId(), file.getPath(), e);
+                // 记录补偿记录，供定时任务重试
+                try {
+                    fileCleanupCompensationService.record(file.getConfigId(), file.getPath(), file.getUrl(),
+                            e.getMessage());
+                } catch (Exception ce) {
+                    log.error("[emptyRecycleBin] 写入清理补偿记录失败，fileId={}", file.getId(), ce);
+                }
             }
         }
 
-        // 删除记录
-        List<Long> ids = recycleFiles.stream().map(FileDO::getId).toList();
-        fileMapper.deleteByIds(ids);
-
-        log.info("[emptyRecycleBin] 清空回收站，共删除 {} 个文件", recycleFiles.size());
+        // 3. 事务内删除数据库记录
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.execute(status -> {
+            List<Long> ids = recycleFiles.stream().map(FileDO::getId).toList();
+            fileMapper.deleteByIds(ids);
+            log.info("[emptyRecycleBin] 清空回收站，共删除 {} 个文件", recycleFiles.size());
+            return null;
+        });
     }
 
     @Override

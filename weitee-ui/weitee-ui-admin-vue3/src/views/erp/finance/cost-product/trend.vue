@@ -68,7 +68,7 @@
         </div>
 
         <div class="filter-actions">
-          <el-button type="primary" :loading="loading" @click="handleQuery">
+          <el-button type="primary" :loading="loading" @click="handleQuery" v-hasPermi="['erp:cost-product:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>

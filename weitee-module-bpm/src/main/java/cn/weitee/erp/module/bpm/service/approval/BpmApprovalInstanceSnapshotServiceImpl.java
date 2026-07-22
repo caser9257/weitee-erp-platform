@@ -2,6 +2,7 @@ package cn.weitee.erp.module.bpm.service.approval;
 
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnapshotDO;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalInstanceSnapshotMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -11,12 +12,14 @@ import java.util.List;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS;
+import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.APPROVAL_INSTANCE_SNAPSHOT_STATUS_CONFLICT;
 
 /**
  * 审批运行时快照 Service 实现类
  */
 @Service
 @Validated
+@Slf4j
 public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstanceSnapshotService {
 
     @Resource
@@ -66,10 +69,16 @@ public class BpmApprovalInstanceSnapshotServiceImpl implements BpmApprovalInstan
         if (snapshot == null) {
             throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
         }
-        approvalInstanceSnapshotMapper.updateById(new BpmApprovalInstanceSnapshotDO()
-                .setId(id)
-                .setStatus(status)
-                .setResultReason(resultReason));
+        // CAS 更新：只有当前状态与预期一致时才更新
+        int updateCount = approvalInstanceSnapshotMapper.updateByIdAndStatus(id, snapshot.getStatus(),
+                new BpmApprovalInstanceSnapshotDO()
+                        .setId(id)
+                        .setStatus(status)
+                        .setResultReason(resultReason));
+        if (updateCount == 0) {
+            log.warn("[updateSnapshotStatus] 快照状态已被其他事务修改，略过，id={}, expectedStatus={}", id, snapshot.getStatus());
+            throw exception(APPROVAL_INSTANCE_SNAPSHOT_STATUS_CONFLICT);
+        }
     }
 
     @Override

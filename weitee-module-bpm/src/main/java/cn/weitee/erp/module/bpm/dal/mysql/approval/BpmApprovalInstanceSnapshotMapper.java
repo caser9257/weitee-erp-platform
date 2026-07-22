@@ -60,6 +60,15 @@ public interface BpmApprovalInstanceSnapshotMapper extends BaseMapperX<BpmApprov
     }
 
     /**
+     * CAS 更新：仅在当前状态与预期一致时才更新
+     */
+    default int updateByIdAndStatus(Long id, Integer expectedStatus, BpmApprovalInstanceSnapshotDO updateObj) {
+        return update(updateObj, new LambdaQueryWrapperX<BpmApprovalInstanceSnapshotDO>()
+                .eq(BpmApprovalInstanceSnapshotDO::getId, id)
+                .eq(BpmApprovalInstanceSnapshotDO::getStatus, expectedStatus));
+    }
+
+    /**
      * 按状态统计数量
      */
     @Select("SELECT COUNT(*) FROM bpm_approval_instance_snapshot WHERE status = #{status} AND deleted = 0")

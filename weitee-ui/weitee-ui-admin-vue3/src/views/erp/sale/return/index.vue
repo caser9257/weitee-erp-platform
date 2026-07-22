@@ -352,7 +352,7 @@
                 审核
               </el-button>
               <el-button
-                v-else
+                v-else-if="row.status === 20"
                 link
                 type="danger"
                 @click="handleUpdateStatus(row.id, 10)"

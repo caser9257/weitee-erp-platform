@@ -100,6 +100,7 @@ public class ErpSaleOrderBpmServiceImpl implements ErpSaleOrderBpmService {
                 // clearProcessBinding 由 SaleOrderResultHandler.onCancel 统一处理
             } catch (Exception e) {
                 log.warn("[cancelSaleOrderApproval] BPM 撤回失败，orderId={}", orderId, e);
+                throw e;
             }
         });
     }

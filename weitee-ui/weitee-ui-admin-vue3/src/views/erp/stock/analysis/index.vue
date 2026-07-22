@@ -25,12 +25,13 @@
           >
             <Icon icon="ep:back" class="mr-5px" /> 返回来源
           </el-button>
-          <el-button
+<el-button
             class="stock-action-btn stock-action-btn--primary"
             type="primary"
             :loading="isNavigatingStock"
             :disabled="isAnyNavigationPending"
             @click="handleNavigate('stock')"
+            v-hasPermi="['erp:stock-analysis:query']"
           >
             <Icon icon="ep:goods" class="mr-5px" /> 库存台账
           </el-button>
@@ -150,6 +151,7 @@
               :loading="isAnyLoading"
               :disabled="!canQuery"
               @click="handleQuery"
+              v-hasPermi="['erp:stock-analysis:query']"
             >
               <Icon icon="ep:search" class="mr-5px" /> 查询
             </el-button>

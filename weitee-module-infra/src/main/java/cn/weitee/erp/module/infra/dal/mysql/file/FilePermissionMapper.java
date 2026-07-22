@@ -33,7 +33,10 @@ public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
                 .eq(FilePermissionDO::getFileId, fileId)
                 .eq(FilePermissionDO::getGrantType, "USER")
                 .eq(FilePermissionDO::getGrantTargetId, userId)
-                .le(FilePermissionDO::getExpireTime, LocalDateTime.now()));
+                .and(w -> w
+                        .isNull(FilePermissionDO::getExpireTime)
+                        .or()
+                        .ge(FilePermissionDO::getExpireTime, LocalDateTime.now())));
     }
 
     /**
@@ -52,7 +55,10 @@ public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
                         .or(w -> w
                                 .eq(FilePermissionDO::getGrantType, "DEPT")
                                 .eq(FilePermissionDO::getGrantTargetId, deptId)))
-                .le(FilePermissionDO::getExpireTime, LocalDateTime.now()));
+                .and(w -> w
+                        .isNull(FilePermissionDO::getExpireTime)
+                        .or()
+                        .ge(FilePermissionDO::getExpireTime, LocalDateTime.now())));
     }
 
     /**

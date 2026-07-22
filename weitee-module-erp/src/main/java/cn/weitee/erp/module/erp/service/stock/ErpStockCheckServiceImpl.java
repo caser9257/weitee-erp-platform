@@ -217,18 +217,18 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     }
 
     /**
-     * 审核通过并关闭（REVIEWING → APPROVED → CLOSED）
+     * 审核通过并关闭（REVIEWING → PROCESSING → CLOSED）
      *
-     * 先写 APPROVED 保留审计轨迹，再执行业务，最后写 CLOSED。
+     * 先写 PROCESSING 中间态，再执行业务，最后写 CLOSED 终态。
      * 包含：更新库存、盘亏结转制造费用、生成凭证、解冻仓库。
      */
     private void approveAndClose(ErpStockCheckDO stockCheck) {
         Long checkId = stockCheck.getId();
 
-        // 0. 先写 APPROVED 状态，保留审计轨迹
+        // 0. 先写 PROCESSING 中间态（业务完成后才能落 CLOSED 终态）
         erpStockCheckMapper.updateById(new ErpStockCheckDO()
                 .setId(checkId)
-                .setStatus(ErpStockCheckStatusEnum.APPROVED.getStatus()));
+                .setStatus(ErpStockCheckStatusEnum.PROCESSING.getStatus()));
 
         // 1. 更新库存
         List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);

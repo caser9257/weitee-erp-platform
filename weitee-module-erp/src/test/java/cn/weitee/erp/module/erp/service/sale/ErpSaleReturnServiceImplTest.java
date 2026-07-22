@@ -52,8 +52,10 @@ class ErpSaleReturnServiceImplTest {
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
         setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
-            if ("getStock".equals(methodName)) {
-                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            if ("getStockMapByProductAndWarehouseIds".equals(methodName)) {
+                return java.util.Collections.singletonMap(
+                        ErpStockService.buildProductWarehouseKey(1L, 2L),
+                        new ErpStockDO().setAverageCost(new BigDecimal("10.00")));
             }
             return null;
         }));
@@ -102,8 +104,10 @@ class ErpSaleReturnServiceImplTest {
         }));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
         setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
-            if ("getStock".equals(methodName)) {
-                return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            if ("getStockMapByProductAndWarehouseIds".equals(methodName)) {
+                return java.util.Collections.singletonMap(
+                        ErpStockService.buildProductWarehouseKey(1L, 2L),
+                        new ErpStockDO().setAverageCost(new BigDecimal("10.00")));
             }
             return null;
         }));

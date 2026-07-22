@@ -96,10 +96,10 @@
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="240" align="center">
         <template #default="{ row }">
-          <el-button v-if="canAssignChecker(row)" link type="warning" @click="openAssignDialog(row)">
+          <el-button v-hasPermi="['erp:purchase-in-quality:assign-checker']" link type="warning" @click="openAssignDialog(row)">
             {{ row.assignedCheckerUserId ? '改派' : '指派' }}
           </el-button>
-          <el-button v-if="canHandleQuality(row)" link type="success" @click="openDetail(row, 'submit')">
+          <el-button v-hasPermi="['erp:purchase-in-quality:handle']" link type="success" @click="openDetail(row, 'submit')">
             处理质检
           </el-button>
           <el-button

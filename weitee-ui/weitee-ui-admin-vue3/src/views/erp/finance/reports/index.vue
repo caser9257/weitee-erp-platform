@@ -62,7 +62,7 @@
             <Icon icon="ep:refresh-left" class="mr-5px" />
             重置
           </el-button>
-          <el-button type="primary" :loading="currentTabLoading" :disabled="!canRefreshReport" @click="refreshReport">
+          <el-button type="primary" :loading="currentTabLoading" :disabled="!canRefreshReport" @click="refreshReport" v-hasPermi="['erp:reports:query']">
             <Icon icon="ep:refresh" class="mr-5px" />
             刷新报表
           </el-button>

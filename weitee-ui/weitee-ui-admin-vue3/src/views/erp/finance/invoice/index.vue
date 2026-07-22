@@ -6,11 +6,11 @@
           <div class="page-header__title">销项发票管理</div>
         </div>
         <div class="page-header__actions">
-          <el-button type="primary" @click="handleCreate">
+          <el-button type="primary" @click="handleCreate" v-hasPermi="['erp:invoice:create']">
             <Icon icon="ep:plus" class="mr-5px" />
             新开发票
           </el-button>
-          <el-button :loading="loading" @click="loadData">
+          <el-button :loading="loading" @click="loadData" v-hasPermi="['erp:invoice:query']">
             <Icon icon="ep:refresh" class="mr-5px" />
             刷新
           </el-button>
@@ -41,7 +41,7 @@
           </el-form-item>
         </div>
         <div class="query-form__actions">
-          <el-button type="primary" :loading="loading" @click="loadData">
+          <el-button type="primary" :loading="loading" @click="loadData" v-hasPermi="['erp:invoice:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>
@@ -91,10 +91,10 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button v-if="row.status === 'DRAFT'" link type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-if="row.status === 'DRAFT'" link type="primary" @click="handleEdit(row)" v-hasPermi="['erp:invoice:update']">编辑</el-button>
             <el-button v-if="row.status === 'DRAFT'" link type="success" @click="handleIssue(row)">开票</el-button>
             <el-button v-if="row.status === 'ISSUED'" link type="warning" @click="handleVoid(row)">作废</el-button>
-            <el-button v-if="row.status === 'DRAFT'" link type="danger" @click="handleDelete(row)">删除</el-button>
+            <el-button v-if="row.status === 'DRAFT'" link type="danger" @click="handleDelete(row)" v-hasPermi="['erp:invoice:delete']">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
