@@ -4,7 +4,7 @@
 
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET FOREIGN_KEY_CHECKS = 0;
-USE `ruoyi-vue-pro`;
+USE `weitee-erp`;
 
 -- ========== 1. 动态解析一级父节点 ==========
 

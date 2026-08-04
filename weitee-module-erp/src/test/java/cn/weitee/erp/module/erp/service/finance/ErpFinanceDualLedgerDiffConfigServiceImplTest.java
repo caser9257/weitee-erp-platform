@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_BIZ_ITEM_DUPLICATE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_DEPRECIATION_SOURCE_ITEM_INVALID;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_FIXED_AMOUNT_INVALID;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CONFIG_RATIO_INVALID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -154,6 +156,36 @@ class ErpFinanceDualLedgerDiffConfigServiceImplTest {
 
         assertEquals(302L, id);
         assertEquals(new BigDecimal("1.1500"), insertedRef.get().getRatio());
+    }
+
+    @Test
+    void createDualLedgerDiffConfig_shouldRejectRatioNotGreaterThanOne() throws Exception {
+        ErpFinanceDualLedgerDiffConfigServiceImpl service = new ErpFinanceDualLedgerDiffConfigServiceImpl();
+        setField(service, "erpFinanceDualLedgerDiffConfigMapper",
+                createProxy(ErpFinanceDualLedgerDiffConfigMapper.class, (methodName, args) -> null));
+
+        ErpFinanceDualLedgerDiffConfigSaveReqVO reqVO = buildBaseReqVO();
+        reqVO.setCalculationType(1);
+        reqVO.setRatio(new BigDecimal("1.00"));
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> service.createDualLedgerDiffConfig(reqVO));
+
+        assertEquals(FINANCE_DUAL_LEDGER_DIFF_CONFIG_RATIO_INVALID.getCode(), ex.getCode());
+    }
+
+    @Test
+    void createDualLedgerDiffConfig_shouldRejectNonNegativeFixedAmount() throws Exception {
+        ErpFinanceDualLedgerDiffConfigServiceImpl service = new ErpFinanceDualLedgerDiffConfigServiceImpl();
+        setField(service, "erpFinanceDualLedgerDiffConfigMapper",
+                createProxy(ErpFinanceDualLedgerDiffConfigMapper.class, (methodName, args) -> null));
+
+        ErpFinanceDualLedgerDiffConfigSaveReqVO reqVO = buildBaseReqVO();
+        reqVO.setCalculationType(2);
+        reqVO.setFixedAmount(BigDecimal.ZERO);
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> service.createDualLedgerDiffConfig(reqVO));
+
+        assertEquals(FINANCE_DUAL_LEDGER_DIFF_CONFIG_FIXED_AMOUNT_INVALID.getCode(), ex.getCode());
     }
 
     @Test

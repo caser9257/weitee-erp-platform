@@ -24,9 +24,12 @@ import cn.weitee.erp.module.erp.service.finance.diffcalc.ProRataAmountDiffCalcul
 import cn.weitee.erp.module.erp.service.finance.diffcalc.SourceMappingAmountDiffCalculator;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionCostService;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionInboundService;
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -36,11 +39,39 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID;
 
 /**
  * 双写服务重算功能单元测试
  */
 class ErpFinanceDualWriteServiceRecomputeTest {
+
+    @Test
+    void calculateExternalAmount_shouldRejectReverseResult() throws Exception {
+        ErpFinanceDualWriteServiceImpl service = new ErpFinanceDualWriteServiceImpl();
+        AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
+        factory.init(Arrays.asList(
+                new ProRataAmountDiffCalculator(),
+                new FixedVarianceAmountDiffCalculator(),
+                new SourceMappingAmountDiffCalculator()
+        ));
+        setField(service, "amountDiffCalculatorFactory", factory);
+
+        ErpFinanceDualLedgerDiffConfigDO config = ErpFinanceDualLedgerDiffConfigDO.builder()
+                .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
+                .ratio(new BigDecimal("0.85"))
+                .build();
+        Method method = ErpFinanceDualWriteServiceImpl.class
+                .getDeclaredMethod("calculateExternalAmount", ErpFinanceDualLedgerDiffConfigDO.class, BigDecimal.class);
+        method.setAccessible(true);
+
+        InvocationTargetException ex = assertThrows(InvocationTargetException.class,
+                () -> method.invoke(service, config, new BigDecimal("100.00")));
+
+        assertInstanceOf(ServiceException.class, ex.getCause());
+        assertEquals(FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID.getCode(),
+                ((ServiceException) ex.getCause()).getCode());
+    }
 
     @Test
     void recomputeByBizId_shouldUseProductionCostDetailForProductionInbound() throws Exception {
@@ -312,7 +343,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .internalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType())
                                 .internalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.POWER.getType())
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .ratio(new BigDecimal("0.8500"))
+                                .ratio(new BigDecimal("1.1500"))
                                 .build(),
                         ErpFinanceDualLedgerDiffConfigDO.builder()
                                 .id(202L)
@@ -321,7 +352,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .internalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType())
                                 .internalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.OTHER.getType())
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .ratio(new BigDecimal("0.8500"))
+                                .ratio(new BigDecimal("1.1500"))
                                 .build()
                 );
             }
@@ -360,13 +391,13 @@ class ErpFinanceDualWriteServiceRecomputeTest {
 
         assertTrue(result);
         assertNotNull(updatedVoucherRef.get());
-        assertEquals(new BigDecimal("42.50"), updatedVoucherRef.get().getTotalDebitAmount());
-        assertEquals(new BigDecimal("42.50"), updatedVoucherRef.get().getTotalCreditAmount());
+        assertEquals(new BigDecimal("57.50"), updatedVoucherRef.get().getTotalDebitAmount());
+        assertEquals(new BigDecimal("57.50"), updatedVoucherRef.get().getTotalCreditAmount());
         assertEquals(2, insertedLogs.size());
         BigDecimal diffAmountSum = insertedLogs.stream()
                 .map(ErpFinanceDualLedgerAmountDiffLogDO::getDiffAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        assertEquals(new BigDecimal("7.50"), diffAmountSum);
+        assertEquals(new BigDecimal("-7.50"), diffAmountSum);
     }
 
     @Test
@@ -456,7 +487,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .internalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType())
                                 .internalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.POWER.getType())
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .ratio(new BigDecimal("0.8500"))
+                                .ratio(new BigDecimal("1.1500"))
                                 .build(),
                         ErpFinanceDualLedgerDiffConfigDO.builder()
                                 .id(204L)
@@ -465,7 +496,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .internalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType())
                                 .internalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.MANUFACTURING_OVERHEAD.getType())
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .ratio(new BigDecimal("0.8500"))
+                                .ratio(new BigDecimal("1.1500"))
                                 .build()
                 );
             }
@@ -504,8 +535,8 @@ class ErpFinanceDualWriteServiceRecomputeTest {
 
         assertTrue(result);
         assertNotNull(updatedVoucherRef.get());
-        assertEquals(new BigDecimal("42.50"), updatedVoucherRef.get().getTotalDebitAmount());
-        assertEquals(new BigDecimal("42.50"), updatedVoucherRef.get().getTotalCreditAmount());
+        assertEquals(new BigDecimal("57.50"), updatedVoucherRef.get().getTotalDebitAmount());
+        assertEquals(new BigDecimal("57.50"), updatedVoucherRef.get().getTotalCreditAmount());
     }
 
     @Test
@@ -843,7 +874,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .diffItemType(20)
                                 .internalSourceValue(5001)
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .ratio(new BigDecimal("0.85"))
+                                .ratio(new BigDecimal("1.15"))
                                 .build()
                 );
             }
@@ -866,13 +897,13 @@ class ErpFinanceDualWriteServiceRecomputeTest {
         assertTrue(result);
         assertEquals(1, updateCount.get());
         assertNotNull(updatedEntryRef.get());
-        // 100 * 0.85 = 85
-        assertEquals(new BigDecimal("85.00"), updatedEntryRef.get().getDebitAmount());
+        // 100 * 1.15 = 115
+        assertEquals(new BigDecimal("115.00"), updatedEntryRef.get().getDebitAmount());
         assertNotNull(updatedVoucherRef.get());
-        assertEquals(new BigDecimal("85.00"), updatedVoucherRef.get().getTotalDebitAmount());
+        assertEquals(new BigDecimal("115.00"), updatedVoucherRef.get().getTotalDebitAmount());
         assertEquals(BigDecimal.ZERO.setScale(2), updatedVoucherRef.get().getTotalCreditAmount());
         assertEquals(1, insertedLogs.size());
-        assertEquals(new BigDecimal("15.00"), insertedLogs.get(0).getDiffAmount());
+        assertEquals(new BigDecimal("-15.00"), insertedLogs.get(0).getDiffAmount());
     }
 
     @Test
@@ -947,7 +978,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .internalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType())
                                 .internalSourceValue(ErpFinanceDualLedgerDiffItemTypeEnum.LABOR.getType())
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .ratio(new BigDecimal("0.90"))
+                                .ratio(new BigDecimal("1.10"))
                                 .build()
                 );
             }
@@ -966,7 +997,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
 
         assertTrue(result);
         assertNotNull(updatedEntryRef.get());
-        assertEquals(new BigDecimal("180.00"), updatedEntryRef.get().getDebitAmount());
+        assertEquals(new BigDecimal("220.00"), updatedEntryRef.get().getDebitAmount());
     }
 
     @Test
@@ -1051,7 +1082,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
                                 .internalSourceType(ErpFinanceDualLedgerDiffSourceTypeEnum.COST_ITEM.getType())
                                 .internalSourceValue(6601)
                                 .calculationType(ErpFinanceDiffCalculationTypeEnum.FIXED_VARIANCE.getType())
-                                .fixedAmount(new BigDecimal("40.00"))
+                                .fixedAmount(new BigDecimal("-40.00"))
                                 .build()
                 );
             }
@@ -1072,7 +1103,7 @@ class ErpFinanceDualWriteServiceRecomputeTest {
         assertEquals(124003L, updatedLogRef.get().getSourceVoucherId());
         assertEquals(124004L, updatedLogRef.get().getTargetVoucherId());
         assertNotNull(updatedEntryRef.get());
-        assertEquals(new BigDecimal("720.00"), updatedEntryRef.get().getDebitAmount());
+        assertEquals(new BigDecimal("800.00"), updatedEntryRef.get().getDebitAmount());
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {

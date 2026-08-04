@@ -10,7 +10,12 @@
     >
       <div class="dual-ledger-diff-config-form__grid">
         <el-form-item label="业务类型" prop="bizType">
-          <el-select v-model="formData.bizType" class="!w-full" clearable placeholder="请选择业务类型">
+          <el-select
+            v-model="formData.bizType"
+            class="!w-full"
+            clearable
+            placeholder="请选择业务类型"
+          >
             <el-option
               v-for="item in ERP_BIZ_TYPE_OPTIONS"
               :key="item.value"
@@ -20,7 +25,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="差异项" prop="diffItemType">
-          <el-select v-model="formData.diffItemType" class="!w-full" clearable placeholder="请选择差异项">
+          <el-select
+            v-model="formData.diffItemType"
+            class="!w-full"
+            clearable
+            placeholder="请选择差异项"
+          >
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_ITEM_OPTIONS"
               :key="item.value"
@@ -30,7 +40,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="外部账来源" prop="externalSourceType">
-          <el-select v-model="formData.externalSourceType" class="!w-full" clearable placeholder="请选择外部账来源">
+          <el-select
+            v-model="formData.externalSourceType"
+            class="!w-full"
+            clearable
+            placeholder="请选择外部账来源"
+          >
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
               :key="item.value"
@@ -44,7 +59,12 @@
           label="外部账来源值"
           prop="externalSourceValue"
         >
-          <el-select v-model="formData.externalSourceValue" class="!w-full" clearable placeholder="请选择外部账来源值">
+          <el-select
+            v-model="formData.externalSourceValue"
+            class="!w-full"
+            clearable
+            placeholder="请选择外部账来源值"
+          >
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_ITEM_OPTIONS"
               :key="item.value"
@@ -54,7 +74,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="内部账来源" prop="internalSourceType">
-          <el-select v-model="formData.internalSourceType" class="!w-full" clearable placeholder="请选择内部账来源">
+          <el-select
+            v-model="formData.internalSourceType"
+            class="!w-full"
+            clearable
+            placeholder="请选择内部账来源"
+          >
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
               :key="item.value"
@@ -68,7 +93,12 @@
           label="内部账来源值"
           prop="internalSourceValue"
         >
-          <el-select v-model="formData.internalSourceValue" class="!w-full" clearable placeholder="请选择内部账来源值">
+          <el-select
+            v-model="formData.internalSourceValue"
+            class="!w-full"
+            clearable
+            placeholder="请选择内部账来源值"
+          >
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_ITEM_OPTIONS"
               :key="item.value"
@@ -78,7 +108,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="计算类型" prop="calculationType">
-          <el-select v-model="formData.calculationType" class="!w-full" clearable placeholder="请选择计算类型">
+          <el-select
+            v-model="formData.calculationType"
+            class="!w-full"
+            clearable
+            placeholder="请选择计算类型"
+          >
             <el-option
               v-for="item in DUAL_LEDGER_DIFF_CALCULATION_TYPE_OPTIONS"
               :key="item.value"
@@ -119,7 +154,12 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button type="primary" :loading="submitLoading" :disabled="dialogLoading" @click="submitForm">
+      <el-button
+        type="primary"
+        :loading="submitLoading"
+        :disabled="dialogLoading"
+        @click="submitForm"
+      >
         确定
       </el-button>
       <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
@@ -163,7 +203,9 @@ const createEmptyFormData = (): ErpFinanceDualLedgerDiffConfigSaveReqVO => ({
   remark: ''
 })
 
-const mapToFormData = (data: ErpFinanceDualLedgerDiffConfigVO): ErpFinanceDualLedgerDiffConfigSaveReqVO => ({
+const mapToFormData = (
+  data: ErpFinanceDualLedgerDiffConfigVO
+): ErpFinanceDualLedgerDiffConfigSaveReqVO => ({
   id: data.id,
   bizType: data.bizType,
   diffItemType: data.diffItemType,
@@ -191,12 +233,22 @@ const createSourceValueValidator = (
   }
 }
 
-const createNumberValidator = (
+const createDirectionValidator = (
   shouldRequire: () => boolean,
+  isValid: (value: number) => boolean,
   messageText: string
 ): FormItemRule['validator'] => {
   return (_rule, value, callback) => {
-    if (shouldRequire() && (value === undefined || value === null || value === '')) {
+    if (!shouldRequire()) {
+      callback()
+      return
+    }
+    const numberValue = Number(value)
+    if (value === undefined || value === null || value === '' || !Number.isFinite(numberValue)) {
+      callback(new Error(messageText))
+      return
+    }
+    if (!isValid(numberValue)) {
       callback(new Error(messageText))
       return
     }
@@ -214,10 +266,16 @@ const formType = ref<FormType>('create')
 const formRef = ref<FormInstance>()
 const formData = ref<ErpFinanceDualLedgerDiffConfigSaveReqVO>(createEmptyFormData())
 
-const requiresExternalSourceValue = computed(() => formData.value.externalSourceType === COST_ITEM_SOURCE_TYPE)
-const requiresInternalSourceValue = computed(() => formData.value.internalSourceType === COST_ITEM_SOURCE_TYPE)
+const requiresExternalSourceValue = computed(
+  () => formData.value.externalSourceType === COST_ITEM_SOURCE_TYPE
+)
+const requiresInternalSourceValue = computed(
+  () => formData.value.internalSourceType === COST_ITEM_SOURCE_TYPE
+)
 const requiresRatio = computed(() => formData.value.calculationType === PRO_RATA_CALCULATION_TYPE)
-const requiresFixedAmount = computed(() => formData.value.calculationType === FIXED_VARIANCE_CALCULATION_TYPE)
+const requiresFixedAmount = computed(
+  () => formData.value.calculationType === FIXED_VARIANCE_CALCULATION_TYPE
+)
 const formDisabled = computed(() => dialogLoading.value || submitLoading.value)
 
 const formRules: FormRules<ErpFinanceDualLedgerDiffConfigSaveReqVO> = {
@@ -246,13 +304,21 @@ const formRules: FormRules<ErpFinanceDualLedgerDiffConfigSaveReqVO> = {
   calculationType: [{ required: true, message: '计算类型不能为空', trigger: 'change' }],
   ratio: [
     {
-      validator: createNumberValidator(() => requiresRatio.value, '比例系数不能为空'),
+      validator: createDirectionValidator(
+        () => requiresRatio.value,
+        (value) => value > 1,
+        '比例系数必须大于 1，才能保证内账金额小于外账金额'
+      ),
       trigger: 'change'
     }
   ],
   fixedAmount: [
     {
-      validator: createNumberValidator(() => requiresFixedAmount.value, '固定差额不能为空'),
+      validator: createDirectionValidator(
+        () => requiresFixedAmount.value,
+        (value) => value < 0,
+        '固定差额必须小于 0，才能保证内账金额小于外账金额'
+      ),
       trigger: 'change'
     }
   ],

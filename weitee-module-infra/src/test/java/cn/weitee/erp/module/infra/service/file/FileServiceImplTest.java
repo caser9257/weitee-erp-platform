@@ -42,6 +42,12 @@ public class FileServiceImplTest extends BaseDbUnitTest {
     @MockBean
     private FileOperationLogService fileOperationLogService;
 
+    @MockBean
+    private FileVersionService fileVersionService;
+
+    @MockBean
+    private FileCleanupCompensationService fileCleanupCompensationService;
+
     @BeforeEach
     public void setUp() {
         FileServiceImpl.PATH_PREFIX_DATE_ENABLE = true;

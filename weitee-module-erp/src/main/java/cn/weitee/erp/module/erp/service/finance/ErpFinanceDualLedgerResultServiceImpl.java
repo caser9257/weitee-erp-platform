@@ -520,7 +520,7 @@ public class ErpFinanceDualLedgerResultServiceImpl implements ErpFinanceDualLedg
         }
         // 查询该业务类型的差异配置
         List<ErpFinanceDualLedgerDiffConfigDO> diffConfigs = dualLedgerDiffConfigService
-                .getDualLedgerDiffConfigList(bizType, null);
+                .getDualLedgerDiffConfigList(bizType, CommonStatusEnum.ENABLE.getStatus());
         if (diffConfigs == null || diffConfigs.isEmpty()) {
             return Collections.emptyList();
         }
