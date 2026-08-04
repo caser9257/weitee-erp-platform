@@ -1234,7 +1234,8 @@ const mergeRouteTree = (
         (item) => normalizeRoutePath(item.path) === normalizeRoutePath(child.path)
       )
       if (childIndex === -1) {
-        mergedChildren.push(cloneRouteTree(child))
+        // 权限边界约束：远端菜单（后端按角色授权精确返回）不含该子菜单时，
+        // 不得通过本地增强注入（避免受限角色看到未授权子菜单）。
         continue
       }
       consumedChildren.add(childIndex)
