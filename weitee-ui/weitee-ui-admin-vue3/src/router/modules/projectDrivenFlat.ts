@@ -1302,12 +1302,29 @@ const shouldRetainFormalAugmentation = (
   route: AppCustomRouteRecordRaw,
   normalizedMenus: AppCustomRouteRecordRaw[] = []
 ) => {
+  // 1. 权限根存在性约束：augmentation 只为远端已授权的模块补充路由组件，
+  //    不能凭空为未授权模块（如受限角色看到的财务/供应链）注入顶级菜单。
+  const rootPath = getRouteRootPath(normalizeRoutePath(route.path))
+  const remoteHasRoot = normalizedMenus.some(
+    (item) => getRouteRootPath(normalizeRoutePath(item.path)) === rootPath
+  )
+  if (!remoteHasRoot) {
+    return false
+  }
+
+  // 2. 原有 scm 兼容逻辑：flat 场景 remote 有 children 时不注入 scm 增强
   if (normalizeRoutePath(route.path) !== '/scm') {
     return true
   }
 
   const remoteScmRoute = normalizedMenus.find((item) => normalizeRoutePath(item.path) === '/scm')
   return !remoteScmRoute?.children?.length
+}
+
+const getRouteRootPath = (path?: string) => {
+  const normalizedPath = normalizeRoutePath(path)
+  const [firstSegment] = normalizedPath.split('/').filter(Boolean)
+  return firstSegment ? `/${firstSegment}` : ''
 }
 
 const filterEmbeddedScmCapabilities = (
@@ -1380,11 +1397,11 @@ export const mergeProjectDrivenMenus = (
   const normalizedMenus = formalized
     ? mergeMenusByPath(flattenedMenus).filter((route) => shouldRetainRouteWhenFormalized(route))
     : flattenedMenus
-  const menuAugmentations = formalized
-    ? mergeMenusByPath(flattenErpRootMenus(flatMenuAugmentations)).filter((route) =>
-        shouldRetainRouteWhenFormalized(route) && shouldRetainFormalAugmentation(route, normalizedMenus)
-      )
-    : flatMenuAugmentations
+  const menuAugmentations = mergeMenusByPath(flattenErpRootMenus(flatMenuAugmentations)).filter(
+    (route) =>
+      shouldRetainRouteWhenFormalized(route) &&
+      shouldRetainFormalAugmentation(route, normalizedMenus)
+  )
 
   return decorateScmMenus(
     decorateFinanceMenus(
