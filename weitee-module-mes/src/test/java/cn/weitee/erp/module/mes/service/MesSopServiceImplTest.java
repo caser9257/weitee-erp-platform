@@ -23,6 +23,7 @@ class MesSopServiceImplTest {
     private final AtomicReference<MesSopDocumentDO> sopRef = new AtomicReference<>();
     private final List<MesSopStepBindingDO> insertedBindings = new java.util.ArrayList<>();
     private final AtomicReference<MesSopDocumentDO> updatedRef = new AtomicReference<>();
+    private boolean duplicateOnInsert = false;
 
     private MesSopServiceImpl sopService;
 
@@ -33,12 +34,17 @@ class MesSopServiceImplTest {
         sopRef.set(null);
         insertedBindings.clear();
         updatedRef.set(null);
+        duplicateOnInsert = false;
 
         setField(sopService, "mesSopDocumentMapper", createProxy(MesSopDocumentMapper.class, (m, a) -> {
             if ("insert".equals(m)) {
+                if (duplicateOnInsert) {
+                    throw new org.springframework.dao.DuplicateKeyException("uk_sop_no");
+                }
                 insertedRef.set((MesSopDocumentDO) a[0]);
                 return 1;
             }
+            if ("deletePhysicalBySopNo".equals(m)) return 1;
             if ("selectById".equals(m)) return sopRef.get();
             if ("updateById".equals(m)) {
                 updatedRef.set((MesSopDocumentDO) a[0]);
@@ -97,6 +103,12 @@ class MesSopServiceImplTest {
         sopService.updateSop(reqVO);
 
         assertEquals(2, insertedBindings.size());
+    }
+
+    @Test
+    void createSop_shouldRejectDuplicateNo() {
+        duplicateOnInsert = true;
+        assertThrows(ServiceException.class, () -> sopService.createSop(buildReqVO()));
     }
 
     @Test

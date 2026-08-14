@@ -18,6 +18,10 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_IMPORT_FILE_EMPTY;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_IMPORT_FILE_TOO_LARGE;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_IMPORT_FILE_TYPE_INVALID;
 
 @Tag(name = "管理后台 - MES SOP OCR 导入")
 @RestController
@@ -32,7 +36,24 @@ public class MesSopImportController {
     @Operation(summary = "OCR 识别 SOP 图片并生成草稿")
     @PreAuthorize("@ss.hasPermission('mes:sop:import')")
     public CommonResult<MesSopImportRecordRespVO> ocrImport(@RequestParam("file") MultipartFile file) throws IOException {
+        validateImage(file);
         return success(mesSopImportService.ocrImport(file.getOriginalFilename(), file.getBytes()));
+    }
+
+    /**
+     * 校验上传文件：仅图片类型、大小 ≤ 10MB。
+     */
+    private void validateImage(MultipartFile file) {
+        if (file.isEmpty()) {
+            throw exception(MES_SOP_IMPORT_FILE_EMPTY);
+        }
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw exception(MES_SOP_IMPORT_FILE_TOO_LARGE);
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw exception(MES_SOP_IMPORT_FILE_TYPE_INVALID);
+        }
     }
 
     @PutMapping("/confirm")

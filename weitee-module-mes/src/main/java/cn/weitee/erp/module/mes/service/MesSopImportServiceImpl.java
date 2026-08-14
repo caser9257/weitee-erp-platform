@@ -22,6 +22,7 @@ import jakarta.annotation.Resource;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_IMPORT_NOT_EXISTS;
 import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_IMPORT_STATUS_INVALID;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_NO_DUPLICATE;
 import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_OCR_FAILED;
 
 @Service
@@ -76,6 +77,8 @@ public class MesSopImportServiceImpl implements MesSopImportService {
             throw exception(MES_SOP_IMPORT_STATUS_INVALID);
         }
         // 生成草稿态 SOP（OCR 仅作导入辅助，不直接发布——需人工后续发布）
+        // 释放同名软删记录的唯一键，允许编码复用
+        mesSopDocumentMapper.deletePhysicalBySopNo(reqVO.getSopNo());
         MesSopDocumentDO sop = new MesSopDocumentDO()
                 .setSopNo(reqVO.getSopNo())
                 .setTitle(reqVO.getTitle())
@@ -84,7 +87,11 @@ public class MesSopImportServiceImpl implements MesSopImportService {
                 .setAttachmentUrl(record.getFileUrl())
                 .setStatus(0)
                 .setRemark(reqVO.getRemark());
-        mesSopDocumentMapper.insert(sop);
+        try {
+            mesSopDocumentMapper.insert(sop);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            throw exception(MES_SOP_NO_DUPLICATE);
+        }
         mesSopImportRecordMapper.updateById(new MesSopImportRecordDO()
                 .setId(record.getId())
                 .setStatus(STATUS_DONE)

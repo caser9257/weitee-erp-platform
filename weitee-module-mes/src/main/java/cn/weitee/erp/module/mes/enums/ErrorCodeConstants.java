@@ -16,5 +16,9 @@ public interface ErrorCodeConstants {
     ErrorCode MES_SOP_IMPORT_NOT_EXISTS = new ErrorCode(1_040_000_010, "SOP 导入记录不存在");
     ErrorCode MES_SOP_IMPORT_STATUS_INVALID = new ErrorCode(1_040_000_011, "当前导入记录状态不允许执行该操作");
     ErrorCode MES_SOP_OCR_FAILED = new ErrorCode(1_040_000_012, "OCR 识别失败，请稍后重试");
+    ErrorCode MES_SOP_NO_DUPLICATE = new ErrorCode(1_040_000_013, "SOP 编码已存在");
+    ErrorCode MES_SOP_IMPORT_FILE_EMPTY = new ErrorCode(1_040_000_014, "上传文件不能为空");
+    ErrorCode MES_SOP_IMPORT_FILE_TOO_LARGE = new ErrorCode(1_040_000_015, "上传文件不能超过 10MB");
+    ErrorCode MES_SOP_IMPORT_FILE_TYPE_INVALID = new ErrorCode(1_040_000_016, "仅支持上传图片文件");
 
 }

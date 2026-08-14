@@ -53,6 +53,7 @@ class MesSopImportServiceImplTest {
                 insertedSopRef.set((MesSopDocumentDO) a[0]);
                 return 1;
             }
+            if ("deletePhysicalBySopNo".equals(m)) return 1;
             return null;
         }));
         setField(importService, "sopOcrClient", new SopOcrClient() {

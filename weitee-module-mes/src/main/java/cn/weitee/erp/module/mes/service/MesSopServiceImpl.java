@@ -11,18 +11,21 @@ import cn.weitee.erp.module.mes.dal.dataobject.MesSopDocumentDO;
 import cn.weitee.erp.module.mes.dal.dataobject.MesSopStepBindingDO;
 import cn.weitee.erp.module.mes.dal.mysql.MesSopDocumentMapper;
 import cn.weitee.erp.module.mes.dal.mysql.MesSopStepBindingMapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
-import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_NOT_EXISTS;
-import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_STATUS_INVALID;
 import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_DATE_INVALID;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_NOT_EXISTS;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_NO_DUPLICATE;
+import static cn.weitee.erp.module.mes.enums.ErrorCodeConstants.MES_SOP_STATUS_INVALID;
 
 @Service
 @Validated
@@ -37,8 +40,14 @@ public class MesSopServiceImpl implements MesSopService {
     @Transactional(rollbackFor = Exception.class)
     public Long createSop(MesSopDocumentSaveReqVO reqVO) {
         validateSop(reqVO);
+        // 释放同名软删记录的唯一键，允许编码复用
+        mesSopDocumentMapper.deletePhysicalBySopNo(reqVO.getSopNo());
         MesSopDocumentDO sop = BeanUtils.toBean(reqVO, MesSopDocumentDO.class, item -> item.setStatus(0));
-        mesSopDocumentMapper.insert(sop);
+        try {
+            mesSopDocumentMapper.insert(sop);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            throw exception(MES_SOP_NO_DUPLICATE);
+        }
         saveBindings(sop.getId(), reqVO.getRouteStepIds());
         return sop.getId();
     }
@@ -83,8 +92,7 @@ public class MesSopServiceImpl implements MesSopService {
     @Override
     public PageResult<MesSopDocumentRespVO> getSopPage(MesSopDocumentPageReqVO pageReqVO) {
         PageResult<MesSopDocumentDO> pageResult = mesSopDocumentMapper.selectPage(pageReqVO);
-        return new PageResult<>(pageResult.getList().stream().map(this::buildRespVO).toList(),
-                pageResult.getTotal());
+        return new PageResult<>(buildRespVOList(pageResult.getList()), pageResult.getTotal());
     }
 
     @Override
@@ -100,11 +108,28 @@ public class MesSopServiceImpl implements MesSopService {
                 .toList();
     }
 
+    /**
+     * 批量构建 VO：一次性查询全部绑定关系，避免 N+1。
+     */
+    private List<MesSopDocumentRespVO> buildRespVOList(List<MesSopDocumentDO> sops) {
+        if (CollUtil.isEmpty(sops)) {
+            return List.of();
+        }
+        List<Long> sopIds = sops.stream().map(MesSopDocumentDO::getId).toList();
+        Map<Long, List<Long>> bindingMap = mesSopStepBindingMapper.selectList(Wrappers.<MesSopStepBindingDO>lambdaQuery()
+                        .in(MesSopStepBindingDO::getSopId, sopIds))
+                .stream()
+                .collect(Collectors.groupingBy(MesSopStepBindingDO::getSopId,
+                        Collectors.mapping(MesSopStepBindingDO::getRouteStepId, Collectors.toList())));
+        return sops.stream().map(sop -> {
+            MesSopDocumentRespVO respVO = BeanUtils.toBean(sop, MesSopDocumentRespVO.class);
+            respVO.setRouteStepIds(bindingMap.getOrDefault(sop.getId(), List.of()));
+            return respVO;
+        }).toList();
+    }
+
     private MesSopDocumentRespVO buildRespVO(MesSopDocumentDO sop) {
-        MesSopDocumentRespVO respVO = BeanUtils.toBean(sop, MesSopDocumentRespVO.class);
-        respVO.setRouteStepIds(mesSopStepBindingMapper.selectListBySopId(sop.getId()).stream()
-                .map(MesSopStepBindingDO::getRouteStepId).toList());
-        return respVO;
+        return buildRespVOList(List.of(sop)).get(0);
     }
 
     private void saveBindings(Long sopId, List<Long> routeStepIds) {

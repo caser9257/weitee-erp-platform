@@ -27,7 +27,7 @@ const report = (name, ok, extra = '') => {
   report('新增按钮', /新增 SOP/.test(text))
   report('OCR 导入按钮', /OCR 导入/.test(text))
   report('SOP 数据渲染', /SOP-E2E-001/.test(text) && /已发布/.test(text))
-  report('状态徽章', /SOP-OCR-E2E/.test(text) && /草稿/.test(text))
+  report('状态徽章', /SOP-OCR-RV/.test(text) && /草稿/.test(text))
   await page.screenshot({ path: 'C:/Users/Administrator/AppData/Local/Temp/tester/pw-shots/50-sop.png' })
 
   // OCR 弹窗
