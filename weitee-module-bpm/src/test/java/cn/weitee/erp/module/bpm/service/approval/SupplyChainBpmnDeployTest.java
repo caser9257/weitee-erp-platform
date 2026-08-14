@@ -8,6 +8,7 @@ import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *   - erp_stock_out_approval
  */
 @Transactional
+@Disabled("手动部署工具：需真实 Flowable 引擎环境（RepositoryService），单元测试环境跳过")
 class SupplyChainBpmnDeployTest extends BaseDbUnitTest {
 
     @Resource
