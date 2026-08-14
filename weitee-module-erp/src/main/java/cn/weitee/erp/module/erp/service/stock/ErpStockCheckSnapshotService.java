@@ -18,7 +18,7 @@ public interface ErpStockCheckSnapshotService {
      * 生成快照记录并同步账面数量到盘点明细
      *
      * @param checkId 盘点单ID
-     * @return 生成的快照数�?
+     * @return 生成的快照数量
      */
     int createSnapshot(Long checkId);
 

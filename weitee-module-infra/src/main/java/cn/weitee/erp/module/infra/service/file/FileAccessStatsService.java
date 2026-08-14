@@ -23,7 +23,7 @@ public interface FileAccessStatsService {
     void recordDownload(Long fileId);
 
     /**
-     * 获取文件的访问统�?
+     * 获取文件的访问统璁?
      */
     List<FileAccessStatsDO> getFileAccessStats(Long fileId);
 

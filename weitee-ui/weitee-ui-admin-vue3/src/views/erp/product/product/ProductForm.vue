@@ -78,7 +78,7 @@
           <el-form-item label="状态" prop="status">
             <el-radio-group v-model="formData.status" class="status-group">
               <el-radio
-                v-for="dict in getIntDictOptions(DICT_TYPE.COMMON_STATUS)"
+                v-for="dict in statusOptions"
                 :key="dict.value"
                 :value="dict.value"
               >
@@ -158,7 +158,7 @@
           <el-form-item label="供给方式" prop="supplyType">
             <el-select v-model="formData.supplyType" placeholder="请选择供给方式" clearable class="w-full">
               <el-option
-                v-for="dict in getIntDictOptions(DICT_TYPE.ERP_SUPPLY_TYPE)"
+                v-for="dict in supplyTypeOptions"
                 :key="dict.value"
                 :label="dict.label"
                 :value="dict.value"
@@ -215,7 +215,7 @@ import { ProductUnitApi, ProductUnitVO } from '@/api/erp/product/unit'
 import { SupplierApi, SupplierVO } from '@/api/erp/purchase/supplier'
 import { CommonStatusEnum } from '@/utils/constants'
 import { defaultProps, handleTree } from '@/utils/tree'
-import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 
 defineOptions({ name: 'ProductForm' })
 
@@ -230,6 +230,8 @@ const formRef = ref()
 const categoryList = ref<ProductCategoryVO[]>([])
 const unitList = ref<ProductUnitVO[]>([])
 const supplierList = ref<SupplierVO[]>([])
+const statusOptions = computed(() => getIntDictOptions(DICT_TYPE.COMMON_STATUS))
+const supplyTypeOptions = computed(() => getStrDictOptions(DICT_TYPE.ERP_SUPPLY_TYPE))
 
 const createDefaultFormData = () => ({
   id: undefined,

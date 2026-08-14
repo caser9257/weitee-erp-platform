@@ -10,6 +10,10 @@ export interface ProductVO {
   unitId: number // 单位编号
   unitName?: string // 单位名字
   quantityPrecision?: number // 数量精度，继承自产品单位
+  productType?: number // 产品类型
+  produceType?: number // 生产方式
+  batchEnable?: boolean // 是否启用批次
+  snEnable?: boolean // 是否启用序列号
   status: number // 产品状态
   standard: string // 产品规格
   remark: string // 产品备注
@@ -19,8 +23,11 @@ export interface ProductVO {
   salePrice: number // 销售价格，单位：元
   minPrice: number // 最低价格，单位：元
   supplyType?: number // 供给方式
-  mrpEnable?: boolean // 是否参与 MRP
+  mrpEnable: boolean // 是否参与 MRP
   defaultRouteId?: number // 默认工艺路线
+  qcEnable?: boolean // 是否启用质检
+  outsourceEnable?: boolean // 是否支持委外
+  costMethod?: number // 成本方式
   defaultSupplierId?: number // 默认供应商
   materialCode?: string // 业务物料号
   batchControlFlag?: boolean // 是否批次管理

@@ -58,7 +58,7 @@ public class FileTagServiceImpl implements FileTagService {
     @Override
     public void deleteFileTag(Long id) {
         fileTagMapper.deleteById(id);
-        // 同时删除该标签的所有关联关�?
+        // 同时删除该标签的所有关联关绯?
         fileTagRelMapper.deleteByTagId(id);
     }
 

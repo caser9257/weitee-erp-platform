@@ -17,7 +17,7 @@ import java.util.List;
 public interface FileAccessStatsMapper extends BaseMapperX<FileAccessStatsDO> {
 
     /**
-     * 获取文件的访问统�?
+     * 获取文件的访问统璁?
      */
     default List<FileAccessStatsDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FileAccessStatsDO>()

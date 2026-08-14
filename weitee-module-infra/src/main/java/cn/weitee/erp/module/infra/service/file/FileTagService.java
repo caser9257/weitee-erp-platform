@@ -33,7 +33,7 @@ public interface FileTagService {
     List<FileTagDO> getFileTagList();
 
     /**
-     * 给文件添加标�?
+     * 给文件添加标绛?
      */
     void addFileTag(Long fileId, Long tagId);
 
@@ -43,7 +43,7 @@ public interface FileTagService {
     void removeFileTag(Long fileId, Long tagId);
 
     /**
-     * 获取文件的标签列�?
+     * 获取文件的标签列琛?
      */
     List<FileTagDO> getFileTags(Long fileId);
 

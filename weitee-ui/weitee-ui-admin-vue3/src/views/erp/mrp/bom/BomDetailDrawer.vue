@@ -152,6 +152,8 @@
                 </template>
               </el-table-column>
 
+              <el-table-column label="位号" prop="referenceDesignator" width="180" show-overflow-tooltip />
+
               <el-table-column label="提前期(天)" width="110" align="right">
                 <template #default="{ row }">
                   <span class="font-mono">{{ formatCount(row.leadTimeDay) }}</span>

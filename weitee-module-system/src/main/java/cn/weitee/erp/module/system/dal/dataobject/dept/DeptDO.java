@@ -10,13 +10,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 部门�?
+ * 部门琛?
  *
  * @author weitee
  * @author WeTai
  */
 @TableName("system_dept")
-@KeySequence("system_dept_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
+@KeySequence("system_dept_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写銆?
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class DeptDO extends BaseDO {
@@ -43,7 +43,7 @@ public class DeptDO extends BaseDO {
      */
     private Integer sort;
     /**
-     * 负责�?
+     * 负责浜?
      *
      * 关联 {@link AdminUserDO#getId()}
      */
@@ -57,7 +57,7 @@ public class DeptDO extends BaseDO {
      */
     private String email;
     /**
-     * 部门状�?
+     * 部门状鎬?
      *
      * 枚举 {@link CommonStatusEnum}
      */
@@ -65,7 +65,7 @@ public class DeptDO extends BaseDO {
     /**
      * 成本类型
      *
-     * 0=不归�? 1=制造费�? 2=管理费用, 3=销售费�? 4=研发支出
+     * 0=不归闆? 1=制造费鐢? 2=管理费用, 3=销售费鐢? 4=研发支出
      */
     private Integer costType;
 

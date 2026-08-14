@@ -69,6 +69,7 @@
           <el-table-column label="单位" prop="unitName" width="120" align="center" />
           <el-table-column label="用量" prop="usageQty" width="140" align="center" />
           <el-table-column label="损耗率" prop="lossRate" width="140" align="center" />
+          <el-table-column label="位号" prop="referenceDesignator" width="180" show-overflow-tooltip />
           <el-table-column label="提前期(天)" prop="leadTimeDay" width="140" align="center" />
           <el-table-column label="排序" prop="sort" width="100" align="center" />
           <el-table-column label="备注" prop="remark" min-width="160" />

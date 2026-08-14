@@ -47,7 +47,7 @@ public interface FileOperationLogMapper extends BaseMapperX<FileOperationLogDO> 
     }
 
     /**
-     * 获取文件的操作日�?
+     * 获取文件的操作日蹇?
      */
     default List<FileOperationLogDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FileOperationLogDO>()

@@ -42,12 +42,12 @@ public class ErpThreeWayMatchDO extends BaseDO {
     private Long serviceReceiptId;
 
     /**
-     * 服务接收单编�?
+     * 服务接收单编鍙?
      */
     private String serviceReceiptNo;
 
     /**
-     * 发票�?
+     * 发票鍙?
      */
     private String invoiceNo;
 
@@ -62,12 +62,12 @@ public class ErpThreeWayMatchDO extends BaseDO {
     private BigDecimal contractAmount;
 
     /**
-     * 接收单金�?
+     * 接收单金棰?
      */
     private BigDecimal receiptAmount;
 
     /**
-     * 匹配结果�?-不匹�?1-完全匹配 2-部分匹配
+     * 匹配结果锛?-不匹閰?1-完全匹配 2-部分匹配
      */
     private Integer matchResult;
 
@@ -82,7 +82,7 @@ public class ErpThreeWayMatchDO extends BaseDO {
     private Long apStatementId;
 
     /**
-     * 状态：0-待匹�?10-已匹�?20-已生成应�?
+     * 状态：0-待匹閰?10-已匹閰?20-已生成应浠?
      */
     private Integer status;
 

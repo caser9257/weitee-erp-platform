@@ -216,6 +216,11 @@ export enum DICT_TYPE {
   ERP_AUDIT_STATUS = 'erp_audit_status', // ERP 审批状态
   ERP_STOCK_RECORD_BIZ_TYPE = 'erp_stock_record_biz_type', // 库存明细的业务类型
   ERP_SUPPLY_TYPE = 'erp_supply_type', // 供给方式
+  ERP_PRODUCT_TYPE = 'erp_product_type', // 产品类型
+  ERP_PRODUCE_TYPE = 'erp_produce_type', // 生产方式
+  ERP_ROUTE_STATUS = 'erp_route_status', // 工艺路线状态
+  ERP_STEP_STATUS = 'erp_step_status', // 工序状态
+  ERP_DEVICE_STATUS = 'erp_device_status', // 设备状态
 
   // ========== AI - 人工智能模块  ==========
   AI_PLATFORM = 'ai_platform', // AI 平台

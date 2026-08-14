@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 /**
- * 文件�?DO
+ * 文件澶?DO
  *
  * @author weitee
  */
@@ -26,17 +26,17 @@ public class FileFolderDO extends BaseDO {
     private Long id;
 
     /**
-     * 文件夹名�?
+     * 文件夹名绉?
      */
     private String name;
 
     /**
-     * 父文件夹ID�?=根目录）
+     * 父文件夹ID锛?=根目录）
      */
     private Long parentId;
 
     /**
-     * 文件夹路�?
+     * 文件夹路寰?
      */
     private String path;
 

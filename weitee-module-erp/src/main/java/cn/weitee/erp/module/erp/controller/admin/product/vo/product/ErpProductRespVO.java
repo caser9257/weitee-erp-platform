@@ -46,6 +46,30 @@ public class ErpProductRespVO {
     @Schema(description = "数量精度，继承自产品单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
     private Integer quantityPrecision;
 
+    @Schema(description = "产品类型")
+    private Integer productType;
+
+    @Schema(description = "生产方式")
+    private Integer produceType;
+
+    @Schema(description = "是否启用批次")
+    private Boolean batchEnable;
+
+    @Schema(description = "是否启用序列号")
+    private Boolean snEnable;
+
+    @Schema(description = "默认工艺路线编号")
+    private Long defaultRouteId;
+
+    @Schema(description = "是否启用质检")
+    private Boolean qcEnable;
+
+    @Schema(description = "是否支持委外")
+    private Boolean outsourceEnable;
+
+    @Schema(description = "成本方式")
+    private Integer costMethod;
+
     @Schema(description = "Status", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @ExcelProperty("Status")
     private Integer status;
@@ -85,6 +109,9 @@ public class ErpProductRespVO {
     @Schema(description = "Min price", example = "61.87")
     @ExcelProperty("Min Price")
     private BigDecimal minPrice;
+
+    @Schema(description = "Whether to participate in MRP", example = "true")
+    private Boolean mrpEnable;
 
     @Schema(description = "Asset candidate flag", example = "true")
     private Boolean assetFlag;

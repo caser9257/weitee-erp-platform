@@ -5,14 +5,7 @@ export interface RdBomItemVO {
   itemNo?: number
   materialId: number
   materialName?: string
-  materialNameSnapshot?: string
-  specModelSnapshot?: string
-  materialDescSnapshot?: string
   referenceDesignator?: string
-  packageTypeSnapshot?: string
-  qualityGradeSnapshot?: string
-  keyPart?: boolean
-  supplierId?: number
   materialType?: number
   unitId?: number
   unitName?: string
@@ -39,14 +32,7 @@ export interface RdBomItemSaveReqVO {
   id?: number
   itemNo?: number
   materialId?: number
-  materialNameSnapshot?: string
-  specModelSnapshot?: string
-  materialDescSnapshot?: string
   referenceDesignator?: string
-  packageTypeSnapshot?: string
-  qualityGradeSnapshot?: string
-  keyPart?: boolean
-  supplierId?: number
   materialType?: number
   unitId?: number
   usageQty?: number

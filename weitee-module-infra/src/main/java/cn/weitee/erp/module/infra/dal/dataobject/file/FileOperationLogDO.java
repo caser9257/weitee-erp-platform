@@ -47,7 +47,7 @@ public class FileOperationLogDO extends BaseDO {
     private Long userId;
 
     /**
-     * 操作人名�?
+     * 操作人名绉?
      */
     private String userName;
 
@@ -57,7 +57,7 @@ public class FileOperationLogDO extends BaseDO {
     private String ip;
 
     /**
-     * 浏览器信�?
+     * 浏览器信鎭?
      */
     private String userAgent;
 
@@ -67,7 +67,7 @@ public class FileOperationLogDO extends BaseDO {
     private String description;
 
     /**
-     * 操作结果�?-成功, 1-失败
+     * 操作结果锛?-成功, 1-失败
      */
     private Integer result;
 

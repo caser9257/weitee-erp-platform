@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.Resource;
 
 /**
- * 项目生命周期刷新事件监听�?
+ * 项目生命周期刷新事件监听器
  *
- * 异步处理项目生命周期状态刷新，避免阻塞主业务流�?
+ * 异步处理项目生命周期状态刷新，避免阻塞主业务流程
  *
  * @author weitee
  */
@@ -25,7 +25,7 @@ public class ProjectLifecycleRefreshListener {
     /**
      * 异步处理项目生命周期刷新
      *
-     * 使用 @Async 注解实现异步执行，不阻塞主业务线�?
+     * 使用 @Async 注解实现异步执行，不阻塞主业务线程
      * refreshProjectStatus() 已有乐观锁保护，天然支持幂等
      */
     @EventListener

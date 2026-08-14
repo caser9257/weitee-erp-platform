@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @Schema(description = "管理后台 - ERP BOM 新增/修改 Request VO")
@@ -24,12 +25,24 @@ public class ErpBomSaveReqVO {
     @NotNull(message = "产品编号不能为空")
     private Long productId;
 
+    @Schema(description = "关联工艺路线编号")
+    private Long routeId;
+
     @Schema(description = "版本")
     private String version;
+
+    @Schema(description = "成品率")
+    private BigDecimal yieldRate;
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "状态不能为空")
     private Integer status;
+
+    @Schema(description = "生效日期")
+    private LocalDate effectiveDate;
+
+    @Schema(description = "失效日期")
+    private LocalDate expireDate;
 
     @Schema(description = "备注")
     private String remark;
@@ -61,8 +74,23 @@ public class ErpBomSaveReqVO {
         @Schema(description = "损耗率")
         private BigDecimal lossRate;
 
+        @Schema(description = "位号（如 R1,C2,U3）")
+        private String referenceDesignator;
+
+        @Schema(description = "发料方式")
+        private Integer issueMode;
+
+        @Schema(description = "是否倒冲")
+        private Boolean backflushFlag;
+
         @Schema(description = "提前期（天）")
         private Integer leadTimeDay;
+
+        @Schema(description = "默认供应仓库编号")
+        private Long supplyWarehouseId;
+
+        @Schema(description = "指定工序编号")
+        private Long requiredStepId;
 
         @Schema(description = "鏄惁鍙備笌 MRP")
         private Boolean mrpEnableFlag;

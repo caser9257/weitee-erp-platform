@@ -64,7 +64,7 @@ public class ErpStockCheckSnapshotDO extends BaseDO {
     private BigDecimal bookAmount;
 
     /**
-     * 快照时加权平均单�?
+     * 快照时加权平均单浠?
      */
     private BigDecimal averageCost;
 

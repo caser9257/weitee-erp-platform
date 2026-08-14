@@ -32,7 +32,7 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.module.system.enums.ErrorCodeConstants.*;
 
 /**
- * 字典数据 Service 实现�?
+ * 字典数据 Service 实现绫?
  *
  * @author weitee
  */
@@ -79,7 +79,7 @@ public class DictDataServiceImpl implements DictDataService {
     public Long createDictData(DictDataSaveReqVO createReqVO) {
         // 校验字典类型有效
         validateDictTypeExists(createReqVO.getDictType());
-        // 校验字典数据的值的唯一�?
+        // 校验字典数据的值的唯一鎬?
         validateDictDataValueUnique(null, createReqVO.getDictType(), createReqVO.getValue());
 
         // 插入字典类型
@@ -94,7 +94,7 @@ public class DictDataServiceImpl implements DictDataService {
         validateDictDataExists(updateReqVO.getId());
         // 校验字典类型有效
         validateDictTypeExists(updateReqVO.getDictType());
-        // 校验字典数据的值的唯一�?
+        // 校验字典数据的值的唯一鎬?
         validateDictDataValueUnique(updateReqVO.getId(), updateReqVO.getDictType(), updateReqVO.getValue());
 
         // 更新字典类型
@@ -162,7 +162,7 @@ public class DictDataServiceImpl implements DictDataService {
         if (dictData == null) {
             return;
         }
-        // 如果 id 为空，说明不用比较是否为相同 id 的字典数�?
+        // 如果 id 为空，说明不用比较是否为相同 id 的字典数鎹?
         if (id == null) {
             throw exception(DICT_DATA_VALUE_DUPLICATE);
         }

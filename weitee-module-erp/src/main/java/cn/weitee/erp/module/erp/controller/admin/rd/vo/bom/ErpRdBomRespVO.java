@@ -52,6 +52,8 @@ public class ErpRdBomRespVO {
 
         private BigDecimal lossRate;
 
+        private String referenceDesignator;
+
         private Integer leadTimeDay;
 
         private Integer sort;

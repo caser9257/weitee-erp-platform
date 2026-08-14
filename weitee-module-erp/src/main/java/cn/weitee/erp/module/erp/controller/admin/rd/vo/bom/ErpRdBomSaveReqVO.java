@@ -57,6 +57,9 @@ public class ErpRdBomSaveReqVO {
         @Schema(description = "损耗率")
         private BigDecimal lossRate;
 
+        @Schema(description = "位号（如 R1,C2,U3）")
+        private String referenceDesignator;
+
         @Schema(description = "提前期")
         private Integer leadTimeDay;
 

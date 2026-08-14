@@ -42,7 +42,7 @@ public class FileAccessStatsServiceImpl implements FileAccessStatsService {
         file.setLastAccessTime(LocalDateTime.now());
         fileMapper.updateById(file);
 
-        // 2. 更新或创建每日统计记�?
+        // 2. 更新或创建每日统计记褰?
         LocalDate today = LocalDate.now();
         FileAccessStatsDO stats = fileAccessStatsMapper.selectByFileIdAndDate(fileId, today);
         if (stats == null) {
@@ -74,7 +74,7 @@ public class FileAccessStatsServiceImpl implements FileAccessStatsService {
         file.setLastAccessTime(LocalDateTime.now());
         fileMapper.updateById(file);
 
-        // 2. 更新或创建每日统计记�?
+        // 2. 更新或创建每日统计记褰?
         LocalDate today = LocalDate.now();
         FileAccessStatsDO stats = fileAccessStatsMapper.selectByFileIdAndDate(fileId, today);
         if (stats == null) {

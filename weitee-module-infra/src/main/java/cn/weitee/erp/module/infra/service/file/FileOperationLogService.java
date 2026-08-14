@@ -22,19 +22,19 @@ public interface FileOperationLogService {
      * @param fileName    文件名称
      * @param operation   操作类型
      * @param description 操作说明
-     * @param result      操作结果�?-成功, 1-失败
+     * @param result      操作结果锛?-成功, 1-失败
      * @param failReason  失败原因
      * @return 日志ID
      */
     Long log(Long fileId, String fileName, String operation, String description, Integer result, String failReason);
 
     /**
-     * 记录成功的文件操作日�?
+     * 记录成功的文件操作日蹇?
      */
     Long logSuccess(Long fileId, String fileName, String operation, String description);
 
     /**
-     * 记录失败的文件操作日�?
+     * 记录失败的文件操作日蹇?
      */
     Long logFail(Long fileId, String fileName, String operation, String description, String failReason);
 
@@ -44,7 +44,7 @@ public interface FileOperationLogService {
     PageResult<FileOperationLogDO> getFileOperationLogPage(FileOperationLogPageReqVO reqVO);
 
     /**
-     * 获取文件的操作日志列�?
+     * 获取文件的操作日志列琛?
      */
     List<FileOperationLogDO> getFileOperationLogs(Long fileId);
 

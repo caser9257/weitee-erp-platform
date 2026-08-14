@@ -3,15 +3,22 @@ package cn.weitee.erp.module.erp.service.mrp;
 import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomItemDO;
-import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
+import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProcessRouteDO;
+import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProcessRouteStepDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionMaterialDO;
+import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
+import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderStepDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionSuggestDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomMapper;
+import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProcessRouteMapper;
+import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProcessRouteStepMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionOrderMapper;
+import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionOrderStepMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionMaterialMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.mrp.ErpProductionOrderStatusEnum;
+import cn.weitee.erp.module.erp.enums.mrp.ErpProductionOrderStepStatusEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +42,10 @@ class ErpProductionOrderServiceImplTest {
     private final AtomicReference<ErpBomDO> bomRef = new AtomicReference<>();
     private final AtomicReference<List<ErpBomItemDO>> bomItemsRef = new AtomicReference<>(Collections.emptyList());
     private final List<ErpProductionMaterialDO> insertedMaterials = new ArrayList<>();
+    private final AtomicReference<ErpProcessRouteDO> routeRef = new AtomicReference<>();
+    private final AtomicReference<List<ErpProcessRouteStepDO>> routeStepsRef = new AtomicReference<>(Collections.emptyList());
+    private final List<ErpProductionOrderStepDO> insertedOrderSteps = new ArrayList<>();
+    private final AtomicReference<List<ErpProductionOrderStepDO>> orderStepsRef = new AtomicReference<>(Collections.emptyList());
     private final AtomicReference<ErpProductionOrderDO> updatedOrderRef = new AtomicReference<>();
     private final AtomicReference<ErpProductionOrderDO> qualityOrderRef = new AtomicReference<>();
     private final AtomicReference<BigDecimal> qualityReportQtyRef = new AtomicReference<>();
@@ -50,6 +61,10 @@ class ErpProductionOrderServiceImplTest {
         bomRef.set(null);
         bomItemsRef.set(Collections.emptyList());
         insertedMaterials.clear();
+        routeRef.set(null);
+        routeStepsRef.set(Collections.emptyList());
+        insertedOrderSteps.clear();
+        orderStepsRef.set(Collections.emptyList());
         updatedOrderRef.set(null);
         qualityOrderRef.set(null);
         qualityReportQtyRef.set(null);
@@ -85,6 +100,28 @@ class ErpProductionOrderServiceImplTest {
             if ("insertBatch".equals(methodName)) {
                 insertedMaterials.addAll((List<ErpProductionMaterialDO>) args[0]);
                 return true;
+            }
+            return null;
+        }));
+        setField(productionOrderService, "erpProcessRouteMapper", createProxy(ErpProcessRouteMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return routeRef.get();
+            }
+            return null;
+        }));
+        setField(productionOrderService, "erpProcessRouteStepMapper", createProxy(ErpProcessRouteStepMapper.class, (methodName, args) -> {
+            if ("selectListByRouteId".equals(methodName)) {
+                return routeStepsRef.get();
+            }
+            return null;
+        }));
+        setField(productionOrderService, "erpProductionOrderStepMapper", createProxy(ErpProductionOrderStepMapper.class, (methodName, args) -> {
+            if ("insertBatch".equals(methodName)) {
+                insertedOrderSteps.addAll((List<ErpProductionOrderStepDO>) args[0]);
+                return true;
+            }
+            if ("selectListByOrderId".equals(methodName)) {
+                return orderStepsRef.get();
             }
             return null;
         }));
@@ -160,10 +197,120 @@ class ErpProductionOrderServiceImplTest {
     }
 
     @Test
+    void releaseProductionOrder_withRoute_shouldCreateStepSnapshot() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(14L)
+                .setProductId(200L)
+                .setPlanQty(new BigDecimal("10"))
+                .setRouteId(300L)
+                .setStatus(ErpProductionOrderStatusEnum.CREATED.getStatus()));
+        bomRef.set(new ErpBomDO().setId(21L).setProductId(200L).setStatus(1));
+        bomItemsRef.set(List.of(
+                new ErpBomItemDO().setId(31L).setMaterialId(1001L).setUsageQty(new BigDecimal("2")).setLossRate(BigDecimal.ZERO)
+        ));
+        routeRef.set(new ErpProcessRouteDO().setId(300L).setProductId(200L).setStatus(1).setVersion("V2"));
+        routeStepsRef.set(List.of(
+                new ErpProcessRouteStepDO().setId(401L).setRouteId(300L).setStepNo(10).setStepCode("OP-10")
+                        .setStepName("下料").setWorkCenterId(501L).setRemark("首道工序"),
+                new ErpProcessRouteStepDO().setId(402L).setRouteId(300L).setStepNo(20).setStepCode("OP-20")
+                        .setStepName("装配").setWorkCenterId(502L).setRemark("末道工序")
+        ));
+
+        productionOrderService.releaseProductionOrder(14L);
+
+        assertEquals(2, insertedOrderSteps.size());
+        ErpProductionOrderStepDO step1 = insertedOrderSteps.get(0);
+        assertEquals(14L, step1.getProductionOrderId());
+        assertEquals(401L, step1.getRouteStepId());
+        assertEquals(10, step1.getStepNo());
+        assertEquals("OP-10", step1.getStepCode());
+        assertEquals("下料", step1.getStepName());
+        assertEquals(501L, step1.getWorkCenterId());
+        assertEquals(new BigDecimal("10"), step1.getPlanQty());
+        assertEquals(BigDecimal.ZERO, step1.getReportedQty());
+        assertEquals(0, step1.getStepStatus());
+        assertEquals(ErpProductionOrderStatusEnum.RELEASED.getStatus(), updatedOrderRef.get().getStatus());
+        assertEquals("V2", updatedOrderRef.get().getRouteVersion());
+    }
+
+    @Test
+    void releaseProductionOrder_withInvalidRoute_shouldReject() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(15L)
+                .setProductId(200L)
+                .setPlanQty(new BigDecimal("10"))
+                .setRouteId(300L)
+                .setStatus(ErpProductionOrderStatusEnum.CREATED.getStatus()));
+        bomRef.set(new ErpBomDO().setId(21L).setProductId(200L).setStatus(1));
+        bomItemsRef.set(List.of(
+                new ErpBomItemDO().setId(31L).setMaterialId(1001L).setUsageQty(new BigDecimal("2")).setLossRate(BigDecimal.ZERO)
+        ));
+        routeRef.set(new ErpProcessRouteDO().setId(300L).setProductId(200L).setStatus(2).setVersion("V1"));
+
+        assertThrows(ServiceException.class, () -> productionOrderService.releaseProductionOrder(15L));
+        assertEquals(0, insertedMaterials.size());
+        assertEquals(0, insertedOrderSteps.size());
+    }
+
+    @Test
+    void finishProductionOrder_shouldRejectWhenOrderNotReleased() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(16L)
+                .setProductId(501L)
+                .setStatus(ErpProductionOrderStatusEnum.CREATED.getStatus()));
+
+        assertThrows(ServiceException.class, () -> productionOrderService.finishProductionOrder(
+                new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderFinishReqVO()
+                        .setId(16L)
+                        .setWarehouseId(11L)
+                        .setFinishedQty(new BigDecimal("12"))));
+    }
+
+    @Test
+    void finishProductionOrder_shouldRejectWhenQtyExceedsPlan() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(17L)
+                .setProductId(501L)
+                .setPlanQty(new BigDecimal("10"))
+                .setStatus(ErpProductionOrderStatusEnum.RELEASED.getStatus()));
+
+        assertThrows(ServiceException.class, () -> productionOrderService.finishProductionOrder(
+                new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderFinishReqVO()
+                        .setId(17L)
+                        .setWarehouseId(11L)
+                        .setFinishedQty(new BigDecimal("10.5"))));
+    }
+
+    @Test
+    void updateProductionOrder_shouldRejectWhenReleased() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(18L)
+                .setProductId(501L)
+                .setStatus(ErpProductionOrderStatusEnum.RELEASED.getStatus()));
+
+        assertThrows(ServiceException.class, () -> productionOrderService.updateProductionOrder(
+                new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderSaveReqVO()
+                        .setId(18L)
+                        .setProductId(501L)
+                        .setPlanQty(new BigDecimal("5"))));
+    }
+
+    @Test
+    void createProductionOrder_shouldRejectWhenPlanTimeInvalid() {
+        assertThrows(ServiceException.class, () -> productionOrderService.createProductionOrder(
+                new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderSaveReqVO()
+                        .setProductId(501L)
+                        .setPlanQty(new BigDecimal("5"))
+                        .setPlanStartTime(java.time.LocalDateTime.of(2026, 8, 20, 8, 0))
+                        .setPlanEndTime(java.time.LocalDateTime.of(2026, 8, 19, 18, 0))));
+    }
+
+    @Test
     void finishProductionOrder_shouldCreatePendingQualityWithoutIncreasingStock() {
         selectedOrderRef.set(new ErpProductionOrderDO()
                 .setId(13L)
                 .setProductId(501L)
+                .setPlanQty(new BigDecimal("12"))
                 .setStatus(ErpProductionOrderStatusEnum.RELEASED.getStatus())
                 .setSourceOrderId(600L)
                 .setSourceItemId(700L));
@@ -191,20 +338,47 @@ class ErpProductionOrderServiceImplTest {
     }
 
     @Test
-    void finishProductionOrder_shouldRejectCreatedOrder() {
+    void finishProductionOrder_shouldRejectWhenAnyStepUnfinished() {
         selectedOrderRef.set(new ErpProductionOrderDO()
-                .setId(14L)
-                .setProductId(502L)
-                .setStatus(ErpProductionOrderStatusEnum.CREATED.getStatus()));
+                .setId(19L)
+                .setProductId(501L)
+                .setPlanQty(new BigDecimal("10"))
+                .setStatus(ErpProductionOrderStatusEnum.RELEASED.getStatus()));
+        orderStepsRef.set(List.of(
+                new ErpProductionOrderStepDO().setId(1L).setStepNo(10)
+                        .setStepStatus(ErpProductionOrderStepStatusEnum.FINISHED.getStatus()),
+                new ErpProductionOrderStepDO().setId(2L).setStepNo(20)
+                        .setStepStatus(ErpProductionOrderStepStatusEnum.PROCESSING.getStatus())
+        ));
 
         assertThrows(ServiceException.class, () -> productionOrderService.finishProductionOrder(
                 new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderFinishReqVO()
-                        .setId(14L)
+                        .setId(19L)
                         .setWarehouseId(11L)
-                        .setFinishedQty(new BigDecimal("1"))));
+                        .setFinishedQty(new BigDecimal("10"))));
+    }
 
-        assertEquals(null, updatedOrderRef.get());
-        assertEquals(null, qualityOrderRef.get());
+    @Test
+    void finishProductionOrder_shouldAllowWhenAllStepsFinished() {
+        selectedOrderRef.set(new ErpProductionOrderDO()
+                .setId(20L)
+                .setProductId(501L)
+                .setPlanQty(new BigDecimal("10"))
+                .setStatus(ErpProductionOrderStatusEnum.RELEASED.getStatus()));
+        orderStepsRef.set(List.of(
+                new ErpProductionOrderStepDO().setId(1L).setStepNo(10)
+                        .setStepStatus(ErpProductionOrderStepStatusEnum.FINISHED.getStatus())
+        ));
+        setFieldQuietly("warehouseService", createProxyByName(
+                "cn.weitee.erp.module.erp.service.stock.ErpWarehouseService", (methodName, args) -> null));
+
+        productionOrderService.finishProductionOrder(
+                new cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderFinishReqVO()
+                        .setId(20L)
+                        .setWarehouseId(11L)
+                        .setFinishedQty(new BigDecimal("10")));
+
+        assertEquals(ErpProductionOrderStatusEnum.FINISHED.getStatus(), updatedOrderRef.get().getStatus());
     }
 
     @SuppressWarnings("unchecked")

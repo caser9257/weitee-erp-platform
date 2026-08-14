@@ -85,21 +85,21 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
         BigDecimal contractAmount = contract.getMonthlyRent();
         BigDecimal receiptAmount = receipt.getAmount();
 
-        int matchResult = 0; // 默认不匹�?
+        int matchResult = 0; // 默认不匹配
         String matchRemark = "";
 
         if (contractAmount.compareTo(receiptAmount) == 0
                 && receiptAmount.compareTo(invoiceAmount) == 0) {
             matchResult = 1; // 完全匹配
-            matchRemark = "三单金额完全一�?;
+            matchRemark = "三单金额完全一致";
         } else if (contractAmount.compareTo(receiptAmount) == 0
                 || receiptAmount.compareTo(invoiceAmount) == 0
                 || contractAmount.compareTo(invoiceAmount) == 0) {
             matchResult = 2; // 部分匹配
             matchRemark = "部分金额一致，需人工确认";
         } else {
-            matchResult = 0; // 不匹�?
-            matchRemark = "三单金额不一�?;
+            matchResult = 0; // 不匹配
+            matchRemark = "三单金额不一致";
         }
 
         // 5. 保存匹配记录
@@ -114,7 +114,7 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
                 .receiptAmount(receiptAmount)
                 .matchResult(matchResult)
                 .matchRemark(matchRemark)
-                .status(0) // 待匹�?
+                .status(0) // 待匹配
                 .build();
         threeWayMatchMapper.insert(match);
 
@@ -145,18 +145,18 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
             throw exception(THREE_WAY_MATCH_NOT_EXISTS);
         }
 
-        // 校验状态：只有待匹�?0)状态才能确�?
+        // 校验状态：只有待匹配(0)状态才能确认
         if (match.getStatus() != 0) {
             throw exception(THREE_WAY_MATCH_STATUS_INVALID);
         }
 
-        // TODO: 生成应付台账 - 需要实�?AP Statement 生成逻辑
-        // 当前实现：确认后状态变�?已确�?(10)，而非"已生成应�?(20)
-        // �?AP Statement 功能实现后，应在生成成功后才将状态更新为 20
+        // TODO: 生成应付台账 - 需要实现 AP Statement 生成逻辑
+        // 当前实现：确认后状态变为已确认(10)，而非"已生成应付(20)"
+        // 待 AP Statement 功能实现后，应在生成成功后才将状态更新为 20
         log.warn("[confirmMatch] 应付台账生成功能尚未实现，matchId={}", id);
 
-        // 更新状态为已确�?10)
-        // 状态说明：0-待匹�?-> 10-已确�?-> 20-已生成应付（待实现）
+        // 更新状态为已确认(10)
+        // 状态说明：0-待匹配 -> 10-已确认 -> 20-已生成应付（待实现）
         match.setStatus(10);
         threeWayMatchMapper.updateById(match);
 

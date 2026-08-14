@@ -20,7 +20,7 @@ import java.util.Set;
  * @author weitee
  */
 @TableName(value = "system_role", autoResultMap = true)
-@KeySequence("system_role_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
+@KeySequence("system_role_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写銆?
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class RoleDO extends BaseDO {
@@ -45,7 +45,7 @@ public class RoleDO extends BaseDO {
      */
     private Integer sort;
     /**
-     * 角色状�?
+     * 角色状鎬?
      *
      * 枚举 {@link CommonStatusEnum}
      */
@@ -70,7 +70,7 @@ public class RoleDO extends BaseDO {
     /**
      * 数据范围(指定部门数组)
      *
-     * 适用�?{@link #dataScope} 的值为 {@link DataScopeEnum#DEPT_CUSTOM} �?
+     * 适用浜?{@link #dataScope} 的值为 {@link DataScopeEnum#DEPT_CUSTOM} 鏃?
      */
     @TableField(typeHandler = JacksonTypeHandler.class)
     private Set<Long> dataScopeDeptIds;

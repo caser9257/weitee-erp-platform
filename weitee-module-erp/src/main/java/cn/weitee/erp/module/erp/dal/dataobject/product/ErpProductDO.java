@@ -39,6 +39,22 @@ public class ErpProductDO extends BaseDO {
 
     private Long unitId;
 
+    private Integer productType;
+
+    private Integer produceType;
+
+    private Boolean batchEnable;
+
+    private Boolean snEnable;
+
+    private Long defaultRouteId;
+
+    private Boolean qcEnable;
+
+    private Boolean outsourceEnable;
+
+    private Integer costMethod;
+
     private Integer status;
 
     private String standard;
@@ -58,6 +74,8 @@ public class ErpProductDO extends BaseDO {
     private BigDecimal salePrice;
 
     private BigDecimal minPrice;
+
+    private Boolean mrpEnable;
 
     private Boolean assetFlag;
 

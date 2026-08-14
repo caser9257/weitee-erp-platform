@@ -37,7 +37,7 @@ public class FilePermissionDO extends BaseDO {
     private String grantType;
 
     /**
-     * 授权目标ID（用户ID/角色ID/部门ID�?
+     * 授权目标ID（用户ID/角色ID/部门ID锛?
      */
     private Long grantTargetId;
 
@@ -53,7 +53,7 @@ public class FilePermissionDO extends BaseDO {
     private String permissions;
 
     /**
-     * 过期时间（null表示永不过期�?
+     * 过期时间（null表示永不过期锛?
      */
     private LocalDateTime expireTime;
 
@@ -63,7 +63,7 @@ public class FilePermissionDO extends BaseDO {
     private Long grantUserId;
 
     /**
-     * 授权人名�?
+     * 授权人名绉?
      */
     private String grantUserName;
 

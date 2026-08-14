@@ -22,17 +22,17 @@ public interface FileBizRelService {
     void deleteFileBizRel(Long fileId, String bizType, Long bizId);
 
     /**
-     * 获取业务单据关联的文件列�?
+     * 获取业务单据关联的文件列琛?
      */
     List<FileBizRelDO> getFileBizRelList(String bizType, Long bizId);
 
     /**
-     * 获取文件关联的业务单据列�?
+     * 获取文件关联的业务单据列琛?
      */
     List<FileBizRelDO> getFileBizRelListByFileId(Long fileId);
 
     /**
-     * 删除业务单据的所有文件关�?
+     * 删除业务单据的所有文件关鑱?
      */
     void deleteAllByBiz(String bizType, Long bizId);
 

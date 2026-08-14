@@ -9,12 +9,12 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 通知公告�?
+ * 通知公告琛?
  *
  * @author weitee
  */
 @TableName("system_notice")
-@KeySequence("system_notice_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写�?
+@KeySequence("system_notice_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写銆?
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class NoticeDO extends BaseDO {
@@ -38,7 +38,7 @@ public class NoticeDO extends BaseDO {
      */
     private String content;
     /**
-     * 公告状�?
+     * 公告状鎬?
      *
      * 枚举 {@link CommonStatusEnum}
      */

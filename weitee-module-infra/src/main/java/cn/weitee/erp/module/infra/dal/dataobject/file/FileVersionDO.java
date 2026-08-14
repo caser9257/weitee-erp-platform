@@ -30,12 +30,12 @@ public class FileVersionDO extends BaseDO {
     private Long fileId;
 
     /**
-     * 版本�?
+     * 版本鍙?
      */
     private Integer version;
 
     /**
-     * 文件�?
+     * 文件鍚?
      */
     private String name;
 

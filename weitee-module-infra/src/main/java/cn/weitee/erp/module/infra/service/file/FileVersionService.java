@@ -22,12 +22,12 @@ public interface FileVersionService {
     List<FileVersionDO> getFileVersions(Long fileId);
 
     /**
-     * 获取最新版�?
+     * 获取最新版鏈?
      */
     Integer getLatestVersion(Long fileId);
 
     /**
-     * 回溯到指定版�?
+     * 回溯到指定版鏈?
      */
     void rollbackToVersion(Long fileId, Integer version);
 

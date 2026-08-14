@@ -18,7 +18,7 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 
 /**
- * 服务接收�?Service 实现
+ * 服务接收鍗?Service 实现
  *
  * @author weitee
  */
@@ -46,7 +46,7 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
         if (receipt == null) {
             throw exception(SERVICE_RECEIPT_NOT_EXISTS);
         }
-        // 只有草稿状态才能编�?
+        // 只有草稿状态才能编杈?
         if (receipt.getStatus() != 0) {
             throw exception(SERVICE_RECEIPT_STATUS_INVALID);
         }
@@ -61,7 +61,7 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
         if (receipt == null) {
             throw exception(SERVICE_RECEIPT_NOT_EXISTS);
         }
-        // 只有草稿状态才能删�?
+        // 只有草稿状态才能删闄?
         if (receipt.getStatus() != 0) {
             throw exception(SERVICE_RECEIPT_STATUS_INVALID);
         }
@@ -90,11 +90,11 @@ public class ErpServiceReceiptServiceImpl implements ErpServiceReceiptService {
         if (receipt == null) {
             throw exception(SERVICE_RECEIPT_NOT_EXISTS);
         }
-        // 校验状态：只有草稿(0)状态才能确�?
+        // 校验状态：只有草稿(0)状态才能确璁?
         if (receipt.getStatus() != 0) {
             throw exception(SERVICE_RECEIPT_STATUS_INVALID);
         }
-        receipt.setStatus(10); // 已确�?
+        receipt.setStatus(10); // 已确璁?
         serviceReceiptMapper.updateById(receipt);
         log.info("[confirmServiceReceipt] 服务接收单已确认：{}", id);
     }

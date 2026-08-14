@@ -198,6 +198,11 @@
             />
           </template>
         </el-table-column>
+        <el-table-column label="位号" width="180" align="center">
+          <template #default="{ row }">
+            <el-input v-model="row.referenceDesignator" placeholder="如 R1,C2,U3" />
+          </template>
+        </el-table-column>
         <el-table-column label="提前期(天)" width="140" align="center">
           <template #default="{ row }">
             <el-input-number

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,11 +18,19 @@ public class ErpBomRespVO {
 
     private Long productId;
 
+    private Long routeId;
+
     private String productName;
 
     private String version;
 
+    private BigDecimal yieldRate;
+
     private Integer status;
+
+    private LocalDate effectiveDate;
+
+    private LocalDate expireDate;
 
     private Long sourceRdBomId;
 
@@ -50,7 +59,17 @@ public class ErpBomRespVO {
 
         private BigDecimal lossRate;
 
+        private String referenceDesignator;
+
+        private Integer issueMode;
+
+        private Boolean backflushFlag;
+
         private Integer leadTimeDay;
+
+        private Long supplyWarehouseId;
+
+        private Long requiredStepId;
 
         private Boolean mrpEnableFlag;
 

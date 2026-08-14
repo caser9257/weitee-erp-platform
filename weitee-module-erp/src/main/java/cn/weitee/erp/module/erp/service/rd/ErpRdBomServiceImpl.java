@@ -168,6 +168,7 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                         .setUnitId(item.getUnitId())
                         .setUsageQty(item.getUsageQty())
                         .setLossRate(item.getLossRate())
+                        .setReferenceDesignator(item.getReferenceDesignator())
                         .setLeadTimeDay(item.getLeadTimeDay())
                         .setSort(item.getSort())
                         .setRemark(item.getRemark()))

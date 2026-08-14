@@ -6,7 +6,7 @@ import org.springframework.context.ApplicationEvent;
 /**
  * 项目生命周期刷新事件
  *
- * 用于异步触发项目生命周期状态刷新，避免阻塞主业务流�?
+ * 用于异步触发项目生命周期状态刷新，避免阻塞主业务流程
  *
  * @author weitee
  */

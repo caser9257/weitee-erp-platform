@@ -18,7 +18,7 @@ public interface ErpThreeWayMatchService {
      *
      * @param leaseContractId 租赁合同ID
      * @param serviceReceiptId 服务接收单ID
-     * @param invoiceNo 发票�?
+     * @param invoiceNo 发票鍙?
      * @return 匹配结果ID
      */
     Long match(Long leaseContractId, Long serviceReceiptId, String invoiceNo);
@@ -39,7 +39,7 @@ public interface ErpThreeWayMatchService {
     ErpThreeWayMatchDO getMatch(Long id);
 
     /**
-     * 确认匹配并生成应付台�?
+     * 确认匹配并生成应付台璐?
      */
     void confirmMatch(Long id);
 

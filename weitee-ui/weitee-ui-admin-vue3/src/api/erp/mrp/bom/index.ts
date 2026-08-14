@@ -7,20 +7,17 @@ export interface BomItemVO {
   itemNo?: number
   materialId: number
   materialName?: string
-  materialNameSnapshot?: string
-  specModelSnapshot?: string
-  materialDescSnapshot?: string
   referenceDesignator?: string
-  packageTypeSnapshot?: string
-  qualityGradeSnapshot?: string
-  keyPart?: boolean
-  supplierId?: number
   materialType?: number
   unitId?: number
   unitName?: string
   usageQty?: number
   lossRate?: number
+  issueMode?: number
+  backflushFlag?: boolean
   leadTimeDay?: number
+  supplyWarehouseId?: number
+  requiredStepId?: number
   mrpEnableFlag?: boolean
   supplyOwner?: string
   sort?: number
@@ -49,19 +46,16 @@ export interface BomItemSaveReqVO {
   id?: number
   itemNo?: number
   materialId?: number
-  materialNameSnapshot?: string
-  specModelSnapshot?: string
-  materialDescSnapshot?: string
   referenceDesignator?: string
-  packageTypeSnapshot?: string
-  qualityGradeSnapshot?: string
-  keyPart?: boolean
-  supplierId?: number
   materialType?: number
   unitId?: number
   usageQty?: number
   lossRate?: number
+  issueMode?: number
+  backflushFlag?: boolean
   leadTimeDay?: number
+  supplyWarehouseId?: number
+  requiredStepId?: number
   mrpEnableFlag?: boolean
   supplyOwner?: string
   sort?: number
@@ -122,8 +116,12 @@ export interface BomVO {
   bomCode: string
   productId: number
   productName?: string
+  routeId?: number
   version?: string
+  yieldRate?: number
   status: number
+  effectiveDate?: string | Date
+  expireDate?: string | Date
   sourceRdBomId?: number
   remark?: string
   createTime?: string | number
@@ -147,8 +145,12 @@ export interface BomSaveReqVO {
   id?: number
   bomCode: string
   productId: number
+  routeId?: number
   version?: string
+  yieldRate?: number
   status: number
+  effectiveDate?: string | Date
+  expireDate?: string | Date
   remark?: string
   items: BomItemSaveReqVO[]
 }

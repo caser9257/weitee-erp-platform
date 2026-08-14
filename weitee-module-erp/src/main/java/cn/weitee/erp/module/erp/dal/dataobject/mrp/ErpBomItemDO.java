@@ -33,7 +33,17 @@ public class ErpBomItemDO extends BaseDO {
 
     private BigDecimal lossRate;
 
+    private String referenceDesignator;
+
+    private Integer issueMode;
+
+    private Boolean backflushFlag;
+
     private Integer leadTimeDay;
+
+    private Long supplyWarehouseId;
+
+    private Long requiredStepId;
 
     private Boolean mrpEnableFlag;
 

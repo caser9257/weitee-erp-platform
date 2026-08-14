@@ -47,7 +47,7 @@ public class FileAccessStatsDO extends BaseDO {
     private Integer downloadCount;
 
     /**
-     * 独立访客�?
+     * 独立访客鏁?
      */
     private Integer uniqueVisitorCount;
 

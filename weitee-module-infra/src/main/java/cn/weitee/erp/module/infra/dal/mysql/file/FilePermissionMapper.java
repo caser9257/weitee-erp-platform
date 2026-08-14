@@ -17,7 +17,7 @@ import java.util.List;
 public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
 
     /**
-     * 获取文件的权限列�?
+     * 获取文件的权限列琛?
      */
     default List<FilePermissionDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FilePermissionDO>()
@@ -62,7 +62,7 @@ public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
     }
 
     /**
-     * 删除文件的所有权�?
+     * 删除文件的所有权闄?
      */
     default int deleteByFileId(Long fileId) {
         return delete(new LambdaQueryWrapperX<FilePermissionDO>()
