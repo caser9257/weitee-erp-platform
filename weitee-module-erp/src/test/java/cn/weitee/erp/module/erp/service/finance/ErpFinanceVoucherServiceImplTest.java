@@ -179,7 +179,7 @@ class ErpFinanceVoucherServiceImplTest {
                 return new ErpStockCheckDO()
                         .setId(1001L)
                         .setNo("PD202605200001")
-                        .setCheckTime(LocalDateTime.of(2026, 5, 20, 10, 0))
+                        .setSnapshotTime(LocalDateTime.of(2026, 5, 20, 10, 0))
                         .setStatus(30)
                         .setTotalPrice(new BigDecimal("-120.00"))
                         .setRemark("盘亏差异");
@@ -701,7 +701,7 @@ class ErpFinanceVoucherServiceImplTest {
         setField(service, "stockCheckMapper", createProxy(ErpStockCheckMapper.class, (methodName, args) -> {
             if ("selectById".equals(methodName)) {
                 return new ErpStockCheckDO().setId(1001L).setNo("PD202607200001")
-                        .setCheckTime(LocalDateTime.of(2026, 7, 20, 18, 0))
+                        .setSnapshotTime(LocalDateTime.of(2026, 7, 20, 18, 0))
                         .setStatus(40).setTotalPrice(new BigDecimal("-280.00"));
             }
             return null;
@@ -950,6 +950,9 @@ class ErpFinanceVoucherServiceImplTest {
                 updatedVoucherRef.set((ErpFinanceVoucherDO) args[0]);
                 return 1;
             }
+            if ("clearApprovalMetadataById".equals(methodName)) {
+                return 1;
+            }
             return null;
         }));
 
@@ -1033,6 +1036,9 @@ class ErpFinanceVoucherServiceImplTest {
             }
             if ("updateById".equals(methodName)) {
                 updatedVoucherRef.set((ErpFinanceVoucherDO) args[0]);
+                return 1;
+            }
+            if ("clearPostingMetadataById".equals(methodName)) {
                 return 1;
             }
             return null;
