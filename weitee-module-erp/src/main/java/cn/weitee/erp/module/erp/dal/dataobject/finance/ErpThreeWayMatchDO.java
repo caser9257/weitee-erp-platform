@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 /**
  * 三单匹配 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("erp_three_way_match")
 @KeySequence("erp_three_way_match_seq")
@@ -42,12 +42,12 @@ public class ErpThreeWayMatchDO extends BaseDO {
     private Long serviceReceiptId;
 
     /**
-     * 服务接收单编号
+     * 服务接收单编�?
      */
     private String serviceReceiptNo;
 
     /**
-     * 发票号
+     * 发票�?
      */
     private String invoiceNo;
 
@@ -62,12 +62,12 @@ public class ErpThreeWayMatchDO extends BaseDO {
     private BigDecimal contractAmount;
 
     /**
-     * 接收单金额
+     * 接收单金�?
      */
     private BigDecimal receiptAmount;
 
     /**
-     * 匹配结果：0-不匹配 1-完全匹配 2-部分匹配
+     * 匹配结果�?-不匹�?1-完全匹配 2-部分匹配
      */
     private Integer matchResult;
 
@@ -82,7 +82,7 @@ public class ErpThreeWayMatchDO extends BaseDO {
     private Long apStatementId;
 
     /**
-     * 状态：0-待匹配 10-已匹配 20-已生成应付
+     * 状态：0-待匹�?10-已匹�?20-已生成应�?
      */
     private Integer status;
 

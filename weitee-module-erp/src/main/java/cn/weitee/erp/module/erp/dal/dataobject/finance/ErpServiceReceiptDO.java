@@ -10,9 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * 服务接收单 DO
+ * 服务接收�?DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("erp_service_receipt")
 @KeySequence("erp_service_receipt_seq")
@@ -48,7 +48,7 @@ public class ErpServiceReceiptDO extends BaseDO {
     private Long supplierId;
 
     /**
-     * 供应商名称（冗余）
+     * 供应商名称（冗余�?
      */
     private String supplierName;
 
@@ -58,7 +58,7 @@ public class ErpServiceReceiptDO extends BaseDO {
     private LocalDate receiptDate;
 
     /**
-     * 归属期间（YYYY-MM）
+     * 归属期间（YYYY-MM�?
      */
     private String period;
 
@@ -68,7 +68,7 @@ public class ErpServiceReceiptDO extends BaseDO {
     private BigDecimal amount;
 
     /**
-     * 成本中心ID（部门ID）
+     * 成本中心ID（部门ID�?
      */
     private Long costCenterId;
 
@@ -78,7 +78,7 @@ public class ErpServiceReceiptDO extends BaseDO {
     private String costCenterName;
 
     /**
-     * 状态：0-草稿 10-已确认 20-已生成应付
+     * 状态：0-草稿 10-已确�?20-已生成应�?
      */
     private Integer status;
 

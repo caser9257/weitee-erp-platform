@@ -389,6 +389,8 @@ public interface ErrorCodeConstants {
     ErrorCode PROJECT_MC_CONFIRM_FORBIDDEN = new ErrorCode(1_020_204_008, "当前用户不是项目 MC 负责人，无法执行确认");
     ErrorCode PROJECT_PC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_009, "当前项目 PC 状态不允许重复确认");
     ErrorCode PROJECT_MC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_010, "当前项目 MC 状态不允许重复确认");
+    ErrorCode PROJECT_LIFECYCLE_STAGE_TRANSITION_FAIL = new ErrorCode(1_020_204_011, "项目生命周期阶段流转失败：{}");
+    ErrorCode PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL = new ErrorCode(1_020_204_012, "项目生命周期阶段前置条件校验失败：{}");
 
     // ========== ERP 租赁合同 1-030-610-000 ==========
     ErrorCode LEASE_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_610_000, "租赁合同不存在");

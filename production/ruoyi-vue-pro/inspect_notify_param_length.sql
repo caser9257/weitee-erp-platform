@@ -10,6 +10,6 @@ SELECT
 
 SELECT COLUMN_NAME, COLUMN_TYPE, CHARACTER_MAXIMUM_LENGTH
 FROM information_schema.COLUMNS
-WHERE TABLE_SCHEMA = 'ruoyi-vue-pro'
+WHERE TABLE_SCHEMA = 'weitee-erp'
   AND TABLE_NAME = 'system_notify_message'
   AND COLUMN_NAME = 'template_params';

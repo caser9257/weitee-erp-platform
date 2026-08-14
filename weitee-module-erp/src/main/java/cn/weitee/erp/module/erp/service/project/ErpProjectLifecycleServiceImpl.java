@@ -1,10 +1,12 @@
 package cn.weitee.erp.module.erp.service.project;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.project.ErpProjectDO;
 import cn.weitee.erp.module.erp.dal.dataobject.project.ErpProjectLifecycleTimelineDO;
 import cn.weitee.erp.module.erp.dal.mysql.project.ErpProjectLifecycleTimelineMapper;
 import cn.weitee.erp.module.erp.dal.mysql.project.ErpProjectMapper;
+import cn.weitee.erp.module.erp.enums.ErrorCodeConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +15,8 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 
 /**
  * 项目生命周期服务实现
@@ -37,7 +41,7 @@ public class ErpProjectLifecycleServiceImpl implements ErpProjectLifecycleServic
         // 1. 获取项目信息
         ErpProjectDO project = erpProjectMapper.selectById(projectId);
         if (project == null) {
-            throw new RuntimeException("项目不存在");
+            throw exception(ErrorCodeConstants.PROJECT_NOT_EXISTS);
         }
 
         String oldStage = project.getLifecycleStage();
@@ -85,14 +89,14 @@ public class ErpProjectLifecycleServiceImpl implements ErpProjectLifecycleServic
                 // 合同必须已签署
                 if (!"SIGNED".equals(project.getContractExecStatus())
                         && !"COMPLETED".equals(project.getContractExecStatus())) {
-                    throw new RuntimeException("流转到订单阶段失败：合同尚未签署");
+                    throw exception(ErrorCodeConstants.PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL, "合同尚未签署");
                 }
                 break;
 
             case "PAYMENT":
                 // 合同必须已完成（订单已审批）
                 if (!isCompleted(project.getContractExecStatus())) {
-                    throw new RuntimeException("流转到收款阶段失败：订单尚未审批通过");
+                    throw exception(ErrorCodeConstants.PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL, "订单尚未审批通过");
                 }
                 break;
 
@@ -100,14 +104,14 @@ public class ErpProjectLifecycleServiceImpl implements ErpProjectLifecycleServic
             case "OUTBOUND":
                 // 收款必须已完成
                 if (!isCompleted(project.getReceiptExecStatus())) {
-                    throw new RuntimeException("流转到发货阶段失败：收款尚未完成");
+                    throw exception(ErrorCodeConstants.PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL, "收款尚未完成");
                 }
                 break;
 
             case "INVOICE":
                 // 出库/发货必须已完成
                 if (!isCompleted(project.getShipmentExecStatus())) {
-                    throw new RuntimeException("流转到开票阶段失败：出库尚未完成");
+                    throw exception(ErrorCodeConstants.PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL, "出库尚未完成");
                 }
                 break;
 
@@ -117,7 +121,7 @@ public class ErpProjectLifecycleServiceImpl implements ErpProjectLifecycleServic
                         || !isCompleted(project.getReceiptExecStatus())
                         || !isCompleted(project.getShipmentExecStatus())
                         || !isCompleted(project.getInvoiceExecStatus())) {
-                    throw new RuntimeException("流转到关闭阶段失败：存在未完成的子状态");
+                    throw exception(ErrorCodeConstants.PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL, "存在未完成的子状态");
                 }
                 break;
 

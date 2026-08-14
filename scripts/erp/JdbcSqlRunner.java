@@ -11,13 +11,14 @@ import java.util.List;
 
 public class JdbcSqlRunner {
 
-    private static final String DATABASE_NAME = System.getenv().getOrDefault("WEITEE_DB_NAME", "weitee-erp");
-    private static final String DATABASE_PORT = System.getenv().getOrDefault("WEITEE_DB_PORT", "3306");
-    private static final String URL = "jdbc:mysql://127.0.0.1:" + DATABASE_PORT + "/" + DATABASE_NAME
+    private static final String URL = System.getenv("JDBC_URL") != null ? System.getenv("JDBC_URL")
+            : "jdbc:mysql://127.0.0.1:"
+            + System.getenv().getOrDefault("WEITEE_DB_PORT", "3306")
+            + "/" + System.getenv().getOrDefault("WEITEE_DB_NAME", "weitee-erp")
             + "?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
             + "&nullCatalogMeansCurrent=true&rewriteBatchedStatements=true";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "123456";
+    private static final String USERNAME = System.getenv("JDBC_USERNAME") != null ? System.getenv("JDBC_USERNAME") : "root";
+    private static final String PASSWORD = System.getenv("JDBC_PASSWORD") != null ? System.getenv("JDBC_PASSWORD") : "";
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {

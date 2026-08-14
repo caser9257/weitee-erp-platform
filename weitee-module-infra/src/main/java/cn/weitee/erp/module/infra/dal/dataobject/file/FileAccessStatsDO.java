@@ -11,7 +11,7 @@ import java.time.LocalDate;
 /**
  * 文件访问统计 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("infra_file_access_stats")
 @KeySequence("infra_file_access_stats_seq")
@@ -47,7 +47,7 @@ public class FileAccessStatsDO extends BaseDO {
     private Integer downloadCount;
 
     /**
-     * 独立访客数
+     * 独立访客�?
      */
     private Integer uniqueVisitorCount;
 

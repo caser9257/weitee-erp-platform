@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 文件访问统计 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface FileAccessStatsService {
 
@@ -23,7 +23,7 @@ public interface FileAccessStatsService {
     void recordDownload(Long fileId);
 
     /**
-     * 获取文件的访问统计
+     * 获取文件的访问统�?
      */
     List<FileAccessStatsDO> getFileAccessStats(Long fileId);
 

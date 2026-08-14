@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * 租赁合同 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface ErpLeaseContractService {
 

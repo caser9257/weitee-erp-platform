@@ -9,7 +9,7 @@ import lombok.*;
 /**
  * 文件标签 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("infra_file_tag")
 @KeySequence("infra_file_tag_seq")

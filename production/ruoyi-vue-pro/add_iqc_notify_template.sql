@@ -1,10 +1,10 @@
-USE `ruoyi-vue-pro`;
+USE `weitee-erp`;
 
 UPDATE `system_notify_template`
 SET
   `name` = '【IQC】质检任务指派',
   `nickname` = 'IQC助手',
-  `content` = '您收到一条新的 IQC 质检任务：{qualityNo}，关联采购入库单：{purchaseInNo}。',
+  `content` = '您收到一条新�?IQC 质检任务：{qualityNo}，关联采购入库单：{purchaseInNo}�?,
   `type` = 2,
   `params` = '["qualityNo","purchaseInNo"]',
   `status` = 0,
@@ -21,7 +21,7 @@ SELECT
   '【IQC】质检任务指派',
   'erp_iqc_checker_assigned',
   'IQC助手',
-  '您收到一条新的 IQC 质检任务：{qualityNo}，关联采购入库单：{purchaseInNo}。',
+  '您收到一条新�?IQC 质检任务：{qualityNo}，关联采购入库单：{purchaseInNo}�?,
   2,
   '["qualityNo","purchaseInNo"]',
   0,

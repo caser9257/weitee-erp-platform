@@ -11,13 +11,13 @@ import java.util.List;
 /**
  * 文件访问统计 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FileAccessStatsMapper extends BaseMapperX<FileAccessStatsDO> {
 
     /**
-     * 获取文件的访问统计
+     * 获取文件的访问统�?
      */
     default List<FileAccessStatsDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FileAccessStatsDO>()

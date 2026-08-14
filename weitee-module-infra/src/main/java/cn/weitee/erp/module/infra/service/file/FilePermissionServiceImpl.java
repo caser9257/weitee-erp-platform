@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 /**
  * 文件权限 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -90,7 +90,7 @@ public class FilePermissionServiceImpl implements FilePermissionService {
     public List<String> getUserPermissions(Long fileId, Long userId, List<Long> roleIds, Long deptId) {
         List<FilePermissionDO> permissions = filePermissionMapper.selectListByFileIdAndUserId(fileId, userId, roleIds, deptId);
 
-        // 合并所有权限
+        // 合并所有权�?
         return permissions.stream()
                 .filter(perm -> StrUtil.isNotEmpty(perm.getPermissions()))
                 .flatMap(perm -> Arrays.stream(perm.getPermissions().split(",")))

@@ -20,7 +20,7 @@ import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.FILE_VERSION_N
 /**
  * 文件版本 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -91,7 +91,7 @@ public class FileVersionServiceImpl implements FileVersionService {
             throw exception(FILE_VERSION_NOT_EXISTS);
         }
 
-        // 2. 查询主文件记录
+        // 2. 查询主文件记�?
         FileDO file = fileMapper.selectById(fileId);
         if (file == null) {
             throw exception(FILE_NOT_EXISTS);
@@ -114,7 +114,7 @@ public class FileVersionServiceImpl implements FileVersionService {
                 .url(fileVersion.getUrl())
                 .size(fileVersion.getSize())
                 .type(fileVersion.getType())
-                .description("回滚到版本 " + version)
+                .description("回滚到版�?" + version)
                 .build();
         fileVersionMapper.insert(rollbackVersion);
 

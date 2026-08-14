@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * 三单匹配 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface ErpThreeWayMatchMapper extends BaseMapperX<ErpThreeWayMatchDO> {

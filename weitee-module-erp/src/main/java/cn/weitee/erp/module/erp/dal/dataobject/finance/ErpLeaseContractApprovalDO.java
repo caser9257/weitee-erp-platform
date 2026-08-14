@@ -9,7 +9,7 @@ import lombok.*;
 /**
  * 租赁合同审批记录 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("erp_lease_contract_approval")
 @KeySequence("erp_lease_contract_approval_seq")
@@ -40,12 +40,12 @@ public class ErpLeaseContractApprovalDO extends BaseDO {
     private String action;
 
     /**
-     * 操作前状态
+     * 操作前状�?
      */
     private Integer statusBefore;
 
     /**
-     * 操作后状态
+     * 操作后状�?
      */
     private Integer statusAfter;
 
@@ -55,7 +55,7 @@ public class ErpLeaseContractApprovalDO extends BaseDO {
     private Long operatorId;
 
     /**
-     * 操作人名称
+     * 操作人名�?
      */
     private String operatorName;
 

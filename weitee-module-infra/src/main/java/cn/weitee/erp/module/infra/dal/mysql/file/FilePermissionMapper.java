@@ -11,13 +11,13 @@ import java.util.List;
 /**
  * 文件权限 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
 
     /**
-     * 获取文件的权限列表
+     * 获取文件的权限列�?
      */
     default List<FilePermissionDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FilePermissionDO>()
@@ -62,7 +62,7 @@ public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
     }
 
     /**
-     * 删除文件的所有权限
+     * 删除文件的所有权�?
      */
     default int deleteByFileId(Long fileId) {
         return delete(new LambdaQueryWrapperX<FilePermissionDO>()

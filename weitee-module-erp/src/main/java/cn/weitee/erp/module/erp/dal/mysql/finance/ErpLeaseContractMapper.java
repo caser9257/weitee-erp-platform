@@ -10,7 +10,7 @@ import org.apache.ibatis.annotations.Mapper;
 /**
  * 租赁合同 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface ErpLeaseContractMapper extends BaseMapperX<ErpLeaseContractDO> {

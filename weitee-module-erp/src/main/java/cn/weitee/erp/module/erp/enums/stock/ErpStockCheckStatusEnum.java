@@ -12,7 +12,7 @@ import java.util.Arrays;
  * 场景 A 简化状态机：
  * DRAFT(0) → COUNTING(10) → REVIEWING(20) → PROCESSING(25) → CLOSED(40)
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @RequiredArgsConstructor
 @Getter

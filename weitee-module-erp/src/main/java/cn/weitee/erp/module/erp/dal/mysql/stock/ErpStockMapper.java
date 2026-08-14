@@ -119,4 +119,36 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
         return stockCountMap;
     }
 
+    /**
+     * 批量查询产品库存（基于产品ID + 仓库ID）
+     *
+     * @param productIds 产品编号集合
+     * @param warehouseId 仓库编号
+     * @return 产品库存列表
+     */
+    default List<ErpStockDO> selectListByProductIdsAndWarehouseId(Collection<Long> productIds, Long warehouseId) {
+        if (CollUtil.isEmpty(productIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapperX<ErpStockDO>()
+                .in(ErpStockDO::getProductId, productIds)
+                .eq(ErpStockDO::getWarehouseId, warehouseId));
+    }
+
+    /**
+     * 批量查询产品库存（基于产品ID + 仓库ID列表）
+     *
+     * @param productId 产品编号
+     * @param warehouseIds 仓库编号集合
+     * @return 产品库存列表
+     */
+    default List<ErpStockDO> selectListByProductIdAndWarehouseIds(Long productId, Collection<Long> warehouseIds) {
+        if (CollUtil.isEmpty(warehouseIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapperX<ErpStockDO>()
+                .eq(ErpStockDO::getProductId, productId)
+                .in(ErpStockDO::getWarehouseId, warehouseIds));
+    }
+
 }

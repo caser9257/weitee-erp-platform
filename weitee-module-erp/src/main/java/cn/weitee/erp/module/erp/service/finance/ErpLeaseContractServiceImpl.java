@@ -22,7 +22,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 /**
  * 租赁合同 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -52,7 +52,7 @@ public class ErpLeaseContractServiceImpl implements ErpLeaseContractService {
         if (contract == null) {
             throw exception(LEASE_CONTRACT_NOT_EXISTS);
         }
-        // 只有草稿状态才能编辑
+        // 只有草稿状态才能编�?
         if (contract.getStatus() != 0) {
             throw exception(LEASE_CONTRACT_STATUS_INVALID);
         }
@@ -68,7 +68,7 @@ public class ErpLeaseContractServiceImpl implements ErpLeaseContractService {
         if (contract == null) {
             throw exception(LEASE_CONTRACT_NOT_EXISTS);
         }
-        // 只有草稿状态才能删除
+        // 只有草稿状态才能删�?
         if (contract.getStatus() != 0) {
             throw exception(LEASE_CONTRACT_STATUS_INVALID);
         }
@@ -103,7 +103,7 @@ public class ErpLeaseContractServiceImpl implements ErpLeaseContractService {
         if (contract.getStatus() != 0) {
             throw exception(LEASE_CONTRACT_STATUS_INVALID);
         }
-        // 3. 更新状态为审批中(5)
+        // 3. 更新状态为审批�?5)
         Integer oldStatus = contract.getStatus();
         contract.setStatus(5);
         leaseContractMapper.updateById(contract);
@@ -121,7 +121,7 @@ public class ErpLeaseContractServiceImpl implements ErpLeaseContractService {
         if (contract == null) {
             throw exception(LEASE_CONTRACT_NOT_EXISTS);
         }
-        // 2. 校验状态：只有审批中(5)才能审批通过
+        // 2. 校验状态：只有审批�?5)才能审批通过
         if (contract.getStatus() != 5) {
             throw exception(LEASE_CONTRACT_STATUS_INVALID);
         }
@@ -143,7 +143,7 @@ public class ErpLeaseContractServiceImpl implements ErpLeaseContractService {
         if (contract == null) {
             throw exception(LEASE_CONTRACT_NOT_EXISTS);
         }
-        // 2. 校验状态：只有审批中(5)才能驳回
+        // 2. 校验状态：只有审批�?5)才能驳回
         if (contract.getStatus() != 5) {
             throw exception(LEASE_CONTRACT_STATUS_INVALID);
         }
