@@ -10,47 +10,24 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePrepaymentMapper;
 import cn.weitee.erp.module.erp.enums.ErpApStatementStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinancePrepaymentServiceImplTest {
 
     @Test
     void allocateFinancePrepayment_shouldPersistPrepaymentIdOnAllocation() throws Exception {
-        ErpFinancePrepaymentServiceImpl service = new ErpFinancePrepaymentServiceImpl();
-        ErpFinancePrepaymentMapper prepaymentMapper = mock(ErpFinancePrepaymentMapper.class);
-        ErpFinancePrepaymentAllocateMapper allocateMapper = mock(ErpFinancePrepaymentAllocateMapper.class);
-        ErpApStatementItemMapper itemMapper = mock(ErpApStatementItemMapper.class);
-        ErpApStatementService statementService = mock(ErpApStatementService.class);
-        ErpFinancePrepaymentDO prepayment = new ErpFinancePrepaymentDO()
-                .setId(7L).setNo("YF-7").setSupplierId(9L)
-                .setStatus(ErpAuditStatus.APPROVE.getStatus())
-                .setPrepaymentPrice(new BigDecimal("100.00"));
-        ErpApStatementDO statement = new ErpApStatementDO()
-                .setId(11L).setStatementNo("YF-11").setSupplierId(9L)
-                .setStatus(ErpApStatementStatusEnum.UNPAID.getStatus())
-                .setAmount(new BigDecimal("80.00"))
-                .setRemainAmount(new BigDecimal("80.00"));
-
-        when(prepaymentMapper.selectById(7L)).thenReturn(prepayment);
-        when(statementService.validateApStatement(11L)).thenReturn(statement);
-        when(allocateMapper.selectApprovedListByPrepaymentId(7L)).thenReturn(List.of());
-        when(statementService.getApStatementListByIds(any())).thenReturn(List.of(statement));
-        when(allocateMapper.insertBatch(any())).thenReturn(true);
-
-        setField(service, "erpFinancePrepaymentMapper", prepaymentMapper);
-        setField(service, "erpFinancePrepaymentAllocateMapper", allocateMapper);
-        setField(service, "erpApStatementItemMapper", itemMapper);
-        setField(service, "apStatementService", statementService);
+        AtomicReference<List<ErpFinancePrepaymentAllocateDO>> insertedAllocates = new AtomicReference<>();
+        ErpFinancePrepaymentServiceImpl service = createService(new BigDecimal("100.00"), new BigDecimal("80.00"),
+                new BigDecimal("80.00"), insertedAllocates);
 
         service.allocateFinancePrepayment(new ErpFinancePrepaymentAllocateReqVO()
                 .setPrepaymentId(7L)
@@ -59,9 +36,96 @@ class ErpFinancePrepaymentServiceImplTest {
                         .setAllocateAmount(new BigDecimal("20.00"))
                         .setRemark("核销"))));
 
-        ArgumentCaptor<List<ErpFinancePrepaymentAllocateDO>> captor = ArgumentCaptor.forClass(List.class);
-        verify(allocateMapper).insertBatch(captor.capture());
-        assertEquals(7L, captor.getValue().get(0).getPrepaymentId());
+        assertEquals(7L, insertedAllocates.get().getFirst().getPrepaymentId());
+    }
+
+    @Test
+    void allocateFinancePrepayment_shouldRejectAmountExceedingPrepaymentRemainPrice() throws Exception {
+        AtomicReference<List<ErpFinancePrepaymentAllocateDO>> insertedAllocates = new AtomicReference<>();
+        ErpFinancePrepaymentServiceImpl service = createService(new BigDecimal("100.00"), new BigDecimal("150.00"),
+                new BigDecimal("150.00"), insertedAllocates);
+
+        assertThrows(RuntimeException.class, () -> service.allocateFinancePrepayment(
+                new ErpFinancePrepaymentAllocateReqVO()
+                        .setPrepaymentId(7L)
+                        .setItems(List.of(new ErpFinancePrepaymentAllocateReqVO.Item()
+                                .setApStatementId(11L)
+                                .setAllocateAmount(new BigDecimal("120.00"))))));
+
+        assertNull(insertedAllocates.get());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static ErpFinancePrepaymentServiceImpl createService(BigDecimal prepaymentRemainPrice,
+                                                                  BigDecimal statementAmount,
+                                                                  BigDecimal statementRemainAmount,
+                                                                  AtomicReference<List<ErpFinancePrepaymentAllocateDO>> insertedAllocates)
+            throws Exception {
+        ErpFinancePrepaymentServiceImpl service = new ErpFinancePrepaymentServiceImpl();
+        ErpFinancePrepaymentDO prepayment = new ErpFinancePrepaymentDO()
+                .setId(7L).setNo("YF-7").setSupplierId(9L)
+                .setStatus(ErpAuditStatus.APPROVE.getStatus())
+                .setPrepaymentPrice(new BigDecimal("100.00"))
+                .setRemainPrice(prepaymentRemainPrice);
+        ErpApStatementDO statement = new ErpApStatementDO()
+                .setId(11L).setStatementNo("YF-11").setSupplierId(9L)
+                .setStatus(ErpApStatementStatusEnum.UNPAID.getStatus())
+                .setAmount(statementAmount)
+                .setRemainAmount(statementRemainAmount);
+
+        setField(service, "erpFinancePrepaymentMapper", createProxy(ErpFinancePrepaymentMapper.class,
+                (methodName, args) -> "selectById".equals(methodName) ? prepayment : defaultValue(methodName)));
+        setField(service, "erpFinancePrepaymentAllocateMapper", createProxy(ErpFinancePrepaymentAllocateMapper.class,
+                (methodName, args) -> {
+                    if ("insertBatch".equals(methodName)) {
+                        insertedAllocates.set((List<ErpFinancePrepaymentAllocateDO>) args[0]);
+                        return true;
+                    }
+                    if ("selectApprovedListByPrepaymentId".equals(methodName)) {
+                        return List.of();
+                    }
+                    return defaultValue(methodName);
+                }));
+        setField(service, "erpApStatementItemMapper", createProxy(ErpApStatementItemMapper.class,
+                (methodName, args) -> defaultValue(methodName)));
+        setField(service, "apStatementService", createProxy(ErpApStatementService.class,
+                (methodName, args) -> {
+                    if ("validateApStatement".equals(methodName)) {
+                        return statement;
+                    }
+                    if ("getApStatementListByIds".equals(methodName)) {
+                        return List.of(statement);
+                    }
+                    return defaultValue(methodName);
+                }));
+        return service;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T createProxy(Class<T> type, MethodHandler handler) {
+        return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, (proxy, method, args) -> {
+            if (method.getDeclaringClass() == Object.class) {
+                return switch (method.getName()) {
+                    case "toString" -> type.getSimpleName() + "Proxy";
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    default -> null;
+                };
+            }
+            return handler.handle(method.getName(), args);
+        });
+    }
+
+    private static Object defaultValue(String methodName) {
+        return switch (methodName) {
+            case "insert", "updateById" -> 1;
+            default -> null;
+        };
+    }
+
+    @FunctionalInterface
+    private interface MethodHandler {
+        Object handle(String methodName, Object[] args);
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {

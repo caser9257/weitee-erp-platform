@@ -131,8 +131,7 @@ public class ErpProductionOrderServiceImpl implements ErpProductionOrderService 
     @Transactional(rollbackFor = Exception.class)
     public void finishProductionOrder(ErpProductionOrderFinishReqVO reqVO) {
         ErpProductionOrderDO order = validateProductionOrderExists(reqVO.getId());
-        if (!(ErpProductionOrderStatusEnum.CREATED.getStatus().equals(order.getStatus())
-                || ErpProductionOrderStatusEnum.RELEASED.getStatus().equals(order.getStatus()))) {
+        if (!ErpProductionOrderStatusEnum.RELEASED.getStatus().equals(order.getStatus())) {
             throw exception(PRODUCTION_ORDER_STATUS_INVALID);
         }
         warehouseService.validWarehouseList(List.of(reqVO.getWarehouseId()));

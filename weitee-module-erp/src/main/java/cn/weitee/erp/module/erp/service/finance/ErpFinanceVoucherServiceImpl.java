@@ -429,7 +429,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         reqVO.setTemplateId(template.getId());
         reqVO.setBizType(actualBizType);
         reqVO.setBizId(bizId);
-        return generateVoucher(reqVO);
+        return generateVoucherWithoutDualWrite(reqVO);
     }
 
     private Long buildMonthEndBizId(YearMonth yearMonth) {

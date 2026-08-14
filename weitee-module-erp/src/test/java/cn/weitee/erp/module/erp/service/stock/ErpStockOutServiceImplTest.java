@@ -10,10 +10,15 @@ import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchAllocateOutboundReqBO;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -22,8 +27,25 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_STATUS
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_OUT_UPDATE_FAIL_PROCESSING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ErpStockOutServiceImplTest {
+
+    @Mock
+    private ErpStockOutMapper approvalMapper;
+    @Mock
+    private ErpStockOutItemMapper approvalItemMapper;
+    @Mock
+    private ErpStockService approvalStockService;
+    @Mock
+    private ErpStockBatchAllocationService approvalBatchAllocationService;
+
+    @InjectMocks
+    private ErpStockOutServiceImpl approvalService;
 
     @Test
     void updateStockOutStatus_shouldAllocateBatchWhenApprove() throws Exception {
@@ -151,6 +173,24 @@ class ErpStockOutServiceImplTest {
         service.updateStockOutStatusByBpm(10L, "PI-BOUND", ErpAuditStatus.APPROVE.getStatus(), "approved");
 
         assertEquals(Boolean.FALSE, updateCalledRef.get());
+    }
+
+    @Test
+    void updateStockOutStatusByBpm_shouldClearProcessInstanceIdAfterApproval() {
+        Long stockOutId = 10L;
+        String processInstanceId = "PI-BOUND";
+        when(approvalMapper.selectById(stockOutId)).thenReturn(new ErpStockOutDO().setId(stockOutId)
+                .setNo("QCKD20260714000002")
+                .setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setProcessInstanceId(processInstanceId));
+        when(approvalMapper.updateByIdStatusAndProcessInstanceId(any(), any(), any(), any())).thenReturn(1);
+        when(approvalItemMapper.selectListByOutId(stockOutId)).thenReturn(Collections.emptyList());
+        when(approvalStockService.getStockListByProductIds(anySet())).thenReturn(Collections.emptyList());
+
+        approvalService.updateStockOutStatusByBpm(stockOutId, processInstanceId,
+                ErpAuditStatus.APPROVE.getStatus(), "approved");
+
+        verify(approvalMapper).clearProcessInstanceId(stockOutId, processInstanceId);
     }
 
     @Test

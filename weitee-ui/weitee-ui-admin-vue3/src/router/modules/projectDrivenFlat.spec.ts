@@ -315,6 +315,38 @@ assert.equal(
   'erp/purchase/order/index'
 )
 
+const supplyChainOnlyMenus = [
+  {
+    path: '/scm',
+    name: '供应链管理',
+    component: '',
+    componentName: 'FormalScmRoot',
+    redirect: '/scm/assemble',
+    meta: {},
+    visible: true,
+    keepAlive: false,
+    alwaysShow: true,
+    children: [
+      {
+        path: 'assemble',
+        name: '组装与拆卸',
+        component: 'erp/stock/assemble/index',
+        componentName: 'ErpStockAssemblePage',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      }
+    ]
+  }
+] as any[]
+
+const supplyChainOnlyMergedMenus = mergeProjectDrivenMenus(supplyChainOnlyMenus)
+assert.equal(
+  supplyChainOnlyMergedMenus.find((item: any) => item.path === '/finance'),
+  undefined,
+  '未被后端授权的财务根菜单不应由项目增强菜单注入'
+)
+
 const routerHelperSource = readFileSync(
   new URL('../../utils/routerHelper.ts', import.meta.url),
   'utf8'

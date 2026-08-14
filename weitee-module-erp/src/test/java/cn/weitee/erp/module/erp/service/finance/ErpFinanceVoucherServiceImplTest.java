@@ -680,6 +680,7 @@ class ErpFinanceVoucherServiceImplTest {
     void autoGenerateVoucher_shouldGenerateBothMappedLedgersWhenDualLedgerConfigExists() throws Exception {
         ErpFinanceVoucherServiceImpl service = newService();
         List<ErpFinanceVoucherDO> insertedVouchers = new ArrayList<>();
+        AtomicInteger eventCount = new AtomicInteger();
 
         setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> {
             if ("getDefaultFinanceLedger".equals(methodName)) {
@@ -739,6 +740,12 @@ class ErpFinanceVoucherServiceImplTest {
                 return prefix + (++seq);
             }
         });
+        setField(service, "applicationContext", createProxy(ApplicationContext.class, (methodName, args) -> {
+            if ("publishEvent".equals(methodName)) {
+                eventCount.incrementAndGet();
+            }
+            return null;
+        }));
         mockOutsourceOrderService(service, null);
 
         Long id = service.autoGenerateVoucher(ErpBizTypeEnum.FINANCE_EXPENSE.getType(), 100L);
@@ -747,6 +754,7 @@ class ErpFinanceVoucherServiceImplTest {
         assertEquals(2, insertedVouchers.size());
         assertEquals(1L, insertedVouchers.get(0).getLedgerId());
         assertEquals(2L, insertedVouchers.get(1).getLedgerId());
+        assertEquals(0, eventCount.get());
     }
 
     @Test

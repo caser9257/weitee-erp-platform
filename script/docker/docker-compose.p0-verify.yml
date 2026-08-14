@@ -1,0 +1,43 @@
+services:
+  mysql:
+    container_name: weitee-p0-verify-mysql
+    ports: !override
+      - "23309:3306"
+    volumes: !override
+      - p0-verify-mysql:/var/lib/mysql/
+      - ../../sql/mysql/base/quartz.sql:/docker-entrypoint-initdb.d/01-quartz.sql:ro
+      - ../../production/ruoyi-vue-pro/weitee-erp_backup_20260709.sql:/docker-entrypoint-initdb.d/02-weitee-erp.sql:ro
+      - ./initdb/03-weitee-post-import-fixes.sql:/docker-entrypoint-initdb.d/03-weitee-post-import-fixes.sql:ro
+      - ../../sql/mysql/stock/143-erp-stock-assemble.sql:/docker-entrypoint-initdb.d/05-erp-stock-assemble.sql:ro
+      - ./initdb/04-demo-accounts.sql:/docker-entrypoint-initdb.d/06-demo-accounts.sql:ro
+
+  redis:
+    container_name: weitee-p0-verify-redis
+    ports: !override
+      - "26382:6379"
+
+  server:
+    container_name: weitee-p0-verify-server
+    image: weitee-p0-verify-server
+    ports: !override
+      - "58084:48080"
+    networks:
+      default:
+        aliases:
+          - weitee-server
+    environment:
+      ARGS: |
+        --spring.datasource.dynamic.datasource.master.url=jdbc:mysql://mysql:3306/weitee-erp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+        --spring.datasource.dynamic.datasource.master.username=root
+        --spring.datasource.dynamic.datasource.master.password=123456
+        --spring.datasource.dynamic.datasource.slave.url=jdbc:mysql://mysql:3306/weitee-erp?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&nullCatalogMeansCurrent=true
+        --spring.datasource.dynamic.datasource.slave.username=root
+        --spring.datasource.dynamic.datasource.slave.password=123456
+        --spring.redis.host=redis
+        --spring.redis.port=6379
+        --spring.data.redis.host=redis
+        --spring.data.redis.port=6379
+
+volumes:
+  p0-verify-mysql:
+    driver: local

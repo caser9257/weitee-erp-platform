@@ -184,13 +184,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         Set<Long> warehouseIds = checkItems.stream()
                 .map(ErpStockCheckItemDO::getWarehouseId)
                 .collect(Collectors.toSet());
-        Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
-        warehouseIds.forEach(warehouseId -> {
-            ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
-            if (warehouse != null) {
-                warehouseService.updateWarehouse(buildWarehouseUpdateReq(warehouse, true));
-            }
-        });
+        warehouseIds.forEach(warehouseId -> updateWarehouseFrozen(warehouseId, true));
 
         // 3. 更新状态为 COUNTING，记录快照时间
         erpStockCheckMapper.updateById(new ErpStockCheckDO()
@@ -312,7 +306,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         warehouseIds.forEach(warehouseId -> {
             ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
             if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
-                warehouseService.updateWarehouse(buildWarehouseUpdateReq(warehouse, false));
+                updateWarehouseFrozen(warehouseId, false);
             }
         });
     }
@@ -339,7 +333,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             warehouseIds.forEach(warehouseId -> {
                 ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
                 if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
-                    warehouseService.updateWarehouse(buildWarehouseUpdateReq(warehouse, false));
+                    updateWarehouseFrozen(warehouseId, false);
                 }
             });
         } else {
@@ -561,6 +555,22 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         }
 
         return new BigDecimal[]{totalProfit, totalLoss};
+    }
+
+    private void updateWarehouseFrozen(Long warehouseId, boolean frozen) {
+        ErpWarehouseDO warehouse = warehouseService.validWarehouseList(List.of(warehouseId)).get(0);
+        warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
+                .setId(warehouse.getId())
+                .setName(warehouse.getName())
+                .setCategoryId(warehouse.getCategoryId())
+                .setAddress(warehouse.getAddress())
+                .setSort(warehouse.getSort())
+                .setRemark(warehouse.getRemark())
+                .setPrincipal(warehouse.getPrincipal())
+                .setWarehousePrice(warehouse.getWarehousePrice())
+                .setTruckagePrice(warehouse.getTruckagePrice())
+                .setStatus(warehouse.getStatus())
+                .setFrozen(frozen));
     }
 
 }

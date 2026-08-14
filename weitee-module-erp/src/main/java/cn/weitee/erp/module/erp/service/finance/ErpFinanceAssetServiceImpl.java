@@ -12,6 +12,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetCandidateMapper
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetDepreciationMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.weitee.erp.module.erp.enums.ErpFinanceAssetCandidateStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetSourceTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseAccountingTypeEnum;
@@ -49,6 +50,16 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createFinanceAsset(ErpFinanceAssetSaveReqVO createReqVO) {
+        if (createReqVO.getCandidateId() != null) {
+            int updateCount = financeAssetCandidateMapper.updateByIdAndStatus(createReqVO.getCandidateId(),
+                    ErpFinanceAssetCandidateStatusEnum.PENDING_CONFIRM.getStatus(),
+                    new ErpFinanceAssetCandidateDO()
+                            .setStatus(ErpFinanceAssetCandidateStatusEnum.CONFIRMED.getStatus())
+                            .setRemark(createReqVO.getRemark()));
+            if (updateCount == 0) {
+                throw exception(ASSET_CANDIDATE_CONFIRM_FAIL);
+            }
+        }
         String no = noRedisDAO.generate("GDZC");
         if (financeAssetMapper.selectByNo(no) != null) {
             throw exception(ASSET_NO_EXISTS);

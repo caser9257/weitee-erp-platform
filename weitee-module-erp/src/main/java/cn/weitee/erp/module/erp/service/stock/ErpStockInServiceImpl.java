@@ -179,10 +179,11 @@ public class ErpStockInServiceImpl implements ErpStockInService {
         }
         int updateCount = erpStockInMapper.updateByIdStatusAndProcessInstanceId(id,
                 ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
-                new ErpStockInDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
+                new ErpStockInDO().setStatus(ErpAuditStatus.APPROVE.getStatus()));
         if (updateCount == 0) {
             throw exception(STOCK_IN_STATUS_UPDATE_ILLEGAL);
         }
+        erpStockInMapper.clearProcessInstanceId(id, processInstanceId);
         List<ErpStockInItemDO> stockInItems = erpStockInItemMapper.selectListByInId(id);
         Set<Long> inProductIds = convertSet(stockInItems, ErpStockInItemDO::getProductId);
         List<ErpStockDO> stockList = stockService.getStockListByProductIds(inProductIds);

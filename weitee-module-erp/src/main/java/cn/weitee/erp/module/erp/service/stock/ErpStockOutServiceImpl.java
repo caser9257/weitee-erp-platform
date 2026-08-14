@@ -271,10 +271,11 @@ public class ErpStockOutServiceImpl implements ErpStockOutService {
         }
         int updateCount = erpStockOutMapper.updateByIdStatusAndProcessInstanceId(id,
                 ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
-                new ErpStockOutDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
+                new ErpStockOutDO().setStatus(ErpAuditStatus.APPROVE.getStatus()));
         if (updateCount == 0) {
             throw exception(STOCK_OUT_STATUS_UPDATE_ILLEGAL);
         }
+        erpStockOutMapper.clearProcessInstanceId(id, processInstanceId);
         List<ErpStockOutItemDO> stockOutItems = erpStockOutItemMapper.selectListByOutId(id);
         allocateStockOutBatches(stockOut, stockOutItems);
         Set<Long> outProductIds = convertSet(stockOutItems, ErpStockOutItemDO::getProductId);
