@@ -28,6 +28,8 @@ public class ErpProductionIssueCreateReqVO {
         @NotNull(message = "productionMaterialId cannot be empty")
         private Long productionMaterialId;
 
+        private Long productionOrderStepId;
+
         @NotNull(message = "materialId cannot be empty")
         private Long materialId;
 

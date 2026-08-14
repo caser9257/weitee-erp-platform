@@ -86,6 +86,13 @@ public class ErpProductionOrderController {
         return success(new PageResult<>(list, pageResult.getTotal()));
     }
 
+    @GetMapping("/summary")
+    @Operation(summary = "获得生产工单状态统计")
+    @PreAuthorize("@ss.hasPermission('erp:production-order:query')")
+    public CommonResult<ErpProductionOrderSummaryRespVO> getProductionOrderSummary() {
+        return success(productionOrderService.getSummary());
+    }
+
     private ErpProductionOrderRespVO buildRespVO(ErpProductionOrderDO order) {
         if (order == null) {
             return null;

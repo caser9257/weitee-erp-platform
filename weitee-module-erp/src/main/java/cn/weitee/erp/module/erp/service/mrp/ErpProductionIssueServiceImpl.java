@@ -185,6 +185,7 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
             ErpProductionIssueItemDO issueItem = new ErpProductionIssueItemDO()
                     .setIssueId(issue.getId())
                     .setProductionMaterialId(item.getProductionMaterialId())
+                    .setProductionOrderStepId(item.getProductionOrderStepId())
                     .setMaterialId(item.getMaterialId())
                     .setWarehouseId(item.getWarehouseId())
                     .setIssueQty(item.getIssueQty())
@@ -217,9 +218,7 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
                         .setProduceDate(stockBatch.getProduceDate())
                         .setExpireDate(stockBatch.getExpireDate()));
             }
-            if (erpProductionMaterialMapper.updateIssuedQtyIncrement(material.getId(), item.getIssueQty()) == 0) {
-                throw exception(PRODUCTION_MATERIAL_QTY_INVALID);
-            }
+            erpProductionMaterialMapper.updateIssuedQtyIncrement(material.getId(), item.getIssueQty());
             totalIssueAmount = totalIssueAmount.add(itemIssueAmount);
         }
         issue.setIssueAmount(totalIssueAmount);

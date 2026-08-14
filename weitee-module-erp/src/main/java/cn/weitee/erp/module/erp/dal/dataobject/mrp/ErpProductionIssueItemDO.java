@@ -30,6 +30,8 @@ public class ErpProductionIssueItemDO extends BaseDO {
 
     private Long productionMaterialId;
 
+    private Long productionOrderStepId;
+
     private Long materialId;
 
     private Long warehouseId;

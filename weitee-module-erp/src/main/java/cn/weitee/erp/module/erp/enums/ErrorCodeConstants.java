@@ -287,7 +287,6 @@ public interface ErrorCodeConstants {
     ErrorCode PREPAYMENT_NO_EXISTS = new ErrorCode(1_030_605_004, "生成预付款单号失败，请重新提交");
     ErrorCode PREPAYMENT_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_605_005, "预付款单({})已审核，无法修改");
     ErrorCode PREPAYMENT_ALLOCATE_FAIL_APPROVE = new ErrorCode(1_030_605_006, "预付款单({})未审核，无法核销");
-    ErrorCode PREPAYMENT_ALLOCATE_AMOUNT_EXCEED = new ErrorCode(1_030_605_007, "预付款单({})本次核销金额({})超过剩余可核销金额({})");
 
     // ========== ERP 采购发票三单匹配 1-030-606-000 ==========
     ErrorCode AP_INVOICE_NOT_EXISTS = new ErrorCode(1_030_606_000, "采购发票不存在");
@@ -369,6 +368,37 @@ public interface ErrorCodeConstants {
     ErrorCode OUTSOURCE_ORDER_BOM_PRODUCT_MISMATCH = new ErrorCode(1_030_700_039, "BOM 成品与委外订单产品不一致");
     ErrorCode OUTSOURCE_FEE_NOT_EXISTS = new ErrorCode(1_030_700_040, "委外加工费不存在");
     ErrorCode OUTSOURCE_FEE_VOID_FAIL_ALLOCATED = new ErrorCode(1_030_700_041, "委外加工费({})已被付款核销，无法作废");
+    ErrorCode PROCESS_ROUTE_NOT_EXISTS = new ErrorCode(1_030_700_042, "工艺路线不存在");
+    ErrorCode PROCESS_ROUTE_CODE_DUPLICATE = new ErrorCode(1_030_700_043, "工艺路线编码已存在");
+    ErrorCode PROCESS_ROUTE_STATUS_INVALID = new ErrorCode(1_030_700_044, "工艺路线状态不合法");
+    ErrorCode PROCESS_ROUTE_STEP_INVALID = new ErrorCode(1_030_700_045, "工序编号或工序编码重复");
+    ErrorCode PROCESS_ROUTE_DATE_INVALID = new ErrorCode(1_030_700_046, "工艺路线失效日期不能早于生效日期");
+    ErrorCode PROCESS_ROUTE_REFERENCED = new ErrorCode(1_030_700_047, "工艺路线已被 BOM 或生产工单引用，无法删除");
+    ErrorCode WORK_CENTER_NOT_EXISTS = new ErrorCode(1_030_700_048, "工作中心不存在");
+    ErrorCode WORK_CENTER_CODE_DUPLICATE = new ErrorCode(1_030_700_049, "工作中心编码已存在");
+    ErrorCode WORK_CENTER_REFERENCED = new ErrorCode(1_030_700_054, "工作中心下存在设备或工序，无法删除");
+    ErrorCode DEVICE_NOT_EXISTS = new ErrorCode(1_030_700_050, "设备不存在");
+    ErrorCode DEVICE_CODE_DUPLICATE = new ErrorCode(1_030_700_051, "设备编码已存在");
+    ErrorCode DEVICE_STATUS_INVALID = new ErrorCode(1_030_700_052, "设备状态不合法");
+    ErrorCode DEVICE_REFERENCED = new ErrorCode(1_030_700_053, "设备已被生产工单工序引用，无法删除");
+    ErrorCode PRODUCTION_ORDER_NOT_RELEASED = new ErrorCode(1_030_700_055, "生产工单未下达，无法完工");
+    ErrorCode PRODUCTION_ORDER_ROUTE_NOT_EXISTS = new ErrorCode(1_030_700_056, "生产工单绑定的工艺路线不存在或已停用");
+    ErrorCode PRODUCTION_ORDER_PLAN_TIME_INVALID = new ErrorCode(1_030_700_057, "计划结束时间不能早于计划开始时间");
+    ErrorCode PRODUCTION_ORDER_FINISH_QTY_EXCEED = new ErrorCode(1_030_700_058, "完工数量不能超过计划数量");
+    ErrorCode PRODUCTION_ORDER_STEP_NOT_EXISTS = new ErrorCode(1_030_700_059, "工单工序不存在");
+    ErrorCode PRODUCTION_ORDER_STEP_STATUS_INVALID = new ErrorCode(1_030_700_060, "当前工序状态不允许执行该操作");
+    ErrorCode PRODUCTION_ORDER_STEP_PRECEDENT_UNFINISHED = new ErrorCode(1_030_700_061, "前序工序未完工，无法开工");
+    ErrorCode PRODUCTION_ORDER_STEP_QTY_EXCEED = new ErrorCode(1_030_700_062, "报工数量超过工序计划数量");
+    ErrorCode PRODUCTION_REPORT_ITEM_EMPTY = new ErrorCode(1_030_700_063, "报工明细不能为空");
+    ErrorCode PRODUCTION_REPORT_STEP_MISMATCH = new ErrorCode(1_030_700_064, "报工明细工序与工单不匹配");
+    ErrorCode PRODUCTION_REPORT_QTY_INVALID = new ErrorCode(1_030_700_065, "合格数量与报废数量之和必须等于报工数量");
+    ErrorCode PRODUCTION_ORDER_NOT_RELEASED_FOR_REPORT = new ErrorCode(1_030_700_066, "生产工单未下达，无法报工");
+    ErrorCode PRODUCTION_STEP_QUALITY_NOT_EXISTS = new ErrorCode(1_030_700_067, "工序质检单不存在");
+    ErrorCode PRODUCTION_STEP_QUALITY_STATUS_INVALID = new ErrorCode(1_030_700_068, "当前工序质检单状态不允许执行该操作");
+    ErrorCode PRODUCTION_STEP_QUALITY_COUNT_INVALID = new ErrorCode(1_030_700_069, "合格数量与不合格数量之和必须等于报工数量");
+    ErrorCode PRODUCTION_STEP_QUALITY_PENDING_UNFINISHED = new ErrorCode(1_030_700_070, "工序存在待检质检单，无法完工");
+    ErrorCode PRODUCTION_ORDER_STEP_UNFINISHED = new ErrorCode(1_030_700_071, "存在未完工工序，无法完工");
+    ErrorCode PRODUCTION_REPORT_TYPE_INVALID = new ErrorCode(1_030_700_072, "暂不支持该报工类型");
 
     // ========== ERP 一期项目/销售扩展 ==========
     ErrorCode SALE_ORDER_BUSINESS_TYPE_REQUIRED = new ErrorCode(1_020_201_011, "销售订单业务类型不能为空");
@@ -389,8 +419,6 @@ public interface ErrorCodeConstants {
     ErrorCode PROJECT_MC_CONFIRM_FORBIDDEN = new ErrorCode(1_020_204_008, "当前用户不是项目 MC 负责人，无法执行确认");
     ErrorCode PROJECT_PC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_009, "当前项目 PC 状态不允许重复确认");
     ErrorCode PROJECT_MC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_010, "当前项目 MC 状态不允许重复确认");
-    ErrorCode PROJECT_LIFECYCLE_STAGE_TRANSITION_FAIL = new ErrorCode(1_020_204_011, "项目生命周期阶段流转失败：{}");
-    ErrorCode PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL = new ErrorCode(1_020_204_012, "项目生命周期阶段前置条件校验失败：{}");
 
     // ========== ERP 租赁合同 1-030-610-000 ==========
     ErrorCode LEASE_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_610_000, "租赁合同不存在");

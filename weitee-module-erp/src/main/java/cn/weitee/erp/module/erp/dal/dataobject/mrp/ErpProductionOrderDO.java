@@ -26,11 +26,19 @@ public class ErpProductionOrderDO extends BaseDO {
 
     private Long productId;
 
+    private Long routeId;
+
+    private String routeVersion;
+
+    private Long workCenterId;
+
     private Long projectId;
 
     private BigDecimal planQty;
 
     private BigDecimal finishedQty;
+
+    private BigDecimal scrapQty;
 
     private Long warehouseId;
 

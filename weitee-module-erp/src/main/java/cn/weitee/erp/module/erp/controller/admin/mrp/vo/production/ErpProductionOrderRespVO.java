@@ -14,11 +14,23 @@ public class ErpProductionOrderRespVO {
 
     private Long productId;
 
+    private Long routeId;
+
+    private String routeVersion;
+
+    private Long workCenterId;
+
+    private String batchNo;
+
     private String productName;
 
     private BigDecimal planQty;
 
     private BigDecimal finishedQty;
+
+    private BigDecimal scrapQty;
+
+    private Long warehouseId;
 
     private LocalDateTime planStartTime;
 
