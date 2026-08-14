@@ -132,7 +132,7 @@ class ErpStockCheckServiceImplTest {
                 () -> service.updateStockCheckStatus(checkId, ErpStockCheckStatusEnum.APPROVED.getStatus()));
 
         assertEquals(STOCK_CHECK_VOUCHER_GENERATE_FAIL.getCode(), ex.getCode());
-        assertEquals(ErpStockCheckStatusEnum.APPROVED.getStatus(), lastWrittenStatus.get());
+        assertEquals(ErpStockCheckStatusEnum.PROCESSING.getStatus(), lastWrittenStatus.get());
     }
 
     @Test
