@@ -159,8 +159,11 @@ class ErpApInvoiceServiceImplTest {
                 return insertedItems;
             }
             if ("insertBatch".equals(methodName)) {
-                insertedItems.addAll((List<ErpApInvoiceMatchItemDO>) args[0]);
                 return true;
+            }
+            if ("insert".equals(methodName)) {
+                insertedItems.add((ErpApInvoiceMatchItemDO) args[0]);
+                return 1;
             }
             return null;
         }));
@@ -421,6 +424,9 @@ class ErpApInvoiceServiceImplTest {
             if ("selectById".equals(methodName)) {
                 return invoice;
             }
+            if ("selectBatchIds".equals(methodName)) {
+                throw new AssertionError("撤销最后一条匹配时不应以空集合查询发票");
+            }
             if ("updateById".equals(methodName)) {
                 updatedInvoiceRef.set((ErpApInvoiceDO) args[0]);
                 return 1;
@@ -464,6 +470,7 @@ class ErpApInvoiceServiceImplTest {
         assertEquals(6001L, updatedItemRef.get().getId());
         assertEquals(ErpApInvoiceMatchItemStatusEnum.CANCELED.getStatus(), updatedItemRef.get().getStatus());
         assertEquals(ErpApInvoiceMatchStatusEnum.UNMATCHED.getStatus(), updatedInvoiceRef.get().getMatchStatus());
+        assertEquals(BigDecimal.ZERO, updatedInvoiceRef.get().getMatchedCount());
         assertEquals(BigDecimal.ZERO, updatedInvoiceRef.get().getMatchedAmount());
         assertEquals(new BigDecimal("100.00"), updatedInvoiceRef.get().getUnmatchedAmount());
         assertEquals(33L, updatedStatementInvoiceRef.get()[0]);

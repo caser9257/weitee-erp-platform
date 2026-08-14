@@ -15,6 +15,9 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+
 /**
  * 审计数据导出服务
  * 只导出外部账簿数据
@@ -39,7 +42,7 @@ public class ErpFinanceAuditExportService {
                                         HttpServletResponse response) throws IOException {
         // 检查是否有权限访问该账簿
         if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
-            throw new RuntimeException("无权访问该账簿");
+            throw exception(NOT_FOUND);
         }
 
         // 查询凭证数据
@@ -87,7 +90,7 @@ public class ErpFinanceAuditExportService {
                                        HttpServletResponse response) throws IOException {
         // 检查权限
         if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
-            throw new RuntimeException("无权访问该账簿");
+            throw exception(NOT_FOUND);
         }
 
         // TODO: 实现科目余额表导出逻辑
@@ -104,7 +107,7 @@ public class ErpFinanceAuditExportService {
                                     HttpServletResponse response) throws IOException {
         // 检查权限
         if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
-            throw new RuntimeException("无权访问该账簿");
+            throw exception(NOT_FOUND);
         }
 
         // TODO: 实现试算平衡表导出逻辑

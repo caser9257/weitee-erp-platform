@@ -41,9 +41,14 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                     "finance", "/finance/payment", "/finance/payment", false),
             new BundledProcessDefinition("erp_finance_expense", "费用报销审批", "bpmn/erp_finance_expense.bpmn",
                     "finance", "/finance/expense", "/finance/expense", false),
+            new BundledProcessDefinition("erp_sale_order", "销售订单审批", "bpmn/erp_sale_order_approval.bpmn",
+                    "erp_sale", "/erp/sale/order", "/erp/sale/order", true),
             new BundledProcessDefinition("erp_purchase_return_approval", "采购退货审批",
                     "bpmn/erp_purchase_return_approval.bpmn", "erp_purchase",
-                    "/scm/purchase-return", "/scm/purchase-return", false),
+                    "/scm/purchase-return", "/scm/purchase-return", true),
+            new BundledProcessDefinition("erp_purchase_in_approval", "采购入库审批",
+                    "bpmn/erp_purchase_in_approval.bpmn", "erp_purchase",
+                    "/scm/purchase-in", "/scm/purchase-in", false),
             new BundledProcessDefinition("erp_stock_in_approval", "其它入库审批",
                     "bpmn/erp_stock_in_approval.bpmn", "erp_stock",
                     "/scm/stock-in", "/scm/stock-in", true),
@@ -265,6 +270,8 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
     }
 
     private void ensureSupplyChainBpmSchema() {
+        addColumnIfMissing("erp_purchase_in", "process_instance_id",
+                "`process_instance_id` varchar(64) DEFAULT NULL COMMENT 'BPM 流程实例 ID' AFTER `status`");
         addColumnIfMissing("erp_purchase_return", "process_instance_id",
                 "`process_instance_id` varchar(64) DEFAULT NULL COMMENT 'BPM 流程实例 ID' AFTER `status`");
         addColumnIfMissing("erp_stock_in", "process_instance_id",

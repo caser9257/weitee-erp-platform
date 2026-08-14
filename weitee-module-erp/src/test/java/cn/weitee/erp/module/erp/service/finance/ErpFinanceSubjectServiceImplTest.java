@@ -2,6 +2,8 @@ package cn.weitee.erp.module.erp.service.finance;
 
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.subject.ErpFinanceSubjectPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.subject.ErpFinanceSubjectSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceSubjectDO;
@@ -10,11 +12,15 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemSubjectMap
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceSubjectMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceSubjectTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherEntryDirectionEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceReport.FINANCE_SUBJECT_CODE_DUPLICATE;
@@ -23,6 +29,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinanceSubjectServiceImplTest {
+
+    @Test
+    void getFinanceSubjectPage_shouldQueryOnlyAuthorizedSubjectCodes() throws Exception {
+        ErpFinanceSubjectServiceImpl service = new ErpFinanceSubjectServiceImpl();
+        AtomicBoolean scopedQueryCalled = new AtomicBoolean(false);
+        PageResult<ErpFinanceSubjectDO> expected = PageResult.empty(0L);
+        setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class, (methodName, args) -> {
+            if ("getVisibleLedgerIds".equals(methodName)) {
+                return List.of(1L);
+            }
+            if ("getPermissionScope".equals(methodName)) {
+                return new FinancePermissionScope(FinancePermissionScope.Scope.limited(Set.of(1L)),
+                        FinancePermissionScope.Scope.all(),
+                        Map.of(1L, FinancePermissionScope.Scope.limited(Set.of("1001"))), false, false);
+            }
+            return null;
+        }));
+        setField(service, "financeSubjectMapper", createProxy(ErpFinanceSubjectMapper.class, (methodName, args) -> {
+            if ("selectPageByVisibleLedgerIdsAndSubjectCodes".equals(methodName)) {
+                scopedQueryCalled.set(true);
+                return expected;
+            }
+            return null;
+        }));
+
+        PageResult<ErpFinanceSubjectDO> result = service.getFinanceSubjectPage(new ErpFinanceSubjectPageReqVO());
+
+        assertEquals(expected, result);
+        assertEquals(true, scopedQueryCalled.get());
+    }
 
     @Test
     void createFinanceSubject_shouldRejectDuplicateSubjectCodeInSameLedger() throws Exception {

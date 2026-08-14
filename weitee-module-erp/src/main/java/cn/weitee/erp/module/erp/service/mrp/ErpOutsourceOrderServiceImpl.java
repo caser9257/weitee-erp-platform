@@ -33,6 +33,7 @@ import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpApStatementDO;
+import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -482,8 +483,8 @@ public class ErpOutsourceOrderServiceImpl implements ErpOutsourceOrderService {
                 .setRemark(reqVO.getRemark());
         erpOutsourceFeeMapper.insert(fee);
         apStatementService.createStatementForOutsourceFee(fee, order);
-        financeBizHookService.handleApprovedBiz(cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum.OUTSOURCE_FEE.getType(),
-                fee.getId(), fee.getFeeTime().toLocalDate());
+        ErpTransactionUtils.afterCommit(() -> financeBizHookService.handleApprovedBiz(
+                ErpBizTypeEnum.OUTSOURCE_FEE.getType(), fee.getId(), fee.getFeeTime().toLocalDate()));
         erpOutsourceOrderMapper.updateById(new ErpOutsourceOrderDO().setId(reqVO.getOrderId())
                 .setStatus(resolveStatusAfterFeeCreate(order.getStatus())));
         return fee.getId();

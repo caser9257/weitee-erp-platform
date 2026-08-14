@@ -10,11 +10,22 @@ import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+
 @Mapper
 public interface ErpFinanceExpenseMapper extends BaseMapperX<ErpFinanceExpenseDO> {
 
     default PageResult<ErpFinanceExpenseDO> selectPage(ErpFinanceExpensePageReqVO reqVO) {
-        MPJLambdaWrapperX<ErpFinanceExpenseDO> query = new MPJLambdaWrapperX<ErpFinanceExpenseDO>()
+        return selectJoinPage(reqVO, ErpFinanceExpenseDO.class, buildPageQuery(reqVO));
+    }
+
+    default PageResult<ErpFinanceExpenseDO> selectPageByDeptIds(ErpFinanceExpensePageReqVO reqVO, Collection<Long> deptIds) {
+        return selectJoinPage(reqVO, ErpFinanceExpenseDO.class, buildPageQuery(reqVO)
+                .in(ErpFinanceExpenseDO::getDeptId, deptIds));
+    }
+
+    private MPJLambdaWrapperX<ErpFinanceExpenseDO> buildPageQuery(ErpFinanceExpensePageReqVO reqVO) {
+        return new MPJLambdaWrapperX<ErpFinanceExpenseDO>()
                 .likeIfPresent(ErpFinanceExpenseDO::getNo, reqVO.getNo())
                 .betweenIfPresent(ErpFinanceExpenseDO::getExpenseTime, reqVO.getExpenseTime())
                 .eqIfPresent(ErpFinanceExpenseDO::getExpenseType, reqVO.getExpenseType())
@@ -28,7 +39,6 @@ public interface ErpFinanceExpenseMapper extends BaseMapperX<ErpFinanceExpenseDO
                 .eqIfPresent(ErpFinanceExpenseDO::getStatus, reqVO.getStatus())
                 .likeIfPresent(ErpFinanceExpenseDO::getRemark, reqVO.getRemark())
                 .orderByDesc(ErpFinanceExpenseDO::getId);
-        return selectJoinPage(reqVO, ErpFinanceExpenseDO.class, query);
     }
 
     default int updateByIdAndStatus(Long id, Integer status, ErpFinanceExpenseDO updateObj) {

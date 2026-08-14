@@ -32,7 +32,7 @@ import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.con
 
 @Tag(name = "管理后台 - ERP 结算账户")
 @RestController
-@RequestMapping("/erp/account")
+@RequestMapping({"/erp/account", "/erp/finance-account"})
 @Validated
 public class ErpAccountController {
 

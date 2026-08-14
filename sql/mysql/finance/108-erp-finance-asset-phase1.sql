@@ -227,9 +227,10 @@ ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 INSERT INTO `erp_finance_voucher_template_item`
 (`id`, `template_id`, `entry_no`, `entry_direction`, `subject_code`, `subject_name`, `amount_source`, `amount_source_value`, `summary`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(2031, 203, 1, 1, '6602', '管理费用', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0'),
-(2032, 203, 2, 2, '1602', '累计折旧', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0')
+(2031, 203, 1, 10, '6602', '管理费用', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0'),
+(2032, 203, 2, 20, '1602', '累计折旧', 10, NULL, '固定资产折旧', '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE
+  `entry_direction` = VALUES(`entry_direction`),
   `subject_code` = VALUES(`subject_code`),
   `subject_name` = VALUES(`subject_name`);
 
@@ -242,9 +243,10 @@ ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 INSERT INTO `erp_finance_voucher_template_item`
 (`id`, `template_id`, `entry_no`, `entry_direction`, `subject_code`, `subject_name`, `amount_source`, `amount_source_value`, `summary`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(2041, 204, 1, 1, '6602', '管理费用', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
-(2042, 204, 2, 2, '1702', '累计摊销', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0')
+(2041, 204, 1, 10, '6602', '管理费用', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
+(2042, 204, 2, 20, '1702', '累计摊销', 10, NULL, '无形资产摊销', '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE
+  `entry_direction` = VALUES(`entry_direction`),
   `subject_code` = VALUES(`subject_code`),
   `subject_name` = VALUES(`subject_name`);
 
@@ -257,9 +259,10 @@ ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
 INSERT INTO `erp_finance_voucher_template_item`
 (`id`, `template_id`, `entry_no`, `entry_direction`, `subject_code`, `subject_name`, `amount_source`, `amount_source_value`, `summary`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(2051, 205, 1, 1, '5301', '研发支出', 10, NULL, '研发无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
-(2052, 205, 2, 2, '1702', '累计摊销', 10, NULL, '研发无形资产摊销', '1', NOW(), '1', NOW(), b'0')
+(2051, 205, 1, 10, '5301', '研发支出', 10, NULL, '研发无形资产摊销', '1', NOW(), '1', NOW(), b'0'),
+(2052, 205, 2, 20, '1702', '累计摊销', 10, NULL, '研发无形资产摊销', '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE
+  `entry_direction` = VALUES(`entry_direction`),
   `subject_code` = VALUES(`subject_code`),
   `subject_name` = VALUES(`subject_name`);
 

@@ -2,7 +2,7 @@ package cn.weitee.erp.module.erp.enums;
 
 public interface ErpPurchaseInBpmConstants {
 
-    String PROCESS_DEFINITION_KEY = "erp_purchase_in";
+    String PROCESS_DEFINITION_KEY = "erp_purchase_in_approval";
 
     String VARIABLE_IN_ID = "purchaseInId";
     String VARIABLE_IN_NO = "purchaseInNo";

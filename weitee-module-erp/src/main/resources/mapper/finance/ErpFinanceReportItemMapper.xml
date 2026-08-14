@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemMapper">
+    <select id="selectPageByVisibleLedgerIdsAndSubjectCodes" resultType="cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceReportItemDO">
+        SELECT r.* FROM erp_finance_report_item r WHERE r.deleted = 0
+        <if test="ledgerIds != null and !ledgerIds.isEmpty()">AND r.ledger_id IN <foreach collection="ledgerIds" item="ledgerId" open="(" separator="," close=")">#{ledgerId}</foreach></if>
+        <if test="reqVO.ledgerId != null">AND r.ledger_id = #{reqVO.ledgerId}</if>
+        <if test="reqVO.reportType != null">AND r.report_type = #{reqVO.reportType}</if>
+        <if test="reqVO.itemCategory != null">AND r.item_category = #{reqVO.itemCategory}</if>
+        <if test="reqVO.itemCode != null and reqVO.itemCode != ''">AND r.item_code LIKE CONCAT('%', #{reqVO.itemCode}, '%')</if>
+        <if test="reqVO.itemName != null and reqVO.itemName != ''">AND r.item_name LIKE CONCAT('%', #{reqVO.itemName}, '%')</if>
+        <if test="reqVO.status != null">AND r.status = #{reqVO.status}</if>
+        <if test="subjectCodesByLedger != null and !subjectCodesByLedger.isEmpty()">
+            AND (<foreach collection="subjectCodesByLedger" index="ledgerId" item="subjectCodes" separator=" AND ">
+                (r.ledger_id != #{ledgerId} OR NOT EXISTS (SELECT 1 FROM erp_finance_report_item_subject s
+                WHERE s.item_id = r.id AND s.deleted = 0 AND s.subject_code NOT IN
+                <foreach collection="subjectCodes" item="subjectCode" open="(" separator="," close=")">#{subjectCode}</foreach>))
+            </foreach>)
+        </if>
+        ORDER BY r.sort ASC, r.id ASC
+    </select>
+</mapper>

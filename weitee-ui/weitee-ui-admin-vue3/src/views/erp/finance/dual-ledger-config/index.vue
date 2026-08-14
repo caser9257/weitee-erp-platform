@@ -3,7 +3,7 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">双账账簿映射</div>
+          <div class="finance-shell__page-title">{{ financeDisplayLabel('双账账簿映射', '账簿映射') }}</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
               当前列表 {{ total }}
@@ -41,34 +41,34 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="外部账账簿" prop="externalLedgerId">
+          <el-form-item :label="financeDisplayLabel('外部账账簿', '账目一账簿')" prop="externalLedgerId">
             <el-select
               v-model="queryParams.externalLedgerId"
               class="!w-full"
               clearable
               filterable
-                placeholder="请选择外部账账簿"
+                :placeholder="financeDisplayLabel('请选择外部账账簿', '请选择账目一账簿')"
             >
               <el-option
                 v-for="item in ledgerOptions"
                 :key="item.id"
-                :label="item.name"
+                :label="displayLedgerName(item.name)"
                 :value="item.id"
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="内部账账簿" prop="internalLedgerId">
+          <el-form-item :label="financeDisplayLabel('内部账账簿', '账目二账簿')" prop="internalLedgerId">
             <el-select
               v-model="queryParams.internalLedgerId"
               class="!w-full"
               clearable
               filterable
-                placeholder="请选择内部账账簿"
+                :placeholder="financeDisplayLabel('请选择内部账账簿', '请选择账目二账簿')"
             >
               <el-option
                 v-for="item in ledgerOptions"
                 :key="item.id"
-                :label="item.name"
+                :label="displayLedgerName(item.name)"
                 :value="item.id"
               />
             </el-select>
@@ -144,18 +144,18 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="外部账账簿" min-width="220">
+            <el-table-column :label="financeDisplayLabel('外部账账簿', '账目一账簿')" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
-                  <span class="finance-shell__primary-text">{{ row.externalLedgerName || '-' }}</span>
+                  <span class="finance-shell__primary-text">{{ displayLedgerName(row.externalLedgerName) }}</span>
                   <span class="finance-shell__muted-text finance-shell__mono">{{ row.externalLedgerId || '-' }}</span>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="内部账账簿" min-width="220">
+            <el-table-column :label="financeDisplayLabel('内部账账簿', '账目二账簿')" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
-                  <span class="finance-shell__primary-text">{{ row.internalLedgerName || '-' }}</span>
+                  <span class="finance-shell__primary-text">{{ displayLedgerName(row.internalLedgerName) }}</span>
                   <span class="finance-shell__muted-text finance-shell__mono">{{ row.internalLedgerId || '-' }}</span>
                 </div>
               </template>
@@ -167,8 +167,8 @@
             </el-table-column>
             <el-table-column label="备注" min-width="200">
               <template #default="{ row }">
-                <span class="finance-shell__muted-text" :title="row.remark || '-'">
-                  {{ row.remark || '-' }}
+                <span class="finance-shell__muted-text" :title="toFinanceDisplayText(row.remark)">
+                  {{ toFinanceDisplayText(row.remark) }}
                 </span>
               </template>
             </el-table-column>
@@ -235,7 +235,7 @@
             <div class="finance-shell__context-title">
               {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) || '映射详情' }}
             </div>
-             <div class="finance-shell__context-subtitle">双账账簿映射详情</div>
+             <div class="finance-shell__context-subtitle">{{ financeDisplayLabel('双账账簿映射详情', '账簿映射详情') }}</div>
           </div>
           <div class="finance-shell__context-meta">
             <div class="finance-shell__context-meta-item">
@@ -256,16 +256,16 @@
               <div class="finance-shell__section-title">映射详情</div>
               <div class="dual-ledger-config-page__detail-list">
                 <div class="dual-ledger-config-page__detail-item">
-                   <span>外部账账簿</span>
-                  <strong>{{ detailData.externalLedgerName || '-' }}</strong>
+                   <span>{{ financeDisplayLabel('外部账账簿', '账目一账簿') }}</span>
+                  <strong>{{ displayLedgerName(detailData.externalLedgerName) }}</strong>
                 </div>
                 <div class="dual-ledger-config-page__detail-item">
-                  <span>内部账账簿</span>
-                  <strong>{{ detailData.internalLedgerName || '-' }}</strong>
+                  <span>{{ financeDisplayLabel('内部账账簿', '账目二账簿') }}</span>
+                  <strong>{{ displayLedgerName(detailData.internalLedgerName) }}</strong>
                 </div>
                 <div class="dual-ledger-config-page__detail-item dual-ledger-config-page__detail-item--full">
                   <span>备注</span>
-                  <strong>{{ detailData.remark || '-' }}</strong>
+                  <strong>{{ toFinanceDisplayText(detailData.remark) }}</strong>
                 </div>
               </div>
             </div>
@@ -291,6 +291,7 @@ import {
 } from '@/api/erp/finance/dual-ledger-config'
 import { ERP_BIZ_TYPE_OPTIONS } from '@/api/erp/finance/dual-ledger-diff-config'
 import { COMMON_STATUS_OPTIONS } from '@/views/erp/finance/shared/accounting'
+import { displayLedgerName, financeDisplayLabel, toFinanceDisplayText } from '@/utils/financeDisplay'
 import DualLedgerConfigForm from './DualLedgerConfigForm.vue'
 
 defineOptions({ name: 'ErpFinanceDualLedgerConfig' })

@@ -14,6 +14,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePeriodDO;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceLedgerService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinancePeriodService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -32,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
@@ -46,11 +49,14 @@ public class ErpFinancePeriodController {
     private ErpFinancePeriodService financePeriodService;
     @Resource
     private ErpFinanceLedgerService financeLedgerService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @PostMapping("/create")
     @Operation(summary = "创建会计期间")
     @PreAuthorize("@ss.hasPermission('erp:finance-period:create')")
     public CommonResult<Long> createFinancePeriod(@Valid @RequestBody ErpFinancePeriodSaveReqVO createReqVO) {
+        requireLedgerAccessForWrite(createReqVO.getLedgerId());
         return success(financePeriodService.createFinancePeriod(createReqVO));
     }
 
@@ -58,6 +64,7 @@ public class ErpFinancePeriodController {
     @Operation(summary = "按年度生成会计期间")
     @PreAuthorize("@ss.hasPermission('erp:finance-period:create')")
     public CommonResult<Integer> createFinancePeriodsByYear(@Valid @RequestBody ErpFinancePeriodCreateYearReqVO createReqVO) {
+        requireLedgerAccessForWrite(createReqVO.getLedgerId());
         return success(financePeriodService.createFinancePeriodsByYear(createReqVO));
     }
 
@@ -66,6 +73,7 @@ public class ErpFinancePeriodController {
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('erp:finance-period:update')")
     public CommonResult<Boolean> closeFinancePeriod(@RequestParam("id") Long id) {
+        requireExistingPeriodAccess(id);
         financePeriodService.closeFinancePeriod(id);
         return success(true);
     }
@@ -75,6 +83,7 @@ public class ErpFinancePeriodController {
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('erp:finance-period:update')")
     public CommonResult<Boolean> reopenFinancePeriod(@RequestParam("id") Long id) {
+        requireExistingPeriodAccess(id);
         financePeriodService.reopenFinancePeriod(id);
         return success(true);
     }
@@ -85,6 +94,9 @@ public class ErpFinancePeriodController {
     @PreAuthorize("@ss.hasPermission('erp:finance-period:query')")
     public CommonResult<ErpFinancePeriodRespVO> getFinancePeriod(@RequestParam("id") Long id) {
         ErpFinancePeriodDO period = financePeriodService.getFinancePeriod(id);
+        if (period == null || !canAccessLedger(period.getLedgerId())) {
+            return success(null);
+        }
         return success(toPeriodResp(period, loadLedgerMap(period == null ? List.of() : List.of(period))));
     }
 
@@ -97,6 +109,9 @@ public class ErpFinancePeriodController {
     @PreAuthorize("@ss.hasPermission('erp:finance-period:query')")
     public CommonResult<ErpFinancePeriodRespVO> getCurrentOpenPeriod(@RequestParam("ledgerId") Long ledgerId,
                                                                      @RequestParam(value = "bizDate", required = false) String bizDate) {
+        if (!canAccessLedger(ledgerId)) {
+            return success(null);
+        }
         LocalDate actualBizDate = bizDate == null || bizDate.isBlank() ? null : LocalDate.parse(bizDate);
         ErpFinancePeriodDO period = financePeriodService.getCurrentOpenPeriod(ledgerId, actualBizDate);
         return success(toPeriodResp(period, loadLedgerMap(period == null ? Collections.emptyList() : List.of(period))));
@@ -135,6 +150,26 @@ public class ErpFinancePeriodController {
         }
         return convertMap(financeLedgerService.getFinanceLedgerList(ledgerIds),
                 ErpFinanceLedgerDO::getId);
+    }
+
+    private void requireExistingPeriodAccess(Long id) {
+        if (id == null) {
+            return;
+        }
+        ErpFinancePeriodDO period = financePeriodService.getFinancePeriod(id);
+        if (period != null) {
+            requireLedgerAccessForWrite(period.getLedgerId());
+        }
+    }
+
+    private boolean canAccessLedger(Long ledgerId) {
+        return financeDataPermissionService.canAccessLedger(ledgerId);
+    }
+
+    private void requireLedgerAccessForWrite(Long ledgerId) {
+        if (!canAccessLedger(ledgerId)) {
+            throw exception(NOT_FOUND);
+        }
     }
 
     private ErpFinancePeriodRespVO toPeriodResp(ErpFinancePeriodDO period, Map<Long, ErpFinanceLedgerDO> ledgerMap) {

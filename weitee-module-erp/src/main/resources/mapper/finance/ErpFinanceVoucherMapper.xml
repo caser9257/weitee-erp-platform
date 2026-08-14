@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper">
+
+    <select id="selectPageByVisibleLedgerIdsAndDeptIdsAndSubjectCodes"
+            resultType="cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherDO">
+        SELECT v.*
+        FROM erp_finance_voucher v
+        WHERE v.deleted = 0
+        <if test="ledgerIds != null and !ledgerIds.isEmpty()">
+            AND v.ledger_id IN
+            <foreach collection="ledgerIds" item="ledgerId" open="(" separator="," close=")">
+                #{ledgerId}
+            </foreach>
+        </if>
+        <if test="deptIds != null and !deptIds.isEmpty()">
+            AND v.dept_id IN
+            <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                #{deptId}
+            </foreach>
+        </if>
+        <if test="reqVO.ledgerId != null">
+            AND v.ledger_id = #{reqVO.ledgerId}
+        </if>
+        <if test="reqVO.periodId != null">
+            AND v.period_id = #{reqVO.periodId}
+        </if>
+        <if test="reqVO.bizType != null">
+            AND v.biz_type = #{reqVO.bizType}
+        </if>
+        <if test="reqVO.bizNo != null and reqVO.bizNo != ''">
+            AND v.biz_no LIKE CONCAT('%', #{reqVO.bizNo}, '%')
+        </if>
+        <if test="reqVO.voucherNo != null and reqVO.voucherNo != ''">
+            AND v.voucher_no LIKE CONCAT('%', #{reqVO.voucherNo}, '%')
+        </if>
+        <if test="reqVO.status != null">
+            AND v.status = #{reqVO.status}
+        </if>
+        <if test="reqVO.voucherTime != null and reqVO.voucherTime.length > 0 and reqVO.voucherTime[0] != null">
+            AND v.voucher_time <![CDATA[ >= ]]> #{reqVO.voucherTime[0]}
+        </if>
+        <if test="reqVO.voucherTime != null and reqVO.voucherTime.length > 1 and reqVO.voucherTime[1] != null">
+            AND v.voucher_time <![CDATA[ <= ]]> #{reqVO.voucherTime[1]}
+        </if>
+        <if test="subjectCodesByLedger != null and !subjectCodesByLedger.isEmpty()">
+            AND (
+            <foreach collection="subjectCodesByLedger" index="ledgerId" item="subjectCodes" separator=" AND ">
+                (v.ledger_id != #{ledgerId}
+                OR NOT EXISTS (
+                    SELECT 1
+                    FROM erp_finance_voucher_entry e
+                    WHERE e.voucher_id = v.id
+                      AND e.deleted = 0
+                      AND e.subject_code NOT IN
+                    <foreach collection="subjectCodes" item="subjectCode" open="(" separator="," close=")">
+                        #{subjectCode}
+                    </foreach>
+                ))
+            </foreach>
+            )
+        </if>
+        ORDER BY v.id DESC
+    </select>
+
+</mapper>

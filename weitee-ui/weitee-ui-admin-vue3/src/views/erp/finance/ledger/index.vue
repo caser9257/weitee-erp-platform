@@ -95,7 +95,7 @@
           <el-table-column label="账簿信息" min-width="240">
             <template #default="{ row }">
               <div class="finance-ledger-page__primary-cell">
-                <span class="finance-ledger-page__primary-text">{{ row.name || '-' }}</span>
+                <span class="finance-ledger-page__primary-text">{{ displayLedgerName(row.name) }}</span>
                 <span class="finance-ledger-page__muted-text font-mono">{{ row.no || '-' }}</span>
               </div>
             </template>
@@ -175,6 +175,7 @@ import {
 } from '@/api/erp/finance/ledger'
 import LedgerForm from './LedgerForm.vue'
 import { DICT_TYPE } from '@/utils/dict'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceLedger' })
 

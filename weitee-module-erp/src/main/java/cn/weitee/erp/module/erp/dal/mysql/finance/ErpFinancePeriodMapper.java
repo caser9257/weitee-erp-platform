@@ -25,6 +25,18 @@ public interface ErpFinancePeriodMapper extends BaseMapperX<ErpFinancePeriodDO> 
                 .orderByDesc(ErpFinancePeriodDO::getId));
     }
 
+    default PageResult<ErpFinancePeriodDO> selectPageByVisibleLedgerIds(ErpFinancePeriodPageReqVO reqVO, List<Long> ledgerIds) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinancePeriodDO>()
+                .in(ErpFinancePeriodDO::getLedgerId, ledgerIds)
+                .eqIfPresent(ErpFinancePeriodDO::getLedgerId, reqVO.getLedgerId())
+                .likeIfPresent(ErpFinancePeriodDO::getPeriodCode, reqVO.getPeriodCode())
+                .eqIfPresent(ErpFinancePeriodDO::getPeriodYear, reqVO.getPeriodYear())
+                .eqIfPresent(ErpFinancePeriodDO::getPeriodMonth, reqVO.getPeriodMonth())
+                .eqIfPresent(ErpFinancePeriodDO::getStatus, reqVO.getStatus())
+                .orderByDesc(ErpFinancePeriodDO::getPeriodSort)
+                .orderByDesc(ErpFinancePeriodDO::getId));
+    }
+
     default ErpFinancePeriodDO selectByLedgerIdAndPeriodSort(Long ledgerId, Integer periodSort) {
         return selectOne(new LambdaQueryWrapperX<ErpFinancePeriodDO>()
                 .eq(ErpFinancePeriodDO::getLedgerId, ledgerId)

@@ -8,14 +8,26 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetCandidateD
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
+import java.util.List;
+
 @Mapper
 public interface ErpFinanceAssetCandidateMapper extends BaseMapperX<ErpFinanceAssetCandidateDO> {
 
     default PageResult<ErpFinanceAssetCandidateDO> selectPage(ErpFinanceAssetCandidatePageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceAssetCandidateDO>()
+        return selectPage(reqVO, buildPageQuery(reqVO));
+    }
+
+    default PageResult<ErpFinanceAssetCandidateDO> selectPageByDeptIds(ErpFinanceAssetCandidatePageReqVO reqVO,
+                                                                        Collection<Long> deptIds) {
+        return selectPage(reqVO, buildPageQuery(reqVO).in(ErpFinanceAssetCandidateDO::getDeptId, deptIds));
+    }
+
+    private LambdaQueryWrapperX<ErpFinanceAssetCandidateDO> buildPageQuery(ErpFinanceAssetCandidatePageReqVO reqVO) {
+        return new LambdaQueryWrapperX<ErpFinanceAssetCandidateDO>()
                 .eqIfPresent(ErpFinanceAssetCandidateDO::getSourceType, reqVO.getSourceType())
                 .eqIfPresent(ErpFinanceAssetCandidateDO::getStatus, reqVO.getStatus())
-                .orderByDesc(ErpFinanceAssetCandidateDO::getId));
+                .orderByDesc(ErpFinanceAssetCandidateDO::getId);
     }
 
     default ErpFinanceAssetCandidateDO selectBySource(Integer sourceType, Long sourceBizId, Long sourceItemId) {
@@ -25,6 +37,12 @@ public interface ErpFinanceAssetCandidateMapper extends BaseMapperX<ErpFinanceAs
                 .eqIfPresent(ErpFinanceAssetCandidateDO::getSourceItemId, sourceItemId)
                 .orderByDesc(ErpFinanceAssetCandidateDO::getId)
                 .last("LIMIT 1"));
+    }
+
+    default List<ErpFinanceAssetCandidateDO> selectListBySource(Integer sourceType, Long sourceBizId) {
+        return selectList(new LambdaQueryWrapperX<ErpFinanceAssetCandidateDO>()
+                .eq(ErpFinanceAssetCandidateDO::getSourceType, sourceType)
+                .eq(ErpFinanceAssetCandidateDO::getSourceBizId, sourceBizId));
     }
 
     default int updateByIdAndStatus(Long id, Integer status, ErpFinanceAssetCandidateDO updateObj) {

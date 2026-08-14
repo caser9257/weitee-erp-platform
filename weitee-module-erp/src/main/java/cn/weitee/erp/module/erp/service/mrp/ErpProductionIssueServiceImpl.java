@@ -217,7 +217,9 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
                         .setProduceDate(stockBatch.getProduceDate())
                         .setExpireDate(stockBatch.getExpireDate()));
             }
-            erpProductionMaterialMapper.updateIssuedQtyIncrement(material.getId(), item.getIssueQty());
+            if (erpProductionMaterialMapper.updateIssuedQtyIncrement(material.getId(), item.getIssueQty()) == 0) {
+                throw exception(PRODUCTION_MATERIAL_QTY_INVALID);
+            }
             totalIssueAmount = totalIssueAmount.add(itemIssueAmount);
         }
         issue.setIssueAmount(totalIssueAmount);

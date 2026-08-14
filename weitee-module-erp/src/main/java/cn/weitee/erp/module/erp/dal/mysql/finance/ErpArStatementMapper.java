@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Mapper;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 应收台账 Mapper
@@ -23,7 +24,24 @@ public interface ErpArStatementMapper extends BaseMapperX<ErpArStatementDO> {
      * 分页查询应收台账
      */
     default PageResult<ErpArStatementDO> selectPage(cn.weitee.erp.module.erp.controller.admin.finance.vo.arstatement.ErpArStatementPageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<ErpArStatementDO>()
+        return selectPage(reqVO, buildPageWrapper(reqVO));
+    }
+
+    default PageResult<ErpArStatementDO> selectPageByVisibleLedgerIds(
+            cn.weitee.erp.module.erp.controller.admin.finance.vo.arstatement.ErpArStatementPageReqVO reqVO,
+            Set<Long> ledgerIds) {
+        if (ledgerIds == null) {
+            return selectPage(reqVO);
+        }
+        if (ledgerIds.isEmpty()) {
+            return new PageResult<>(List.of(), 0L);
+        }
+        return selectPage(reqVO, buildPageWrapper(reqVO).in(ErpArStatementDO::getLedgerId, ledgerIds));
+    }
+
+    private LambdaQueryWrapperX<ErpArStatementDO> buildPageWrapper(
+            cn.weitee.erp.module.erp.controller.admin.finance.vo.arstatement.ErpArStatementPageReqVO reqVO) {
+        return new LambdaQueryWrapperX<ErpArStatementDO>()
                 .likeIfPresent(ErpArStatementDO::getStatementNo, reqVO.getStatementNo())
                 .eqIfPresent(ErpArStatementDO::getBizType, reqVO.getBizType())
                 .likeIfPresent(ErpArStatementDO::getBizNo, reqVO.getBizNo())
@@ -35,7 +53,7 @@ public interface ErpArStatementMapper extends BaseMapperX<ErpArStatementDO> {
                 .eqIfPresent(ErpArStatementDO::getStatus, reqVO.getStatus())
                 .betweenIfPresent(ErpArStatementDO::getBizDate, reqVO.getBizDate())
                 .betweenIfPresent(ErpArStatementDO::getDueDate, reqVO.getDueDate())
-                .orderByDesc(ErpArStatementDO::getId));
+                .orderByDesc(ErpArStatementDO::getId);
     }
 
     /**
@@ -60,6 +78,19 @@ public interface ErpArStatementMapper extends BaseMapperX<ErpArStatementDO> {
      */
     default List<ErpArStatementDO> selectListBySourceOrderId(Long sourceOrderId) {
         return selectList(ErpArStatementDO::getSourceOrderId, sourceOrderId);
+    }
+
+    default List<ErpArStatementDO> selectListByVisibleLedgerIds(Long customerId, Set<Long> ledgerIds) {
+        LambdaQueryWrapperX<ErpArStatementDO> wrapper = new LambdaQueryWrapperX<>();
+        wrapper.eqIfPresent(ErpArStatementDO::getCustomerId, customerId);
+        wrapper.ne(ErpArStatementDO::getStatus, 3);
+        if (ledgerIds != null) {
+            if (ledgerIds.isEmpty()) {
+                return List.of();
+            }
+            wrapper.in(ErpArStatementDO::getLedgerId, ledgerIds);
+        }
+        return selectList(wrapper);
     }
 
     /**
@@ -91,11 +122,22 @@ public interface ErpArStatementMapper extends BaseMapperX<ErpArStatementDO> {
      * @return 汇总结果数组：[0]=count, [1]=totalAmount, [2]=totalReceivedAmount, [3]=totalRemainAmount
      */
     default java.util.Map<String, BigDecimal> selectSummaryBySourceOrderId(Long sourceOrderId) {
-        // 使用 selectList 只查必要字段，避免加载全部列
-        java.util.List<ErpArStatementDO> list = selectList(new LambdaQueryWrapperX<ErpArStatementDO>()
-                .eq(ErpArStatementDO::getSourceOrderId, sourceOrderId)
-                .ne(ErpArStatementDO::getStatus, 3) // 排除已关闭
-                .select(ErpArStatementDO::getAmount, ErpArStatementDO::getReceivedAmount, ErpArStatementDO::getRemainAmount));
+        return selectSummaryBySourceOrderId(sourceOrderId, null);
+    }
+
+    default java.util.Map<String, BigDecimal> selectSummaryBySourceOrderId(Long sourceOrderId, Set<Long> ledgerIds) {
+        LambdaQueryWrapperX<ErpArStatementDO> wrapper = new LambdaQueryWrapperX<>();
+        wrapper.eq(ErpArStatementDO::getSourceOrderId, sourceOrderId);
+        wrapper.ne(ErpArStatementDO::getStatus, 3);
+        wrapper.select(ErpArStatementDO::getAmount, ErpArStatementDO::getReceivedAmount,
+                ErpArStatementDO::getRemainAmount);
+        if (ledgerIds != null) {
+            if (ledgerIds.isEmpty()) {
+                return emptySummary();
+            }
+            wrapper.in(ErpArStatementDO::getLedgerId, ledgerIds);
+        }
+        java.util.List<ErpArStatementDO> list = selectList(wrapper);
         java.util.Map<String, BigDecimal> result = new java.util.HashMap<>();
         result.put("count", new BigDecimal(list.size()));
         result.put("totalAmount", list.stream().map(s -> s.getAmount() != null ? s.getAmount() : BigDecimal.ZERO)
@@ -104,6 +146,15 @@ public interface ErpArStatementMapper extends BaseMapperX<ErpArStatementDO> {
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
         result.put("totalRemainAmount", list.stream().map(s -> s.getRemainAmount() != null ? s.getRemainAmount() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
+        return result;
+    }
+
+    private java.util.Map<String, BigDecimal> emptySummary() {
+        java.util.Map<String, BigDecimal> result = new java.util.HashMap<>();
+        result.put("count", BigDecimal.ZERO);
+        result.put("totalAmount", BigDecimal.ZERO);
+        result.put("totalReceivedAmount", BigDecimal.ZERO);
+        result.put("totalRemainAmount", BigDecimal.ZERO);
         return result;
     }
 

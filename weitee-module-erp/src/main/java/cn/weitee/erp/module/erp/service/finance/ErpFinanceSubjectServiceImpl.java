@@ -12,6 +12,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceSubjectDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemSubjectMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceSubjectMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -20,6 +21,8 @@ import jakarta.annotation.Resource;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -35,6 +38,8 @@ public class ErpFinanceSubjectServiceImpl implements ErpFinanceSubjectService {
 
     @Resource
     private ErpFinanceSubjectMapper erpFinanceSubjectMapper;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
     @Resource
     private ErpFinanceReportItemMapper erpFinanceReportItemMapper;
     @Resource
@@ -83,7 +88,32 @@ public class ErpFinanceSubjectServiceImpl implements ErpFinanceSubjectService {
 
     @Override
     public PageResult<ErpFinanceSubjectDO> getFinanceSubjectPage(ErpFinanceSubjectPageReqVO pageReqVO) {
-        return erpFinanceSubjectMapper.selectPage(pageReqVO);
+        List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        if (visibleLedgerIds == null) {
+            return erpFinanceSubjectMapper.selectPage(pageReqVO);
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        FinancePermissionScope permissionScope = financeDataPermissionService.getPermissionScope();
+        Map<Long, Set<String>> subjectCodesByLedger = new LinkedHashMap<>();
+        List<Long> scopedLedgerIds = visibleLedgerIds.stream().filter(ledgerId -> {
+            FinancePermissionScope.Scope<String> subjectScope = permissionScope == null
+                    ? FinancePermissionScope.Scope.all()
+                    : permissionScope.subjectScopesByLedger().getOrDefault(ledgerId, FinancePermissionScope.Scope.all());
+            if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+                subjectCodesByLedger.put(ledgerId, subjectScope.values());
+            }
+            return subjectScope.mode() != FinancePermissionScope.ScopeMode.NONE;
+        }).toList();
+        if (CollUtil.isEmpty(scopedLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        if (!subjectCodesByLedger.isEmpty()) {
+            return erpFinanceSubjectMapper.selectPageByVisibleLedgerIdsAndSubjectCodes(
+                    pageReqVO, scopedLedgerIds, subjectCodesByLedger);
+        }
+        return erpFinanceSubjectMapper.selectPageByVisibleLedgerIds(pageReqVO, scopedLedgerIds);
     }
 
     @Override

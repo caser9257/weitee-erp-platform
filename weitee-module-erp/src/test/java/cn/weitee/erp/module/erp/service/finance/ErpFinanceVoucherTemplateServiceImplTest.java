@@ -2,6 +2,8 @@ package cn.weitee.erp.module.erp.service.finance;
 
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherTemplatePageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherTemplateSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceSubjectDO;
@@ -12,12 +14,16 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherTemplateMappe
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherEntryDirectionEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceReport.FINANCE_SUBJECT_NOT_ENABLE;
@@ -26,6 +32,37 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinanceVoucherTemplateServiceImplTest {
+
+    @Test
+    void getVoucherTemplatePage_shouldExcludeTemplateContainingUnauthorizedSubject() throws Exception {
+        ErpFinanceVoucherTemplateServiceImpl service = new ErpFinanceVoucherTemplateServiceImpl();
+        AtomicBoolean scopedQueryCalled = new AtomicBoolean(false);
+        PageResult<ErpFinanceVoucherTemplateDO> expected = PageResult.empty(0L);
+        setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class, (methodName, args) -> {
+            if ("getVisibleLedgerIds".equals(methodName)) {
+                return List.of(1L);
+            }
+            if ("getPermissionScope".equals(methodName)) {
+                return new FinancePermissionScope(FinancePermissionScope.Scope.limited(Set.of(1L)),
+                        FinancePermissionScope.Scope.all(),
+                        Map.of(1L, FinancePermissionScope.Scope.limited(Set.of("1001"))), false, false);
+            }
+            return null;
+        }));
+        setField(service, "voucherTemplateMapper", createProxy(ErpFinanceVoucherTemplateMapper.class, (methodName, args) -> {
+            if ("selectPageByVisibleLedgerIdsAndSubjectCodes".equals(methodName)) {
+                scopedQueryCalled.set(true);
+                return expected;
+            }
+            return null;
+        }));
+
+        PageResult<ErpFinanceVoucherTemplateDO> result = service.getVoucherTemplatePage(
+                new ErpFinanceVoucherTemplatePageReqVO());
+
+        assertEquals(expected, result);
+        assertEquals(true, scopedQueryCalled.get());
+    }
 
     @Test
     void createVoucherTemplate_shouldInsertHeadAndItems() throws Exception {

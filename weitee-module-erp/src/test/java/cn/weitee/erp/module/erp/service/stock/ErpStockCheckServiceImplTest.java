@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.stock;
 
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.ErpWarehouseSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockCheckItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpWarehouseDO;
@@ -168,8 +169,8 @@ class ErpStockCheckServiceImplTest {
                 .setDefaultStatus(true)
                 .setFrozen(false);
         setField(service, "warehouseService", createProxy(ErpWarehouseService.class, (methodName, args) -> {
-            if ("getWarehouseMap".equals(methodName)) {
-                return Map.of(warehouse.getId(), warehouse);
+            if ("validWarehouseList".equals(methodName)) {
+                return List.of(warehouse);
             }
             if ("updateWarehouse".equals(methodName)) {
                 freezeRequestRef.set((ErpWarehouseSaveReqVO) args[0]);

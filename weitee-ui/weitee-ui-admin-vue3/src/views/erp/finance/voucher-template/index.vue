@@ -93,7 +93,7 @@
               <el-option
                 v-for="item in ledgerOptions"
                 :key="item.id"
-                :label="item.name"
+                :label="displayLedgerName(item.name)"
                 :value="item.id"
               />
             </el-select>
@@ -246,7 +246,7 @@
                 <template #default="{ row }">
                   <div class="voucher-template-page__secondary-cell">
                     <div class="voucher-template-page__secondary-title">{{
-                      row.ledgerName || '-'
+                      displayLedgerName(row.ledgerName)
                     }}</div>
                     <div class="voucher-template-page__secondary-desc">{{
                       row.bizTypeName || getBizTypeLabel(row.bizType)
@@ -386,7 +386,7 @@
           <div class="voucher-template-page__context-main">
             <div class="voucher-template-page__context-title">{{ detailData.name || '-' }}</div>
             <div class="voucher-template-page__context-subtitle">
-              {{ detailData.ledgerName || '-' }} /
+              {{ displayLedgerName(detailData.ledgerName) }} /
               {{ detailData.bizTypeName || getBizTypeLabel(detailData.bizType) }}
             </div>
           </div>
@@ -486,7 +486,7 @@
               <el-option
                 v-for="item in ledgerOptions"
                 :key="item.id"
-                :label="item.name"
+                :label="displayLedgerName(item.name)"
                 :value="item.id"
               />
             </el-select>
@@ -637,6 +637,7 @@
 import type { FormRules } from 'element-plus'
 import { CommonStatusEnum, ErpBizType } from '@/utils/constants'
 import { formatDateTimeValue } from '@/views/erp/finance/shared/accounting'
+import { displayLedgerName } from '@/utils/financeDisplay'
 import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import {
   ErpFinanceVoucherTemplateItemVO,

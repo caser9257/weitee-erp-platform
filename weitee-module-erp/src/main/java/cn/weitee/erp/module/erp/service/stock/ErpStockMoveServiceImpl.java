@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.stock;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.number.MoneyUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
@@ -74,7 +75,7 @@ public class ErpStockMoveServiceImpl implements ErpStockMoveService {
 
         // 2.1 插入出库单
         ErpStockMoveDO stockMove = BeanUtils.toBean(createReqVO, ErpStockMoveDO.class, in -> in
-                .setNo(no).setStatus(ErpAuditStatus.PROCESS.getStatus())
+                .setNo(no).setStatus(ErpAuditStatus.DRAFT.getStatus())
                 .setTotalCount(getSumValue(stockMoveItems, ErpStockMoveItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockMoveItems, ErpStockMoveItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockMoveMapper.insert(stockMove);
@@ -91,6 +92,9 @@ public class ErpStockMoveServiceImpl implements ErpStockMoveService {
         ErpStockMoveDO stockMove = validateStockMoveExists(updateReqVO.getId());
         if (ErpAuditStatus.APPROVE.getStatus().equals(stockMove.getStatus())) {
             throw exception(STOCK_MOVE_UPDATE_FAIL_APPROVE, stockMove.getNo());
+        }
+        if (ErpAuditStatus.PROCESS.getStatus().equals(stockMove.getStatus())) {
+            throw exception(STOCK_MOVE_PROCESS_FAIL);
         }
         // 1.2 校验出库项的有效性
         List<ErpStockMoveItemDO> stockMoveItems = validateStockMoveItems(updateReqVO.getItems());
@@ -147,6 +151,62 @@ public class ErpStockMoveServiceImpl implements ErpStockMoveService {
                     stockMoveItem.getProductId(), stockMoveItem.getToWarehouseId(), toCount,
                     toBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo(),
                     price, amount));
+        });
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateStockMoveStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
+        ErpStockMoveDO stockMove = validateStockMoveExists(id);
+        if (!ObjectUtil.equal(processInstanceId, stockMove.getProcessInstanceId())
+                || !ErpAuditStatus.PROCESS.getStatus().equals(stockMove.getStatus())
+                || !ErpAuditStatus.APPROVE.getStatus().equals(status)) {
+            throw exception(STOCK_MOVE_APPROVE_FAIL);
+        }
+        int updateCount = erpStockMoveMapper.updateByIdStatusAndProcessInstanceId(id,
+                ErpAuditStatus.PROCESS.getStatus(), processInstanceId,
+                new ErpStockMoveDO().setStatus(ErpAuditStatus.APPROVE.getStatus()).setProcessInstanceId(null));
+        if (updateCount == 0) {
+            throw exception(STOCK_MOVE_APPROVE_FAIL);
+        }
+        applyStockMoveInventory(stockMove, true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackStockMoveStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        ErpStockMoveDO stockMove = validateStockMoveExists(id);
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(stockMove.getStatus())) {
+            return;
+        }
+        if (erpStockMoveMapper.resetStatusToDraftByBpm(id, processInstanceId) == 0) {
+            throw exception(STOCK_MOVE_PROCESS_FAIL);
+        }
+    }
+
+    private void applyStockMoveInventory(ErpStockMoveDO stockMove, boolean approve) {
+        Long id = stockMove.getId();
+        List<ErpStockMoveItemDO> stockMoveItems = erpStockMoveItemMapper.selectListByMoveId(id);
+        Integer fromBizType = approve ? ErpStockRecordBizTypeEnum.MOVE_OUT.getType()
+                : ErpStockRecordBizTypeEnum.MOVE_OUT_CANCEL.getType();
+        Integer toBizType = approve ? ErpStockRecordBizTypeEnum.MOVE_IN.getType()
+                : ErpStockRecordBizTypeEnum.MOVE_IN_CANCEL.getType();
+        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
+                convertSet(stockMoveItems, ErpStockMoveItemDO::getProductId),
+                convertSet(stockMoveItems, ErpStockMoveItemDO::getFromWarehouseId));
+        stockMoveItems.forEach(stockMoveItem -> {
+            BigDecimal fromCount = approve ? stockMoveItem.getCount().negate() : stockMoveItem.getCount();
+            BigDecimal toCount = approve ? stockMoveItem.getCount() : stockMoveItem.getCount().negate();
+            ErpStockDO stock = stockMap.get(ErpStockService.buildProductWarehouseKey(
+                    stockMoveItem.getProductId(), stockMoveItem.getFromWarehouseId()));
+            BigDecimal price = stock != null ? stock.getAverageCost() : null;
+            BigDecimal amount = price != null ? price.multiply(stockMoveItem.getCount()) : null;
+            stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
+                    stockMoveItem.getProductId(), stockMoveItem.getFromWarehouseId(), fromCount,
+                    fromBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo(), price, amount));
+            stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
+                    stockMoveItem.getProductId(), stockMoveItem.getToWarehouseId(), toCount,
+                    toBizType, stockMoveItem.getMoveId(), stockMoveItem.getId(), stockMove.getNo(), price, amount));
         });
     }
 

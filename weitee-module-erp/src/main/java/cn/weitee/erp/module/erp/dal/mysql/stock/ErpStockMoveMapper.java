@@ -39,6 +39,25 @@ public interface ErpStockMoveMapper extends BaseMapperX<ErpStockMoveDO> {
                 .eq(ErpStockMoveDO::getId, id).eq(ErpStockMoveDO::getStatus, status));
     }
 
+    default int updateByIdStatusAndProcessInstanceId(Long id, Integer status, String processInstanceId,
+                                                      ErpStockMoveDO updateObj) {
+        return update(null, new LambdaUpdateWrapper<ErpStockMoveDO>()
+                .set(ErpStockMoveDO::getStatus, updateObj.getStatus())
+                .set(ErpStockMoveDO::getProcessInstanceId, updateObj.getProcessInstanceId())
+                .eq(ErpStockMoveDO::getId, id)
+                .eq(ErpStockMoveDO::getStatus, status)
+                .eq(ErpStockMoveDO::getProcessInstanceId, processInstanceId));
+    }
+
+    default int resetStatusToDraftByBpm(Long id, String processInstanceId) {
+        return update(null, new LambdaUpdateWrapper<ErpStockMoveDO>()
+                        .set(ErpStockMoveDO::getStatus, 0)
+                        .set(ErpStockMoveDO::getProcessInstanceId, null)
+                        .eq(ErpStockMoveDO::getId, id)
+                        .eq(ErpStockMoveDO::getStatus, 10)
+                        .eq(ErpStockMoveDO::getProcessInstanceId, processInstanceId));
+    }
+
     default ErpStockMoveDO selectByNo(String no) {
         return selectOne(ErpStockMoveDO::getNo, no);
     }

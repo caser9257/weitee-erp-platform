@@ -17,6 +17,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
@@ -26,12 +27,81 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ErpFinanceGeneralLedgerServiceImplTest {
+
+    @Test
+    void getGeneralLedgerDetail_shouldRejectUnauthorizedSubjectBeforeReadingBalance() throws Exception {
+        ErpFinanceGeneralLedgerServiceImpl service = new ErpFinanceGeneralLedgerServiceImpl();
+        setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) ->
+                "validateFinanceLedger".equals(methodName)
+                        ? new ErpFinanceLedgerDO().setId(1L).setName("标准账簿") : null));
+        setField(service, "financePeriodService", createProxy(ErpFinancePeriodService.class, (methodName, args) ->
+                "getFinancePeriod".equals(methodName)
+                        ? new ErpFinancePeriodDO().setId(20L).setLedgerId(1L) : null));
+        setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class,
+                (methodName, args) -> {
+                    if ("canAccessLedger".equals(methodName) || "canAccessSubject".equals(methodName)) {
+                        return false;
+                    }
+                    return null;
+                }));
+        setField(service, "financeSubjectBalanceMapper", createProxy(ErpFinanceSubjectBalanceMapper.class,
+                (methodName, args) -> new ErpFinanceSubjectBalanceDO().setSubjectCode("660201")));
+        setField(service, "financeVoucherMapper", createProxy(ErpFinanceVoucherMapper.class,
+                (methodName, args) -> List.of()));
+
+        ErpFinanceGeneralLedgerDetailReqVO reqVO = new ErpFinanceGeneralLedgerDetailReqVO();
+        reqVO.setLedgerId(1L);
+        reqVO.setPeriodId(20L);
+        reqVO.setSubjectCode("660201");
+
+        assertNull(service.getGeneralLedgerDetail(reqVO));
+    }
+
+    @Test
+    void getGeneralLedgerDetail_shouldQueryPostedVouchersWithinVisibleDepartments() throws Exception {
+        ErpFinanceGeneralLedgerServiceImpl service = new ErpFinanceGeneralLedgerServiceImpl();
+        AtomicBoolean scopedQueryCalled = new AtomicBoolean(false);
+        setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) ->
+                "validateFinanceLedger".equals(methodName) ? new ErpFinanceLedgerDO().setId(1L) : null));
+        setField(service, "financePeriodService", createProxy(ErpFinancePeriodService.class, (methodName, args) ->
+                "getFinancePeriod".equals(methodName) ? new ErpFinancePeriodDO().setId(20L).setLedgerId(1L) : null));
+        setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class, (methodName, args) -> {
+            if ("canAccessLedger".equals(methodName) || "canAccessSubject".equals(methodName)) {
+                return true;
+            }
+            if ("getPermissionScope".equals(methodName)) {
+                return new FinancePermissionScope(FinancePermissionScope.Scope.all(),
+                        FinancePermissionScope.Scope.limited(Set.of(10L)), Map.of(), false, false);
+            }
+            return null;
+        }));
+        setField(service, "financeSubjectBalanceMapper", createProxy(ErpFinanceSubjectBalanceMapper.class,
+                (methodName, args) -> new ErpFinanceSubjectBalanceDO().setSubjectCode("660201")));
+        setField(service, "financeVoucherMapper", createProxy(ErpFinanceVoucherMapper.class, (methodName, args) -> {
+            if ("selectPostedListByLedgerIdAndPeriodIdAndDeptIds".equals(methodName)) {
+                scopedQueryCalled.set(true);
+                return List.of();
+            }
+            return List.of();
+        }));
+
+        ErpFinanceGeneralLedgerDetailReqVO reqVO = new ErpFinanceGeneralLedgerDetailReqVO();
+        reqVO.setLedgerId(1L);
+        reqVO.setPeriodId(20L);
+        reqVO.setSubjectCode("660201");
+        service.getGeneralLedgerDetail(reqVO);
+
+        assertEquals(true, scopedQueryCalled.get());
+    }
 
     @Test
     void applyPostedVoucher_shouldInsertBalanceAndCascadeLaterPeriods() throws Exception {

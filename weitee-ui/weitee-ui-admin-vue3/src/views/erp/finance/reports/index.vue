@@ -16,7 +16,7 @@
               <el-option
                 v-for="item in ledgerOptions"
                 :key="item.id"
-                :label="item.name"
+                :label="displayLedgerName(item.name)"
                 :value="item.id"
               />
             </el-select>
@@ -261,7 +261,7 @@
           <div class="finance-readonly-page__context-meta">
             <div class="finance-readonly-page__context-meta-item">
               <span>账簿</span>
-              <span>{{ detailData.ledgerName || '-' }}</span>
+              <span>{{ displayLedgerName(detailData.ledgerName) }}</span>
             </div>
             <div class="finance-readonly-page__context-meta-item">
               <span>期间</span>
@@ -343,6 +343,7 @@ import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinancePeriodVO, FinancePeriodApi } from '@/api/erp/finance/period'
 import { formatAmount, formatDateTimeValue } from '@/views/erp/finance/shared/accounting'
 import StatementPane from './StatementPane.vue'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceReports' })
 

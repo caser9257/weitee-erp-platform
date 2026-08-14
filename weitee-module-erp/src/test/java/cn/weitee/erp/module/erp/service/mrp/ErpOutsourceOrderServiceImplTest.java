@@ -1279,6 +1279,11 @@ class ErpOutsourceOrderServiceImplTest {
             if ("getStock".equals(methodName)) {
                 return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
             }
+            if ("getStockMapByProductAndWarehouseIds".equals(methodName)) {
+                return Map.of(ErpStockService.buildProductWarehouseKey(1001L, 11L),
+                        new ErpStockDO().setProductId(1001L).setWarehouseId(11L)
+                                .setAverageCost(new BigDecimal("10.00")));
+            }
             return null;
         }));
     }

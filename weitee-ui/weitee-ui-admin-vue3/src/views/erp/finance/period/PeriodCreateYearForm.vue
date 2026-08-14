@@ -3,7 +3,7 @@
     <el-form ref="formRef" :model="formData" :rules="formRules" label-width="96px" v-loading="dialogLoading" :disabled="formDisabled">
       <el-form-item label="账簿" prop="ledgerId">
         <el-select v-model="formData.ledgerId" placeholder="请选择账簿" filterable class="!w-full">
-          <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+          <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
         </el-select>
       </el-form-item>
       <el-form-item label="会计年度" prop="periodYear">
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import type { FormRules } from 'element-plus'
 import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
+import { displayLedgerName } from '@/utils/financeDisplay'
 import {
   ErpFinancePeriodCreateYearReqVO,
   FinancePeriodApi

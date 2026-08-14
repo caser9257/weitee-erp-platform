@@ -60,7 +60,7 @@
               <el-option
                 v-for="item in ledgerOptions"
                 :key="item.id"
-                :label="item.name"
+                :label="displayLedgerName(item.name)"
                 :value="item.id"
               />
             </el-select>
@@ -247,7 +247,7 @@
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ detailData.subjectName || '总账明细' }}</div>
             <div class="finance-shell__context-subtitle">
-              {{ detailData.subjectCode || '-' }} · {{ detailData.ledgerName || '-' }} ·
+              {{ detailData.subjectCode || '-' }} · {{ displayLedgerName(detailData.ledgerName) }} ·
               {{ detailData.periodCode || '-' }}
             </div>
           </div>
@@ -352,6 +352,7 @@ import {
 import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinancePeriodVO, FinancePeriodApi } from '@/api/erp/finance/period'
 import { formatAmount, formatDateTimeValue } from '@/views/erp/finance/shared/accounting'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceGeneralLedger' })
 
@@ -391,7 +392,7 @@ const drawerSize = computed(() => {
 })
 
 const selectedLedgerLabel = computed(
-  () => ledgerOptions.value.find((item) => item.id === queryParams.ledgerId)?.name || '未选择'
+  () => displayLedgerName(ledgerOptions.value.find((item) => item.id === queryParams.ledgerId)?.name, '未选择')
 )
 const selectedPeriodLabel = computed(
   () => periodOptions.value.find((item) => item.id === queryParams.periodId)?.periodCode || '未选择'

@@ -72,6 +72,15 @@ const remoteMenus = [
         keepAlive: false
       },
       {
+        path: 'ar-statement',
+        name: '应收台账',
+        component: 'erp/finance/ar-statement/index',
+        componentName: 'ErpArStatement',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
         path: 'cost-report',
         name: '产品成本分析报表',
         component: 'erp/finance/cost-report/index',
@@ -136,6 +145,7 @@ assert.equal(financeGroups.find((item: any) => item.path === 'dual-ledger-diff-c
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-ledger-result')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-project-cost')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-product-cost')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
+assert.equal(financeGroups.find((item: any) => item.path === 'ar-statement')?.component, 'erp/finance/ar-statement/index')
 assert.equal(financeGroups.find((item: any) => item.path === 'cost-report')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.equal(financeGroups.find((item: any) => item.path === 'cost-product-trend')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.deepEqual(

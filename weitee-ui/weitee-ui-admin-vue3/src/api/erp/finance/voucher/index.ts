@@ -98,5 +98,9 @@ export const FinanceVoucherApi = {
 
   reverseVoucher: async (data: { id: number; voucherTime?: string; remark?: string }) => {
     return await request.post({ url: '/erp/finance-voucher/reverse', data })
+  },
+
+  recomputeVoucher: async (data: { bizType: number; bizId: number; remark?: string }) => {
+    return await request.post({ url: '/erp/finance-voucher/recompute', data })
   }
 }

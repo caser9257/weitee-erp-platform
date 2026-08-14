@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict'
-
-const {
+import {
   getPurchaseInMainControlActions,
   getPurchaseInMainControlStageQuery,
   getPurchaseInPrimaryStockContext,
   PURCHASE_IN_QA_STATUS,
   PURCHASE_IN_STATUS,
   PURCHASE_IN_STOCK_IN_STATUS
-} = await import(new URL('./purchaseInMainControl.helpers.ts', import.meta.url).href)
+} from './purchaseInMainControl.helpers'
 
 assert.deepEqual(getPurchaseInMainControlStageQuery('pendingQuality'), {
   status: PURCHASE_IN_STATUS.APPROVE,
@@ -30,6 +29,7 @@ const completeRow = {
     {
       productId: 101,
       warehouseId: 7,
+      purchaseSourceBatchId: 66,
       purchaseSourceBatchNo: 'B-001'
     }
   ]
@@ -58,7 +58,7 @@ assert.deepEqual(
   [
     ['viewPurchaseOrder', true, 'missing-order'],
     ['viewStock', true, 'missing-stock-context'],
-    ['traceBatch', true, 'missing-stock-context'],
+    ['traceBatch', true, 'missing-source-batch'],
     ['viewStockFlow', true, 'missing-flow-context']
   ]
 )

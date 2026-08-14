@@ -3,7 +3,7 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">双账口径配置</div>
+          <div class="finance-shell__page-title">{{ financeDisplayLabel('双账口径配置', '账目口径配置') }}</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip finance-shell__metric-chip--primary">
               当前列表 {{ total }}
@@ -51,12 +51,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="外部账来源" prop="externalSourceType">
+          <el-form-item :label="financeDisplayLabel('外部账来源', '账目一来源')" prop="externalSourceType">
             <el-select
               v-model="queryParams.externalSourceType"
               class="!w-full"
               clearable
-               placeholder="请选择外部账来源"
+               :placeholder="financeDisplayLabel('请选择外部账来源', '请选择账目一来源')"
             >
               <el-option
                 v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
@@ -66,12 +66,12 @@
               />
             </el-select>
           </el-form-item>
-          <el-form-item label="内部账来源" prop="internalSourceType">
+          <el-form-item :label="financeDisplayLabel('内部账来源', '账目二来源')" prop="internalSourceType">
             <el-select
               v-model="queryParams.internalSourceType"
               class="!w-full"
               clearable
-               placeholder="请选择内部账来源"
+               :placeholder="financeDisplayLabel('请选择内部账来源', '请选择账目二来源')"
             >
               <el-option
                 v-for="item in DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS"
@@ -157,26 +157,26 @@
                 {{ row.diffItemTypeName || getDiffItemTypeLabel(row.diffItemType) || '-' }}
               </template>
             </el-table-column>
-            <el-table-column label="外部账来源" min-width="220">
+            <el-table-column :label="financeDisplayLabel('外部账来源', '账目一来源')" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__primary-text">
-                    {{ row.externalSourceTypeName || getSourceTypeLabel(row.externalSourceType) || '-' }}
+                    {{ toFinanceDisplayText(row.externalSourceTypeName || getSourceTypeLabel(row.externalSourceType)) }}
                   </span>
                   <span class="finance-shell__muted-text">
-                    {{ row.externalSourceValueName || getDiffItemTypeLabel(row.externalSourceValue) || '-' }}
+                    {{ toFinanceDisplayText(row.externalSourceValueName || getDiffItemTypeLabel(row.externalSourceValue)) }}
                   </span>
                 </div>
               </template>
             </el-table-column>
-            <el-table-column label="内部账来源" min-width="220">
+            <el-table-column :label="financeDisplayLabel('内部账来源', '账目二来源')" min-width="220">
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
                   <span class="finance-shell__primary-text">
-                    {{ row.internalSourceTypeName || getSourceTypeLabel(row.internalSourceType) || '-' }}
+                    {{ toFinanceDisplayText(row.internalSourceTypeName || getSourceTypeLabel(row.internalSourceType)) }}
                   </span>
                   <span class="finance-shell__muted-text">
-                    {{ row.internalSourceValueName || getDiffItemTypeLabel(row.internalSourceValue) || '-' }}
+                    {{ toFinanceDisplayText(row.internalSourceValueName || getDiffItemTypeLabel(row.internalSourceValue)) }}
                   </span>
                 </div>
               </template>
@@ -204,7 +204,7 @@
             <el-table-column label="备注" min-width="200">
               <template #default="{ row }">
                 <span class="finance-shell__muted-text" :title="row.remark || '-'">
-                  {{ row.remark || '-' }}
+                  {{ toFinanceDisplayText(row.remark) }}
                 </span>
               </template>
             </el-table-column>
@@ -298,17 +298,17 @@
               <div class="finance-shell__section-title">规则详情</div>
               <div class="dual-ledger-diff-config-page__detail-list">
                 <div class="dual-ledger-diff-config-page__detail-item">
-                  <span>外部账来源</span>
+                  <span>{{ financeDisplayLabel('外部账来源', '账目一来源') }}</span>
                   <strong>
-                    {{ detailData.externalSourceTypeName || getSourceTypeLabel(detailData.externalSourceType) || '-' }}
-                    / {{ detailData.externalSourceValueName || getDiffItemTypeLabel(detailData.externalSourceValue) || '-' }}
+                    {{ toFinanceDisplayText(detailData.externalSourceTypeName || getSourceTypeLabel(detailData.externalSourceType)) }}
+                    / {{ toFinanceDisplayText(detailData.externalSourceValueName || getDiffItemTypeLabel(detailData.externalSourceValue)) }}
                   </strong>
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item">
-                  <span>内部账来源</span>
+                  <span>{{ financeDisplayLabel('内部账来源', '账目二来源') }}</span>
                   <strong>
-                    {{ detailData.internalSourceTypeName || getSourceTypeLabel(detailData.internalSourceType) || '-' }}
-                    / {{ detailData.internalSourceValueName || getDiffItemTypeLabel(detailData.internalSourceValue) || '-' }}
+                    {{ toFinanceDisplayText(detailData.internalSourceTypeName || getSourceTypeLabel(detailData.internalSourceType)) }}
+                    / {{ toFinanceDisplayText(detailData.internalSourceValueName || getDiffItemTypeLabel(detailData.internalSourceValue)) }}
                   </strong>
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item">
@@ -321,7 +321,7 @@
                 </div>
                 <div class="dual-ledger-diff-config-page__detail-item dual-ledger-diff-config-page__detail-item--full">
                   <span>备注</span>
-                  <strong>{{ detailData.remark || '-' }}</strong>
+                  <strong>{{ toFinanceDisplayText(detailData.remark) }}</strong>
                 </div>
               </div>
             </div>
@@ -349,6 +349,7 @@ import {
   type ErpFinanceDualLedgerDiffConfigVO
 } from '@/api/erp/finance/dual-ledger-diff-config'
 import { COMMON_STATUS_OPTIONS, formatAmount } from '@/views/erp/finance/shared/accounting'
+import { financeDisplayLabel, toFinanceDisplayText } from '@/utils/financeDisplay'
 import DualLedgerDiffConfigForm from './DualLedgerDiffConfigForm.vue'
 
 defineOptions({ name: 'ErpFinanceDualLedgerDiffConfig' })

@@ -15,6 +15,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceSubjectDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReportItemSubjectMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceSubjectMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportAmountRuleEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportItemCategoryEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceReportTypeEnum;
@@ -50,6 +51,8 @@ public class ErpFinanceReportItemServiceImpl implements ErpFinanceReportItemServ
 
     @Resource
     private ErpFinanceReportItemMapper erpFinanceReportItemMapper;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
     @Resource
     private ErpFinanceReportItemSubjectMapper erpFinanceReportItemSubjectMapper;
     @Resource
@@ -101,7 +104,30 @@ public class ErpFinanceReportItemServiceImpl implements ErpFinanceReportItemServ
 
     @Override
     public PageResult<ErpFinanceReportItemDO> getFinanceReportItemPage(ErpFinanceReportItemPageReqVO pageReqVO) {
-        return erpFinanceReportItemMapper.selectPage(pageReqVO);
+        List<Long> visibleLedgerIds = financeDataPermissionService.getVisibleLedgerIds();
+        if (visibleLedgerIds == null) {
+            return erpFinanceReportItemMapper.selectPage(pageReqVO);
+        }
+        if (CollUtil.isEmpty(visibleLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        Map<Long, Set<String>> subjectCodesByLedger = new LinkedHashMap<>();
+        FinancePermissionScope permissionScope = financeDataPermissionService.getPermissionScope();
+        List<Long> scopedLedgerIds = visibleLedgerIds.stream().filter(ledgerId -> {
+            FinancePermissionScope.Scope<String> subjectScope = permissionScope == null ? FinancePermissionScope.Scope.all()
+                    : permissionScope.subjectScopesByLedger().getOrDefault(ledgerId, FinancePermissionScope.Scope.all());
+            if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+                subjectCodesByLedger.put(ledgerId, subjectScope.values());
+            }
+            return subjectScope.mode() != FinancePermissionScope.ScopeMode.NONE;
+        }).toList();
+        if (CollUtil.isEmpty(scopedLedgerIds)) {
+            return PageResult.empty(0L);
+        }
+        return subjectCodesByLedger.isEmpty()
+                ? erpFinanceReportItemMapper.selectPageByVisibleLedgerIds(pageReqVO, scopedLedgerIds)
+                : erpFinanceReportItemMapper.selectPageByVisibleLedgerIdsAndSubjectCodes(
+                pageReqVO, scopedLedgerIds, subjectCodesByLedger);
     }
 
     @Override
@@ -142,9 +168,13 @@ public class ErpFinanceReportItemServiceImpl implements ErpFinanceReportItemServ
         int createdItemCount = 0;
         int skippedItemCount = 0;
         int createdMappingCount = 0;
+        List<ErpFinanceReportItemDO> existedItems = erpFinanceReportItemMapper.selectList(
+                new cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX<ErpFinanceReportItemDO>()
+                        .eq(ErpFinanceReportItemDO::getLedgerId, reqVO.getLedgerId()));
+        Map<String, ErpFinanceReportItemDO> existedItemMap = convertMap(existedItems,
+                item -> item.getReportType() + ":" + item.getItemCode());
         for (StandardReportItem standardItem : STANDARD_REPORT_ITEMS) {
-            ErpFinanceReportItemDO existedItem = erpFinanceReportItemMapper.selectByLedgerIdAndReportTypeAndItemCode(
-                    reqVO.getLedgerId(), standardItem.reportType, standardItem.itemCode);
+            ErpFinanceReportItemDO existedItem = existedItemMap.get(standardItem.reportType + ":" + standardItem.itemCode);
             if (existedItem != null && !Boolean.TRUE.equals(reqVO.getOverrideExisting())) {
                 skippedItemCount++;
                 continue;

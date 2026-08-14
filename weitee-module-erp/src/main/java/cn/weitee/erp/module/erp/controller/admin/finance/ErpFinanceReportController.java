@@ -5,6 +5,7 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.report.ErpFinanceRep
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.report.ErpFinanceStatementRespVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.report.ErpFinanceTrialBalanceRespVO;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceReportService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,11 +27,16 @@ public class ErpFinanceReportController {
 
     @Resource
     private ErpFinanceReportService financeReportService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @GetMapping("/trial-balance")
     @Operation(summary = "获得试算平衡表")
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
     public CommonResult<ErpFinanceTrialBalanceRespVO> getTrialBalance(@Valid ErpFinanceReportReqVO reqVO) {
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return success(null);
+        }
         return success(financeReportService.getTrialBalance(reqVO));
     }
 
@@ -38,6 +44,9 @@ public class ErpFinanceReportController {
     @Operation(summary = "获得资产负债表")
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
     public CommonResult<ErpFinanceStatementRespVO> getBalanceSheet(@Valid ErpFinanceReportReqVO reqVO) {
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return success(null);
+        }
         return success(financeReportService.getBalanceSheet(reqVO));
     }
 
@@ -45,6 +54,9 @@ public class ErpFinanceReportController {
     @Operation(summary = "获得利润表")
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
     public CommonResult<ErpFinanceStatementRespVO> getIncomeStatement(@Valid ErpFinanceReportReqVO reqVO) {
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return success(null);
+        }
         return success(financeReportService.getIncomeStatement(reqVO));
     }
 
@@ -52,7 +64,14 @@ public class ErpFinanceReportController {
     @Operation(summary = "获得现金流量表")
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
     public CommonResult<ErpFinanceStatementRespVO> getCashFlowStatement(@Valid ErpFinanceReportReqVO reqVO) {
+        if (!canAccessLedger(reqVO.getLedgerId())) {
+            return success(null);
+        }
         return success(financeReportService.getCashFlowStatement(reqVO));
+    }
+
+    private boolean canAccessLedger(Long ledgerId) {
+        return financeDataPermissionService.canAccessLedger(ledgerId);
     }
 
 }

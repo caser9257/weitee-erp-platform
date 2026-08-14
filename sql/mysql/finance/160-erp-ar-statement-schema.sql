@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS `erp_ar_statement` (
     `source_order_id` BIGINT NULL COMMENT 'source order id',
     `source_order_no` VARCHAR(64) NULL COMMENT 'source order no',
     `customer_id` BIGINT NOT NULL COMMENT 'customer id',
+    `ledger_id` BIGINT NULL COMMENT 'owning finance ledger id',
     `account_id` BIGINT NULL COMMENT 'account id',
     `amount` DECIMAL(24, 6) NOT NULL COMMENT 'statement amount',
     `received_amount` DECIMAL(24, 6) NOT NULL DEFAULT 0 COMMENT 'received amount',
@@ -30,6 +31,7 @@ CREATE TABLE IF NOT EXISTS `erp_ar_statement` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_ar_statement_biz` (`biz_type`, `biz_id`, `deleted`),
     UNIQUE KEY `uk_ar_statement_no` (`statement_no`, `deleted`),
+    KEY `idx_ar_statement_ledger_status` (`ledger_id`, `status`, `deleted`),
     KEY `idx_ar_statement_customer_status` (`customer_id`, `status`, `deleted`),
     KEY `idx_ar_statement_due_date` (`due_date`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='ERP AR statement';

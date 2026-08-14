@@ -235,7 +235,7 @@ public class ErpApInvoiceServiceImpl implements ErpApInvoiceService {
             statementDeltaCountMap.merge(statement.getId(), defaultAmount(item.getMatchCount()), BigDecimal::add);
         }
         validateInvoiceTotalLimit(invoice, insertList);
-        erpApInvoiceMatchItemMapper.insertBatch(insertList);
+        insertList.forEach(erpApInvoiceMatchItemMapper::insert);
         refreshInvoiceSummary(invoice.getId(), reqVO.getDifferenceReason());
         refreshStatementInvoiceSummary(statementDeltaAmountMap.keySet());
         createStatementMatchLogs(statementDeltaAmountMap, invoice, ErpApStatementItemTypeEnum.INVOICE_MATCHED.getStatus());
@@ -331,7 +331,7 @@ public class ErpApInvoiceServiceImpl implements ErpApInvoiceService {
                 : ObjectUtil.defaultIfNull(StrUtil.trimToNull(differenceReasonOverride), invoice.getDifferenceReason());
         erpApInvoiceMapper.updateById(new ErpApInvoiceDO()
                 .setId(invoiceId)
-                .setMatchedCount(activeItems.isEmpty() ? null : matchedCount)
+                .setMatchedCount(matchedCount)
                 .setMatchedAmount(matchedAmount)
                 .setUnmatchedAmount(unmatchedAmount)
                 .setDifferenceAmount(differenceAmount)
@@ -367,9 +367,11 @@ public class ErpApInvoiceServiceImpl implements ErpApInvoiceService {
         Map<Long, List<ErpApInvoiceMatchItemDO>> statementItemMap = convertMultiMap(
                 erpApInvoiceMatchItemMapper.selectActiveListByStatementIds(statementIds),
                 ErpApInvoiceMatchItemDO::getApStatementId);
-        List<ErpApInvoiceDO> invoiceList = ObjectUtil.defaultIfNull(erpApInvoiceMapper.selectBatchIds(
-                convertSet(statementItemMap.values().stream().flatMap(Collection::stream).toList(),
-                        ErpApInvoiceMatchItemDO::getInvoiceId)), Collections.emptyList());
+        Collection<Long> matchedInvoiceIds = convertSet(statementItemMap.values().stream().flatMap(Collection::stream).toList(),
+                ErpApInvoiceMatchItemDO::getInvoiceId);
+        List<ErpApInvoiceDO> invoiceList = CollUtil.isEmpty(matchedInvoiceIds)
+                ? Collections.emptyList()
+                : ObjectUtil.defaultIfNull(erpApInvoiceMapper.selectBatchIds(matchedInvoiceIds), Collections.emptyList());
         Map<Long, ErpApInvoiceDO> invoiceMap = convertMap(invoiceList, ErpApInvoiceDO::getId);
         for (ErpApStatementDO statement : statements) {
             List<ErpApInvoiceMatchItemDO> activeItems = statementItemMap.getOrDefault(statement.getId(), Collections.emptyList());

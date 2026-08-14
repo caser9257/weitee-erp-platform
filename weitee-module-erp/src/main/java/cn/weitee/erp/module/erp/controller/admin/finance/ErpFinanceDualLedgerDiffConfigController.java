@@ -77,6 +77,7 @@ public class ErpFinanceDualLedgerDiffConfigController {
 
     @GetMapping("/simple-list")
     @Operation(summary = "获得启用中的双账套差异项口径简洁列表")
+    @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-diff-config:query')")
     public CommonResult<List<ErpFinanceDualLedgerDiffConfigRespVO>> getDualLedgerDiffConfigSimpleList(
             @RequestParam(value = "bizType", required = false) Integer bizType) {
         List<ErpFinanceDualLedgerDiffConfigDO> list = dualLedgerDiffConfigService

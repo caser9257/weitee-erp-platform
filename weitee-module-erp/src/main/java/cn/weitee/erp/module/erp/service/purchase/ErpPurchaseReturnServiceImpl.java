@@ -161,7 +161,9 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
             purchaseReturn.setDiscountPercent(BigDecimal.ZERO);
         }
         purchaseReturn.setDiscountPrice(MoneyUtils.priceMultiplyPercent(purchaseReturn.getTotalPrice(), purchaseReturn.getDiscountPercent()));
-        purchaseReturn.setTotalPrice(purchaseReturn.getTotalPrice().subtract(purchaseReturn.getDiscountPrice()).add(purchaseReturn.getOtherPrice()));
+        purchaseReturn.setTotalPrice(purchaseReturn.getTotalPrice()
+                .subtract(purchaseReturn.getDiscountPrice())
+                .add(ObjectUtil.defaultIfNull(purchaseReturn.getOtherPrice(), BigDecimal.ZERO)));
     }
 
     private void updatePurchaseOrderReturnCount(Long orderId) {

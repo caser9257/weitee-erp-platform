@@ -11,15 +11,18 @@ import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.move.ErpStockMovePageReqVO;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.move.ErpStockMoveCancelApprovalReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.move.ErpStockMovePrintDataRespVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.move.ErpStockMoveRespVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.move.ErpStockMoveSaveReqVO;
+import cn.weitee.erp.module.erp.controller.admin.stock.vo.move.ErpStockMoveSubmitReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockMoveDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockMoveItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpWarehouseDO;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockMoveService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockMoveBpmService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.ErpWarehouseService;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
@@ -46,6 +49,7 @@ import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMultiMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 
 @Tag(name = "管理后台 - ERP 库存调拨单")
@@ -56,6 +60,8 @@ public class ErpStockMoveController {
 
     @Resource
     private ErpStockMoveService stockMoveService;
+    @Resource
+    private ErpStockMoveBpmService stockMoveBpmService;
     @Resource
     private ErpStockService stockService;
     @Resource
@@ -81,12 +87,19 @@ public class ErpStockMoveController {
         return success(true);
     }
 
-    @PutMapping("/update-status")
-    @Operation(summary = "更新库存调拨单的状态")
-    @PreAuthorize("@ss.hasPermission('erp:stock-move:update-status')")
-    public CommonResult<Boolean> updateStockMoveStatus(@RequestParam("id") Long id,
-                                                     @RequestParam("status") Integer status) {
-        stockMoveService.updateStockMoveStatus(id, status);
+    @PostMapping("/submit")
+    @Operation(summary = "提交库存调拨单审批")
+    @PreAuthorize("@ss.hasPermission('erp:stock-move:submit')")
+    public CommonResult<Boolean> submitStockMove(@Valid @RequestBody ErpStockMoveSubmitReqVO reqVO) {
+        stockMoveBpmService.submitStockMove(getLoginUserId(), reqVO);
+        return success(true);
+    }
+
+    @DeleteMapping("/cancel-approval")
+    @Operation(summary = "撤回库存调拨单审批")
+    @PreAuthorize("@ss.hasPermission('erp:stock-move:cancel-approval')")
+    public CommonResult<Boolean> cancelStockMoveApproval(@Valid @RequestBody ErpStockMoveCancelApprovalReqVO reqVO) {
+        stockMoveBpmService.cancelStockMoveApproval(getLoginUserId(), reqVO);
         return success(true);
     }
 

@@ -17,6 +17,8 @@ import cn.weitee.erp.module.erp.enums.ErpFinanceAssetSourceTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseAccountingTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceAsset.*;
 
 @Service
@@ -46,6 +49,8 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
     @Resource
     @Lazy
     private ErpFinanceExpenseService financeExpenseService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -60,6 +65,7 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
                 throw exception(ASSET_CANDIDATE_CONFIRM_FAIL);
             }
         }
+        validateDeptAccess(createReqVO.getDeptId());
         String no = noRedisDAO.generate("GDZC");
         if (financeAssetMapper.selectByNo(no) != null) {
             throw exception(ASSET_NO_EXISTS);
@@ -78,6 +84,8 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
     @Transactional(rollbackFor = Exception.class)
     public void updateFinanceAsset(ErpFinanceAssetSaveReqVO updateReqVO) {
         ErpFinanceAssetDO asset = validateFinanceAssetExists(updateReqVO.getId());
+        validateDeptAccess(asset.getDeptId());
+        validateDeptAccess(updateReqVO.getDeptId());
         ErpFinanceAssetDO updateObj = BeanUtils.toBean(updateReqVO, ErpFinanceAssetDO.class, in -> in
                 .setNo(asset.getNo())
                 .setSalvageAmount(calculateSalvageAmount(updateReqVO.getOriginalAmount(), updateReqVO.getSalvageRate())));
@@ -89,6 +97,7 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
     public void deleteFinanceAsset(List<Long> ids) {
         ids.forEach(id -> {
             ErpFinanceAssetDO asset = validateFinanceAssetExists(id);
+            validateDeptAccess(asset.getDeptId());
             if (!ErpFinanceAssetStatusEnum.DRAFT.getStatus().equals(asset.getStatus())) {
                 throw exception(ASSET_DELETE_FAIL_STATUS, asset.getNo());
             }
@@ -103,6 +112,7 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
     @Transactional(rollbackFor = Exception.class)
     public void updateFinanceAssetStatus(Long id, Integer status) {
         ErpFinanceAssetDO asset = validateFinanceAssetExists(id);
+        validateDeptAccess(asset.getDeptId());
         int updateCount = financeAssetMapper.updateByIdAndStatus(id, asset.getStatus(),
                 new ErpFinanceAssetDO().setStatus(status));
         if (updateCount == 0) {
@@ -112,7 +122,11 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
 
     @Override
     public ErpFinanceAssetDO getFinanceAsset(Long id) {
-        return financeAssetMapper.selectById(id);
+        ErpFinanceAssetDO asset = financeAssetMapper.selectById(id);
+        if (asset != null) {
+            validateDeptAccess(asset.getDeptId());
+        }
+        return asset;
     }
 
     @Override
@@ -152,6 +166,13 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
 
     @Override
     public PageResult<ErpFinanceAssetDO> getFinanceAssetPage(ErpFinanceAssetPageReqVO pageReqVO) {
+        FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService.getPermissionScope().deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            return financeAssetMapper.selectPageByDeptIds(pageReqVO, deptScope.values());
+        }
         return financeAssetMapper.selectPage(pageReqVO);
     }
 
@@ -183,6 +204,16 @@ public class ErpFinanceAssetServiceImpl implements ErpFinanceAssetService {
             throw exception(ASSET_NOT_EXISTS);
         }
         return asset;
+    }
+
+    private void validateDeptAccess(Long deptId) {
+        FinancePermissionScope permissionScope = FinanceDataPermissionContext.getPermissionScope();
+        if (permissionScope == null || permissionScope.deptScope().mode() == FinancePermissionScope.ScopeMode.ALL) {
+            return;
+        }
+        if (deptId == null || !permissionScope.deptScope().values().contains(deptId)) {
+            throw exception(FORBIDDEN);
+        }
     }
 
     private BigDecimal calculateSalvageAmount(BigDecimal originalAmount, BigDecimal salvageRate) {

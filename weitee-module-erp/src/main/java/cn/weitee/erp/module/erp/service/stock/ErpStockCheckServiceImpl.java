@@ -302,9 +302,8 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         Set<Long> warehouseIds = stockCheckItems.stream()
                 .map(ErpStockCheckItemDO::getWarehouseId)
                 .collect(Collectors.toSet());
-        Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
         warehouseIds.forEach(warehouseId -> {
-            ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
+            ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
             if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
                 updateWarehouseFrozen(warehouseId, false);
             }
@@ -329,9 +328,8 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             Set<Long> warehouseIds = checkItems.stream()
                     .map(ErpStockCheckItemDO::getWarehouseId)
                     .collect(Collectors.toSet());
-            Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
             warehouseIds.forEach(warehouseId -> {
-                ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
+                ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
                 if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
                     updateWarehouseFrozen(warehouseId, false);
                 }
@@ -348,6 +346,25 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     /**
      * 计算差异金额
      */
+    private void updateWarehouseFrozen(Long warehouseId, boolean frozen) {
+        ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
+        if (warehouse == null) {
+            throw exception(WAREHOUSE_NOT_EXISTS);
+        }
+        warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
+                .setId(warehouse.getId())
+                .setName(warehouse.getName())
+                .setCategoryId(warehouse.getCategoryId())
+                .setAddress(warehouse.getAddress())
+                .setSort(warehouse.getSort())
+                .setRemark(warehouse.getRemark())
+                .setPrincipal(warehouse.getPrincipal())
+                .setWarehousePrice(warehouse.getWarehousePrice())
+                .setTruckagePrice(warehouse.getTruckagePrice())
+                .setStatus(warehouse.getStatus())
+                .setFrozen(frozen));
+    }
+
     private void calculateDiffAmount(Long checkId) {
         List<ErpStockCheckItemDO> checkItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
         List<ErpStockCheckSnapshotDO> snapshots = stockCheckSnapshotService.getSnapshotList(checkId);

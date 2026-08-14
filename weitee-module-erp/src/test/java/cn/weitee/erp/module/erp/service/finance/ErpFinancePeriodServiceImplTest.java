@@ -6,16 +6,27 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePeriodDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePeriodMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinancePeriodStatusEnum;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ErpFinancePeriodServiceImplTest {
 
     @Test
@@ -77,6 +88,29 @@ class ErpFinancePeriodServiceImplTest {
         setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class, (methodName, args) -> null));
 
         assertThrows(RuntimeException.class, () -> service.closeFinancePeriod(3L));
+    }
+
+    @Test
+    void reopenFinancePeriod_shouldClearCloseMetadata() throws Exception {
+        ErpFinancePeriodServiceImpl service = new ErpFinancePeriodServiceImpl();
+        ErpFinancePeriodMapper mapper = mock(ErpFinancePeriodMapper.class);
+        ErpFinancePeriodDO period = new ErpFinancePeriodDO()
+                .setId(9L)
+                .setLedgerId(1L)
+                .setPeriodCode("2026-01")
+                .setPeriodSort(202601)
+                .setStatus(ErpFinancePeriodStatusEnum.CLOSED.getStatus());
+        when(mapper.selectById(9L)).thenReturn(period);
+        when(mapper.selectLaterClosedCount(1L, 202601)).thenReturn(0L);
+        setField(service, "financePeriodMapper", mapper);
+
+        service.reopenFinancePeriod(9L);
+
+        ArgumentCaptor<LambdaUpdateWrapper<ErpFinancePeriodDO>> wrapperCaptor = ArgumentCaptor.forClass(LambdaUpdateWrapper.class);
+        verify(mapper).update(isNull(), wrapperCaptor.capture());
+        assertTrue(wrapperCaptor.getValue().getSqlSet().contains("close_time"));
+        assertEquals(2, wrapperCaptor.getValue().getParamNameValuePairs().values().stream()
+                .filter(Objects::isNull).count());
     }
 
     @SuppressWarnings("unchecked")

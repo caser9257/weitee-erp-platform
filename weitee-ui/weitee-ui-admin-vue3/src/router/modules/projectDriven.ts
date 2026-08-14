@@ -670,6 +670,17 @@ const projectDrivenMenus: AppCustomRouteRecordRaw[] = [
             keepAlive: false
           },
           {
+            path: 'ar-statement',
+            name: '\u5e94\u6536\u53f0\u8d26',
+            icon: 'ep:money',
+            component: 'erp/finance/ar-statement/index',
+            componentName: 'ErpArStatement',
+            redirect: '',
+            meta: {},
+            visible: true,
+            keepAlive: false
+          },
+          {
             path: 'ap-estimate',
             name: '\u91c7\u8d2d\u6682\u4f30\u5165\u5e93',
             icon: 'ep:clock',

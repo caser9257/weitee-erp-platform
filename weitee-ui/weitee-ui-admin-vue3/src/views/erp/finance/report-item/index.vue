@@ -34,7 +34,7 @@
         <div class="finance-shell__query-grid finance-shell__query-grid--wide finance-report-item-page__query-grid">
           <el-form-item label="账簿" prop="ledgerId">
             <el-select v-model="queryParams.ledgerId" placeholder="请选择账簿" clearable filterable :loading="ledgerLoading" class="!w-full">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="报表类型" prop="reportType">
@@ -116,7 +116,7 @@
               </template>
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
-                  <span class="finance-shell__primary-text">{{ row.ledgerName || '-' }}</span>
+                  <span class="finance-shell__primary-text">{{ displayLedgerName(row.ledgerName) }}</span>
                   <span class="finance-shell__muted-text finance-shell__mono">{{ row.ledgerId || '-' }}</span>
                 </div>
               </template>
@@ -203,7 +203,7 @@
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ currentRow.itemName || '-' }}</div>
             <div class="finance-shell__context-subtitle">
-              {{ currentRow.itemCode || '-' }} · {{ currentRow.ledgerName || '-' }} · {{ currentRow.reportTypeName || getReportTypeLabel(currentRow.reportType) }}
+              {{ currentRow.itemCode || '-' }} · {{ displayLedgerName(currentRow.ledgerName) }} · {{ currentRow.reportTypeName || getReportTypeLabel(currentRow.reportType) }}
             </div>
           </div>
           <div class="finance-shell__context-meta">
@@ -267,6 +267,7 @@ import { ErpFinanceReportItemPageReqVO, ErpFinanceReportItemVO, FinanceReportIte
 import ReportItemForm from './ReportItemForm.vue'
 import ReportItemTemplateInitForm from './ReportItemTemplateInitForm.vue'
 import { reportItemDemoLedgers, reportItemDemoRows } from './demo'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceReportItem' })
 

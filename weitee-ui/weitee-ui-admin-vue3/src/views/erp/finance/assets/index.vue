@@ -625,6 +625,7 @@ import {
   type FinanceAssetTraceVO,
   type FinanceAssetVO
 } from '@/api/erp/finance/assets'
+import { getFinanceAssetStatusActionDescriptor } from './assetStatus.helpers'
 
 defineOptions({ name: 'ErpFinanceAssets' })
 
@@ -842,7 +843,8 @@ const jumpToSource = async (sourceType?: number, sourceBizId?: number, sourceBiz
 }
 
 const canEdit = (row: FinanceAssetVO) => row.status !== 30
-const canToggleStatus = (row: FinanceAssetVO) => row.status === 10 || row.status === 20
+const canToggleStatus = (row: FinanceAssetVO) =>
+  getFinanceAssetStatusActionDescriptor(row.status).canToggleStatus
 const canDelete = (row: FinanceAssetVO) => row.status === 0
 
 const getAssetList = async () => {
@@ -955,7 +957,8 @@ const handleDelete = async (row: FinanceAssetVO) => {
 }
 
 const toggleStatus = async (row: FinanceAssetVO) => {
-  const nextStatus = row.status === 10 ? 20 : 10
+  const { nextStatus } = getFinanceAssetStatusActionDescriptor(row.status)
+  if (nextStatus == null) return
   updatingStatus.value = true
   try {
     await FinanceAssetApi.updateFinanceAssetStatus({ id: Number(row.id), status: nextStatus })
