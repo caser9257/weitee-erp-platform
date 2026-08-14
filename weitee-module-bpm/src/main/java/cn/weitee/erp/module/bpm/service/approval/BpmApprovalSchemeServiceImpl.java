@@ -286,8 +286,9 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
      */
     private void validateSchemeOwnership(BpmApprovalSchemeDO scheme) {
         Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
-        // 如果 ownerUserId 为空或者是当前用户，则允许操作
-        if (scheme.getOwnerUserId() == null || scheme.getOwnerUserId().equals(currentUserId)) {
+        // 如果 ownerUserId 为空（含 0 兜底）或者是当前用户，则允许操作
+        if (scheme.getOwnerUserId() == null || scheme.getOwnerUserId() == 0L
+                || scheme.getOwnerUserId().equals(currentUserId)) {
             return;
         }
         // TODO: 这里可以添加更复杂的权限校验逻辑，如检查用户角色
