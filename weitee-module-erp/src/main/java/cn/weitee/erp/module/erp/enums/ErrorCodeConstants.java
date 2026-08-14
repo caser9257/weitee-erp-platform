@@ -287,6 +287,7 @@ public interface ErrorCodeConstants {
     ErrorCode PREPAYMENT_NO_EXISTS = new ErrorCode(1_030_605_004, "生成预付款单号失败，请重新提交");
     ErrorCode PREPAYMENT_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_605_005, "预付款单({})已审核，无法修改");
     ErrorCode PREPAYMENT_ALLOCATE_FAIL_APPROVE = new ErrorCode(1_030_605_006, "预付款单({})未审核，无法核销");
+    ErrorCode PREPAYMENT_ALLOCATE_AMOUNT_EXCEED = new ErrorCode(1_030_605_007, "预付款单({})本次核销金额({})超过剩余可核销金额({})");
 
     // ========== ERP 采购发票三单匹配 1-030-606-000 ==========
     ErrorCode AP_INVOICE_NOT_EXISTS = new ErrorCode(1_030_606_000, "采购发票不存在");
@@ -419,6 +420,8 @@ public interface ErrorCodeConstants {
     ErrorCode PROJECT_MC_CONFIRM_FORBIDDEN = new ErrorCode(1_020_204_008, "当前用户不是项目 MC 负责人，无法执行确认");
     ErrorCode PROJECT_PC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_009, "当前项目 PC 状态不允许重复确认");
     ErrorCode PROJECT_MC_CONFIRM_STATUS_INVALID = new ErrorCode(1_020_204_010, "当前项目 MC 状态不允许重复确认");
+    ErrorCode PROJECT_LIFECYCLE_STAGE_TRANSITION_FAIL = new ErrorCode(1_020_204_011, "项目生命周期阶段流转失败：{}");
+    ErrorCode PROJECT_LIFECYCLE_STAGE_PRECONDITION_FAIL = new ErrorCode(1_020_204_012, "项目生命周期阶段前置条件校验失败：{}");
 
     // ========== ERP 租赁合同 1-030-610-000 ==========
     ErrorCode LEASE_CONTRACT_NOT_EXISTS = new ErrorCode(1_030_610_000, "租赁合同不存在");
