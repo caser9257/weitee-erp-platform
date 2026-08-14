@@ -134,11 +134,11 @@ public class MesWorkTaskServiceImpl implements MesWorkTaskService {
 
     @Override
     public List<MesWorkTaskDO> getGanttList(Long workCenterId, java.time.LocalDateTime startTime,
-                                            java.time.LocalDateTime endTime) {
+                                            java.time.LocalDateTime endTime, Integer status) {
         if (workCenterId == null || startTime == null || endTime == null) {
             return List.of();
         }
-        return mesWorkTaskMapper.selectGanttList(workCenterId, startTime, endTime);
+        return mesWorkTaskMapper.selectGanttList(workCenterId, startTime, endTime, status);
     }
 
     @Override

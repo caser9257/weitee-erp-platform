@@ -34,4 +34,14 @@ public class MesSopDocumentRespVO {
     /** 绑定工序（route_step_id 列表） */
     private List<Long> routeStepIds;
 
+    /** 绑定工序明细（含名称，便于详情展示） */
+    private List<StepInfo> stepInfos;
+
+    @Data
+    public static class StepInfo {
+        private Long id;
+        private Integer stepNo;
+        private String stepCode;
+        private String stepName;
+    }
 }

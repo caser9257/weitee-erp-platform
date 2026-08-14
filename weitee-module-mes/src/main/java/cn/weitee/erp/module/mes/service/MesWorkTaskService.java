@@ -48,8 +48,9 @@ public interface MesWorkTaskService {
     List<cn.weitee.erp.module.mes.service.scheduling.MesSchedulingService.ConflictPair> detectConflicts(Long workCenterId);
 
     /**
-     * 甘特数据：按工作中心 + 时间范围查询已排程任务块。
+     * 甘特数据：按工作中心 + 时间范围（可选状态）查询有计划时间窗的任务块。
      */
-    List<MesWorkTaskDO> getGanttList(Long workCenterId, java.time.LocalDateTime startTime, java.time.LocalDateTime endTime);
+    List<MesWorkTaskDO> getGanttList(Long workCenterId, java.time.LocalDateTime startTime,
+                                     java.time.LocalDateTime endTime, Integer status);
 
 }

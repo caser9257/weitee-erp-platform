@@ -36,6 +36,14 @@
             style="width: 100%"
           />
         </el-form-item>
+        <el-form-item label="状态" prop="status">
+          <el-select v-model="statusFilter" clearable placeholder="全部状态">
+            <el-option label="已排程" :value="1" />
+            <el-option label="进行中" :value="2" />
+            <el-option label="已完成" :value="3" />
+            <el-option label="已取消" :value="4" />
+          </el-select>
+        </el-form-item>
       </div>
       <div class="gantt-query__footer">
         <div class="gantt-query__actions">
@@ -55,7 +63,7 @@
       <span class="gantt-tip__item"><i class="gantt-dot gantt-dot--primary"></i>已排程</span>
       <span class="gantt-tip__item"><i class="gantt-dot gantt-dot--success"></i>已完成</span>
       <span class="gantt-tip__item"><i class="gantt-dot gantt-dot--warning"></i>进行中</span>
-      <span class="gantt-tip__hint">拖动任务块可调整计划时间</span>
+      <span class="gantt-tip__hint">拖动调整时间（默认对齐整点，按住 Shift 精确到分钟）</span>
     </div>
     <div ref="chartRef" v-loading="loading" class="gantt-chart"></div>
     <div v-if="!tasks.length && !loading" class="gantt-empty">
@@ -82,6 +90,7 @@ const chartRef = ref<HTMLDivElement>()
 const loading = ref(false)
 const workCenterId = ref<number>()
 const dateRange = ref<string[]>([])
+const statusFilter = ref<number>() // 状态筛选（可选）
 const workCenterList = ref<WorkCenterSimpleVO[]>([])
 const tasks = ref<WorkTaskVO[]>([])
 
@@ -95,10 +104,17 @@ let dragState: {
 } | null = null
 let dataCache: any[] = []
 
+// canvas 填充不支持 CSS 变量：运行时从设计 Token 解析为具体色值（取不到时用 fallback）
+const resolveCssColor = (varName: string, fallback: string) => {
+  const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim()
+  return val || fallback
+}
+
 const TASK_COLOR: Record<number, string> = {
-  1: 'var(--erp-primary-400)',
-  2: 'var(--erp-warning-400)',
-  3: 'var(--erp-success-400)'
+  1: resolveCssColor('--erp-primary-600', '#2563eb'),
+  2: resolveCssColor('--erp-warning-600', '#d97706'),
+  3: resolveCssColor('--erp-success-600', '#059669'),
+  4: resolveCssColor('--erp-slate-400', '#94a3b8')
 }
 
 const statusLabel: Record<number, string> = {
@@ -122,7 +138,13 @@ const loadData = async () => {
     dateRange.value?.[1] || formatDate(new Date(now + 7 * 86400000), 'YYYY-MM-DD HH:mm:ss')
   loading.value = true
   try {
-    tasks.value = (await WorkTaskApi.getGanttList(workCenterId.value, startTime, endTime)) || []
+    tasks.value =
+      (await WorkTaskApi.getGanttList(
+        workCenterId.value,
+        startTime,
+        endTime,
+        statusFilter.value
+      )) || []
     await renderChart()
   } finally {
     loading.value = false
@@ -157,7 +179,14 @@ const renderChart = async () => {
     },
     xAxis: {
       type: 'time',
-      axisLabel: { color: 'var(--erp-slate-500)', fontSize: 11 },
+      axisLabel: {
+        color: 'var(--erp-slate-500)',
+        fontSize: 11,
+        formatter: (value: number) => {
+          const d = new Date(value)
+          return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}\n${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+        }
+      },
       splitLine: { lineStyle: { color: 'var(--erp-slate-100)' } }
     },
     yAxis: {
@@ -174,6 +203,9 @@ const renderChart = async () => {
           const start = api.coord([api.value(1), api.value(0)])
           const end = api.coord([api.value(2), api.value(0)])
           const height = Math.min(api.size([0, 1])[1] * 0.5, 28)
+          const label = String(api.value(3) || '')
+          const status = api.value(4)
+          const taskId = api.value(5)
           const rect = {
             x: start[0],
             y: start[1] - height / 2,
@@ -186,19 +218,21 @@ const renderChart = async () => {
               height
             }
           }
-          const data = api.value(4)
           return {
             type: 'group',
             children: [
               {
                 type: 'rect',
                 shape: rect.shape,
-                style: { fill: TASK_COLOR[data.status] || '#94a3b8', borderRadius: 4 }
+                style: {
+                  fill: TASK_COLOR[status] || '#94a3b8',
+                  borderRadius: 4
+                }
               },
               {
                 type: 'text',
                 style: {
-                  text: data.label,
+                  text: label,
                   x: rect.x + 6,
                   y: rect.y + rect.height / 2,
                   textVerticalAlign: 'middle',
@@ -208,11 +242,11 @@ const renderChart = async () => {
                 }
               }
             ],
-            data
+            data: { id: taskId, status }
           }
         },
         encode: { x: [1, 2], y: 0 },
-        data: data.map((d) => [0, d.start, d.end, d.label, d])
+        data: dataCache.map((d) => [0, d.start, d.end, d.label, d.status, d.id])
       }
     ]
   }
@@ -221,8 +255,48 @@ const renderChart = async () => {
 
 const bindDrag = (chartInstance: echarts.ECharts) => {
   const zr = chartInstance.getZr()
+  const HOUR_MS = 60 * 60 * 1000 // 小时对齐粒度
   const MIN_DURATION = 30 * 60 * 1000 // 最小时长 30 分钟
   const EDGE_PX = 8 // 边缘判定像素
+
+  // 拖动期间改用 window 级事件：鼠标移出 canvas 不中断（zr 事件只在 canvas 内生效）
+  const onWinMove = (e: MouseEvent) => {
+    if (!dragState) return
+    const rect = chartInstance.getDom().getBoundingClientRect()
+    const offsetX = e.clientX - rect.left
+    const offsetY = e.clientY - rect.top
+    const point = [offsetX, offsetY]
+    const time = chartInstance.convertFromPixel({ xAxisIndex: 0 }, point[0]) as unknown as number
+    const { taskId, mode, endMs, offsetMs } = dragState
+    let newStart: number
+    let newEnd: number
+    const target = dataCache.find((d) => d.id === taskId)
+    if (!target) return
+    if (mode === 'resize-left') {
+      newStart = Math.min(time, endMs - MIN_DURATION)
+      newEnd = endMs
+    } else if (mode === 'resize-right') {
+      newStart = target.start
+      newEnd = Math.max(time, target.start + MIN_DURATION)
+    } else {
+      newStart = time - offsetMs
+      newEnd = newStart + (endMs - (dragState.startMs || 0))
+    }
+    // 拖拽精度：默认对齐整小时（大范围粗调）；按住 Shift 精确到分钟（小时范围内细调）
+    if (!e.shiftKey) {
+      newStart = Math.round(newStart / HOUR_MS) * HOUR_MS
+      newEnd = Math.round(newEnd / HOUR_MS) * HOUR_MS
+    }
+    dataCache = dataCache.map((d) => (d.id !== taskId ? d : { ...d, start: newStart, end: newEnd }))
+    chartInstance.setOption({
+      series: [{ data: dataCache.map((d) => [0, d.start, d.end, d.label, d.status, d.id]) }]
+    } as any)
+  }
+    if (!dragState) return
+    void handleDragEnd(chartInstance)
+    window.removeEventListener('mousemove', onWinMove)
+    window.removeEventListener('mouseup', onWinUp)
+  }
 
   const getDragMode = (
     chart: echarts.ECharts,
@@ -258,6 +332,9 @@ const bindDrag = (chartInstance: echarts.ECharts) => {
       offsetMs: time - task.start
     }
     zr.setCursorStyle(mode === 'move' ? 'grabbing' : 'col-resize')
+    // 注册 window 级拖动事件（鼠标移出 canvas 不中断）
+    window.addEventListener('mousemove', onWinMove)
+    window.addEventListener('mouseup', onWinUp)
   })
   zr.on('mousemove', (e: any) => {
     const point = [e.offsetX, e.offsetY]
@@ -286,7 +363,7 @@ const bindDrag = (chartInstance: echarts.ECharts) => {
         d.id !== taskId ? d : { ...d, start: newStart, end: newEnd }
       )
       chartInstance.setOption({
-        series: [{ data: dataCache.map((d) => [0, d.start, d.end, d.label, d]) }]
+        series: [{ data: dataCache.map((d) => [0, d.start, d.end, d.label, d.status, d.id]) }]
       } as any)
       return
     }
@@ -303,6 +380,8 @@ const bindDrag = (chartInstance: echarts.ECharts) => {
   })
   zr.on('mouseup', () => {
     void handleDragEnd(chartInstance)
+    window.removeEventListener('mousemove', onWinMove)
+    window.removeEventListener('mouseup', onWinUp)
   })
 }
 

@@ -82,10 +82,15 @@ export const WorkTaskApi = {
       params: { workCenterId }
     })
   },
-  getGanttList: async (workCenterId: number, startTime: string, endTime: string) => {
+  getGanttList: async (
+    workCenterId: number,
+    startTime: string,
+    endTime: string,
+    status?: number
+  ) => {
     return await request.get<WorkTaskVO[]>({
       url: '/mes/work-task/gantt',
-      params: { workCenterId, startTime, endTime }
+      params: { workCenterId, startTime, endTime, status }
     })
   },
   regenerateTasks: async (productionOrderId: number) => {

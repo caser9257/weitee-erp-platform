@@ -101,10 +101,12 @@ public class MesSchedulingService {
                 .thenComparing(MesWorkTaskDO::getProductionOrderId)
                 .thenComparing(t -> t.getStepNo() == null ? Integer.MAX_VALUE : t.getStepNo()));
 
-        // 2. 资源占用表：数据库全部已排程任务 + 本次循环内追加
+        // 2. 资源占用表：全部有计划时间的任务（已排程/进行中/已完成，排除已取消）+ 本次循环内追加
         ResourceOccupancy occupancy = new ResourceOccupancy();
         mesWorkTaskMapper.selectList(new cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX<MesWorkTaskDO>()
-                        .eq(MesWorkTaskDO::getStatus, MesWorkTaskStatusEnum.SCHEDULED.getStatus())
+                        .in(MesWorkTaskDO::getStatus, MesWorkTaskStatusEnum.SCHEDULED.getStatus(),
+                                MesWorkTaskStatusEnum.PROCESSING.getStatus(),
+                                MesWorkTaskStatusEnum.FINISHED.getStatus())
                         .isNotNull(MesWorkTaskDO::getPlanStartTime)
                         .isNotNull(MesWorkTaskDO::getPlanEndTime))
                 .forEach(t -> occupancy.add(t.getWorkCenterId(), t.getPlanStartTime(), t.getPlanEndTime()));

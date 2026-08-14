@@ -102,8 +102,9 @@ public class MesWorkTaskController {
     public CommonResult<List<MesWorkTaskDO>> getGanttList(
             @RequestParam("workCenterId") Long workCenterId,
             @RequestParam("startTime") @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") java.time.LocalDateTime startTime,
-            @RequestParam("endTime") @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") java.time.LocalDateTime endTime) {
-        return success(mesWorkTaskService.getGanttList(workCenterId, startTime, endTime));
+            @RequestParam("endTime") @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") java.time.LocalDateTime endTime,
+            @RequestParam(value = "status", required = false) Integer status) {
+        return success(mesWorkTaskService.getGanttList(workCenterId, startTime, endTime, status));
     }
 
 }

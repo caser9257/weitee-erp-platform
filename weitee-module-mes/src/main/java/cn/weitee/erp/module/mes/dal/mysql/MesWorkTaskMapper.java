@@ -78,13 +78,15 @@ public interface MesWorkTaskMapper extends BaseMapperX<MesWorkTaskDO> {
     int markActualEnd(@Param("orderStepId") Long orderStepId, @Param("finishTime") LocalDateTime finishTime);
 
     /**
-     * 甘特数据：按工作中心 + 时间范围查询有计划时间窗的任务块（含已完成，便于查看历史）。
+     * 甘特数据：按工作中心 + 时间范围（可选状态）查询有计划时间窗的任务块（含已完成，便于查看历史）。
      */
-    default List<MesWorkTaskDO> selectGanttList(Long workCenterId, LocalDateTime startTime, LocalDateTime endTime) {
+    default List<MesWorkTaskDO> selectGanttList(Long workCenterId, LocalDateTime startTime, LocalDateTime endTime,
+                                                Integer status) {
         return selectList(Wrappers.<MesWorkTaskDO>lambdaQuery()
                 .isNotNull(MesWorkTaskDO::getPlanStartTime)
                 .isNotNull(MesWorkTaskDO::getPlanEndTime)
                 .eq(MesWorkTaskDO::getWorkCenterId, workCenterId)
+                .eq(status != null, MesWorkTaskDO::getStatus, status)
                 .le(MesWorkTaskDO::getPlanStartTime, endTime)
                 .ge(MesWorkTaskDO::getPlanEndTime, startTime)
                 .orderByAsc(MesWorkTaskDO::getPlanStartTime));

@@ -91,8 +91,9 @@
       <el-table-column label="创建时间" min-width="150">
         <template #default="{ row }">{{ formatDateValue(row.createTime) }}</template>
       </el-table-column>
-      <el-table-column label="操作" fixed="right" width="170" align="center">
+      <el-table-column label="操作" fixed="right" width="200" align="center">
         <template #default="{ row }">
+          <el-button link type="primary" @click="openDetail(row)">查看</el-button>
           <el-button
             v-if="Number(row.status) !== 1"
             link
@@ -129,6 +130,50 @@
       @pagination="getList"
     />
   </ContentWrap>
+
+  <!-- 详情弹窗 -->
+  <Dialog v-model="detailVisible" title="查看 SOP" width="640">
+    <el-descriptions v-if="detailForm.sopNo" :column="2" border>
+      <el-descriptions-item label="SOP 编码">{{ detailForm.sopNo }}</el-descriptions-item>
+      <el-descriptions-item label="状态">
+        <span class="sop-badge" :class="statusBadgeClass(detailForm.status)">{{
+          statusLabel(detailForm.status)
+        }}</span>
+      </el-descriptions-item>
+      <el-descriptions-item label="标题">{{ detailForm.title }}</el-descriptions-item>
+      <el-descriptions-item label="版本">{{ detailForm.version || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="生效期"
+        >{{ detailForm.effectiveDate || '-' }} ~
+        {{ detailForm.expireDate || '-' }}</el-descriptions-item
+      >
+      <el-descriptions-item label="创建时间">{{ formatDateValue(detailForm.createTime) }}</el-descriptions-item>
+    </el-descriptions>
+    <div v-if="detailForm.stepInfos?.length" class="sop-detail-content">
+      <div class="sop-detail-content__label">绑定工序（{{ detailForm.stepInfos.length }} 道）</div>
+      <div class="sop-detail-steps">
+        <span v-for="step in detailForm.stepInfos" :key="step.id" class="sop-step-tag">
+          {{ step.stepNo }} · {{ step.stepName }}（{{ step.stepCode }}）
+        </span>
+      </div>
+    </div>
+    <div v-if="detailForm.attachmentUrl" class="sop-detail-content">
+      <div class="sop-detail-content__label">附件</div>
+      <el-link type="primary" :href="detailForm.attachmentUrl" target="_blank">{{
+        detailForm.attachmentUrl
+      }}</el-link>
+    </div>
+    <div v-if="detailForm.content" class="sop-detail-content">
+      <div class="sop-detail-content__label">步骤内容</div>
+      <pre class="sop-detail-content__body">{{ detailForm.content }}</pre>
+    </div>
+    <div v-if="detailForm.remark" class="sop-detail-content">
+      <div class="sop-detail-content__label">备注</div>
+      <div class="sop-detail-content__body">{{ detailForm.remark }}</div>
+    </div>
+    <template #footer>
+      <el-button @click="detailVisible = false">关闭</el-button>
+    </template>
+  </Dialog>
 
   <!-- 新增/编辑弹窗 -->
   <Dialog
@@ -280,10 +325,12 @@ const submitLoading = ref(false)
 const ocrConfirmLoading = ref(false)
 const formVisible = ref(false)
 const ocrVisible = ref(false)
+const detailVisible = ref(false)
 const formMode = ref<'create' | 'edit'>('create')
 
 const list = ref<SopDocumentVO[]>([])
 const total = ref(0)
+const detailForm = ref<Partial<SopDocumentVO>>({})
 const routeList = ref<ProcessRouteVO[]>([])
 const routeStepOptions = ref<{ id: number; stepNo: number; stepCode: string; stepName: string }[]>(
   []
@@ -392,6 +439,17 @@ const loadRouteSteps = async (routeId?: number) => {
     }))
   } catch {
     routeStepOptions.value = []
+  }
+}
+
+const openDetail = async (row: SopDocumentVO) => {
+  if (!row.id) return
+  detailVisible.value = true
+  try {
+    detailForm.value = await SopApi.getSop(row.id)
+  } catch {
+    detailForm.value = {}
+    message.error('SOP 详情加载失败')
   }
 }
 
@@ -733,5 +791,47 @@ onMounted(async () => {
   .sop-query__grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.sop-detail-content {
+  margin-top: 16px;
+}
+
+.sop-detail-content__label {
+  color: var(--erp-slate-600);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.sop-detail-content__body {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 10px;
+  background: var(--erp-slate-50);
+  color: var(--erp-slate-700);
+  font-size: 13px;
+  line-height: 22px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sop-detail-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sop-step-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1px solid var(--erp-slate-200);
+  border-radius: 999px;
+  background: var(--erp-surface-white);
+  color: var(--erp-slate-700);
+  font-size: 12px;
+  font-weight: 600;
 }
 </style>
