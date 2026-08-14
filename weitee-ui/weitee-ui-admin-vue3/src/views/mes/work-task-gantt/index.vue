@@ -86,7 +86,13 @@ const workCenterList = ref<WorkCenterSimpleVO[]>([])
 const tasks = ref<WorkTaskVO[]>([])
 
 let chart: echarts.ECharts | null = null
-let dragState: { taskId: number; startMs: number; offsetMs: number } | null = null
+let dragState: {
+  taskId: number
+  mode: 'move' | 'resize-left' | 'resize-right'
+  startMs: number
+  endMs: number
+  offsetMs: number
+} | null = null
 let dataCache: any[] = []
 
 const TASK_COLOR: Record<number, string> = {
@@ -215,6 +221,23 @@ const renderChart = async () => {
 
 const bindDrag = (chartInstance: echarts.ECharts) => {
   const zr = chartInstance.getZr()
+  const MIN_DURATION = 30 * 60 * 1000 // 最小时长 30 分钟
+  const EDGE_PX = 8 // 边缘判定像素
+
+  const getDragMode = (
+    chart: echarts.ECharts,
+    x: number,
+    y: number,
+    task: any
+  ): 'move' | 'resize-left' | 'resize-right' => {
+    // 计算块左右边缘的像素位置
+    const leftPx = chart.convertToPixel({ xAxisIndex: 0 }, task.start) as unknown as number
+    const rightPx = chart.convertToPixel({ xAxisIndex: 0 }, task.end) as unknown as number
+    if (Math.abs(x - leftPx) <= EDGE_PX) return 'resize-left'
+    if (Math.abs(x - rightPx) <= EDGE_PX) return 'resize-right'
+    return 'move'
+  }
+
   zr.on('mousedown', (e: any) => {
     const point = [e.offsetX, e.offsetY]
     const time = chartInstance.convertFromPixel({ xAxisIndex: 0 }, point[0]) as unknown as number
@@ -226,57 +249,97 @@ const bindDrag = (chartInstance: echarts.ECharts) => {
     if (!task) return
     // 仅已排程(1)/进行中(2)可拖动
     if (task.status !== 1 && task.status !== 2) return
-    dragState = { taskId: task.id, startMs: task.start, offsetMs: time - task.start }
-    zr.setCursorStyle('grabbing')
+    const mode = getDragMode(chartInstance, e.offsetX, e.offsetY, task)
+    dragState = {
+      taskId: task.id,
+      mode,
+      startMs: task.start,
+      endMs: task.end,
+      offsetMs: time - task.start
+    }
+    zr.setCursorStyle(mode === 'move' ? 'grabbing' : 'col-resize')
   })
   zr.on('mousemove', (e: any) => {
-    if (!dragState) return
     const point = [e.offsetX, e.offsetY]
     const time = chartInstance.convertFromPixel({ xAxisIndex: 0 }, point[0]) as unknown as number
-    const newStart = time - dragState.offsetMs
-    // 基于内存缓存更新块位置（custom series 的 getOption 数据结构不稳定）
-    dataCache = dataCache.map((d) => {
-      if (d.id !== dragState?.taskId) return d
-      const duration = d.end - d.start
-      return { ...d, start: newStart, end: newStart + duration }
-    })
-    chartInstance.setOption({
-      series: [{ data: dataCache.map((d) => [0, d.start, d.end, d.label, d]) }]
-    } as any)
-  })
-  zr.on('mouseup', async () => {
-    if (!dragState) return
-    const { taskId, startMs } = dragState
-    dragState = null
-    zr.setCursorStyle('default')
-    const target = dataCache.find((d) => d.id === taskId)
-    if (!target) return
-    const newStart = target.start
-    const duration = target.end - target.start
-    const changed = Math.abs(newStart - startMs) > 60000
-    if (!changed) return
-    // 本地冲突预检：与其他块重叠则回滚
-    const conflict = dataCache.some((d) => {
-      if (!d || d.id === taskId) return false
-      return newStart < d.end && newStart + duration > d.start
-    })
-    if (conflict) {
-      message.warning('目标位置与其他任务冲突，已回滚')
-      await renderChart()
+    if (dragState) {
+      const { taskId, mode, endMs, offsetMs } = dragState
+      let newStart: number
+      let newEnd: number
+      const target = dataCache.find((d) => d.id === taskId)
+      if (!target) return
+      if (mode === 'resize-left') {
+        // 左边缘拉伸：改开始，结束不变
+        newStart = Math.min(time, endMs - MIN_DURATION)
+        newEnd = endMs
+      } else if (mode === 'resize-right') {
+        // 右边缘拉伸：改结束，开始不变
+        newStart = target.start
+        newEnd = Math.max(time, target.start + MIN_DURATION)
+      } else {
+        // 平移：时长不变
+        newStart = time - offsetMs
+        newEnd = newStart + (endMs - (dragState.startMs || 0))
+      }
+      // 基于内存缓存更新块位置（custom series 的 getOption 数据结构不稳定）
+      dataCache = dataCache.map((d) =>
+        d.id !== taskId ? d : { ...d, start: newStart, end: newEnd }
+      )
+      chartInstance.setOption({
+        series: [{ data: dataCache.map((d) => [0, d.start, d.end, d.label, d]) }]
+      } as any)
       return
     }
-    try {
-      await WorkTaskApi.updatePlanTime({
-        id: taskId,
-        planStartTime: formatDate(new Date(newStart), 'YYYY-MM-DD HH:mm:ss'),
-        planEndTime: formatDate(new Date(newStart + duration), 'YYYY-MM-DD HH:mm:ss')
-      })
-      message.success('调整计划时间成功')
-      await loadData()
-    } catch {
-      await renderChart()
+    // 非拖动：悬停提示（边缘显示 col-resize）
+    const yVal = chartInstance.convertFromPixel({ yAxisIndex: 0 }, point[1]) as unknown as number
+    const inRow = Math.abs(yVal - 0) < 0.6
+    const task = dataCache.find((d) => time >= d.start && time <= d.end && inRow)
+    if (task && (task.status === 1 || task.status === 2)) {
+      const mode = getDragMode(chartInstance, e.offsetX, e.offsetY, task)
+      zr.setCursorStyle(mode === 'move' ? 'grab' : 'col-resize')
+    } else {
+      zr.setCursorStyle('default')
     }
   })
+  zr.on('mouseup', () => {
+    void handleDragEnd(chartInstance)
+  })
+}
+
+const handleDragEnd = async (chartInstance: echarts.ECharts) => {
+  if (!dragState) return
+  const { taskId, startMs, endMs, mode } = dragState
+  dragState = null
+  chartInstance.getZr().setCursorStyle('default')
+  const target = dataCache.find((d) => d.id === taskId)
+  if (!target) return
+  const newStart = target.start
+  const newEnd = target.end
+  const changed = Math.abs(newStart - startMs) > 60000 || Math.abs(newEnd - endMs) > 60000
+  if (!changed) return
+  // 本地冲突预检：与其他块重叠则回滚
+  const conflict = dataCache.some((d) => {
+    if (!d || d.id === taskId) return false
+    return newStart < d.end && newEnd > d.start
+  })
+  if (conflict) {
+    message.warning(
+      mode === 'move' ? '目标位置与其他任务冲突，已回滚' : '拉伸后与其他任务冲突，已回滚'
+    )
+    await renderChart()
+    return
+  }
+  try {
+    await WorkTaskApi.updatePlanTime({
+      id: taskId,
+      planStartTime: formatDate(new Date(newStart), 'YYYY-MM-DD HH:mm:ss'),
+      planEndTime: formatDate(new Date(newEnd), 'YYYY-MM-DD HH:mm:ss')
+    })
+    message.success(mode === 'move' ? '调整计划时间成功' : '调整任务时长成功')
+    await loadData()
+  } catch {
+    await renderChart()
+  }
 }
 
 const handleQuery = () => {
