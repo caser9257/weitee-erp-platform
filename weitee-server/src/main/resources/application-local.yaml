@@ -1,6 +1,14 @@
 server:
   port: 48080
 
+--- #################### MES 模块配置 ####################
+# PaddleOCR 服务（SOP 图片识别）。paddle.ocr.mock=true 时使用 Mock 识别（联调/测试）
+mes:
+  paddle-ocr-url: ${PADDLE_OCR_URL:http://localhost:8866/ocr}
+paddle:
+  ocr:
+    mock: ${PADDLE_OCR_MOCK:true}
+
 --- #################### 数据库相关配�?####################
 spring:
   autoconfigure:
