@@ -14,7 +14,9 @@ const report = (name, ok, extra = '') => {
 
   let updateCount = 0
   page.on('response', async (resp) => {
-    if (resp.url().includes('work-task/update-plan-time')) updateCount++
+    if (resp.url().includes('work-task/update-plan-time')) {
+      updateCount++
+    }
   })
 
   await page.goto(BASE)
@@ -27,13 +29,23 @@ const report = (name, ok, extra = '') => {
   // 幂等前置：重置演示数据（任务 16 回 08-18），保证每次运行起始状态一致
   await page.evaluate(async () => {
     const raw = localStorage.getItem('ACCESS_TOKEN')
-    const token = raw ? JSON.parse(raw).v : ''
-    await fetch('http://localhost:48080/admin-api/mes/work-task/clear-and-reschedule?productionOrderId=990083', {
+    const token = raw ? (() => { const v = JSON.parse(raw).v; return v.startsWith('\"') ? JSON.parse(v) : v })() : ''
+    const resp = await fetch('http://localhost:48080/admin-api/mes/work-task/clear-and-reschedule?productionOrderId=990083', {
       method: 'PUT',
       headers: { Authorization: 'Bearer ' + token }
     })
+    return { status: resp.status, body: (await resp.text()).slice(0, 100) }
   })
-  console.log('IDEMPOTENT PREP DONE')
+  const prepResult = await page.evaluate(async () => {
+    const raw = localStorage.getItem('ACCESS_TOKEN')
+    const token = raw ? (() => { const v = JSON.parse(raw).v; return v.startsWith('\"') ? JSON.parse(v) : v })() : ''
+    const resp = await fetch('http://localhost:48080/admin-api/mes/work-task/clear-and-reschedule?productionOrderId=990083', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    return { status: resp.status, body: (await resp.text()).slice(0, 100) }
+  })
+  console.log('IDEMPOTENT PREP DONE:', JSON.stringify(prepResult))
 
   await page.goto(`${BASE}/mes/work-task-gantt`)
   await page.waitForTimeout(6000)
@@ -112,7 +124,16 @@ const report = (name, ok, extra = '') => {
   report('跨边界拖拽触发保存', updateCount >= 1, `updateCount=${updateCount}`)
 
   const before2 = updateCount
-  // 重新扫描块位置（跨边界拖拽后块已移位）
+  // 跨边界拖拽后块已出画布：先恢复数据并重新查询，再验证拖拽功能仍正常（状态清理效果）
+  await page.evaluate(async () => {
+    const raw = localStorage.getItem('ACCESS_TOKEN')
+    const token = raw ? (() => { const v = JSON.parse(raw).v; return v.startsWith('"') ? JSON.parse(v) : v })() : ''
+    await fetch('http://localhost:48080/admin-api/mes/work-task/clear-and-reschedule?productionOrderId=990083', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token }
+    })
+  })
+  await query()
   const block2 = await page.evaluate(() => {
     const canvas = document.querySelector('.gantt-chart canvas')
     const r = canvas.getBoundingClientRect()
@@ -146,7 +167,7 @@ const report = (name, ok, extra = '') => {
   // 恢复演示数据：任务 16 重置回 08-18（避免污染用户体验数据）
   await page.evaluate(async () => {
     const raw = localStorage.getItem('ACCESS_TOKEN')
-    const token = raw ? JSON.parse(raw).v : ''
+    const token = raw ? (() => { const v = JSON.parse(raw).v; return v.startsWith('\"') ? JSON.parse(v) : v })() : ''
     await fetch('http://localhost:48080/admin-api/mes/work-task/clear-and-reschedule?productionOrderId=990083', {
       method: 'PUT',
       headers: { Authorization: 'Bearer ' + token }

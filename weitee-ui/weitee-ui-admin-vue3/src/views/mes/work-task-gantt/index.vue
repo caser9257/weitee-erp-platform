@@ -292,6 +292,8 @@ const bindDrag = (chartInstance: echarts.ECharts) => {
       series: [{ data: dataCache.map((d) => [0, d.start, d.end, d.label, d.status, d.id]) }]
     } as any)
   }
+
+  const onWinUp = () => {
     if (!dragState) return
     void handleDragEnd(chartInstance)
     window.removeEventListener('mousemove', onWinMove)
