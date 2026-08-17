@@ -57,20 +57,12 @@
           </div>
           <div class="approval-scheme-form__rule-json">
             <el-form-item label="条件配置">
-              <el-input
-                v-model="rule.conditionJson"
-                type="textarea"
-                :rows="2"
-                placeholder='JSON，如 {"amount": {"operator": "gte", "value": 10000}}'
-                class="approval-scheme-form__json-input"
-              />
+              <ApprovalConditionDesigner v-model="rule.conditionJson" class="approval-scheme-form__condition" />
             </el-form-item>
-            <el-form-item label="流程配置">
+            <el-form-item label="流程定义Key">
               <el-input
                 v-model="rule.processJson"
-                type="textarea"
-                :rows="2"
-                placeholder='JSON，如 {"processDefinitionKey": "erp_purchase_in_approval"}'
+                placeholder="如 erp_purchase_in_approval（对应 BPM 后台已部署的流程定义 Key）"
                 class="approval-scheme-form__json-input"
               />
             </el-form-item>
@@ -87,6 +79,7 @@
 
 <script setup lang="ts">
 import { ApprovalSchemeApi, BpmApprovalRuleVO, BpmApprovalSchemeSaveReqVO } from '@/api/bpm/approval/scheme'
+import ApprovalConditionDesigner from './ApprovalConditionDesigner.vue'
 
 /** 审批方案表单 */
 defineOptions({ name: 'ApprovalSchemeForm' })
