@@ -9,6 +9,7 @@ import cn.weitee.erp.module.bpm.controller.admin.approval.vo.scene.BpmApprovalSc
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalSceneDO;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSceneMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeMapper;
+import cn.weitee.erp.module.system.api.permission.PermissionApi;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,9 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
 
     @Resource
     private BpmApprovalSchemeMapper approvalSchemeMapper;
+
+    @Resource
+    private PermissionApi permissionApi;
 
     @Override
     public PageResult<BpmApprovalSceneRespVO> getScenePage(BpmApprovalScenePageReqVO pageReqVO) {
@@ -124,8 +128,9 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
      */
     private void validateSceneOwnership(BpmApprovalSceneDO scene) {
         Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
-        // 如果 ownerUserId 为空或者是当前用户，则允许操作
-        if (scene.getOwnerUserId() == null || scene.getOwnerUserId().equals(currentUserId)) {
+        // 如果 ownerUserId 为空（含 0 兜底）或者是当前用户，则允许操作
+        if (scene.getOwnerUserId() == null || scene.getOwnerUserId() == 0L
+                || scene.getOwnerUserId().equals(currentUserId)) {
             return;
         }
         // 如果用户是流程管理员角色，则允许操作
@@ -137,11 +142,15 @@ public class BpmApprovalSceneServiceImpl implements BpmApprovalSceneService {
 
     /**
      * 判断用户是否为流程管理员
+     *
+     * 拥有审批场景或审批方案任一管理权限即视为流程管理员；超管自动放行
      */
     private boolean isBpmAdmin(Long userId) {
-        // TODO: 调用权限服务判断用户是否为流程管理员角色
-        // 这里需要根据实际情况实现
-        return false;
+        if (userId == null) {
+            return false;
+        }
+        return permissionApi.hasAnyPermissions(userId,
+                "bpm:approval-scene:create", "bpm:approval-scheme:create");
     }
 
     private void validateSceneCodeUnique(Long id, String sceneCode) {

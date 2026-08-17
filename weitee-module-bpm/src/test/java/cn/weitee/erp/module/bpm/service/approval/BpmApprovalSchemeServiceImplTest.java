@@ -26,8 +26,14 @@ import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.APPROVAL_SCHEME_
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import cn.weitee.erp.module.system.api.permission.PermissionApi;
+import org.springframework.boot.test.mock.mockito.MockBean;
+
 @Import(BpmApprovalSchemeServiceImpl.class)
 class BpmApprovalSchemeServiceImplTest extends BaseDbUnitTest {
+
+    @MockBean
+    private PermissionApi permissionApi;
 
     @Resource
     private BpmApprovalSchemeServiceImpl approvalSchemeService;

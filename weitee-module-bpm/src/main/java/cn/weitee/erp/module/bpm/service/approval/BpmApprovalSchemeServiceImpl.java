@@ -18,6 +18,7 @@ import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSceneMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeVersionMapper;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
+import cn.weitee.erp.module.system.api.permission.PermissionApi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -51,6 +52,9 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
 
     @Resource
     private BpmApprovalSceneMapper bpmApprovalSceneMapper;
+
+    @Resource
+    private PermissionApi permissionApi;
 
     @Override
     public PageResult<BpmApprovalSchemeRespVO> getSchemePage(BpmApprovalSchemePageReqVO pageReqVO) {
@@ -291,9 +295,24 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
                 || scheme.getOwnerUserId().equals(currentUserId)) {
             return;
         }
-        // TODO: 这里可以添加更复杂的权限校验逻辑，如检查用户角色
-        // 暂时简单校验：只有归属用户才能操作
+        // 如果用户是流程管理员（拥有审批场景/方案管理权限），则允许操作
+        if (isBpmAdmin(currentUserId)) {
+            return;
+        }
         throw exception(APPROVAL_SCENE_NO_PERMISSION);
+    }
+
+    /**
+     * 判断用户是否为流程管理员
+     *
+     * 拥有审批场景或审批方案任一管理权限即视为流程管理员；超管自动放行
+     */
+    private boolean isBpmAdmin(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        return permissionApi.hasAnyPermissions(userId,
+                "bpm:approval-scene:create", "bpm:approval-scheme:create");
     }
 
     private BpmApprovalSchemeVersionDO validateVersionExists(Long id) {
