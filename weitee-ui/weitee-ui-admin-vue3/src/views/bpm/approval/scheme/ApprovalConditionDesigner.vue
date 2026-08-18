@@ -1,6 +1,6 @@
 <template>
   <div class="approval-condition-designer">
-    <div v-if="conditions.length" class="approval-condition-designer__head">
+    <div v-if="conditions.length && !advancedOnly" class="approval-condition-designer__head">
       <div class="approval-condition-designer__logic">
         <span class="approval-condition-designer__logic-label">条件逻辑</span>
         <el-radio-group v-model="logic" size="small" @change="emitChange">
@@ -10,8 +10,12 @@
       </div>
     </div>
 
-    <div v-if="conditions.length" class="approval-condition-designer__rows">
-      <div v-for="(item, index) in conditions" :key="index" class="approval-condition-designer__row">
+    <div v-if="conditions.length && !advancedOnly" class="approval-condition-designer__rows">
+      <div
+        v-for="(item, index) in conditions"
+        :key="index"
+        class="approval-condition-designer__row"
+      >
         <el-select
           v-model="item.field"
           placeholder="选择字段"
@@ -21,10 +25,25 @@
           class="approval-condition-designer__field"
           @change="emitChange"
         >
-          <el-option v-for="opt in fieldOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+          <el-option
+            v-for="opt in fieldOptions"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
         </el-select>
-        <el-select v-model="item.operator" placeholder="操作符" class="approval-condition-designer__operator" @change="emitChange">
-          <el-option v-for="opt in operatorOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+        <el-select
+          v-model="item.operator"
+          placeholder="操作符"
+          class="approval-condition-designer__operator"
+          @change="emitChange"
+        >
+          <el-option
+            v-for="opt in operatorOptions"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
         </el-select>
         <el-input
           v-model="item.value"
@@ -33,16 +52,22 @@
           class="approval-condition-designer__value"
           :type="isRangeOperator(item.operator) ? 'textarea' : 'text'"
           :rows="1"
-          @change="emitChange"
+          @input="emitChange"
         />
-        <el-button link type="danger" :disabled="conditions.length <= 1" @click="removeCondition(index)">
+        <el-button
+          class="approval-condition-designer__remove"
+          link
+          type="danger"
+          :disabled="conditions.length <= 1"
+          @click="removeCondition(index)"
+        >
           <Icon icon="ep:delete" />
         </el-button>
       </div>
     </div>
 
     <div class="approval-condition-designer__actions">
-      <el-button type="primary" plain size="small" @click="addCondition">
+      <el-button v-if="!advancedOnly" type="primary" plain size="small" @click="addCondition">
         <Icon icon="ep:plus" class="mr-5px" />
         添加条件
       </el-button>
@@ -58,9 +83,13 @@
           type="textarea"
           :rows="5"
           placeholder='{"conditions":[{"field":"amount","operator":">","value":10000}],"logic":"AND"}'
+          @input="advancedJsonError = ''"
           @change="applyAdvancedJson"
+          @blur="applyAdvancedJson"
         />
-        <div class="approval-condition-designer__advanced-tip">高级模式可直接编辑完整 JSON，支持嵌套条件组（AND/OR）</div>
+        <span v-if="advancedJsonError" class="approval-condition-designer__advanced-error">
+          {{ advancedJsonError }}
+        </span>
       </div>
     </el-collapse-transition>
   </div>
@@ -73,8 +102,10 @@ defineOptions({ name: 'ApprovalConditionDesigner' })
 interface ConditionItem {
   field: string
   operator: string
-  value: any
+  value: string | number
 }
+
+type JsonObject = Record<string, unknown>
 
 const fieldOptions = [
   { value: 'amount', label: '金额 amount' },
@@ -106,11 +137,129 @@ const conditions = ref<ConditionItem[]>([])
 const logic = ref<'AND' | 'OR'>('AND')
 const advancedVisible = ref(false)
 const advancedJson = ref('')
+const advancedOnly = ref(false)
+const advancedJsonError = ref('')
 
-const isRangeOperator = (operator: string) => operator === 'in' || operator === 'not_in' || operator === 'between'
+const isRangeOperator = (operator: string) =>
+  operator === 'in' || operator === 'not_in' || operator === 'between'
+const numericFields = new Set(['amount', 'deptId', 'projectId', 'bizId', 'startUserId', 'organId'])
+const numericOperators = new Set([
+  '==',
+  '!=',
+  '>',
+  '>=',
+  '<',
+  '<=',
+  'equals',
+  'not_equals',
+  'gt',
+  'gte',
+  'lt',
+  'lte'
+])
+
+const asJsonObject = (value: unknown): JsonObject | undefined => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined
+  }
+  return value as JsonObject
+}
+
+const isLeafCondition = (value: unknown): boolean => {
+  const object = asJsonObject(value)
+  return typeof object?.field === 'string' && typeof object?.operator === 'string'
+}
+
+const isConditionNode = (value: unknown): boolean => {
+  const object = asJsonObject(value)
+  if (isLeafCondition(object)) {
+    return true
+  }
+  if (!object || !Array.isArray(object.conditions)) {
+    return false
+  }
+  const normalizedLogic = String(object.logic ?? '').toUpperCase()
+  return (
+    (normalizedLogic === 'AND' || normalizedLogic === 'OR') &&
+    object.conditions.every((item) => isConditionNode(item))
+  )
+}
+
+const isConditionGroup = (value: unknown): boolean => {
+  const object = asJsonObject(value)
+  return Boolean(object && Array.isArray(object.conditions) && isConditionNode(object))
+}
+
+const normalizeValue = (item: ConditionItem) => {
+  if (
+    !numericFields.has(item.field) ||
+    !numericOperators.has(item.operator) ||
+    typeof item.value !== 'string'
+  ) {
+    return item.value
+  }
+  const value = item.value.trim()
+  if (!value) {
+    return item.value
+  }
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : item.value
+}
+
+const toEditorValue = (value: unknown): string | number => {
+  if (typeof value === 'number' || typeof value === 'string') {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.join(',')
+  }
+  return value == null ? '' : String(value)
+}
+
+const applyFlatJson = (parsed: unknown) => {
+  const object = asJsonObject(parsed)
+  if (
+    !object ||
+    !Array.isArray(object.conditions) ||
+    object.conditions.some((item) => !isLeafCondition(item))
+  ) {
+    conditions.value = []
+    logic.value = 'AND'
+    advancedOnly.value = true
+    advancedVisible.value = true
+    return false
+  }
+  conditions.value = object.conditions.map((item) => ({
+    field: String(item.field ?? ''),
+    operator: String(item.operator ?? '=='),
+    value: toEditorValue(item.value)
+  }))
+  logic.value = String(object.logic ?? 'AND').toUpperCase() === 'OR' ? 'OR' : 'AND'
+  advancedOnly.value = false
+  return true
+}
+
+const applyParsedJson = (parsed: unknown) => {
+  if (!isConditionGroup(parsed)) {
+    advancedJsonError.value = '高级 JSON 格式无效，未应用'
+    return false
+  }
+  if (applyFlatJson(parsed)) {
+    advancedJsonError.value = ''
+    return true
+  }
+  // 嵌套条件组由后端递归求值，保留在高级编辑模式，避免丢失结构。
+  conditions.value = []
+  logic.value = String((parsed as JsonObject).logic).toUpperCase() === 'OR' ? 'OR' : 'AND'
+  advancedOnly.value = true
+  advancedVisible.value = true
+  advancedJsonError.value = ''
+  return true
+}
 
 const addCondition = () => {
   conditions.value.push({ field: '', operator: '==', value: '' })
+  emitChange()
 }
 
 const removeCondition = (index: number) => {
@@ -119,27 +268,31 @@ const removeCondition = (index: number) => {
 }
 
 const emitChange = () => {
-  const payload = { conditions: conditions.value, logic: logic.value }
+  if (advancedOnly.value) {
+    return
+  }
+  const serializedConditions = conditions.value.map((item) => ({
+    field: item.field,
+    operator: item.operator,
+    value: normalizeValue(item)
+  }))
+  const payload = { conditions: serializedConditions, logic: logic.value }
   const json = JSON.stringify(payload)
   emit('update:modelValue', json)
   advancedJson.value = json
+  advancedJsonError.value = ''
 }
 
 /** 应用高级 JSON */
 const applyAdvancedJson = () => {
   try {
-    const parsed = JSON.parse(advancedJson.value)
-    if (parsed && Array.isArray(parsed.conditions)) {
-      conditions.value = parsed.conditions.map((c: any) => ({
-        field: String(c.field ?? ''),
-        operator: String(c.operator ?? '=='),
-        value: c.value ?? ''
-      }))
-      logic.value = String(parsed.logic ?? 'AND').toUpperCase() === 'OR' ? 'OR' : 'AND'
+    const parsed: unknown = JSON.parse(advancedJson.value)
+    if (!applyParsedJson(parsed)) {
+      return
     }
     emit('update:modelValue', advancedJson.value)
   } catch {
-    // 非法 JSON 不应用，保留原文由后端兜底
+    advancedJsonError.value = '高级 JSON 格式无效，未应用'
   }
 }
 
@@ -151,6 +304,9 @@ watch(
       conditions.value = []
       logic.value = 'AND'
       advancedJson.value = ''
+      advancedOnly.value = false
+      advancedVisible.value = false
+      advancedJsonError.value = ''
       return
     }
     // 内部已同步（由本组件 emit 回写）则跳过重建
@@ -158,23 +314,21 @@ watch(
       return
     }
     try {
-      const parsed = JSON.parse(val)
-      if (parsed && Array.isArray(parsed.conditions)) {
-        conditions.value = parsed.conditions.map((c: any) => ({
-          field: String(c.field ?? ''),
-          operator: String(c.operator ?? '=='),
-          value: c.value ?? ''
-        }))
-        logic.value = String(parsed.logic ?? 'AND').toUpperCase() === 'OR' ? 'OR' : 'AND'
-      } else {
+      const parsed: unknown = JSON.parse(val)
+      if (!applyParsedJson(parsed)) {
         conditions.value = []
         logic.value = 'AND'
+        advancedOnly.value = true
+        advancedVisible.value = true
       }
       advancedJson.value = val
     } catch {
       conditions.value = []
       logic.value = 'AND'
       advancedJson.value = val
+      advancedOnly.value = true
+      advancedVisible.value = true
+      advancedJsonError.value = '高级 JSON 格式无效，未应用'
     }
   },
   { immediate: true }
@@ -207,21 +361,33 @@ defineExpose({ emitChange })
   }
 
   &__row {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(160px, 0.9fr) minmax(140px, 0.75fr) minmax(180px, 1.5fr) auto;
     align-items: flex-start;
     gap: 8px;
   }
 
   &__field {
-    flex: 0 0 180px;
+    min-width: 0;
   }
 
   &__operator {
-    flex: 0 0 150px;
+    min-width: 0;
   }
 
   &__value {
-    flex: 1;
+    min-width: 0;
+  }
+
+  &__remove {
+    justify-self: end;
+  }
+
+  &__advanced-error {
+    display: block;
+    margin-top: 4px;
+    color: var(--erp-danger-600);
+    font-size: 12px;
   }
 
   &__actions {
@@ -234,11 +400,40 @@ defineExpose({ emitChange })
   &__advanced {
     margin-top: 8px;
   }
+}
 
-  &__advanced-tip {
-    margin-top: 4px;
-    font-size: 12px;
-    color: var(--erp-slate-400);
+@media (max-width: 1024px) {
+  .approval-condition-designer {
+    &__row {
+      grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.9fr) auto;
+    }
+
+    &__value {
+      grid-column: 1 / -1;
+    }
+
+    &__remove {
+      grid-column: 3;
+      grid-row: 1;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .approval-condition-designer {
+    &__row {
+      grid-template-columns: 1fr;
+    }
+
+    &__value,
+    &__remove {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    &__remove {
+      justify-self: start;
+    }
   }
 }
 </style>
