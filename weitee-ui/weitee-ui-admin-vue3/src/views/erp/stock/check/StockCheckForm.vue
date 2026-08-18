@@ -30,6 +30,23 @@
             <el-form-item label="盘点单号" prop="no">
               <el-input v-model="formData.no" disabled placeholder="保存时自动生成" />
             </el-form-item>
+            <el-form-item label="归属部门" prop="deptId">
+              <div class="stock-check-form__dept-picker">
+                <el-input
+                  :model-value="formData.deptName || (formData.deptId ? `部门#${formData.deptId}` : '')"
+                  placeholder="默认取创建人所属部门"
+                  readonly
+                  :disabled="disabled"
+                >
+                  <template #append>
+                    <el-button :disabled="disabled" @click="openDeptSelect">
+                      <Icon icon="ep:office-building" />
+                      选择
+                    </el-button>
+                  </template>
+                </el-input>
+              </div>
+            </el-form-item>
             <el-form-item label="盘点时间" prop="checkTime">
               <el-date-picker
                 v-model="formData.checkTime"
@@ -65,6 +82,8 @@
       </div>
     </div>
 
+    <DeptSelectForm ref="deptSelectFormRef" :multiple="false" :check-strictly="true" @confirm="handleDeptSelectConfirm" />
+
     <template #footer>
       <div class="stock-check-form__footer">
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -84,6 +103,8 @@
 
 <script setup lang="ts">
 import { StockCheckApi, StockCheckVO } from '@/api/erp/stock/check'
+import * as DeptApi from '@/api/system/dept'
+import DeptSelectForm from '@/components/DeptSelectForm/index.vue'
 import StockCheckItemForm from './components/StockCheckItemForm.vue'
 
 defineOptions({ name: 'StockCheckForm' })
@@ -105,6 +126,8 @@ type StockCheckItemRow = {
 
 type StockCheckFormData = Partial<StockCheckVO> & {
   no?: string
+  deptId?: number
+  deptName?: string
   checkTime?: string | number
   remark?: string
   fileUrl?: string
@@ -117,6 +140,8 @@ const message = useMessage()
 const createDefaultFormData = (): StockCheckFormData => ({
   id: undefined,
   no: '',
+  deptId: undefined,
+  deptName: '',
   checkTime: undefined,
   remark: undefined,
   fileUrl: '',
@@ -131,6 +156,39 @@ const detailLoadError = ref('')
 const formData = ref<StockCheckFormData>(createDefaultFormData())
 const formRef = ref()
 const itemFormRef = ref()
+const deptSelectFormRef = ref()
+const deptOptions = ref<DeptApi.DeptVO[]>([])
+
+/** 打开部门选择 */
+const openDeptSelect = () => {
+  const selected = deptOptions.value.filter((item) => item.id === formData.value.deptId)
+  deptSelectFormRef.value.open(selected)
+}
+
+/** 部门选择确认（单选） */
+const handleDeptSelectConfirm = (depts: DeptApi.DeptVO[]) => {
+  if (depts.length > 0) {
+    formData.value.deptId = depts[0].id
+    formData.value.deptName = depts[0].name
+  }
+}
+
+/** 根据 deptId 回显部门名 */
+const resolveDeptName = async () => {
+  if (!formData.value.deptId) {
+    formData.value.deptName = ''
+    return
+  }
+  if (deptOptions.value.length === 0) {
+    try {
+      deptOptions.value = await DeptApi.getSimpleDeptList()
+    } catch {
+      return
+    }
+  }
+  const found = deptOptions.value.find((item) => item.id === formData.value.deptId)
+  formData.value.deptName = found?.name || ''
+}
 
 const dialogTitle = computed(() => t('action.' + formType.value))
 const isDetailMode = computed(() => formType.value === 'detail')
@@ -164,6 +222,7 @@ const open = async (type: 'create' | 'update' | 'detail', id?: number) => {
       ...createDefaultFormData(),
       ...(await StockCheckApi.getStockCheck(id))
     }
+    await resolveDeptName()
     itemFormRef.value?.clearValidate?.()
   } catch (error: any) {
     detailLoadError.value = error?.message || '详情加载失败，请重试'
@@ -239,6 +298,10 @@ const handleDialogClosed = () => {
 }
 
 .stock-check-form__field {
+  width: 100%;
+}
+
+.stock-check-form__dept-picker {
   width: 100%;
 }
 

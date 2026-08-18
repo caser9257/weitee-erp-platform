@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.number.MoneyUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
+import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.check.ErpStockCheckPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.check.ErpStockCheckSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.ErpWarehouseSaveReqVO;
@@ -93,8 +94,11 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         }
 
         // 2.1 插入盘点单（使用DRAFT状态）
+        Long deptId = createReqVO.getDeptId() != null
+                ? createReqVO.getDeptId() : SecurityFrameworkUtils.getLoginUserDeptId();
         ErpStockCheckDO stockCheck = BeanUtils.toBean(createReqVO, ErpStockCheckDO.class, in -> in
                 .setNo(no).setStatus(ErpStockCheckStatusEnum.DRAFT.getStatus())
+                .setDeptId(deptId)
                 .setTotalCount(getSumValue(stockCheckItems, ErpStockCheckItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockCheckItems, ErpStockCheckItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockCheckMapper.insert(stockCheck);

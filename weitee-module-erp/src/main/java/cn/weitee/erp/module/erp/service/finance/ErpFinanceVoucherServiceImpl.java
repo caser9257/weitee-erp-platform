@@ -39,7 +39,6 @@ import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherAmountSourceEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherEntryDirectionEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
-import cn.weitee.erp.module.erp.enums.stock.ErpStockCheckStatusEnum;
 import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseInService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseReturnService;
@@ -769,7 +768,7 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             }
             return new VoucherSource(stockCheck.getNo(),
                     defaultTime(stockCheck.getSnapshotTime(), stockCheck.getCreateTime(), stockCheck.getUpdateTime()),
-                    defaultAmount(stockCheck.getTotalPrice()).abs(), stockCheck.getRemark());
+                    defaultAmount(stockCheck.getTotalPrice()).abs(), stockCheck.getRemark(), stockCheck.getDeptId());
         }
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.PURCHASE_IN.getType())) {
             ErpPurchaseInDO purchaseIn = purchaseInService.getPurchaseIn(bizId);
@@ -849,19 +848,6 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
             return new VoucherSource(expense.getNo(),
                     defaultTime(expense.getExpenseTime(), expense.getCreateTime(), expense.getUpdateTime()),
                     defaultAmount(expense.getExpensePrice()), expense.getRemark(), expense.getDeptId());
-        }
-        if (ObjectUtil.equal(bizType, ErpBizTypeEnum.STOCK_CHECK.getType())) {
-            ErpStockCheckDO stockCheck = stockCheckMapper.selectById(bizId);
-            if (stockCheck == null) {
-                throw exception(FINANCE_VOUCHER_NOT_EXISTS);
-            }
-            if (!ObjectUtil.equal(stockCheck.getStatus(), ErpStockCheckStatusEnum.APPROVED.getStatus())
-                    && !ObjectUtil.equal(stockCheck.getStatus(), ErpStockCheckStatusEnum.CLOSED.getStatus())) {
-                throw exception(FINANCE_VOUCHER_SOURCE_STATUS_INVALID, stockCheck.getNo());
-            }
-            return new VoucherSource(stockCheck.getNo(),
-                    defaultTime(stockCheck.getCheckTime(), stockCheck.getCreateTime(), stockCheck.getUpdateTime()),
-                    defaultAmount(stockCheck.getTotalPrice()).abs(), stockCheck.getRemark());
         }
         // 固定资产折旧 / 无形资产摊销 / 研发无形资产摊销
         if (ObjectUtil.equal(bizType, ErpBizTypeEnum.ASSET_DEPRECIATION.getType())

@@ -4,6 +4,8 @@ import request from '@/config/axios'
 export interface StockCheckVO {
   id: number // 盘点编号
   no: string // 盘点单号
+  deptId?: number // 归属部门ID（数据权限）
+  deptName?: string // 归属部门名称
   checkTime: Date // 盘点时间
   totalCount: number // 合计数量
   totalPrice: number // 合计金额，单位：元
