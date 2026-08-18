@@ -8,6 +8,8 @@ import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalInstanceSnaps
 import cn.weitee.erp.module.bpm.dal.dataobject.approval.BpmApprovalRecordDO;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalInstanceSnapshotStatusEnum;
 import cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
+import cn.weitee.erp.module.bpm.service.approval.generic.GenericApprovalConfigService;
+import cn.weitee.erp.module.bpm.service.approval.generic.GenericApprovalResultHandler;
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
 import cn.weitee.erp.module.bpm.service.approval.handler.SnapshotAwareApprovalResultHandler;
 import cn.weitee.erp.module.bpm.service.message.BpmMessageService;
@@ -41,6 +43,12 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
 
     private Map<String, ApprovalResultHandler> resultHandlerMap;
 
+    @Resource
+    private GenericApprovalConfigService genericConfigService;
+
+    @Resource
+    private GenericApprovalResultHandler genericApprovalResultHandler;
+
     /**
      * 注入所有 ApprovalResultHandler
      */
@@ -66,8 +74,11 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
             return;
         }
 
-        // 2. 获取结果处理器
+        // 2. 获取结果处理器（精确匹配；未命中时兜底通用审批接入）
         ApprovalResultHandler handler = resultHandlerMap.get(snapshot.getSceneCode());
+        if (handler == null && genericConfigService.isGenericEnabled(snapshot.getSceneCode())) {
+            handler = genericApprovalResultHandler;
+        }
         if (handler == null) {
             log.warn("[onApplicationEvent][场景({}) 找不到结果处理器]", snapshot.getSceneCode());
             return;
@@ -107,7 +118,9 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         // 1. 先调用结果处理器（业务状态回写）
         //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
-            if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
+            if (handler instanceof GenericApprovalResultHandler genericHandler) {
+                genericHandler.onApproveWithScene(snapshot.getSceneCode(), bizId, processInstanceId, snapshotId, reason);
+            } else if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
                 snapshotAwareHandler.onApproveWithSnapshot(bizId, processInstanceId, snapshotId, reason);
             } else {
                 handler.onApprove(bizId, processInstanceId, reason);
@@ -151,7 +164,9 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         // 1. 先调用结果处理器（业务状态回写）
         //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
-            if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
+            if (handler instanceof GenericApprovalResultHandler genericHandler) {
+                genericHandler.onRejectWithScene(snapshot.getSceneCode(), bizId, processInstanceId, snapshotId, reason);
+            } else if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
                 snapshotAwareHandler.onRejectWithSnapshot(bizId, processInstanceId, snapshotId, reason);
             } else {
                 handler.onReject(bizId, processInstanceId, reason);
@@ -196,7 +211,9 @@ public class BpmApprovalEventDispatcher implements ApplicationListener<BpmProces
         // 1. 先调用结果处理器（业务状态回写）
         //    如果处理器失败，快照保持"审批中"状态，避免快照与业务状态不一致
         try {
-            if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
+            if (handler instanceof GenericApprovalResultHandler genericHandler) {
+                genericHandler.onCancelWithScene(snapshot.getSceneCode(), bizId, processInstanceId, snapshotId, reason);
+            } else if (handler instanceof SnapshotAwareApprovalResultHandler snapshotAwareHandler) {
                 snapshotAwareHandler.onCancelWithSnapshot(bizId, processInstanceId, snapshotId, reason);
             } else {
                 handler.onCancel(bizId, processInstanceId, reason);
