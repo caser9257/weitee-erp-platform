@@ -13,6 +13,7 @@ export interface BpmApprovalSceneVO {
   ownerUserId?: number
   status?: number
   remark?: string
+  genericConfig?: string
   createTime?: string
 }
 
@@ -27,6 +28,7 @@ export interface BpmApprovalSceneSaveReqVO {
   activeSchemeId?: number
   status?: number
   remark?: string
+  genericConfig?: string
 }
 
 // 审批场景 API
