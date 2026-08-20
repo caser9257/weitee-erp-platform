@@ -7,6 +7,9 @@ import cn.weitee.erp.module.system.api.dept.DeptApi;
 import cn.weitee.erp.module.system.api.dept.dto.DeptRespDTO;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import cn.weitee.erp.module.system.api.user.dto.AdminUserRespDTO;
+import cn.weitee.erp.module.system.dal.dataobject.dept.DeptDO;
+import cn.weitee.erp.framework.common.util.object.BeanUtils;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.Resource;
 import java.util.HashSet;
@@ -19,12 +22,15 @@ import java.util.Set;
  *
  * @author jason
  */
+@Slf4j
 public abstract class AbstractBpmTaskCandidateDeptLeaderStrategy implements BpmTaskCandidateStrategy {
 
     @Resource
     protected DeptApi deptApi;
     @Resource
     protected AdminUserApi adminUserApi;
+    @Resource
+    protected cn.weitee.erp.module.system.dal.mysql.dept.DeptMapper deptMapper;
 
     /**
      * 获得指定层级的部门负责人，只有第 level 的负责人
@@ -84,11 +90,32 @@ public abstract class AbstractBpmTaskCandidateDeptLeaderStrategy implements BpmT
      * @param startUserId 发起人 Id
      */
     protected DeptRespDTO getStartUserDept(Long startUserId) {
-        AdminUserRespDTO startUser = adminUserApi.getUser(startUserId);
-        if (startUser.getDeptId() == null) { // 找不到部门
+        try {
+            AdminUserRespDTO startUser = adminUserApi.getUser(startUserId);
+            log.info("[getStartUserDept][startUserId={}, startUser={}]", startUserId, startUser);
+            if (startUser == null) {
+                return null;
+            }
+            if (startUser.getDeptId() == null) { // 找不到部门
+                log.info("[getStartUserDept][startUserId={}, deptId=null]", startUserId);
+                return null;
+            }
+            DeptRespDTO dept = deptApi.getDept(startUser.getDeptId());
+            // fallback：deptApi.getDept 可能被数据权限拦截器过滤导致返回 null
+            // 直接用 deptMapper 绕过服务层查询
+            if (dept == null) {
+                log.info("[getStartUserDept][deptApi.getDept(null), fallback to deptMapper]");
+                cn.weitee.erp.module.system.dal.dataobject.dept.DeptDO deptDO = deptMapper.selectById(startUser.getDeptId());
+                if (deptDO != null) {
+                    dept = BeanUtils.toBean(deptDO, DeptRespDTO.class);
+                }
+            }
+            log.info("[getStartUserDept][startUserId={}, deptId={}, dept={}]", startUserId, startUser.getDeptId(), dept);
+            return dept;
+        } catch (Exception e) {
+            log.error("[getStartUserDept][startUserId={}, exception={}]", startUserId, e.getMessage(), e);
             return null;
         }
-        return deptApi.getDept(startUser.getDeptId());
     }
 
 }
