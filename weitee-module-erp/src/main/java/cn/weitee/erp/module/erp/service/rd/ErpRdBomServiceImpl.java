@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.rd;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPageReqVO;
@@ -11,6 +12,8 @@ import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomItemSubstituteDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
+import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomItemSubstituteMapper;
@@ -20,17 +23,28 @@ import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
 import cn.weitee.erp.module.erp.dal.mysql.rd.ErpRdBomItemSubstituteMapper;
 import cn.weitee.erp.module.erp.enums.mrp.ErpBomStatusEnum;
 import cn.weitee.erp.module.erp.enums.rd.ErpRdBomStatusEnum;
+import cn.weitee.erp.module.erp.enums.rd.RdBomIntegrityIssueType;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.util.BomDesignatorUtils;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
@@ -40,6 +54,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXIST
 
 @Service
 @Validated
+@Slf4j
 public class ErpRdBomServiceImpl implements ErpRdBomService {
 
     private static final Pattern RD_BOM_VERSION_PATTERN = Pattern.compile("^[Vv](\\d+)(?:\\.\\d+)?$");
@@ -58,6 +73,8 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     private ErpRdBomItemSubstituteMapper erpRdBomItemSubstituteMapper;
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpRdBomChangeLogService changeLogService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -78,15 +95,42 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         ErpRdBomDO existed = validateRdBomExists(updateReqVO.getId());
         validateBomItems(updateReqVO.getItems());
         productService.validProductList(List.of(updateReqVO.getProductId()));
+        List<ErpRdBomItemDO> existedItems = erpRdBomItemMapper.selectListByBomId(updateReqVO.getId());
+        String oldDetail = buildChangeSnapshot(existed, existedItems);
         erpRdBomMapper.updateById(BeanUtils.toBean(updateReqVO, ErpRdBomDO.class)
                 .setVersion(existed.getVersion())
                 .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus())
                 .setPublishedBomId(existed.getPublishedBomId())
                 .setLastPublishedTime(existed.getLastPublishedTime()));
-        List<ErpRdBomItemDO> existedItems = erpRdBomItemMapper.selectListByBomId(updateReqVO.getId());
         erpRdBomItemSubstituteMapper.deleteByBomItemIds(convertSet(existedItems, ErpRdBomItemDO::getId));
         erpRdBomItemMapper.deleteByBomId(updateReqVO.getId());
         saveRdBomItems(updateReqVO.getId(), updateReqVO.getItems());
+        List<ErpRdBomItemDO> newItems = erpRdBomItemMapper.selectListByBomId(updateReqVO.getId());
+        ErpRdBomDO updated = erpRdBomMapper.selectById(updateReqVO.getId());
+        String newDetail = buildChangeSnapshot(updated, newItems);
+        String diff = "旧值: " + oldDetail + " | 新值: " + newDetail;
+        try {
+            changeLogService.logChange(updateReqVO.getId(), "UPDATE", diff);
+        } catch (Exception e) {
+            log.warn("[updateRdBom] 记录变更日志失败，bomId={}", updateReqVO.getId(), e);
+        }
+    }
+
+    private String buildChangeSnapshot(ErpRdBomDO bom, List<ErpRdBomItemDO> items) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("bomCode=").append(bom.getBomCode())
+                .append(",productId=").append(bom.getProductId())
+                .append(",remark=").append(bom.getRemark())
+                .append(",items=").append(items != null ? items.size() : 0).append("[");
+        if (items != null) {
+            for (ErpRdBomItemDO item : items) {
+                sb.append("{materialId=").append(item.getMaterialId())
+                        .append(",qty=").append(item.getUsageQty())
+                        .append(",designator=").append(item.getReferenceDesignator()).append("},");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     @Override
@@ -102,6 +146,46 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     @Override
     public ErpRdBomDO getRdBom(Long id) {
         return erpRdBomMapper.selectById(id);
+    }
+
+    @Override
+    public ErpRdBomDO getLatestRdBomByProductId(Long productId) {
+        if (productId == null) {
+            return null;
+        }
+        List<ErpRdBomDO> bomList = erpRdBomMapper.selectList(ErpRdBomDO::getProductId, productId);
+        if (CollUtil.isEmpty(bomList)) {
+            return null;
+        }
+        // 取版本号主版本最大者；并列时取 id 最大（最近创建）
+        return bomList.stream()
+                .max((a, b) -> {
+                    int majorCompare = Integer.compare(extractMajorVersion(a.getVersion()), extractMajorVersion(b.getVersion()));
+                    if (majorCompare != 0) {
+                        return majorCompare;
+                    }
+                    return Long.compare(a.getId(), b.getId());
+                })
+                .orElse(null);
+    }
+
+    @Override
+    public Map<Long, ErpRdBomDO> getLatestRdBomMapByProductIds(Collection<Long> productIds) {
+        if (CollUtil.isEmpty(productIds)) {
+            return Map.of();
+        }
+        List<ErpRdBomDO> bomList = erpRdBomMapper.selectList(ErpRdBomDO::getProductId, productIds);
+        Map<Long, ErpRdBomDO> result = new HashMap<>();
+        for (ErpRdBomDO bom : bomList) {
+            result.merge(bom.getProductId(), bom, (existing, candidate) -> {
+                int majorCompare = Integer.compare(extractMajorVersion(candidate.getVersion()), extractMajorVersion(existing.getVersion()));
+                if (majorCompare != 0) {
+                    return majorCompare > 0 ? candidate : existing;
+                }
+                return candidate.getId() > existing.getId() ? candidate : existing;
+            });
+        }
+        return result;
     }
 
     @Override
@@ -182,6 +266,209 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                 .setStatus(ErpRdBomStatusEnum.PUBLISHED.getStatus())
                 .setPublishedBomId(manufacturingBomId)
                 .setLastPublishedTime(LocalDateTime.now()));
+    }
+
+    @Override
+    public List<ErpRdBomIntegrityIssueRespVO> validateRdBomIntegrity(Long id) {
+        validateRdBomExists(id);
+        List<ErpRdBomItemDO> items = erpRdBomItemMapper.selectListByBomId(id);
+        List<ErpRdBomIntegrityIssueRespVO> issues = new ArrayList<>();
+        if (CollUtil.isEmpty(items)) {
+            return issues;
+        }
+
+        Set<Long> materialIds = convertSet(items, ErpRdBomItemDO::getMaterialId);
+        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(materialIds);
+
+        // 收集所有 MAKE（自制件/装配体）的物料，批量判断其是否挂接了下层 BOM（避免 N+1）
+        List<Long> makeMaterialIds = items.stream()
+                .filter(item -> Integer.valueOf(1).equals(item.getMaterialType()))
+                .map(ErpRdBomItemDO::getMaterialId)
+                .distinct()
+                .collect(Collectors.toList());
+        Set<Long> productIdsWithRdBom = Collections.emptySet();
+        Set<Long> productIdsWithBom = Collections.emptySet();
+        if (CollUtil.isNotEmpty(makeMaterialIds)) {
+            productIdsWithRdBom = convertSet(
+                    erpRdBomMapper.selectList(ErpRdBomDO::getProductId, makeMaterialIds),
+                    ErpRdBomDO::getProductId);
+            productIdsWithBom = convertSet(
+                    erpBomMapper.selectListByProductIds(makeMaterialIds),
+                    ErpBomDO::getProductId);
+        }
+
+        for (int i = 0; i < items.size(); i++) {
+            ErpRdBomItemDO item = items.get(i);
+            int rowIndex = i + 1;
+            ErpProductRespVO material = productMap.get(item.getMaterialId());
+
+            // 悬浮件：子件物料不存在，跳过后续该项校验
+            if (material == null) {
+                issues.add(buildIssue(rowIndex, item.getMaterialId(), null, RdBomIntegrityIssueType.FLOATING_MATERIAL, null));
+                continue;
+            }
+
+            boolean usageInvalid = item.getUsageQty() == null || item.getUsageQty().compareTo(BigDecimal.ZERO) <= 0;
+            if (usageInvalid) {
+                issues.add(buildIssue(rowIndex, item.getMaterialId(), material.getName(),
+                        RdBomIntegrityIssueType.USAGE_INVALID, null));
+            }
+
+            boolean isMake = Integer.valueOf(1).equals(item.getMaterialType());
+            if (isMake) {
+                if (StrUtil.isNotBlank(item.getReferenceDesignator())) {
+                    issues.add(buildIssue(rowIndex, item.getMaterialId(), material.getName(),
+                            RdBomIntegrityIssueType.DESIGNATOR_ON_ASSEMBLY, null));
+                }
+                if (!productIdsWithRdBom.contains(item.getMaterialId())
+                        && !productIdsWithBom.contains(item.getMaterialId())) {
+                    issues.add(buildIssue(rowIndex, item.getMaterialId(), material.getName(),
+                            RdBomIntegrityIssueType.FLOATING_ASSEMBLY, null));
+                }
+                continue;
+            }
+
+            // 采购件 / 需位号元器件
+            if (StrUtil.isBlank(item.getReferenceDesignator())) {
+                issues.add(buildIssue(rowIndex, item.getMaterialId(), material.getName(),
+                        RdBomIntegrityIssueType.MISSING_DESIGNATOR, null));
+            } else {
+                int designatorCount = BomDesignatorUtils.countDesignators(item.getReferenceDesignator());
+                boolean usageIsInteger = item.getUsageQty() != null
+                        && item.getUsageQty().remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0;
+                if (usageIsInteger && designatorCount != item.getUsageQty().intValue()) {
+                    String message = String.format("位号数量 %d 与用量 %s 不一致",
+                            designatorCount, item.getUsageQty().toPlainString());
+                    issues.add(buildIssue(rowIndex, item.getMaterialId(), material.getName(),
+                            RdBomIntegrityIssueType.DESIGNATOR_COUNT_MISMATCH, message));
+                }
+            }
+        }
+        return issues;
+    }
+
+    private ErpRdBomIntegrityIssueRespVO buildIssue(int rowIndex, Long materialId, String materialName,
+                                                   RdBomIntegrityIssueType type, String message) {
+        ErpRdBomIntegrityIssueRespVO issue = new ErpRdBomIntegrityIssueRespVO();
+        issue.setIssueType(type.getType());
+        issue.setSeverity(type.getSeverity());
+        issue.setRowIndex(rowIndex);
+        issue.setMaterialId(materialId);
+        issue.setMaterialName(materialName);
+        issue.setMessage(message != null ? message : type.getDefaultMessage());
+        return issue;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateRdBomStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
+        ErpRdBomDO bom = validateRdBomExists(id);
+        if (!StrUtil.equals(processInstanceId, bom.getProcessInstanceId())) {
+            throw exception(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_STATUS_UPDATE_ILLEGAL);
+        }
+        if (!ErpRdBomStatusEnum.PROCESS.getStatus().equals(bom.getStatus())) {
+            log.warn("[updateRdBomStatusByBpm] 忽略非审批中回调，id={}, currentStatus={}, callbackStatus={}", id, bom.getStatus(), status);
+            return;
+        }
+        int count = erpRdBomMapper.update(null, new LambdaUpdateWrapper<ErpRdBomDO>()
+                .eq(ErpRdBomDO::getId, id)
+                .eq(ErpRdBomDO::getStatus, ErpRdBomStatusEnum.PROCESS.getStatus())
+                .eq(ErpRdBomDO::getProcessInstanceId, processInstanceId)
+                .set(ErpRdBomDO::getStatus, status)
+                .set(ErpRdBomDO::getProcessInstanceId, processInstanceId));
+        if (count == 0) {
+            throw exception(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_STATUS_UPDATE_ILLEGAL);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackRdBomStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        ErpRdBomDO bom = validateRdBomExists(id);
+        if (!ErpRdBomStatusEnum.PROCESS.getStatus().equals(bom.getStatus())) {
+            log.warn("[rollbackRdBomStatusToDraftByBpm] 忽略非审批中回退，id={}, currentStatus={}", id, bom.getStatus());
+            return;
+        }
+        if (processInstanceId != null && !processInstanceId.equals(bom.getProcessInstanceId())) {
+            log.warn("[rollbackRdBomStatusToDraftByBpm] processInstanceId 不匹配，忽略回调，bomId={}, expected={}, actual={}", id, processInstanceId, bom.getProcessInstanceId());
+            return;
+        }
+        int count = erpRdBomMapper.update(null, new LambdaUpdateWrapper<ErpRdBomDO>()
+                .eq(ErpRdBomDO::getId, id)
+                .eq(ErpRdBomDO::getStatus, ErpRdBomStatusEnum.PROCESS.getStatus())
+                .set(ErpRdBomDO::getStatus, ErpRdBomStatusEnum.DRAFT.getStatus())
+                .set(ErpRdBomDO::getProcessInstanceId, null));
+        if (count == 0) {
+            throw exception(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_STATUS_UPDATE_ILLEGAL);
+        }
+    }
+
+    @Override
+    public List<cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomWhereUsedRespVO> getWhereUsed(Long materialId) {
+        if (materialId == null) {
+            return List.of();
+        }
+        Set<Long> visitedBomIds = new java.util.HashSet<>();
+        List<cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomWhereUsedRespVO> result = new ArrayList<>();
+        java.util.Queue<MaterialLevel> queue = new java.util.LinkedList<>();
+        queue.add(new MaterialLevel(materialId, 1));
+        Set<Long> queuedMaterialIds = new java.util.HashSet<>();
+        queuedMaterialIds.add(materialId);
+        Map<Long, cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO> productCache = new HashMap<>();
+        while (!queue.isEmpty()) {
+            MaterialLevel current = queue.poll();
+            if (current.level > 10) {
+                continue;
+            }
+            List<ErpRdBomItemDO> items = erpRdBomItemMapper.selectListByMaterialId(current.materialId);
+            if (CollUtil.isEmpty(items)) {
+                continue;
+            }
+            Set<Long> bomIds = convertSet(items, ErpRdBomItemDO::getBomId);
+            bomIds.removeAll(visitedBomIds);
+            if (bomIds.isEmpty()) {
+                continue;
+            }
+            visitedBomIds.addAll(bomIds);
+            List<ErpRdBomDO> boms = erpRdBomMapper.selectBatchIds(new ArrayList<>(bomIds));
+            if (CollUtil.isEmpty(boms)) {
+                continue;
+            }
+            Set<Long> productIds = convertSet(boms, ErpRdBomDO::getProductId);
+            productIds.removeAll(productCache.keySet());
+            if (!productIds.isEmpty()) {
+                productCache.putAll(productService.getProductVOMap(productIds));
+            }
+            for (ErpRdBomDO bom : boms) {
+                cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomWhereUsedRespVO vo = new cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomWhereUsedRespVO();
+                vo.setBomId(bom.getId());
+                vo.setBomCode(bom.getBomCode());
+                vo.setProductId(bom.getProductId());
+                cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO prod = productCache.get(bom.getProductId());
+                if (prod != null) {
+                    vo.setProductName(prod.getName());
+                }
+                vo.setVersion(bom.getVersion());
+                vo.setStatus(bom.getStatus());
+                vo.setLevel(current.level);
+                result.add(vo);
+                Long parentMaterialId = bom.getProductId();
+                if (!queuedMaterialIds.contains(parentMaterialId) && current.level < 10) {
+                    queuedMaterialIds.add(parentMaterialId);
+                    queue.add(new MaterialLevel(parentMaterialId, current.level + 1));
+                }
+            }
+        }
+        return result;
+    }
+
+    private static class MaterialLevel {
+        Long materialId;
+        int level;
+        MaterialLevel(Long materialId, int level) {
+            this.materialId = materialId;
+            this.level = level;
+        }
     }
 
     private String generateNextVersion(Long productId) {

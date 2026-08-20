@@ -341,6 +341,14 @@ public interface ErrorCodeConstants {
     ErrorCode PRODUCTION_ORDER_EFFECTIVE_BOM_NOT_EXISTS = new ErrorCode(1_030_700_011, "当前生产工单缺少有效 BOM，无法下达");
     ErrorCode BOM_STATUS_INVALID = new ErrorCode(1_030_700_012, "BOM 状态不合法");
     ErrorCode RD_BOM_NOT_EXISTS = new ErrorCode(1_030_700_013, "研发 BOM 不存在");
+    ErrorCode RD_BOM_STATUS_UPDATE_ILLEGAL = new ErrorCode(1_030_700_060, "研发 BOM 状态不合法，无法执行该操作");
+    ErrorCode RD_BOM_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_061, "研发 BOM 已在审批中，无法重复提交");
+    ErrorCode RD_BOM_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_062, "研发 BOM 不在审批中，无法撤回");
+    ErrorCode RD_BOM_APPROVE_FAIL = new ErrorCode(1_030_700_063, "研发 BOM 已审批通过，无法重复提交");
+    ErrorCode PRODUCT_AUDIT_STATUS_ILLEGAL = new ErrorCode(1_030_700_064, "物料审核状态不合法，无法执行该操作");
+    ErrorCode PRODUCT_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_065, "物料已在审批中，无法重复提交");
+    ErrorCode PRODUCT_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_066, "物料不在审批中，无法撤回");
+    ErrorCode PRODUCT_APPROVE_FAIL = new ErrorCode(1_030_700_067, "物料已审批通过，无法重复提交");
     ErrorCode MRP_NETTING_POLICY_NOT_EXISTS = new ErrorCode(1_030_700_014, "净需求策略不存在");
     ErrorCode MRP_NETTING_POLICY_DEFAULT_DELETE_FORBIDDEN = new ErrorCode(1_030_700_015, "默认净需求策略不允许删除");
     ErrorCode MRP_PLAN_STATUS_INVALID = new ErrorCode(1_030_700_016, "当前 MRP 计划状态不允许执行该操作");

@@ -57,6 +57,10 @@ public class ErpProductDO extends BaseDO {
 
     private Integer status;
 
+    private Integer auditStatus;
+
+    private String processInstanceId;
+
     private String standard;
 
     private String packaging;

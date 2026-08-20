@@ -132,6 +132,12 @@ public class ErpProductRespVO {
     @Schema(description = "Asset candidate flag", example = "true")
     private Boolean assetFlag;
 
+    @Schema(description = "审核状态：0草稿 10审批中 20已审批 30已驳回 60处理失败")
+    private Integer auditStatus;
+
+    @Schema(description = "流程实例编号")
+    private String processInstanceId;
+
     @Schema(description = "Create time", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("Create Time")
     private LocalDateTime createTime;

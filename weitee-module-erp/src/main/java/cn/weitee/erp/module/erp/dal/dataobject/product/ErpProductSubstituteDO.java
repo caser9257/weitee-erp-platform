@@ -1,4 +1,4 @@
-package cn.weitee.erp.module.erp.dal.dataobject.rd;
+package cn.weitee.erp.module.erp.dal.dataobject.product;
 
 import cn.weitee.erp.framework.mybatis.core.dataobject.BaseDO;
 import com.baomidou.mybatisplus.annotation.KeySequence;
@@ -11,34 +11,28 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
-@TableName("erp_rd_bom")
-@KeySequence("erp_rd_bom_seq")
+@TableName("erp_product_substitute")
+@KeySequence("erp_product_substitute_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ErpRdBomDO extends BaseDO {
+public class ErpProductSubstituteDO extends BaseDO {
 
     @TableId
     private Long id;
 
-    private String bomCode;
-
     private Long productId;
 
-    private String version;
+    private Long substituteProductId;
 
-    private Integer status;
+    private Integer priority;
 
-    private String processInstanceId;
-
-    private Long publishedBomId;
-
-    private LocalDateTime lastPublishedTime;
+    private BigDecimal replaceRatio;
 
     private String remark;
 

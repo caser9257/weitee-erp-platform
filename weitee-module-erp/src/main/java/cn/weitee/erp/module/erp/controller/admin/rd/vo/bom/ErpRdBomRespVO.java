@@ -23,6 +23,8 @@ public class ErpRdBomRespVO {
 
     private Integer status;
 
+    private String processInstanceId;
+
     private Long publishedBomId;
 
     private LocalDateTime lastPublishedTime;

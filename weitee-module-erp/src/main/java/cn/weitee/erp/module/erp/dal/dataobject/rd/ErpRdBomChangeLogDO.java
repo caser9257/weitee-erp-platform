@@ -11,35 +11,23 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import java.time.LocalDateTime;
-
-@TableName("erp_rd_bom")
-@KeySequence("erp_rd_bom_seq")
+@TableName("erp_rd_bom_change_log")
+@KeySequence("erp_rd_bom_change_log_seq")
 @Data
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ErpRdBomDO extends BaseDO {
+public class ErpRdBomChangeLogDO extends BaseDO {
 
     @TableId
     private Long id;
 
-    private String bomCode;
+    private Long bomId;
 
-    private Long productId;
+    private String changeType;
 
-    private String version;
-
-    private Integer status;
-
-    private String processInstanceId;
-
-    private Long publishedBomId;
-
-    private LocalDateTime lastPublishedTime;
-
-    private String remark;
+    private String changeDetail;
 
 }

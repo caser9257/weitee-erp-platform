@@ -74,5 +74,33 @@ export const ProductApi = {
   // 导出产品 Excel
   exportProduct: async (params) => {
     return await request.download({ url: `/erp/product/export-excel`, params })
+  },
+
+  // 替代料
+  getSubstituteList: async (productId: number) => {
+    return await request.get({ url: '/erp/product/substitute/list', params: { productId } })
+  },
+  getHasSubstituteMap: async (productIds: number[]) => {
+    return await request.get({ url: '/erp/product/substitute/has-map', params: { productIds: productIds.join(',') } })
+  },
+  createSubstitute: async (data: any) => {
+    return await request.post({ url: '/erp/product/substitute/create', data })
+  },
+  deleteSubstitute: async (productId: number, substituteProductId: number) => {
+    return await request.delete({ url: `/erp/product/substitute/delete?productId=${productId}&substituteProductId=${substituteProductId}` })
+  },
+
+  getApprovedProductSimpleList: async () => {
+    return await request.get({ url: `/erp/product/simple-list-approved` })
+  },
+
+  submitProduct: async (id: number) => {
+    return await request.post<string>({ url: `/erp/product/submit?id=${id}` })
+  },
+
+  cancelProduct: async (id: number, reason?: string) => {
+    const params: any = { id }
+    if (reason) params.reason = reason
+    return await request.post<boolean>({ url: '/erp/product/cancel', params })
   }
 }

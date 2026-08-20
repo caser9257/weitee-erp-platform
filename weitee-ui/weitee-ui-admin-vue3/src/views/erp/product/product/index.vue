@@ -235,6 +235,7 @@
                 :stripe="true"
                 :show-overflow-tooltip="true"
                 class="product-table"
+                @expand-change="handleExpand"
               >
                 <el-table-column type="selection" width="32" />
                 <el-table-column :label="PAGE_COPY.productInfoLabel" align="left" min-width="120">
@@ -271,6 +272,17 @@
                     <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
                   </template>
                 </el-table-column>
+                <el-table-column label="审核状态" width="100" align="center">
+                  <template #default="{ row }">
+                    <el-tag
+                      :type="({0:'info',10:'warning',20:'success',30:'danger',60:'danger'}[row.auditStatus] || 'info') as any"
+                      size="small"
+                      effect="light"
+                    >
+                      {{ ({0:'草稿',10:'审批中',20:'已审批',30:'已驳回',60:'失败'}[row.auditStatus] || row.auditStatus) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
                 <el-table-column
                   :label="PAGE_COPY.packagingLabel"
                   align="center"
@@ -303,6 +315,39 @@
                 >
                   <template #default="{ row }">{{ row.alternativeModel || '-' }}</template>
                 </el-table-column>
+                <el-table-column label="替代料" width="100" align="center">
+                  <template #default="{ row }">
+                    <el-tag
+                      v-if="hasSubstituteMap[row.id]"
+                      size="small"
+                      type="warning"
+                      effect="plain"
+                    >
+                      有替代料
+                    </el-tag>
+                    <span v-else class="text-11px text-slate-300">—</span>
+                  </template>
+                </el-table-column>
+                <el-table-column type="expand" width="50">
+                  <template #default="{ row }">
+                    <div v-loading="subLoading[row.id]" class="px-16px py-12px bg-slate-50">
+                      <div v-if="substituteMap[row.id]?.length" class="space-y-8px">
+                        <div
+                          v-for="sub in substituteMap[row.id]"
+                          :key="sub.id"
+                          class="flex items-center gap-10px rounded border border-slate-100 bg-white px-12px py-8px text-12px"
+                        >
+                          <span class="font-medium text-slate-700">{{ sub.substituteProductName }}</span>
+                          <span class="font-mono text-slate-400">{{ sub.substituteMaterialCode || sub.substituteProductId }}</span>
+                          <el-tag size="small" effect="plain">优先级 {{ sub.priority }}</el-tag>
+                          <span class="text-slate-500">替换比 {{ sub.replaceRatio }}</span>
+                          <span v-if="sub.remark" class="text-slate-400">{{ sub.remark }}</span>
+                        </div>
+                      </div>
+                      <div v-else class="py-8px text-center text-12px text-slate-400">暂无替代料（展开可查看）</div>
+                    </div>
+                  </template>
+                </el-table-column>
                 <el-table-column
                   :label="PAGE_COPY.actionsLabel"
                   align="center"
@@ -328,6 +373,26 @@
                         v-hasPermi="['erp:product:update']"
                       >
                         {{ PAGE_COPY.modify }}
+                      </el-button>
+                      <el-button
+                        v-if="[0,30,60].includes(row.auditStatus ?? 0) && !row.processInstanceId"
+                        link
+                        type="primary"
+                        :disabled="isProductActionBusy"
+                        @click="handleSubmitAudit(row)"
+                        v-hasPermi="['erp:product:submit']"
+                      >
+                        提交审核
+                      </el-button>
+                      <el-button
+                        v-if="row.auditStatus === 10 && row.processInstanceId"
+                        link
+                        type="warning"
+                        :disabled="isProductActionBusy"
+                        @click="handleCancelAudit(row)"
+                        v-hasPermi="['erp:product:cancel']"
+                      >
+                        撤回
                       </el-button>
                       <el-button
                         link
@@ -455,6 +520,10 @@ const categoryDeletingId = ref<number>()
 const productDeletingId = ref<number>()
 const productStatusUpdatingId = ref<number>()
 
+const hasSubstituteMap = ref<Record<number, boolean>>({})
+const substituteMap = ref<Record<number, any[]>>({})
+const subLoading = ref<Record<number, boolean>>({})
+
 const list = ref<ProductVO[]>([])
 const total = ref(0)
 const queryParams = reactive({
@@ -547,10 +616,39 @@ const getList = async () => {
     const data = await ProductApi.getProductPage(queryParams)
     list.value = data.list
     total.value = data.total
+    await loadHasSubstituteMap()
   } catch {
     productLoadError.value = true
   } finally {
     productListLoading.value = false
+  }
+}
+
+const loadHasSubstituteMap = async () => {
+  if (!list.value.length) {
+    hasSubstituteMap.value = {}
+    return
+  }
+  const ids = list.value.map((p) => p.id)
+  try {
+    const map: any = await ProductApi.getHasSubstituteMap(ids as any)
+    hasSubstituteMap.value = map || {}
+  } catch {
+    hasSubstituteMap.value = {}
+  }
+}
+
+const handleExpand = async (row: ProductVO, expandedRows: ProductVO[]) => {
+  const expanded = expandedRows.find((r) => r.id === row.id)
+  if (!expanded) return
+  if (substituteMap.value[row.id]) return
+  subLoading.value[row.id] = true
+  try {
+    const subs: any = await ProductApi.getSubstituteList(row.id)
+    substituteMap.value[row.id] = subs || []
+    if (subs?.length) hasSubstituteMap.value[row.id] = true
+  } finally {
+    subLoading.value[row.id] = false
   }
 }
 
@@ -674,6 +772,30 @@ const handleDelete = async (id: number) => {
   } finally {
     productDeletingId.value = undefined
   }
+}
+
+const handleSubmitAudit = async (row: ProductVO) => {
+  try {
+    await message.confirm(`确认提交物料“${row.name}”进行审核吗？`)
+    await ProductApi.submitProduct(row.id)
+    message.success('提交请求已发送，列表将刷新校验状态')
+    await getList()
+    const updated: any = list.value.find((p: any) => p.id === row.id)
+    if (updated?.auditStatus === 10 && updated?.processInstanceId) {
+      message.success('已提交审核，等待流程受理')
+    } else if (updated?.auditStatus === 60) {
+      message.error('提交已受理但流程创建失败，请重试')
+    }
+  } catch {}
+}
+
+const handleCancelAudit = async (row: ProductVO) => {
+  try {
+    await message.confirm(`确认撤回物料“${row.name}”的审核吗？`)
+    await ProductApi.cancelProduct(row.id)
+    message.success('撤回成功')
+    await getList()
+  } catch {}
 }
 
 const handleExport = async () => {
