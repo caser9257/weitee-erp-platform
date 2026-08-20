@@ -59,7 +59,15 @@
         </el-button>
       </div>
     </div>
-    <el-table v-loading="listLoading" :data="list" :stripe="true">
+    <el-alert
+      v-if="listError"
+      class="sop-list-error"
+      type="error"
+      :title="listError"
+      :closable="false"
+      show-icon
+    />
+    <el-table v-else v-loading="listLoading" :data="list" :stripe="true">
       <template #empty>
         <div class="sop-empty">
           <div class="sop-empty__icon">
@@ -105,6 +113,8 @@
             v-if="Number(row.status) === 0"
             link
             type="success"
+            :loading="statusLoadingId === row.id"
+            :disabled="statusLoadingId !== undefined && statusLoadingId !== row.id"
             @click="handleStatus(row, 1)"
           >
             发布
@@ -113,17 +123,27 @@
             v-if="Number(row.status) === 1"
             link
             type="warning"
+            :loading="statusLoadingId === row.id"
+            :disabled="statusLoadingId !== undefined && statusLoadingId !== row.id"
             @click="handleStatus(row, 2)"
           >
             停用
           </el-button>
-          <el-button v-if="Number(row.status) !== 1" link type="danger" @click="handleDelete(row)">
+          <el-button
+            v-if="Number(row.status) !== 1"
+            link
+            type="danger"
+            :loading="deleteLoadingId === row.id"
+            :disabled="deleteLoadingId !== undefined && deleteLoadingId !== row.id"
+            @click="handleDelete(row)"
+          >
             删除
           </el-button>
         </template>
       </el-table-column>
     </el-table>
     <Pagination
+      v-if="!listError"
       :total="total"
       v-model:page="queryParams.pageNo"
       v-model:limit="queryParams.pageSize"
@@ -146,7 +166,9 @@
         >{{ detailForm.effectiveDate || '-' }} ~
         {{ detailForm.expireDate || '-' }}</el-descriptions-item
       >
-      <el-descriptions-item label="创建时间">{{ formatDateValue(detailForm.createTime) }}</el-descriptions-item>
+      <el-descriptions-item label="创建时间">{{
+        formatDateValue(detailForm.createTime)
+      }}</el-descriptions-item>
     </el-descriptions>
     <div v-if="detailForm.stepInfos?.length" class="sop-detail-content">
       <div class="sop-detail-content__label">绑定工序（{{ detailForm.stepInfos.length }} 道）</div>
@@ -321,7 +343,10 @@ const message = useMessage()
 const queryFormRef = ref()
 const formRef = ref<FormInstance>()
 const listLoading = ref(false)
+const listError = ref('')
 const submitLoading = ref(false)
+const statusLoadingId = ref<number>()
+const deleteLoadingId = ref<number>()
 const ocrConfirmLoading = ref(false)
 const formVisible = ref(false)
 const ocrVisible = ref(false)
@@ -393,7 +418,9 @@ const formatDateValue = (value?: string | Date | number) =>
   value ? formatDate(value, 'YYYY-MM-DD HH:mm') : '-'
 
 const getList = async () => {
+  if (listLoading.value) return
   listLoading.value = true
+  listError.value = ''
   try {
     const data = await SopApi.getSopPage(queryParams)
     list.value = data.list || []
@@ -401,6 +428,7 @@ const getList = async () => {
   } catch {
     list.value = []
     total.value = 0
+    listError.value = 'SOP 列表加载失败，请重试'
   } finally {
     listLoading.value = false
   }
@@ -492,6 +520,7 @@ const openForm = async (mode: 'create' | 'edit', row?: SopDocumentVO) => {
 }
 
 const handleSubmit = async () => {
+  if (submitLoading.value) return
   const valid = await formRef.value?.validate().catch(() => false)
   if (!valid) return
   submitLoading.value = true
@@ -505,34 +534,52 @@ const handleSubmit = async () => {
     }
     formVisible.value = false
     await getList()
+  } catch {
+    message.error('SOP 保存失败，请重试')
   } finally {
     submitLoading.value = false
   }
 }
 
 const handleStatus = async (row: SopDocumentVO, status: number) => {
-  if (!row.id) return
+  if (!row.id || statusLoadingId.value !== undefined) return
   const action = status === 1 ? '发布' : '停用'
+  statusLoadingId.value = row.id
   try {
     await message.confirm(`确定${action} SOP「${row.sopNo}」吗？`)
   } catch {
+    statusLoadingId.value = undefined
     return
   }
-  await SopApi.updateStatus(row.id, status)
-  message.success(`${action}成功`)
-  await getList()
+  try {
+    await SopApi.updateStatus(row.id, status)
+    message.success(`${action}成功`)
+    await getList()
+  } catch {
+    message.error(`SOP ${action}失败，请重试`)
+  } finally {
+    statusLoadingId.value = undefined
+  }
 }
 
 const handleDelete = async (row: SopDocumentVO) => {
-  if (!row.id) return
+  if (!row.id || deleteLoadingId.value !== undefined) return
+  deleteLoadingId.value = row.id
   try {
     await message.confirm(`确定删除 SOP「${row.sopNo}」吗？`)
   } catch {
+    deleteLoadingId.value = undefined
     return
   }
-  await SopApi.deleteSop(row.id)
-  message.success('删除成功')
-  await getList()
+  try {
+    await SopApi.deleteSop(row.id)
+    message.success('删除成功')
+    await getList()
+  } catch {
+    message.error('SOP 删除失败，请重试')
+  } finally {
+    deleteLoadingId.value = undefined
+  }
 }
 
 const openOcrDialog = () => {
@@ -564,7 +611,7 @@ const handleOcrFileChange = async (file: any) => {
 }
 
 const handleOcrConfirm = async () => {
-  if (!ocrRecord.value?.id) return
+  if (ocrConfirmLoading.value || !ocrRecord.value?.id) return
   if (!confirmForm.sopNo || !confirmForm.title) {
     message.warning('请填写 SOP 编码和标题')
     return
@@ -580,6 +627,8 @@ const handleOcrConfirm = async () => {
     message.success('已生成 SOP 草稿，可继续编辑后发布')
     ocrVisible.value = false
     await getList()
+  } catch {
+    message.error('SOP 草稿生成失败，请重试')
   } finally {
     ocrConfirmLoading.value = false
   }

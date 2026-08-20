@@ -64,6 +64,18 @@ public class ProductSaveReqVO {
     @Schema(description = "Standard", example = "1.2mm")
     private String standard;
 
+    @Schema(description = "产品封装")
+    private String packaging;
+
+    @Schema(description = "质量等级")
+    private String qualityGrade;
+
+    @Schema(description = "品牌/制造商")
+    private String brandManufacturer;
+
+    @Schema(description = "替代型号")
+    private String alternativeModel;
+
     @Schema(description = "Remark", example = "Key material")
     private String remark;
 

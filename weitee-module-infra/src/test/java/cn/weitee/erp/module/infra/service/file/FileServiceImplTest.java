@@ -5,9 +5,11 @@ import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.ObjectUtils;
 import cn.weitee.erp.framework.test.core.ut.BaseDbUnitTest;
 import cn.weitee.erp.framework.test.core.util.AssertUtils;
+import cn.weitee.erp.module.infra.controller.admin.file.vo.file.FileCreateReqVO;
 import cn.weitee.erp.module.infra.controller.admin.file.vo.file.FilePageReqVO;
 import cn.weitee.erp.module.infra.dal.dataobject.file.FileDO;
 import cn.weitee.erp.module.infra.dal.mysql.file.FileMapper;
+import cn.weitee.erp.module.infra.framework.drm.DrmProperties;
 import cn.weitee.erp.module.infra.framework.file.core.client.FileClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static cn.weitee.erp.framework.common.util.date.LocalDateTimeUtils.buildTime;
 import static cn.weitee.erp.framework.test.core.util.AssertUtils.assertServiceException;
 import static cn.weitee.erp.framework.test.core.util.RandomUtils.*;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.FILE_NOT_EXISTS;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.same;
@@ -48,10 +51,18 @@ public class FileServiceImplTest extends BaseDbUnitTest {
     @MockBean
     private FileCleanupCompensationService fileCleanupCompensationService;
 
+    @MockBean
+    private IncomingFileProtectionService incomingFileProtectionService;
+
+    @MockBean
+    private DrmProperties drmProperties;
+
     @BeforeEach
     public void setUp() {
         FileServiceImpl.PATH_PREFIX_DATE_ENABLE = true;
         FileServiceImpl.PATH_SUFFIX_TIMESTAMP_ENABLE = true;
+        lenient().when(incomingFileProtectionService.preparePlainContent(any(), any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -206,6 +217,24 @@ public class FileServiceImplTest extends BaseDbUnitTest {
         byte[] result = fileService.getFileContent(configId, path);
         // 断言
         assertSame(result, content);
+    }
+
+    @Test
+    public void testPresignPutUrl_drmEnabled_forbidden() {
+        when(drmProperties.isEnabled()).thenReturn(true);
+
+        assertServiceException(() -> fileService.presignPutUrl("test.xlsx", "import"), FORBIDDEN);
+    }
+
+    @Test
+    public void testCreateFileRecord_drmEnabled_forbidden() {
+        when(drmProperties.isEnabled()).thenReturn(true);
+        FileCreateReqVO request = new FileCreateReqVO()
+                .setConfigId(10L).setPath("import/test.xlsx").setName("test.xlsx")
+                .setUrl("https://storage.example/test.xlsx");
+
+        assertServiceException(() -> fileService.createFile(request), FORBIDDEN);
+        verifyNoInteractions(fileMapper);
     }
 
     @Test

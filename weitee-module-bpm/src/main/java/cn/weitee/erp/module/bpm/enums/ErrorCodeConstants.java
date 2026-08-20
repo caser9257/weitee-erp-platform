@@ -103,6 +103,7 @@ public interface ErrorCodeConstants {
     ErrorCode APPROVAL_SCHEME_DEFAULT_RULE_DUPLICATE = new ErrorCode(1_009_015_005, "默认兜底规则只能存在一条");
     ErrorCode APPROVAL_SCHEME_VERSION_NOT_PENDING_PUBLISH = new ErrorCode(1_009_015_006, "当前版本不是待发布状态，不能发布");
     ErrorCode APPROVAL_SCHEME_VERSION_NOT_ACTIVE = new ErrorCode(1_009_015_007, "当前版本不是生效状态，不能停用");
+    ErrorCode APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS = new ErrorCode(1_009_015_008, "审批规则引用的流程定义 Key【{}】不存在或未激活");
 
     // ========== BPM 审批场景 1-009-016-000 ==========
     ErrorCode APPROVAL_SCENE_NOT_EXISTS = new ErrorCode(1_009_016_000, "审批场景不存在");

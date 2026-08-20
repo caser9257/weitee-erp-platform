@@ -12,7 +12,10 @@ import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalRuleMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeVersionMapper;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
+import org.flowable.engine.repository.ProcessDefinition;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 
 import jakarta.annotation.Resource;
@@ -21,19 +24,26 @@ import java.util.List;
 
 import static cn.weitee.erp.framework.test.core.util.AssertUtils.assertServiceException;
 import static cn.weitee.erp.framework.test.core.util.RandomUtils.randomString;
+import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS;
 import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.APPROVAL_SCHEME_DEFAULT_RULE_REQUIRED;
 import static cn.weitee.erp.module.bpm.enums.ErrorCodeConstants.APPROVAL_SCHEME_VERSION_NOT_ACTIVE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import cn.weitee.erp.module.bpm.service.definition.BpmProcessDefinitionService;
 import cn.weitee.erp.module.system.api.permission.PermissionApi;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 @Import(BpmApprovalSchemeServiceImpl.class)
 class BpmApprovalSchemeServiceImplTest extends BaseDbUnitTest {
 
     @MockBean
     private PermissionApi permissionApi;
+
+    @MockBean
+    private BpmProcessDefinitionService processDefinitionService;
 
     @Resource
     private BpmApprovalSchemeServiceImpl approvalSchemeService;
@@ -46,6 +56,12 @@ class BpmApprovalSchemeServiceImplTest extends BaseDbUnitTest {
 
     @Resource
     private BpmApprovalRuleMapper approvalRuleMapper;
+
+    @BeforeEach
+    void setUp() {
+        when(processDefinitionService.getActiveProcessDefinition(anyString()))
+                .thenReturn(mock(ProcessDefinition.class));
+    }
 
     @Test
     void testCreateDraft_success() {
@@ -93,6 +109,17 @@ class BpmApprovalSchemeServiceImplTest extends BaseDbUnitTest {
     }
 
     @Test
+    void testPublish_rejectsMissingProcessDefinition() {
+        Long versionId = approvalSchemeService.createDraft(buildSaveReqVO());
+        approvalSchemeService.submit(new BpmApprovalSchemeSubmitReqVO().setVersionId(versionId));
+        when(processDefinitionService.getActiveProcessDefinition("erp_purchase_in_approval")).thenReturn(null);
+
+        assertServiceException(() -> approvalSchemeService.publish(
+                new BpmApprovalSchemePublishReqVO().setVersionId(versionId)),
+                APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS, "erp_purchase_in_approval");
+    }
+
+    @Test
     void testDisable_onlyActive() {
         Long versionId = approvalSchemeService.createDraft(buildSaveReqVO());
 
@@ -126,6 +153,6 @@ class BpmApprovalSchemeServiceImplTest extends BaseDbUnitTest {
                         .setPriority(1)
                         .setDefaultRule(true)
                         .setConditionJson("{}")
-                        .setProcessJson("{\"nodes\":[]}")));
+                        .setProcessJson("erp_purchase_in_approval")));
     }
 }

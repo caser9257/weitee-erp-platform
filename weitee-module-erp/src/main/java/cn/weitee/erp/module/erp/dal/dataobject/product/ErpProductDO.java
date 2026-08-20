@@ -59,6 +59,14 @@ public class ErpProductDO extends BaseDO {
 
     private String standard;
 
+    private String packaging;
+
+    private String qualityGrade;
+
+    private String brandManufacturer;
+
+    private String alternativeModel;
+
     private String remark;
 
     private Integer expiryDay;

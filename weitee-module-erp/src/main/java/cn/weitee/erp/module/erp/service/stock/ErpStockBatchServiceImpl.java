@@ -52,6 +52,11 @@ public class ErpStockBatchServiceImpl implements ErpStockBatchService {
     }
 
     @Override
+    public ErpStockBatchDO getStockBatchByProductWarehouseAndBatchNo(Long productId, Long warehouseId, String batchNo) {
+        return erpStockBatchMapper.selectByProductWarehouseAndBatchNo(productId, warehouseId, batchNo);
+    }
+
+    @Override
     public ErpStockBatchDO validateStockBatch(Long id) {
         ErpStockBatchDO stockBatch = erpStockBatchMapper.selectById(id);
         if (stockBatch == null) {

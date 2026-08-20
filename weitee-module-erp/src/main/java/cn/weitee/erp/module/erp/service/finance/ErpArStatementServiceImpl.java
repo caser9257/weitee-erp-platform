@@ -87,8 +87,19 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
         if (saleOut == null || saleOut.getId() == null) {
             return;
         }
-        // 防重复：同一业务单据只创建一次
-        if (erpArStatementMapper.selectByBizTypeAndBizId(ErpBizTypeEnum.SALE_OUT.getType(), saleOut.getId()) != null) {
+        // 幂等：同一业务单据只保留一条主台账。反审核会关闭台账，再次审批时需要恢复其可收状态。
+        ErpArStatementDO existedStatement = erpArStatementMapper.selectByBizTypeAndBizId(
+                ErpBizTypeEnum.SALE_OUT.getType(), saleOut.getId());
+        if (existedStatement != null) {
+            BigDecimal receivedAmount = defaultAmount(existedStatement.getReceivedAmount());
+            BigDecimal remainAmount = defaultAmount(existedStatement.getAmount()).subtract(receivedAmount);
+            Integer restoredStatus = calculateStatus(receivedAmount, remainAmount, STATUS_UNRECEIVED);
+            erpArStatementMapper.updateById(new ErpArStatementDO()
+                    .setId(existedStatement.getId())
+                    .setLedgerId(resolveExternalLedgerId(ErpBizTypeEnum.SALE_OUT.getType()))
+                    .setRemainAmount(remainAmount)
+                    .setStatus(restoredStatus)
+                    .setRemark(saleOut.getRemark()));
             return;
         }
         BigDecimal amount = defaultAmount(saleOut.getTotalPrice());

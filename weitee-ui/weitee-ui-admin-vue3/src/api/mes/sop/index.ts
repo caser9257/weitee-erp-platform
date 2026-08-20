@@ -75,7 +75,12 @@ export const SopApi = {
   ocrImport: async (file: File) => {
     const formData = new FormData()
     formData.append('file', file)
-    return await request.post<SopImportRecordVO>({ url: '/mes/sop-import/ocr', data: formData })
+    return await request.post<SopImportRecordVO>({
+      url: '/mes/sop-import/ocr',
+      data: formData,
+      headersType: 'multipart/form-data',
+      timeout: 180000
+    })
   },
   confirmImport: async (data: {
     importRecordId: number

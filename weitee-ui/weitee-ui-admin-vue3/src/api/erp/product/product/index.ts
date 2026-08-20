@@ -16,6 +16,10 @@ export interface ProductVO {
   snEnable?: boolean // 是否启用序列号
   status: number // 产品状态
   standard: string // 产品规格
+  packaging?: string // 产品封装
+  qualityGrade?: string // 质量等级
+  brandManufacturer?: string // 品牌/制造商
+  alternativeModel?: string // 替代型号
   remark: string // 产品备注
   expiryDay: number // 保质期天数
   weight: number // 重量（kg）

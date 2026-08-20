@@ -18,6 +18,8 @@ public interface ErpStockBatchService {
 
     ErpStockBatchDO getStockBatch(Long id);
 
+    ErpStockBatchDO getStockBatchByProductWarehouseAndBatchNo(Long productId, Long warehouseId, String batchNo);
+
     ErpStockBatchDO validateStockBatch(Long id);
 
     List<ErpStockBatchDO> getAvailableStockBatchList(Long productId, Long warehouseId);

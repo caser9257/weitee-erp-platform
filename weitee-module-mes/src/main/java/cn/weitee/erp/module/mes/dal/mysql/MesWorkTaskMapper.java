@@ -8,22 +8,39 @@ import cn.weitee.erp.module.mes.dal.dataobject.MesWorkTaskDO;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Mapper
 public interface MesWorkTaskMapper extends BaseMapperX<MesWorkTaskDO> {
 
+    default MesWorkTaskDO selectByTaskNo(String taskNo) {
+        return selectOne(Wrappers.<MesWorkTaskDO>lambdaQuery()
+                .eq(MesWorkTaskDO::getTaskNo, taskNo));
+    }
+
     default PageResult<MesWorkTaskDO> selectPage(MesWorkTaskPageReqVO reqVO) {
+        return selectPage(reqVO, Collections.emptyList());
+    }
+
+    default PageResult<MesWorkTaskDO> selectPage(MesWorkTaskPageReqVO reqVO, Collection<Long> taskIds) {
         return selectPage(reqVO, new LambdaQueryWrapperX<MesWorkTaskDO>()
+                .likeIfPresent(MesWorkTaskDO::getTaskNo, reqVO.getTaskNo())
                 .likeIfPresent(MesWorkTaskDO::getProductionOrderNo, reqVO.getProductionOrderNo())
                 .eqIfPresent(MesWorkTaskDO::getProductionOrderId, reqVO.getProductionOrderId())
                 .eqIfPresent(MesWorkTaskDO::getWorkCenterId, reqVO.getWorkCenterId())
                 .eqIfPresent(MesWorkTaskDO::getStatus, reqVO.getStatus())
+                .inIfPresent(MesWorkTaskDO::getId, taskIds)
                 .orderByDesc(MesWorkTaskDO::getId));
     }
+
+    @Select("SELECT * FROM mes_work_task WHERE id = #{id} AND deleted = 0 FOR UPDATE")
+    MesWorkTaskDO selectByIdForUpdate(@Param("id") Long id);
 
     default List<MesWorkTaskDO> selectListByOrderId(Long productionOrderId) {
         return selectList(Wrappers.<MesWorkTaskDO>lambdaQuery()

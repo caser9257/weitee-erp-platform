@@ -541,6 +541,17 @@ const projectDrivenMenus: AppCustomRouteRecordRaw[] = [
         keepAlive: false
       },
       {
+        path: 'task-dispatch',
+        name: '派工管理',
+        icon: 'ep:user-filled',
+        component: 'mes/task-dispatch/index',
+        componentName: 'ProjectMesTaskDispatch',
+        redirect: '',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
         path: 'pda-receive',
         name: 'PDA \u626b\u7801\u9886\u9000\u6599',
         icon: 'ep:cellphone',
@@ -553,7 +564,7 @@ const projectDrivenMenus: AppCustomRouteRecordRaw[] = [
       },
       {
         path: 'pda-report',
-        name: 'PDA \u626b\u7801\u62a5\u5de5',
+        name: '现场执行',
         icon: 'ep:iphone',
         component: 'mes/pda-execute/report',
         componentName: 'ProjectMesPdaReport',

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
@@ -70,7 +71,8 @@ public class BpmApprovalSchemeSaveReqVO {
         @Schema(description = "命中条件 JSON", example = "{}")
         private String conditionJson;
 
-        @Schema(description = "审批流程 JSON", example = "{\"nodes\":[]}")
+        @Schema(description = "流程定义 Key", example = "erp_purchase_in_approval")
+        @NotBlank(message = "流程定义Key不能为空")
         private String processJson;
 
         @Schema(description = "是否启用", example = "true")

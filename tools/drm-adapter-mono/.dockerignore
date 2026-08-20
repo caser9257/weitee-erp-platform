@@ -1,0 +1,6 @@
+*.tar
+*.nupkg
+bin/
+obj/
+DrmBridge.exe
+DrmBridge.exe.config

@@ -78,6 +78,22 @@ public class ErpProductRespVO {
     @ExcelProperty("Standard")
     private String standard;
 
+    @Schema(description = "产品封装")
+    @ExcelProperty("Packaging")
+    private String packaging;
+
+    @Schema(description = "质量等级")
+    @ExcelProperty("Quality Grade")
+    private String qualityGrade;
+
+    @Schema(description = "品牌/制造商")
+    @ExcelProperty("Brand/Manufacturer")
+    private String brandManufacturer;
+
+    @Schema(description = "替代型号")
+    @ExcelProperty("Alternative Model")
+    private String alternativeModel;
+
     @Schema(description = "Remark", example = "Key material")
     @ExcelProperty("Remark")
     private String remark;

@@ -74,7 +74,7 @@ public class BpmApprovalSchemeRespVO {
         @Schema(description = "命中条件 JSON", example = "{}")
         private String conditionJson;
 
-        @Schema(description = "审批流程 JSON", example = "{\"nodes\":[]}")
+        @Schema(description = "流程定义 Key", example = "erp_purchase_in_approval")
         private String processJson;
 
         @Schema(description = "是否启用", example = "true")

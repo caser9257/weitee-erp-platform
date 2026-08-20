@@ -7,12 +7,16 @@ import cn.weitee.erp.module.erp.controller.admin.mrp.vo.inbound.ErpProductionInb
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionFinishQualityDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionInboundDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionInboundMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.enums.mrp.ErpProductionInboundStatusEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
+import cn.weitee.erp.module.erp.service.stock.ErpStockBatchService;
+import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchChangeReqBO;
+import cn.weitee.erp.module.erp.service.stock.bo.ErpStockBatchInboundReqBO;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import org.springframework.stereotype.Service;
@@ -37,6 +41,9 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
             new ErrorCode(1_030_700_041, "当前自制入库单状态不允许执行该操作");
     private static final ErrorCode PRODUCTION_INBOUND_WAREHOUSE_REQUIRED =
             new ErrorCode(1_030_700_042, "生产工单缺少完工仓库，无法生成自制入库单");
+    private static final ErrorCode PRODUCTION_INBOUND_BATCH_NOT_EXISTS =
+            new ErrorCode(1_030_700_043, "自制入库对应的成品批次不存在，无法反执行");
+    private static final String PRODUCTION_INBOUND_SOURCE_BIZ_TYPE = "PRODUCTION_INBOUND";
 
     @Resource
     private ErpProductionInboundMapper erpProductionInboundMapper;
@@ -46,6 +53,8 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
     private ErpProductionCostService productionCostService;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
+    @Resource
+    private ErpStockBatchService stockBatchService;
     @Resource
     private ErpStockRecordService stockRecordService;
     @Resource
@@ -94,11 +103,16 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
         if (!ErpProductionInboundStatusEnum.PENDING.getStatus().equals(inbound.getStatus())) {
             throw exception(PRODUCTION_INBOUND_STATUS_INVALID);
         }
+        LocalDateTime now = LocalDateTime.now();
+        stockBatchService.createOrIncreaseBatch(new ErpStockBatchInboundReqBO(
+                inbound.getProductId(), inbound.getWarehouseId(), inbound.getNo(), now, null, null,
+                inbound.getInboundQty(), Boolean.FALSE, ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(),
+                inbound.getId(), inbound.getId(), inbound.getNo(), PRODUCTION_INBOUND_SOURCE_BIZ_TYPE,
+                null, null, inbound.getRemark()));
         stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getInboundQty(),
                 ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(), inbound.getId(), inbound.getId(), inbound.getNo(),
                 inbound.getUnitCost(), inbound.getTotalCost()));
-        LocalDateTime now = LocalDateTime.now();
         erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
                 .setId(id)
                 .setStatus(ErpProductionInboundStatusEnum.EXECUTED.getStatus())
@@ -127,6 +141,14 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
         if (!ErpProductionInboundStatusEnum.EXECUTED.getStatus().equals(inbound.getStatus())) {
             throw exception(PRODUCTION_INBOUND_STATUS_INVALID);
         }
+        ErpStockBatchDO stockBatch = stockBatchService.getStockBatchByProductWarehouseAndBatchNo(
+                inbound.getProductId(), inbound.getWarehouseId(), inbound.getNo());
+        if (stockBatch == null) {
+            throw exception(PRODUCTION_INBOUND_BATCH_NOT_EXISTS);
+        }
+        stockBatchService.decreaseBatch(new ErpStockBatchChangeReqBO(
+                stockBatch.getId(), inbound.getInboundQty(), ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(),
+                inbound.getId(), inbound.getId(), inbound.getNo(), "自制入库反执行"));
         stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getInboundQty().negate(),
                 ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(), inbound.getId(), inbound.getId(), inbound.getNo(),

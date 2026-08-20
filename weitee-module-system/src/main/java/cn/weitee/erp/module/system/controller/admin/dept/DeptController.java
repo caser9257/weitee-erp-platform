@@ -12,6 +12,7 @@ import cn.weitee.erp.module.system.controller.admin.dept.vo.dept.DeptSaveReqVO;
 import cn.weitee.erp.module.system.controller.admin.dept.vo.dept.DeptSimpleRespVO;
 import cn.weitee.erp.module.system.dal.dataobject.dept.DeptDO;
 import cn.weitee.erp.module.system.service.dept.DeptService;
+import cn.weitee.erp.module.infra.service.file.IncomingFileProtectionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,6 +25,8 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,6 +40,8 @@ public class DeptController {
 
     @Resource
     private DeptService deptService;
+    @Resource
+    private IncomingFileProtectionService incomingFileProtectionService;
 
     @PostMapping("create")
     @Operation(summary = "创建部门")
@@ -117,7 +122,11 @@ public class DeptController {
     @PreAuthorize("@ss.hasPermission('system:dept:import')")
     public CommonResult<DeptImportRespVO> importExcel(@RequestParam("file") MultipartFile file,
                                                       @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
-        List<DeptImportExcelVO> list = ExcelUtils.read(file, DeptImportExcelVO.class);
+        byte[] plainContent = incomingFileProtectionService.preparePlainContent(file.getBytes(), file.getOriginalFilename());
+        List<DeptImportExcelVO> list;
+        try (InputStream inputStream = new ByteArrayInputStream(plainContent)) {
+            list = ExcelUtils.read(inputStream, DeptImportExcelVO.class);
+        }
         return success(deptService.importDeptList(list, updateSupport));
     }
 

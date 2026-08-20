@@ -2,6 +2,7 @@ package cn.weitee.erp.module.bpm.service.approval;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
@@ -18,7 +19,9 @@ import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSceneMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeVersionMapper;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
+import cn.weitee.erp.module.bpm.service.definition.BpmProcessDefinitionService;
 import cn.weitee.erp.module.system.api.permission.PermissionApi;
+import org.flowable.engine.repository.ProcessDefinition;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -55,6 +58,9 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
 
     @Resource
     private PermissionApi permissionApi;
+
+    @Resource
+    private BpmProcessDefinitionService bpmProcessDefinitionService;
 
     @Override
     public PageResult<BpmApprovalSchemeRespVO> getSchemePage(BpmApprovalSchemePageReqVO pageReqVO) {
@@ -156,6 +162,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         validateDefaultRule(version.getId());
         BpmApprovalSchemeDO scheme = validateSchemeExists(version.getSchemeId());
         validateSchemeOwnership(scheme);
+        validateProcessDefinitions(version.getId());
 
         if (scheme.getActiveVersionId() != null && !ObjUtil.equal(scheme.getActiveVersionId(), version.getId())) {
             bpmApprovalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
@@ -245,6 +252,20 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         }
         if (defaultRuleCount > 1) {
             throw exception(APPROVAL_SCHEME_DEFAULT_RULE_DUPLICATE);
+        }
+    }
+
+    private void validateProcessDefinitions(Long versionId) {
+        List<BpmApprovalRuleDO> rules = bpmApprovalRuleMapper.selectListBySchemeVersionId(versionId);
+        for (BpmApprovalRuleDO rule : rules) {
+            String processKey = StrUtil.trim(rule.getProcessJson());
+            if (StrUtil.isBlank(processKey)) {
+                throw exception(APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS, processKey);
+            }
+            ProcessDefinition processDefinition = bpmProcessDefinitionService.getActiveProcessDefinition(processKey);
+            if (processDefinition == null) {
+                throw exception(APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS, processKey);
+            }
         }
     }
 

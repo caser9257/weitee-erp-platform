@@ -2,6 +2,7 @@ package cn.weitee.erp.module.erp.service.sale;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.weitee.erp.framework.excel.core.util.FileImportProtector;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.ContractImportResultVO;
 import cn.weitee.erp.module.crm.dal.dataobject.contract.CrmContractDO;
 import cn.weitee.erp.module.crm.service.contract.CrmContractService;
@@ -13,6 +14,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.Resource;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,6 +29,9 @@ import java.util.List;
 @Validated
 @Slf4j
 public class ErpContractImportServiceImpl implements ErpContractImportService {
+
+    @Resource
+    private FileImportProtector fileImportProtector;
 
     @Resource
     private CrmContractService crmContractService;
@@ -102,7 +107,9 @@ public class ErpContractImportServiceImpl implements ErpContractImportService {
         result.setFailCount(0);
         result.setFailDetails(new ArrayList<>());
 
-        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+        try {
+            byte[] plainContent = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
+            try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(plainContent))) {
             Sheet sheet = workbook.getSheetAt(0);
             int totalRows = sheet.getLastRowNum();
             result.setTotalCount(totalRows);
@@ -141,6 +148,7 @@ public class ErpContractImportServiceImpl implements ErpContractImportService {
                     failDetail.setReason(e.getMessage());
                     result.getFailDetails().add(failDetail);
                 }
+            }
             }
         } catch (IOException e) {
             log.error("导入合同失败", e);

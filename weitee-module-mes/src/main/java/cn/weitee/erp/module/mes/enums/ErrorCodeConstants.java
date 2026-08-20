@@ -20,5 +20,10 @@ public interface ErrorCodeConstants {
     ErrorCode MES_SOP_IMPORT_FILE_EMPTY = new ErrorCode(1_040_000_014, "上传文件不能为空");
     ErrorCode MES_SOP_IMPORT_FILE_TOO_LARGE = new ErrorCode(1_040_000_015, "上传文件不能超过 10MB");
     ErrorCode MES_SOP_IMPORT_FILE_TYPE_INVALID = new ErrorCode(1_040_000_016, "仅支持上传图片文件");
+    ErrorCode MES_TASK_DISPATCH_NOT_EXISTS = new ErrorCode(1_040_000_017, "派工记录不存在");
+    ErrorCode MES_TASK_DISPATCH_ALREADY_EXISTS = new ErrorCode(1_040_000_018, "当前工序任务已有派工记录，请使用改派");
+    ErrorCode MES_TASK_DISPATCH_ASSIGNEE_REQUIRED = new ErrorCode(1_040_000_019, "班组、人员、设备至少选择一项");
+    ErrorCode MES_EXECUTION_NOT_DISPATCHED = new ErrorCode(1_040_000_020, "当前任务尚未派工或派工已失效");
+    ErrorCode MES_EXECUTION_ERP_STEP_NOT_EXISTS = new ErrorCode(1_040_000_021, "现场执行对应的 ERP 工序不存在");
 
 }

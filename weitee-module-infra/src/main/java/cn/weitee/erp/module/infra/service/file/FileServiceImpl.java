@@ -14,6 +14,7 @@ import cn.weitee.erp.module.infra.controller.admin.file.vo.file.FilePageReqVO;
 import cn.weitee.erp.module.infra.controller.admin.file.vo.file.FilePresignedUrlRespVO;
 import cn.weitee.erp.module.infra.dal.dataobject.file.FileDO;
 import cn.weitee.erp.module.infra.dal.mysql.file.FileMapper;
+import cn.weitee.erp.module.infra.framework.drm.DrmProperties;
 import cn.weitee.erp.module.infra.framework.file.core.client.FileClient;
 import cn.weitee.erp.module.infra.framework.file.core.utils.FileTypeUtils;
 import com.google.common.annotations.VisibleForTesting;
@@ -33,6 +34,7 @@ import java.util.Map;
 
 import static cn.hutool.core.date.DatePattern.PURE_DATE_PATTERN;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.FILE_NOT_EXISTS;
 
 /**
@@ -70,6 +72,12 @@ public class FileServiceImpl implements FileService {
     private FileCleanupCompensationService fileCleanupCompensationService;
 
     @Resource
+    private IncomingFileProtectionService incomingFileProtectionService;
+
+    @Resource
+    private DrmProperties drmProperties;
+
+    @Resource
     private PlatformTransactionManager transactionManager;
 
     @Override
@@ -86,9 +94,12 @@ public class FileServiceImpl implements FileService {
     @Override
     @SneakyThrows
     public String createFile(byte[] content, String name, String directory, String type) {
+        // 文件进入系统后统一转换为明文，供后续存储和业务处理。
+        content = incomingFileProtectionService.preparePlainContent(content, name);
+        final byte[] uploadContent = content;
         // 1.1 处理 type 为空的情况
         if (StrUtil.isEmpty(type)) {
-            type = FileTypeUtils.getMineType(content, name);
+            type = FileTypeUtils.getMineType(uploadContent, name);
         }
         // 1.2 处理 name 为空的情况
         if (StrUtil.isEmpty(name)) {
@@ -109,7 +120,7 @@ public class FileServiceImpl implements FileService {
         // 2.2 上传到远端存储（事务外执行，避免事务回滚后远端文件成为孤文件）
         FileClient client = fileConfigService.getMasterFileClient();
         Assert.notNull(client, "客户端(master) 不能为空");
-        String url = client.upload(content, path, uploadType);
+        String url = client.upload(uploadContent, path, uploadType);
 
         // 3. 事务内保存数据库记录
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
@@ -118,7 +129,7 @@ public class FileServiceImpl implements FileService {
             file = transactionTemplate.execute(status -> {
                 FileDO fileRecord = new FileDO().setConfigId(client.getId())
                         .setName(uploadName).setPath(path).setUrl(url)
-                        .setType(uploadType).setSize((long) content.length);
+                        .setType(uploadType).setSize((long) uploadContent.length);
                 fileMapper.insert(fileRecord);
 
                 // 4. 记录操作日志
@@ -184,6 +195,7 @@ public class FileServiceImpl implements FileService {
     @Override
     @SneakyThrows
     public FilePresignedUrlRespVO presignPutUrl(String name, String directory) {
+        assertPresignedTransferAllowed();
         String path = generateUploadPath(name, directory);
         FileClient fileClient = fileConfigService.getMasterFileClient();
         String uploadUrl = fileClient.presignPutUrl(path);
@@ -194,12 +206,14 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public String presignGetUrl(String url, Integer expirationSeconds) {
+        assertPresignedTransferAllowed();
         FileClient fileClient = fileConfigService.getMasterFileClient();
         return fileClient.presignGetUrl(url, expirationSeconds);
     }
 
     @Override
     public Long createFile(FileCreateReqVO createReqVO) {
+        assertPresignedTransferAllowed();
         createReqVO.setUrl(HttpUtils.removeUrlQuery(createReqVO.getUrl()));
         FileDO file = BeanUtils.toBean(createReqVO, FileDO.class);
         fileMapper.insert(file);
@@ -395,6 +409,12 @@ public class FileServiceImpl implements FileService {
             throw exception(FILE_NOT_EXISTS);
         }
         return fileDO;
+    }
+
+    private void assertPresignedTransferAllowed() {
+        if (drmProperties.isEnabled()) {
+            throw exception(FORBIDDEN);
+        }
     }
 
 }

@@ -1,22 +1,28 @@
 <template>
   <div class="product-workbench">
-    <el-row :gutter="20">
-      <el-col :xs="24" :lg="7" :xl="6">
+    <el-row :gutter="16">
+      <el-col :xs="24" :lg="5" :xl="4">
         <ContentWrap class="category-workspace">
           <div class="workspace-header">
             <div>
-              <p class="workspace-caption">{{ PAGE_COPY.workspaceCaption }}</p>
               <h3 class="workspace-title">{{ PAGE_COPY.categoryTreeTitle }}</h3>
-              <p class="workspace-hint">{{ PAGE_COPY.workspaceHint }}</p>
             </div>
             <div class="workspace-header-actions">
-              <el-button link type="primary" :disabled="!canSelectAllProducts" @click="handleSelectAll">
+              <el-button
+                link
+                type="primary"
+                :disabled="!canSelectAllProducts"
+                @click="handleSelectAll"
+              >
                 {{ PAGE_COPY.allProducts }}
               </el-button>
-              <el-tooltip
-                :content="isTreeExpanded ? PAGE_COPY.collapseTree : PAGE_COPY.expandTree"
-              >
-                <el-button circle plain :disabled="!canToggleTreeExpanded" @click="toggleTreeExpanded">
+              <el-tooltip :content="isTreeExpanded ? PAGE_COPY.collapseTree : PAGE_COPY.expandTree">
+                <el-button
+                  circle
+                  plain
+                  :disabled="!canToggleTreeExpanded"
+                  @click="toggleTreeExpanded"
+                >
                   <Icon :icon="isTreeExpanded ? 'ep:folder-remove' : 'ep:folder-add'" />
                 </el-button>
               </el-tooltip>
@@ -46,23 +52,15 @@
             </el-button>
           </div>
 
-          <div class="workspace-active">
-            <div class="workspace-active-main">
-              <span class="workspace-active-label">{{ PAGE_COPY.currentCategory }}</span>
-              <el-tag round effect="light">{{ activeCategoryLabel }}</el-tag>
-            </div>
-            <span class="workspace-count">{{ PAGE_COPY.categoryCount(categoryCount) }}</span>
-          </div>
-
           <div v-loading="categoryTreeLoading" class="workspace-tree">
             <template v-if="categoryLoadError">
-              <el-result
-                icon="error"
-                :title="PAGE_COPY.categoryLoadFailed"
-                :sub-title="PAGE_COPY.retryWhenReady"
-              >
+              <el-result icon="error" :title="PAGE_COPY.categoryLoadFailed">
                 <template #extra>
-                  <el-button type="primary" :disabled="categoryTreeLoading" @click="loadCategoryTree">
+                  <el-button
+                    type="primary"
+                    :disabled="categoryTreeLoading"
+                    @click="loadCategoryTree"
+                  >
                     {{ PAGE_COPY.reload }}
                   </el-button>
                 </template>
@@ -85,9 +83,13 @@
                 >
                   <template #default="{ data }">
                     <div class="tree-node">
-                      <div class="tree-node-main">
-                        <span class="tree-node-label">{{ data.name }}</span>
-                        <span v-if="data.code" class="tree-node-code">{{ data.code }}</span>
+                      <div
+                        class="tree-node-main"
+                        :title="data.code ? `${data.name}（${data.code}）` : data.name"
+                      >
+                        <span class="tree-node-label">
+                          {{ data.code ? `${data.code} ${data.name}` : data.name }}
+                        </span>
                       </div>
                       <div class="tree-node-tools">
                         <el-tooltip :content="PAGE_COPY.addChildCategory">
@@ -150,35 +152,22 @@
         </ContentWrap>
       </el-col>
 
-      <el-col :xs="24" :lg="17" :xl="18">
+      <el-col :xs="24" :lg="19" :xl="20">
         <ContentWrap class="product-panel">
           <div class="panel-header">
             <div>
-              <p class="workspace-caption">{{ PAGE_COPY.panelCaption }}</p>
               <h3 class="panel-title">{{ PAGE_COPY.productListTitle }}</h3>
-              <div class="panel-meta">
-                <span>{{ PAGE_COPY.filterLabel }}</span>
-                <el-tag type="success" effect="light">{{ activeCategoryLabel }}</el-tag>
-                <span class="panel-total">{{ PAGE_COPY.totalRecords(total) }}</span>
-              </div>
-            </div>
-            <div class="panel-summary">
-              <div class="summary-card">
-                <span class="summary-label">{{ PAGE_COPY.currentPageCount }}</span>
-                <strong>{{ visibleProductCount }}</strong>
-              </div>
             </div>
           </div>
 
-          <el-form
-            ref="queryFormRef"
-            :model="queryParams"
-            label-width="90px"
-            class="query-form"
-          >
+          <el-form ref="queryFormRef" :model="queryParams" label-width="90px" class="query-form">
             <el-row :gutter="16" class="query-row">
               <el-col :xs="24" :sm="14" :lg="10" :xl="8">
-                <el-form-item :label="PAGE_COPY.productNameLabel" prop="name" class="query-form-item">
+                <el-form-item
+                  :label="PAGE_COPY.productNameLabel"
+                  prop="name"
+                  class="query-form-item"
+                >
                   <el-input
                     v-model="queryParams.name"
                     :placeholder="PAGE_COPY.productNamePlaceholder"
@@ -204,7 +193,11 @@
           </el-form>
 
           <div class="panel-toolbar">
-            <el-button type="primary" @click="openForm('create')" v-hasPermi="['erp:product:create']">
+            <el-button
+              type="primary"
+              @click="openForm('create')"
+              v-hasPermi="['erp:product:create']"
+            >
               <Icon icon="ep:plus" class="mr-5px" />
               {{ PAGE_COPY.addProduct }}
             </el-button>
@@ -226,11 +219,7 @@
           </div>
 
           <template v-if="productLoadError">
-            <el-result
-              icon="error"
-              :title="PAGE_COPY.productLoadFailed"
-              :sub-title="PAGE_COPY.retryWhenReady"
-            >
+            <el-result icon="error" :title="PAGE_COPY.productLoadFailed">
               <template #extra>
                 <el-button type="primary" :disabled="productListLoading" @click="getList">
                   {{ PAGE_COPY.reload }}
@@ -239,91 +228,143 @@
             </el-result>
           </template>
           <template v-else>
-            <el-table
-              v-loading="productListLoading"
-              :data="list"
-              :stripe="true"
-              :show-overflow-tooltip="true"
-            >
-              <el-table-column :label="PAGE_COPY.barCodeLabel" align="center" prop="barCode" min-width="150" />
-              <el-table-column :label="PAGE_COPY.productNameLabel" align="center" prop="name" min-width="180" />
-              <el-table-column :label="PAGE_COPY.specLabel" align="center" prop="standard" min-width="140" />
-              <el-table-column :label="PAGE_COPY.categoryLabel" align="center" prop="categoryName" min-width="140" />
-              <el-table-column :label="PAGE_COPY.mrpLabel" align="center" prop="mrpEnable" width="100">
-                <template #default="{ row }">
-                  <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="row.mrpEnable" />
+            <div class="product-table-wrap">
+              <el-table
+                v-loading="productListLoading"
+                :data="list"
+                :stripe="true"
+                :show-overflow-tooltip="true"
+                class="product-table"
+              >
+                <el-table-column type="selection" width="32" />
+                <el-table-column :label="PAGE_COPY.productInfoLabel" align="left" min-width="120">
+                  <template #default="{ row }">
+                    <div class="product-cell">
+                      <div class="product-cell-primary">{{ row.name || '-' }}</div>
+                      <div class="product-cell-secondary">
+                        {{ row.materialCode || row.barCode || row.id }}
+                      </div>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column :label="PAGE_COPY.specCategoryLabel" align="left" min-width="100">
+                  <template #default="{ row }">
+                    <div class="product-cell">
+                      <div class="product-cell-primary">{{ row.standard || '-' }}</div>
+                      <div class="product-cell-secondary">{{ row.categoryName || '-' }}</div>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  :label="PAGE_COPY.productUnitLabel"
+                  align="center"
+                  prop="unitName"
+                  min-width="46"
+                />
+                <el-table-column
+                  :label="PAGE_COPY.approvalStatusLabel"
+                  align="center"
+                  prop="status"
+                  min-width="60"
+                >
+                  <template #default="{ row }">
+                    <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
+                  </template>
+                </el-table-column>
+                <el-table-column
+                  :label="PAGE_COPY.packagingLabel"
+                  align="center"
+                  prop="packaging"
+                  min-width="68"
+                >
+                  <template #default="{ row }">{{ row.packaging || '-' }}</template>
+                </el-table-column>
+                <el-table-column
+                  :label="PAGE_COPY.qualityGradeLabel"
+                  align="center"
+                  prop="qualityGrade"
+                  min-width="60"
+                >
+                  <template #default="{ row }">{{ row.qualityGrade || '-' }}</template>
+                </el-table-column>
+                <el-table-column
+                  :label="PAGE_COPY.brandManufacturerLabel"
+                  align="center"
+                  prop="brandManufacturer"
+                  min-width="84"
+                >
+                  <template #default="{ row }">{{ row.brandManufacturer || '-' }}</template>
+                </el-table-column>
+                <el-table-column
+                  :label="PAGE_COPY.alternativeModelLabel"
+                  align="center"
+                  prop="alternativeModel"
+                  min-width="76"
+                >
+                  <template #default="{ row }">{{ row.alternativeModel || '-' }}</template>
+                </el-table-column>
+                <el-table-column
+                  :label="PAGE_COPY.actionsLabel"
+                  align="center"
+                  width="220"
+                  fixed="right"
+                >
+                  <template #default="{ row }">
+                    <div class="product-actions">
+                      <el-button
+                        link
+                        type="primary"
+                        :disabled="isProductActionBusy"
+                        @click="openForm('detail', row.id)"
+                        v-hasPermi="['erp:product:query']"
+                      >
+                        {{ PAGE_COPY.detail }}
+                      </el-button>
+                      <el-button
+                        link
+                        type="primary"
+                        :disabled="isProductActionBusy"
+                        @click="openForm('update', row.id)"
+                        v-hasPermi="['erp:product:update']"
+                      >
+                        {{ PAGE_COPY.modify }}
+                      </el-button>
+                      <el-button
+                        link
+                        type="warning"
+                        :loading="productStatusUpdatingId === row.id"
+                        :disabled="isProductActionBusy"
+                        @click="handleStatusChange(row)"
+                        v-hasPermi="['erp:product:update']"
+                      >
+                        {{
+                          row.status === CommonStatusEnum.ENABLE
+                            ? PAGE_COPY.disable
+                            : PAGE_COPY.enable
+                        }}
+                      </el-button>
+                      <el-button
+                        link
+                        type="danger"
+                        :loading="productDeletingId === row.id"
+                        :disabled="isProductActionBusy"
+                        @click="handleDelete(row.id)"
+                        v-hasPermi="['erp:product:delete']"
+                      >
+                        {{ PAGE_COPY.delete }}
+                      </el-button>
+                    </div>
+                  </template>
+                </el-table-column>
+                <template #empty>
+                  <el-empty :description="PAGE_COPY.emptyProductList">
+                    <el-button link type="primary" :disabled="!canResetQuery" @click="resetQuery">
+                      {{ PAGE_COPY.resetFilters }}
+                    </el-button>
+                  </el-empty>
                 </template>
-              </el-table-column>
-              <el-table-column :label="PAGE_COPY.supplyTypeLabel" align="center" prop="supplyType" width="120">
-                <template #default="{ row }">
-                  <dict-tag :type="DICT_TYPE.ERP_SUPPLY_TYPE" :value="row.supplyType" />
-                </template>
-              </el-table-column>
-              <el-table-column :label="PAGE_COPY.unitLabel" align="center" prop="unitName" width="90" />
-              <el-table-column
-                :label="PAGE_COPY.purchasePriceLabel"
-                align="center"
-                prop="purchasePrice"
-                :formatter="erpPriceTableColumnFormatter"
-                width="120"
-              />
-              <el-table-column
-                :label="PAGE_COPY.salePriceLabel"
-                align="center"
-                prop="salePrice"
-                :formatter="erpPriceTableColumnFormatter"
-                width="120"
-              />
-              <el-table-column
-                :label="PAGE_COPY.minPriceLabel"
-                align="center"
-                prop="minPrice"
-                :formatter="erpPriceTableColumnFormatter"
-                width="120"
-              />
-              <el-table-column :label="PAGE_COPY.statusLabel" align="center" prop="status" width="100">
-                <template #default="{ row }">
-                  <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
-                </template>
-              </el-table-column>
-              <el-table-column
-                :label="PAGE_COPY.createdAtLabel"
-                align="center"
-                prop="createTime"
-                :formatter="dateFormatter"
-                width="180"
-              />
-              <el-table-column :label="PAGE_COPY.actionsLabel" align="center" width="160" fixed="right">
-                <template #default="{ row }">
-                  <el-button
-                    link
-                    type="primary"
-                    :disabled="isProductDeleteBusy"
-                    @click="openForm('update', row.id)"
-                    v-hasPermi="['erp:product:update']"
-                  >
-                    {{ PAGE_COPY.edit }}
-                  </el-button>
-                  <el-button
-                    link
-                    type="danger"
-                    :loading="productDeletingId === row.id"
-                    :disabled="isProductDeleteBusy"
-                    @click="handleDelete(row.id)"
-                    v-hasPermi="['erp:product:delete']"
-                  >
-                    {{ PAGE_COPY.delete }}
-                  </el-button>
-                </template>
-              </el-table-column>
-              <template #empty>
-                <el-empty :description="PAGE_COPY.emptyProductList">
-                  <el-button link type="primary" :disabled="!canResetQuery" @click="resetQuery">
-                    {{ PAGE_COPY.resetFilters }}
-                  </el-button>
-                </el-empty>
-              </template>
-            </el-table>
+              </el-table>
+            </div>
 
             <div class="panel-pagination">
               <Pagination
@@ -345,7 +386,6 @@
 </template>
 
 <script setup lang="ts">
-import { dateFormatter } from '@/utils/formatTime'
 import download from '@/utils/download'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { ProductCategoryApi, ProductCategoryVO } from '@/api/erp/product/category'
@@ -353,8 +393,8 @@ import ProductForm from './ProductForm.vue'
 import ProductImportForm from './ProductImportForm.vue'
 import ProductCategoryForm from '../category/ProductCategoryForm.vue'
 import { DICT_TYPE } from '@/utils/dict'
+import { CommonStatusEnum } from '@/utils/constants'
 import { defaultProps, handleTree } from '@/utils/tree'
-import { erpPriceTableColumnFormatter } from '@/utils'
 
 defineOptions({ name: 'ErpProductWorkbench' })
 
@@ -363,26 +403,21 @@ type CategoryTreeNode = ProductCategoryVO & {
 }
 
 const PAGE_COPY = {
-  workspaceCaption: '产品工作台',
-  categoryTreeTitle: '分类树',
-  workspaceHint: '左侧维护分类层级，右侧同步查看当前分类下的产品列表。',
-  allProducts: '全部产品',
+  categoryTreeTitle: '产品分类',
+  allProducts: '所有分类',
   collapseTree: '收起分类树',
   expandTree: '展开分类树',
   categorySearchPlaceholder: '按分类名称或编码搜索',
   addRootCategory: '新增一级分类',
-  currentCategory: '当前分类',
   categoryLoadFailed: '分类加载失败',
-  retryWhenReady: '请稍后重试',
   reload: '重新加载',
   addChildCategory: '新增子分类',
   editCategory: '编辑分类',
   deleteCategory: '删除分类',
   noCategoryData: '暂无分类数据',
-  panelCaption: '产品看板',
   productListTitle: '产品列表',
-  filterLabel: '当前筛选：',
-  currentPageCount: '当前页条数',
+  productInfoLabel: '产品信息',
+  specCategoryLabel: '规格/分类',
   productNameLabel: '产品名称',
   productNamePlaceholder: '请输入产品名称',
   search: '搜索',
@@ -391,24 +426,21 @@ const PAGE_COPY = {
   importProduct: '导入产品',
   exportProduct: '导出产品',
   productLoadFailed: '产品列表加载失败',
-  barCodeLabel: '条码',
-  specLabel: '规格',
-  categoryLabel: '分类',
-  mrpLabel: 'MRP',
-  supplyTypeLabel: '供应方式',
-  unitLabel: '单位',
-  purchasePriceLabel: '采购价',
-  salePriceLabel: '销售价',
-  minPriceLabel: '最低价',
-  statusLabel: '状态',
-  createdAtLabel: '创建时间',
+  categoryLabel: '产品分类',
+  productUnitLabel: '产品单位',
+  approvalStatusLabel: '审批状态',
+  packagingLabel: '产品封装',
+  qualityGradeLabel: '质量等级',
+  brandManufacturerLabel: '品牌/制造商',
+  alternativeModelLabel: '替代型号',
   actionsLabel: '操作',
-  edit: '编辑',
+  detail: '详情',
+  modify: '修改',
+  disable: '停用',
+  enable: '启用',
   delete: '删除',
   emptyProductList: '当前筛选条件下暂无产品',
-  resetFilters: '重置筛选',
-  categoryCount: (count: number) => `共 ${count} 个分类`,
-  totalRecords: (count: number) => `共 ${count} 条`
+  resetFilters: '重置筛选'
 }
 
 const message = useMessage()
@@ -421,6 +453,7 @@ const productLoadError = ref(false)
 const productExporting = ref(false)
 const categoryDeletingId = ref<number>()
 const productDeletingId = ref<number>()
+const productStatusUpdatingId = ref<number>()
 
 const list = ref<ProductVO[]>([])
 const total = ref(0)
@@ -443,37 +476,14 @@ const categoryKeyword = ref('')
 const isTreeExpanded = ref(true)
 const categoryTreeRenderKey = ref(0)
 
-const countCategoryNodes = (nodes: CategoryTreeNode[]): number => {
-  return nodes.reduce((count, node) => count + 1 + countCategoryNodes(node.children || []), 0)
-}
-
-const findCategoryNameById = (nodes: CategoryTreeNode[], id: number): string | undefined => {
-  for (const node of nodes) {
-    if (node.id === id) {
-      return node.name
-    }
-    const childName = findCategoryNameById(node.children || [], id)
-    if (childName) {
-      return childName
-    }
-  }
-  return undefined
-}
-
 const hasCategoryId = (nodes: CategoryTreeNode[], id: number): boolean => {
   return nodes.some((node) => node.id === id || hasCategoryId(node.children || [], id))
 }
 
-const categoryCount = computed(() => countCategoryNodes(categoryList.value))
-const visibleProductCount = computed(() => list.value.length)
-const activeCategoryLabel = computed(() => {
-  if (!activeCategoryId.value) {
-    return PAGE_COPY.allProducts
-  }
-  return findCategoryNameById(categoryList.value, activeCategoryId.value) || PAGE_COPY.allProducts
-})
 const isCategoryDeleteBusy = computed(() => categoryDeletingId.value !== undefined)
 const isProductDeleteBusy = computed(() => productDeletingId.value !== undefined)
+const isProductStatusBusy = computed(() => productStatusUpdatingId.value !== undefined)
+const isProductActionBusy = computed(() => isProductDeleteBusy.value || isProductStatusBusy.value)
 const canSelectAllProducts = computed(() => !categoryTreeLoading.value && !!activeCategoryId.value)
 const canToggleTreeExpanded = computed(
   () => !categoryTreeLoading.value && categoryList.value.length > 0
@@ -623,8 +633,35 @@ const handleCategoryDelete = async (row: ProductCategoryVO) => {
   }
 }
 
+const handleStatusChange = async (row: ProductVO) => {
+  if (isProductActionBusy.value) {
+    return
+  }
+  let actionText = row.status === CommonStatusEnum.ENABLE ? PAGE_COPY.disable : PAGE_COPY.enable
+  productStatusUpdatingId.value = row.id
+  try {
+    const latestProduct = await ProductApi.getProduct(row.id)
+    const isEnabled = latestProduct.status === CommonStatusEnum.ENABLE
+    actionText = isEnabled ? PAGE_COPY.disable : PAGE_COPY.enable
+    await message.confirm(`确认${actionText}产品“${row.name}”吗？`)
+    const nextStatus =
+      latestProduct.status === CommonStatusEnum.ENABLE
+        ? CommonStatusEnum.DISABLE
+        : CommonStatusEnum.ENABLE
+    await ProductApi.updateProduct({ ...latestProduct, status: nextStatus })
+    message.success(`${actionText}成功`)
+    await getList()
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') {
+      message.error(error?.msg || error?.message || `${actionText}失败`)
+    }
+  } finally {
+    productStatusUpdatingId.value = undefined
+  }
+}
+
 const handleDelete = async (id: number) => {
-  if (isProductDeleteBusy.value) {
+  if (isProductActionBusy.value) {
     return
   }
   try {
@@ -661,43 +698,25 @@ onMounted(async () => {
 
 <style scoped lang="scss">
 .product-workbench {
-  --workbench-accent: var(--el-color-primary);
-  --workbench-accent-soft: color-mix(in srgb, var(--el-color-primary) 12%, white);
-  --workbench-border: rgba(15, 23, 42, 0.08);
-  --workbench-panel: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.96));
+  --workbench-accent-soft: var(--erp-primary-50);
+  --workbench-border: var(--erp-slate-200);
+  --workbench-panel: var(--erp-surface-white);
 }
 
 .category-workspace,
 .product-panel {
   min-height: calc(100vh - 220px);
-  background:
-    radial-gradient(circle at top right, rgba(64, 158, 255, 0.08), transparent 34%),
-    var(--workbench-panel);
+  background: var(--workbench-panel);
   border: 1px solid var(--workbench-border);
-}
-
-.workspace-caption {
-  margin: 0 0 4px;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--el-text-color-secondary);
+  box-shadow: var(--erp-shadow-sm);
 }
 
 .workspace-title,
 .panel-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--el-text-color-primary);
-}
-
-.workspace-hint,
-.panel-meta {
-  margin: 8px 0 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--el-text-color-secondary);
 }
 
 .workspace-header,
@@ -711,7 +730,7 @@ onMounted(async () => {
 .workspace-header,
 .panel-header {
   align-items: flex-start;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .workspace-header-actions,
@@ -723,7 +742,7 @@ onMounted(async () => {
 }
 
 .workspace-toolbar {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
   align-items: center;
 }
 
@@ -731,100 +750,57 @@ onMounted(async () => {
   flex: 1;
 }
 
-.workspace-active {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border: 1px solid rgba(64, 158, 255, 0.12);
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(255, 255, 255, 0.95));
-}
-
-.workspace-active-main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.workspace-active-label,
-.workspace-count,
-.panel-total,
-.summary-label {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
 .workspace-tree {
-  min-height: 540px;
+  min-height: 480px;
 }
 
 .tree-scrollbar {
-  height: 540px;
+  height: 480px;
   padding-right: 4px;
 }
 
 .tree-node {
+  position: relative;
   display: flex;
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
 }
 
 .tree-node-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
   min-width: 0;
 }
 
 .tree-node-label {
+  min-width: 0;
   overflow: hidden;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--erp-slate-700);
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 500;
 }
 
 .tree-node-code {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.06);
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
+  display: none;
 }
 
 .tree-node-tools {
+  position: absolute;
+  top: 50%;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 2px;
-  opacity: 0;
   pointer-events: none;
+  opacity: 0;
+  transform: translateY(-50%);
   transition: opacity 0.2s ease;
-}
-
-.panel-summary {
-  display: flex;
-  gap: 12px;
-}
-
-.summary-card {
-  min-width: 92px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  text-align: center;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.12), rgba(64, 158, 255, 0.04));
-  color: var(--workbench-accent);
-}
-
-.summary-card strong {
-  display: block;
-  margin-top: 6px;
-  font-size: 28px;
-  line-height: 1;
 }
 
 .query-form {
@@ -851,8 +827,44 @@ onMounted(async () => {
 }
 
 .panel-toolbar {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   justify-content: flex-end;
+}
+
+.product-table-wrap {
+  overflow-x: auto;
+}
+
+.product-table {
+  width: 100%;
+  min-width: 0;
+}
+
+.product-table :deep(.cell) {
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.product-cell {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.product-cell-primary {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-cell-secondary {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--erp-slate-500);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .panel-pagination :deep(.el-pagination) {
@@ -862,38 +874,79 @@ onMounted(async () => {
 }
 
 :deep(.category-tree .el-tree-node__content) {
-  height: 40px;
-  border-radius: 12px;
+  position: relative;
+  height: 32px;
+  border-radius: 8px;
   transition:
     background-color 0.2s ease,
     transform 0.2s ease;
 }
 
 :deep(.category-tree .el-tree-node__content:hover) {
-  transform: translateX(2px);
+  transform: none;
+}
+
+:deep(.category-tree .el-tree-node__expand-icon) {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  font-size: 0;
+  color: transparent;
+  border: 1px solid var(--erp-slate-400);
+  border-radius: 0;
+  transform: none;
+}
+
+:deep(.category-tree .el-tree-node__expand-icon::before) {
+  display: block;
+  font-size: 12px;
+  line-height: 10px;
+  color: var(--erp-slate-600);
+  text-align: center;
+  content: '+';
+}
+
+:deep(.category-tree .el-tree-node__expand-icon.expanded::before) {
+  content: '-';
+}
+
+:deep(.category-tree .el-tree-node__expand-icon.is-leaf) {
+  border-color: transparent;
+  visibility: hidden;
+}
+
+:deep(.category-tree .el-tree-node__children) {
+  position: relative;
+  padding-left: 12px;
+  margin-left: 8px;
+  border-left: 1px dotted var(--erp-slate-400);
+}
+
+:deep(.category-tree .el-tree-node__children .el-tree-node__content::before) {
+  position: absolute;
+  top: 50%;
+  left: -13px;
+  width: 12px;
+  border-top: 1px dotted var(--erp-slate-400);
+  content: '';
 }
 
 :deep(.category-tree .el-tree-node__content:hover .tree-node-tools),
 :deep(.category-tree .el-tree-node.is-current > .el-tree-node__content .tree-node-tools) {
-  opacity: 1;
   pointer-events: auto;
+  opacity: 1;
 }
 
 :deep(.category-tree .el-tree-node.is-current > .el-tree-node__content) {
   background: var(--workbench-accent-soft);
 }
 
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .workspace-header,
   .panel-header,
   .workspace-toolbar {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .workspace-active {
-    flex-direction: column;
-    align-items: flex-start;
   }
 
   .panel-toolbar {
@@ -905,17 +958,11 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .workspace-tree,
   .tree-scrollbar {
-    min-height: 420px;
-    height: 420px;
-  }
-
-  .panel-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    height: 400px;
+    min-height: 400px;
   }
 
   .panel-pagination :deep(.el-pagination) {
@@ -923,7 +970,7 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .product-workbench {
     --el-content-wrap-padding: 16px;
   }
@@ -937,10 +984,6 @@ onMounted(async () => {
   .workspace-search,
   .workspace-toolbar :deep(.el-button),
   .panel-toolbar :deep(.el-button) {
-    width: 100%;
-  }
-
-  .summary-card {
     width: 100%;
   }
 

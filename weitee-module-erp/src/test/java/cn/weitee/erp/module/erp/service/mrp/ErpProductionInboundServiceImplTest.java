@@ -4,6 +4,7 @@ import cn.weitee.erp.module.erp.controller.admin.mrp.vo.cost.ErpProductionCostDe
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionFinishQualityDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionInboundDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockBatchDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionInboundMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
@@ -97,6 +98,13 @@ class ErpProductionInboundServiceImplTest {
                 "cn.weitee.erp.module.erp.service.mrp.ErpProductionCostService", (methodName, args) -> {
                     if ("getCostDetail".equals(methodName)) {
                         return costDetailRef.get();
+                    }
+                    return null;
+                }));
+        setField(service, "stockBatchService", createProxyByName(
+                "cn.weitee.erp.module.erp.service.stock.ErpStockBatchService", (methodName, args) -> {
+                    if ("getStockBatchByProductWarehouseAndBatchNo".equals(methodName)) {
+                        return new ErpStockBatchDO().setId(701L);
                     }
                     return null;
                 }));

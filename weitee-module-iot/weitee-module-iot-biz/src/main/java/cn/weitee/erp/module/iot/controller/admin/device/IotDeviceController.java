@@ -8,6 +8,7 @@ import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.collection.MapUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
+import cn.weitee.erp.module.infra.service.file.IncomingFileProtectionService;
 import cn.weitee.erp.module.iot.controller.admin.device.vo.device.*;
 import cn.weitee.erp.module.iot.dal.dataobject.device.IotDeviceDO;
 import cn.weitee.erp.module.iot.dal.dataobject.product.IotProductDO;
@@ -26,6 +27,8 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.*;
 
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
@@ -43,6 +46,8 @@ public class IotDeviceController {
     private IotDeviceService deviceService;
     @Resource
     private IotProductService productService;
+    @Resource
+    private IncomingFileProtectionService incomingFileProtectionService;
 
     @PostMapping("/create")
     @Operation(summary = "创建设备")
@@ -218,7 +223,11 @@ public class IotDeviceController {
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport)
             throws Exception {
-        List<IotDeviceImportExcelVO> list = ExcelUtils.read(file, IotDeviceImportExcelVO.class);
+        byte[] plainContent = incomingFileProtectionService.preparePlainContent(file.getBytes(), file.getOriginalFilename());
+        List<IotDeviceImportExcelVO> list;
+        try (InputStream inputStream = new ByteArrayInputStream(plainContent)) {
+            list = ExcelUtils.read(inputStream, IotDeviceImportExcelVO.class);
+        }
         return success(deviceService.importDevice(list, updateSupport));
     }
 

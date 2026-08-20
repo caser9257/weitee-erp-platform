@@ -10,6 +10,8 @@ import lombok.ToString;
 @ToString(callSuper = true)
 public class MesWorkTaskPageReqVO extends PageParam {
 
+    private String taskNo;
+
     private String productionOrderNo;
 
     private Long productionOrderId;

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <appSettings>
+    <add key="drm.serverip" value="192.168.1.242" />
+    <add key="drm.port" value="8080" />
+    <add key="drm.user" value="&lt;SDK_USER&gt;" />
+    <add key="drm.password" value="&lt;SDK_PASSWORD&gt;" />
+    <add key="drm.adapter.token" value="&lt;LONG_RANDOM_TOKEN&gt;" />
+    <add key="drm.adapter.allowAnonymous" value="false" />
+    <add key="drm.adapter.maxFileSize" value="524288000" />
+  </appSettings>
+  <system.web>
+    <compilation debug="false" targetFramework="4.8" />
+    <httpRuntime targetFramework="4.8" maxRequestLength="512000" executionTimeout="120" />
+  </system.web>
+  <system.webServer>
+    <security>
+      <requestFiltering>
+        <requestLimits maxAllowedContentLength="524288000" />
+      </requestFiltering>
+    </security>
+    <handlers>
+      <remove name="ExtensionlessUrlHandler-Integrated-4.0" />
+      <add name="ExtensionlessUrlHandler-Integrated-4.0" path="*" verb="*" type="System.Web.Handlers.TransferRequestHandler" preCondition="integratedMode,runtimeVersionv4.0" />
+    </handlers>
+  </system.webServer>
+</configuration>

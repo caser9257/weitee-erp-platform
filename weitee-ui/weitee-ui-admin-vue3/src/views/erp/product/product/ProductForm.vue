@@ -3,16 +3,18 @@
   <Dialog
     v-model="dialogVisible"
     :title="dialogTitle"
-    width="min(1120px, 92vw)"
-    :fullscreen="true"
+    :width="isDetail ? 'min(960px, 92vw)' : 'min(1120px, 92vw)'"
+    :fullscreen="!isDetail"
     :scroll="true"
     max-height="calc(100vh - 180px)"
+    @closed="resetForm"
     class="product-form-dialog"
   >
     <el-form
       ref="formRef"
       :model="formData"
       :rules="formRules"
+      :disabled="isDetail"
       label-width="100px"
       v-loading="formLoading"
       class="product-form"
@@ -65,6 +67,34 @@
           </el-form-item>
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="产品封装" prop="packaging">
+            <el-input v-model="formData.packaging" placeholder="请输入产品封装" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="质量等级" prop="qualityGrade">
+            <el-input v-model="formData.qualityGrade" placeholder="请输入质量等级" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="品牌/制造商" prop="brandManufacturer">
+            <el-input
+              v-model="formData.brandManufacturer"
+              placeholder="请输入品牌/制造商"
+              class="w-full"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="替代型号" prop="alternativeModel">
+            <el-input
+              v-model="formData.alternativeModel"
+              placeholder="请输入替代型号"
+              class="w-full"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
           <el-form-item label="重量（kg）" prop="weight">
             <el-input-number
               v-model="formData.weight"
@@ -77,11 +107,7 @@
         <el-col :xs="24" :sm="12" :xl="8">
           <el-form-item label="状态" prop="status">
             <el-radio-group v-model="formData.status" class="status-group">
-              <el-radio
-                v-for="dict in statusOptions"
-                :key="dict.value"
-                :value="dict.value"
-              >
+              <el-radio v-for="dict in statusOptions" :key="dict.value" :value="dict.value">
                 {{ dict.label }}
               </el-radio>
             </el-radio-group>
@@ -156,7 +182,12 @@
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
           <el-form-item label="供给方式" prop="supplyType">
-            <el-select v-model="formData.supplyType" placeholder="请选择供给方式" clearable class="w-full">
+            <el-select
+              v-model="formData.supplyType"
+              placeholder="请选择供给方式"
+              clearable
+              class="w-full"
+            >
               <el-option
                 v-for="dict in supplyTypeOptions"
                 :key="dict.value"
@@ -202,7 +233,9 @@
       </el-row>
     </el-form>
     <template #footer>
-      <el-button @click="submitForm" type="primary" :disabled="formLoading">确定</el-button>
+      <el-button v-if="!isDetail" @click="submitForm" type="primary" :disabled="formLoading">
+        确定
+      </el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
     </template>
   </Dialog>
@@ -232,6 +265,7 @@ const unitList = ref<ProductUnitVO[]>([])
 const supplierList = ref<SupplierVO[]>([])
 const statusOptions = computed(() => getIntDictOptions(DICT_TYPE.COMMON_STATUS))
 const supplyTypeOptions = computed(() => getStrDictOptions(DICT_TYPE.ERP_SUPPLY_TYPE))
+const isDetail = computed(() => formType.value === 'detail')
 
 const createDefaultFormData = () => ({
   id: undefined,
@@ -242,6 +276,10 @@ const createDefaultFormData = () => ({
   unitId: undefined,
   status: CommonStatusEnum.ENABLE,
   standard: undefined,
+  packaging: undefined,
+  qualityGrade: undefined,
+  brandManufacturer: undefined,
+  alternativeModel: undefined,
   remark: undefined,
   expiryDay: undefined,
   batchControlFlag: false,
@@ -268,8 +306,8 @@ const formRules = reactive({
 
 const open = async (type: string, id?: number) => {
   dialogVisible.value = true
-  dialogTitle.value = t('action.' + type)
   formType.value = type
+  dialogTitle.value = type === 'detail' ? '产品详情' : t('action.' + type)
   resetForm()
   if (id) {
     formLoading.value = true
@@ -288,6 +326,9 @@ defineExpose({ open })
 
 const emit = defineEmits(['success'])
 const submitForm = async () => {
+  if (isDetail.value || formLoading.value) {
+    return
+  }
   await formRef.value.validate()
   formLoading.value = true
   try {
@@ -332,7 +373,7 @@ const resetForm = () => {
   gap: 16px;
 }
 
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
   .product-form {
     :deep(.el-form-item) {
       margin-bottom: 18px;
@@ -340,7 +381,7 @@ const resetForm = () => {
   }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .product-form {
     :deep(.el-form-item) {
       margin-bottom: 16px;
