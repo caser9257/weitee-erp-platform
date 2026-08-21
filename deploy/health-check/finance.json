@@ -1,0 +1,10 @@
+{
+  "module": "finance",
+  "baseUrl": "http://127.0.0.1:48080",
+  "frontendUrl": "http://127.0.0.1:8080",
+  "loginUsername": "finance01",
+  "requiredMenuPath": "/finance/payment",
+  "businessUrls": [
+    "http://127.0.0.1:48080/admin-api/erp/finance-payment/page"
+  ]
+}
