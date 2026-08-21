@@ -133,11 +133,11 @@ public class ErpRdBomController {
     }
 
     @PostMapping("/import")
-    @Operation(summary = "按单导入研发 BOM 明细（导入即跑完整性校验）")
+    @Operation(summary = "按单导入研发 BOM 明细（智能识别表头，导入即跑完整性校验）")
     @PreAuthorize("@ss.hasPermission('erp:rd-bom:create')")
     public CommonResult<ErpRdBomImportResultVO> importRdBom(
-            @RequestParam("productId") Long productId,
-            @RequestParam("bomCode") String bomCode,
+            @RequestParam(value = "productId", required = false) Long productId,
+            @RequestParam(value = "bomCode", required = false) String bomCode,
             @RequestParam(value = "version", required = false) String version,
             @RequestParam(value = "remark", required = false) String remark,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport,

@@ -7,17 +7,17 @@
             v-model="formData.productId"
             filterable
             :loading="productLoading"
-            placeholder="请选择成品"
+            placeholder="自动识别（可手动选择覆盖）"
             class="w-full"
           >
             <el-option v-for="item in productList" :key="item.id" :label="item.name" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="BOM 编码" prop="bomCode">
-          <el-input v-model="formData.bomCode" placeholder="请输入研发 BOM 编码" />
+          <el-input v-model="formData.bomCode" placeholder="自动识别（可手动输入覆盖）" />
         </el-form-item>
         <el-form-item label="版本">
-          <el-input v-model="formData.version" placeholder="可选，如 V1.0" />
+          <el-input v-model="formData.version" placeholder="自动识别（可手动输入，如 V1.0）" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="可选" />
@@ -30,7 +30,7 @@
           下载导入模板
         </el-button>
         <span class="ml-10px text-12px text-slate-400">
-          按单导入：先选成品与 BOM 编码，再上传明细文件
+          智能识别：上传即自动解析表头与层级明细，无需手填
         </span>
       </div>
 
@@ -163,17 +163,17 @@ const ISSUE_TYPE_LABELS: Record<string, string> = {
 const issueTypeLabel = (type?: string) => (type && ISSUE_TYPE_LABELS[type]) || `类型${type}`
 
 const formRules = {
-  productId: [{ required: true, message: '请选择成品', trigger: 'change' }],
-  bomCode: [{ required: true, message: '请输入 BOM 编码', trigger: 'blur' }]
+  productId: [{ required: false }],
+  bomCode: [{ required: false }]
 }
 const formRef = ref()
 
 const importUrl = computed(() => {
   const params = new URLSearchParams()
-  params.set('productId', String(formData.productId ?? ''))
-  params.set('bomCode', formData.bomCode || '')
-  params.set('version', formData.version || '')
-  params.set('remark', formData.remark || '')
+  if (formData.productId != null) params.set('productId', String(formData.productId))
+  if (formData.bomCode) params.set('bomCode', formData.bomCode)
+  if (formData.version) params.set('version', formData.version)
+  if (formData.remark) params.set('remark', formData.remark)
   return (
     import.meta.env.VITE_BASE_URL +
     import.meta.env.VITE_API_URL +
@@ -202,10 +202,6 @@ const loadProductList = async () => {
 }
 
 const submitFileForm = async () => {
-  if (!formData.productId || !formData.bomCode) {
-    message.error('请先选择成品并填写 BOM 编码')
-    return
-  }
   if (!hasSelectedFile.value) {
     message.error('请上传文件')
     return
