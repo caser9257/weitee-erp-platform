@@ -126,6 +126,7 @@ import { getAccessToken, getTenantId } from '@/utils/auth'
 import download from '@/utils/download'
 import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import { RdBomApi, type RdBomImportResultVO } from '@/api/erp/rd/bom'
+import { genFileId } from 'element-plus'
 import type { UploadInstance, UploadProps, UploadUserFile } from 'element-plus'
 import { useMessage } from '@/hooks/web/useMessage'
 
@@ -235,8 +236,11 @@ const submitFormError: UploadProps['onError'] = () => {
   uploadLoading.value = false
 }
 
-const handleExceed: UploadProps['onExceed'] = () => {
-  message.error('最多只能上传一个文件！')
+const handleExceed: UploadProps['onExceed'] = (files) => {
+  uploadRef.value?.clearFiles()
+  const file = files[0] as UploadUserFile
+  file.uid = genFileId()
+  uploadRef.value?.handleStart(file as any)
 }
 
 const downloadTemplate = async () => {
