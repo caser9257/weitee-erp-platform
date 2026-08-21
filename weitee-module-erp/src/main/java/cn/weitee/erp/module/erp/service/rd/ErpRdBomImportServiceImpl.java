@@ -142,11 +142,12 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         Long detectedProductId = productId;
         String detectedVersion = version;
         String detectedRemark = remark;
+        SmartHeader header = null;
         try {
             byte[] plainContent = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
             try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(plainContent))) {
                 Sheet sheet = workbook.getSheetAt(0);
-                SmartHeader header = tryParseSmartHeader(sheet, materialCodeMap, normalizedCodeMap);
+                header = tryParseSmartHeader(sheet, materialCodeMap, normalizedCodeMap);
                 if (header != null) {
                     if (detectedProductId == null && header.productId != null) {
                         detectedProductId = header.productId;
@@ -232,10 +233,31 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         }
 
         Long finalProductId = detectedProductId;
+        ErpProductDO topProduct = null;
+        if (finalProductId != null) {
+            topProduct = productService.getProduct(finalProductId);
+        }
+        if (topProduct == null && header != null && StrUtil.isNotBlank(header.bomCode)) {
+            String topCode = header.bomCode.trim();
+            String topNorm = topCode.replaceAll("\\s+", "");
+            topProduct = normalizedCodeMap.get(topNorm);
+            if (topProduct == null) topProduct = materialCodeMap.get(topCode);
+            if (topProduct == null) {
+                String topName = StrUtil.isNotBlank(header.productName) ? header.productName : topCode;
+                topProduct = autoCreateTopProduct(topCode, topName);
+                materialCodeMap.put(topCode, topProduct);
+                normalizedCodeMap.put(topNorm, topProduct);
+                finalProductId = topProduct.getId();
+            } else {
+                finalProductId = topProduct.getId();
+            }
+        }
         if (finalProductId == null) {
             throw exception(ErrorCodeConstants.PRODUCT_NOT_EXISTS);
         }
-        ErpProductDO topProduct = productService.getProduct(finalProductId);
+        if (topProduct == null) {
+            topProduct = productService.getProduct(finalProductId);
+        }
         if (topProduct == null) {
             throw exception(ErrorCodeConstants.PRODUCT_NOT_EXISTS);
         }
@@ -262,11 +284,13 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         Long productId;
         String bomCode;
         String version;
+        String productName;
     }
 
     private SmartHeader tryParseSmartHeader(Sheet sheet, Map<String, ErpProductDO> codeMap, Map<String, ErpProductDO> normMap) {
         String foundCode = null;
         String foundVersion = null;
+        String foundProductName = null;
         Long foundProductId = null;
         for (int r = 0; r < Math.min(4, sheet.getLastRowNum() + 1); r++) {
             Row row = sheet.getRow(r);
@@ -297,15 +321,25 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
                         }
                     }
                 }
+                if (t.contains("产品名称")) {
+                    for (int k = 1; k <= 2; k++) {
+                        String v = getCellString(row, c + k);
+                        if (StrUtil.isNotBlank(v) && v.trim().length() >= 2) {
+                            foundProductName = v.trim();
+                            break;
+                        }
+                    }
+                }
             }
         }
-        if (foundCode == null && foundProductId == null && foundVersion == null) {
+        if (foundCode == null && foundProductId == null && foundVersion == null && foundProductName == null) {
             return null;
         }
         SmartHeader h = new SmartHeader();
         h.bomCode = foundCode;
         h.productId = foundProductId;
         h.version = foundVersion;
+        h.productName = foundProductName;
         return h;
     }
 
@@ -550,6 +584,25 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
             throw new IllegalArgumentException("自动创建物料失败：" + rawCode);
         }
         log.info("[autoCreateProduct] 自动创建物料成功，code={}, id={}, name={}", rawCode, newId, productName);
+        return created;
+    }
+
+    private ErpProductDO autoCreateTopProduct(String rawCode, String productName) {
+        Long unitId = findUnitIdByName("");
+        Long categoryId = findDefaultCategoryId();
+        ProductSaveReqVO req = new ProductSaveReqVO();
+        req.setName(StrUtil.isBlank(productName) ? rawCode : productName);
+        req.setMaterialCode(rawCode.trim());
+        req.setBarCode(rawCode.trim());
+        req.setCategoryId(categoryId);
+        req.setUnitId(unitId);
+        req.setStatus(1);
+        Long newId = productService.createProduct(req);
+        ErpProductDO created = productMapper.selectById(newId);
+        if (created == null) {
+            throw new IllegalArgumentException("自动创建顶层物料失败：" + rawCode);
+        }
+        log.info("[autoCreateTopProduct] 自动创建顶层物料成功，code={}, id={}, name={}", rawCode, newId, productName);
         return created;
     }
 
