@@ -644,6 +644,46 @@ const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
     alwaysShow: true,
     children: [
       {
+        path: 'todo',
+        name: '待我审批',
+        icon: 'ep:clock',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalTodo',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'submitted',
+        name: '我发起的',
+        icon: 'ep:promotion',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalSubmitted',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'done',
+        name: '已审批',
+        icon: 'ep:circle-check',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalDone',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'cc',
+        name: '抄送我',
+        icon: 'ep:message',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalCc',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
         path: 'statistics',
         name: '审批统计看板',
         icon: 'ep:data-analysis',

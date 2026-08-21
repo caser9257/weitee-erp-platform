@@ -54,7 +54,13 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                     "/scm/stock-in", "/scm/stock-in", true),
             new BundledProcessDefinition("erp_stock_out_approval", "其它出库审批",
                     "bpmn/erp_stock_out_approval.bpmn", "erp_stock",
-                    "/scm/stock-out", "/scm/stock-out", true)
+                    "/scm/stock-out", "/scm/stock-out", true),
+            new BundledProcessDefinition("erp_rd_bom_approval", "研发BOM审批",
+                    "bpmn/erp_rd_bom_approval.bpmn", "erp_rd",
+                    "/erp/rd/rd-bom", "/erp/rd/rd-bom", true),
+            new BundledProcessDefinition("erp_product_approval", "物料新建审核",
+                    "bpmn/erp_product_approval.bpmn", "erp_product",
+                    "/erp/product/product", "/erp/product/product", true)
     );
 
     private final RepositoryService repositoryService;
