@@ -11,7 +11,7 @@
       >
         <Icon :icon="expanded ? 'ep:arrow-down' : 'ep:arrow-right'" :size="14" />
       </span>
-      <span v-else class="inline-block w-20px" />
+      <span v-else class="inline-block w-20px"></span>
 
       <span class="text-13px font-medium text-slate-800 truncate max-w-180px" :title="item.materialName">
         {{ item.materialName || '—' }}
