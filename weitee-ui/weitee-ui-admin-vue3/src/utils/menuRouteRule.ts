@@ -11,7 +11,9 @@ export const FORMAL_ROOT_PATHS = [
   '/mes',
   '/finance',
   '/hr',
-  '/system'
+  '/system',
+  '/approval',
+  '/bpm'
 ] as const
 
 export const formalRootPaths = new Set<string>(FORMAL_ROOT_PATHS)
