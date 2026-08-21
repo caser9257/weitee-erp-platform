@@ -86,7 +86,7 @@ export interface RdBomSaveReqVO {
 }
 
 export interface RdBomIntegrityIssueVO {
-  issueType?: number
+  issueType?: string
   severity?: string
   rowIndex?: number
   materialId?: number

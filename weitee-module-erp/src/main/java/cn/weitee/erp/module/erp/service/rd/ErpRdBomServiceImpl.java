@@ -50,6 +50,7 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.BOM_ITEM_EMPTY;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_SUBMIT_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXISTS;
 
 @Service
@@ -93,6 +94,9 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     @Transactional(rollbackFor = Exception.class)
     public void updateRdBom(ErpRdBomSaveReqVO updateReqVO) {
         ErpRdBomDO existed = validateRdBomExists(updateReqVO.getId());
+        if (ErpRdBomStatusEnum.PROCESS.getStatus().equals(existed.getStatus())) {
+            throw exception(RD_BOM_BPM_SUBMIT_FAIL);
+        }
         validateBomItems(updateReqVO.getItems());
         productService.validProductList(List.of(updateReqVO.getProductId()));
         List<ErpRdBomItemDO> existedItems = erpRdBomItemMapper.selectListByBomId(updateReqVO.getId());
@@ -263,7 +267,6 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         erpRdBomMapper.updateById(new ErpRdBomDO()
                 .setId(id)
                 .setVersion(nextVersion)
-                .setStatus(ErpRdBomStatusEnum.PUBLISHED.getStatus())
                 .setPublishedBomId(manufacturingBomId)
                 .setLastPublishedTime(LocalDateTime.now()));
     }

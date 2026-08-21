@@ -319,15 +319,15 @@ const treeVisible = ref(false)
 const treeLoading = ref(false)
 const treeData = ref<RdBomTreeRespVO | null>(null)
 
-const ISSUE_TYPE_LABELS: Record<number, string> = {
-  1: '悬浮件',
-  2: '用量无效',
-  3: '装配体位号',
-  4: '悬空装配体',
-  5: '缺少位号',
-  6: '位号数不符'
+const ISSUE_TYPE_LABELS: Record<string, string> = {
+  FLOATING_MATERIAL: '悬浮件',
+  USAGE_INVALID: '用量无效',
+  DESIGNATOR_ON_ASSEMBLY: '装配体位号',
+  FLOATING_ASSEMBLY: '悬空装配体',
+  MISSING_DESIGNATOR: '缺少位号',
+  DESIGNATOR_COUNT_MISMATCH: '位号数不符'
 }
-const issueTypeLabel = (type?: number) => (type != null && ISSUE_TYPE_LABELS[type]) || `类型${type}`
+const issueTypeLabel = (type?: string) => (type && ISSUE_TYPE_LABELS[type]) || `类型${type}`
 
 const queryParams = reactive<RdBomPageReqVO>({
   pageNo: 1,
