@@ -22,6 +22,7 @@ import cn.weitee.erp.module.erp.dal.mysql.rd.ErpRdBomMapper;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
 import cn.weitee.erp.module.erp.dal.mysql.rd.ErpRdBomItemSubstituteMapper;
 import cn.weitee.erp.module.erp.enums.mrp.ErpBomStatusEnum;
+import cn.weitee.erp.module.erp.enums.rd.ErpRdBomChangeType;
 import cn.weitee.erp.module.erp.enums.rd.ErpRdBomStatusEnum;
 import cn.weitee.erp.module.erp.enums.rd.RdBomIntegrityIssueType;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
@@ -49,9 +50,13 @@ import java.util.stream.Collectors;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.BOM_INTEGRITY_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.BOM_ITEM_EMPTY;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_APPROVE_LOCKED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_SUBMIT_FAIL;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_CHANGE_NOT_APPROVED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_PUBLISH_NOT_APPROVED;
 
 @Service
 @Validated
@@ -87,6 +92,9 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                 .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus());
         erpRdBomMapper.insert(rdBom);
         saveRdBomItems(rdBom.getId(), createReqVO.getItems());
+        assertBomIntegrityPassed(rdBom.getId());
+        changeLogService.logChange(rdBom.getId(), ErpRdBomChangeType.CREATE.getType(),
+                "创建研发 BOM，版本=" + rdBom.getVersion());
         return rdBom.getId();
     }
 
@@ -97,13 +105,20 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         if (ErpRdBomStatusEnum.PROCESS.getStatus().equals(existed.getStatus())) {
             throw exception(RD_BOM_BPM_SUBMIT_FAIL);
         }
+        if (ErpRdBomStatusEnum.APPROVE.getStatus().equals(existed.getStatus())) {
+            throw exception(RD_BOM_APPROVE_LOCKED);
+        }
         validateBomItems(updateReqVO.getItems());
         productService.validProductList(List.of(updateReqVO.getProductId()));
+        List<ErpRdBomItemDO> newItemDOs = BeanUtils.toBean(updateReqVO.getItems(), ErpRdBomItemDO.class,
+                item -> item.setBomId(updateReqVO.getId()));
+        assertBomIntegrityPassed(newItemDOs);
         List<ErpRdBomItemDO> existedItems = erpRdBomItemMapper.selectListByBomId(updateReqVO.getId());
         String oldDetail = buildChangeSnapshot(existed, existedItems);
         erpRdBomMapper.updateById(BeanUtils.toBean(updateReqVO, ErpRdBomDO.class)
                 .setVersion(existed.getVersion())
                 .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus())
+                .setProcessInstanceId(null)
                 .setPublishedBomId(existed.getPublishedBomId())
                 .setLastPublishedTime(existed.getLastPublishedTime()));
         erpRdBomItemSubstituteMapper.deleteByBomItemIds(convertSet(existedItems, ErpRdBomItemDO::getId));
@@ -113,11 +128,7 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         ErpRdBomDO updated = erpRdBomMapper.selectById(updateReqVO.getId());
         String newDetail = buildChangeSnapshot(updated, newItems);
         String diff = "旧值: " + oldDetail + " | 新值: " + newDetail;
-        try {
-            changeLogService.logChange(updateReqVO.getId(), "UPDATE", diff);
-        } catch (Exception e) {
-            log.warn("[updateRdBom] 记录变更日志失败，bomId={}", updateReqVO.getId(), e);
-        }
+        changeLogService.logChange(updateReqVO.getId(), ErpRdBomChangeType.UPDATE.getType(), diff);
     }
 
     private String buildChangeSnapshot(ErpRdBomDO bom, List<ErpRdBomItemDO> items) {
@@ -211,6 +222,10 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     @Transactional(rollbackFor = Exception.class)
     public void publishRdBom(Long id) {
         ErpRdBomDO rdBom = validateRdBomExists(id);
+        if (!ErpRdBomStatusEnum.APPROVE.getStatus().equals(rdBom.getStatus())) {
+            throw exception(RD_BOM_PUBLISH_NOT_APPROVED);
+        }
+        assertBomIntegrityPassed(id);
         List<ErpRdBomItemDO> rdBomItems = erpRdBomItemMapper.selectListByBomId(id);
         if (CollUtil.isEmpty(rdBomItems)) {
             throw exception(BOM_ITEM_EMPTY);
@@ -272,9 +287,46 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long startChangeRdBom(Long id) {
+        ErpRdBomDO source = validateRdBomExists(id);
+        if (!ErpRdBomStatusEnum.APPROVE.getStatus().equals(source.getStatus())) {
+            throw exception(RD_BOM_CHANGE_NOT_APPROVED);
+        }
+        List<ErpRdBomItemDO> sourceItems = erpRdBomItemMapper.selectListByBomId(id);
+        if (CollUtil.isEmpty(sourceItems)) {
+            throw exception(BOM_ITEM_EMPTY);
+        }
+        String nextVersion = generateNextVersion(source.getProductId());
+        ErpRdBomDO changeBom = new ErpRdBomDO()
+                .setBomCode(source.getBomCode())
+                .setProductId(source.getProductId())
+                .setVersion(nextVersion)
+                .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus())
+                .setRemark("发起变更，源版本=" + source.getVersion());
+        erpRdBomMapper.insert(changeBom);
+        List<ErpRdBomItemDO> changeItems = BeanUtils.toBean(sourceItems, ErpRdBomItemDO.class,
+                item -> item.setId(null).setBomId(changeBom.getId()));
+        erpRdBomItemMapper.insertBatch(changeItems);
+        copyRdBomItemSubstitutesForChange(sourceItems, changeItems);
+        changeLogService.logChange(changeBom.getId(), ErpRdBomChangeType.CHANGE_CREATE.getType(),
+                "发起变更，源 BOM id=" + id + " 源版本=" + source.getVersion() + " 新版本=" + nextVersion);
+        changeLogService.logChange(id, ErpRdBomChangeType.CHANGE_CREATE.getType(),
+                "派生变更版本，新 BOM id=" + changeBom.getId() + " 版本=" + nextVersion);
+        return changeBom.getId();
+    }
+
+    @Override
     public List<ErpRdBomIntegrityIssueRespVO> validateRdBomIntegrity(Long id) {
         validateRdBomExists(id);
         List<ErpRdBomItemDO> items = erpRdBomItemMapper.selectListByBomId(id);
+        return validateItemsIntegrity(items);
+    }
+
+    /**
+     * 校验 BOM 明细完整性。ERROR 级问题（悬浮件 / 用量无效 / 缺位号 / 位号数量与用量不一致）将阻断保存。
+     */
+    private List<ErpRdBomIntegrityIssueRespVO> validateItemsIntegrity(List<ErpRdBomItemDO> items) {
         List<ErpRdBomIntegrityIssueRespVO> issues = new ArrayList<>();
         if (CollUtil.isEmpty(items)) {
             return issues;
@@ -348,6 +400,23 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
             }
         }
         return issues;
+    }
+
+    /**
+     * 保存前拦截：若存在 ERROR 级完整性问题，直接拒绝保存。
+     */
+    private void assertBomIntegrityPassed(Long id) {
+        List<ErpRdBomIntegrityIssueRespVO> issues = validateRdBomIntegrity(id);
+        if (issues.stream().anyMatch(issue -> "ERROR".equals(issue.getSeverity()))) {
+            throw exception(BOM_INTEGRITY_INVALID);
+        }
+    }
+
+    private void assertBomIntegrityPassed(List<ErpRdBomItemDO> items) {
+        List<ErpRdBomIntegrityIssueRespVO> issues = validateItemsIntegrity(items);
+        if (issues.stream().anyMatch(issue -> "ERROR".equals(issue.getSeverity()))) {
+            throw exception(BOM_INTEGRITY_INVALID);
+        }
     }
 
     private ErpRdBomIntegrityIssueRespVO buildIssue(int rowIndex, Long materialId, String materialName,
@@ -500,7 +569,7 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         List<ErpProductDO> products = productService.validProductList(convertSet(items, ErpRdBomSaveReqVO.Item::getMaterialId));
         Map<Long, ErpProductDO> productMap = convertMap(products, ErpProductDO::getId);
         List<ErpRdBomItemDO> itemDOs = BeanUtils.toBean(items, ErpRdBomItemDO.class,
-                item -> item.setBomId(bomId).setUnitId(productMap.get(item.getMaterialId()).getUnitId()));
+                item -> item.setId(null).setBomId(bomId).setUnitId(productMap.get(item.getMaterialId()).getUnitId()));
         erpRdBomItemMapper.insertBatch(itemDOs);
         saveRdBomItemSubstitutes(itemDOs, items);
     }
@@ -541,6 +610,24 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                     substitute.setBomItemId(rdBomItemIdMap.get(substitute.getBomItemId()));
                 });
         erpBomItemSubstituteMapper.insertBatch(manufacturingItemSubstitutes);
+    }
+
+    private void copyRdBomItemSubstitutesForChange(List<ErpRdBomItemDO> sourceItems, List<ErpRdBomItemDO> targetItems) {
+        List<ErpRdBomItemSubstituteDO> substitutes =
+                erpRdBomItemSubstituteMapper.selectListByBomItemIds(convertSet(sourceItems, ErpRdBomItemDO::getId));
+        if (CollUtil.isEmpty(substitutes)) {
+            return;
+        }
+        Map<Long, Long> idMap = new java.util.HashMap<>();
+        for (int i = 0; i < sourceItems.size(); i++) {
+            idMap.put(sourceItems.get(i).getId(), targetItems.get(i).getId());
+        }
+        List<ErpRdBomItemSubstituteDO> newSubstitutes = BeanUtils.toBean(substitutes,
+                ErpRdBomItemSubstituteDO.class, s -> {
+                    s.setId(null);
+                    s.setBomItemId(idMap.get(s.getBomItemId()));
+                });
+        erpRdBomItemSubstituteMapper.insertBatch(newSubstitutes);
     }
 
     private void validateBomItems(List<?> items) {
