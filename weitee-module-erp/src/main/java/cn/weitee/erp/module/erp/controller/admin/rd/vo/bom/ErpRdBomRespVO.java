@@ -56,6 +56,8 @@ public class ErpRdBomRespVO {
 
         private String referenceDesignator;
 
+        private String position;
+
         private Integer leadTimeDay;
 
         private Integer sort;

@@ -40,6 +40,8 @@ public class ErpRdBomItemDO extends BaseDO {
 
     private String referenceDesignator;
 
+    private String position;
+
     private Integer leadTimeDay;
 
     private Integer sort;

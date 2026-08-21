@@ -480,17 +480,34 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         item.setMaterialType(0);
         item.setUnitId(material.getUnitId());
         item.setUsageQty(qty);
+        String positionVal = null;
         Integer posCol = colIndex.get("物料位置");
         if (posCol != null) {
             String pos = getCellString(row, posCol).trim();
             if (StrUtil.isNotBlank(pos)) {
-                item.setReferenceDesignator(pos);
+                positionVal = pos;
             }
         }
+        String remarkVal = null;
         Integer remarkCol = colIndex.get("备注");
         if (remarkCol != null) {
             String rm = getCellString(row, remarkCol).trim();
-            if (StrUtil.isNotBlank(rm)) item.setRemark(rm);
+            if (StrUtil.isNotBlank(rm)) remarkVal = rm;
+        }
+        // 物料位置：位号形态进位号，否则进独立的 position 列
+        if (StrUtil.isNotBlank(positionVal)) {
+            boolean looksLikeDesignator = positionVal.matches("(?i).*[A-Za-z]+\\d+.*")
+                    && !positionVal.contains("安装")
+                    && positionVal.length() < 64
+                    && !positionVal.matches(".*[\\u4e00-\\u9fa5]{4,}.*");
+            if (looksLikeDesignator) {
+                item.setReferenceDesignator(positionVal);
+            } else {
+                item.setPosition(positionVal);
+            }
+        }
+        if (StrUtil.isNotBlank(remarkVal)) {
+            item.setRemark(remarkVal);
         }
         return item;
     }

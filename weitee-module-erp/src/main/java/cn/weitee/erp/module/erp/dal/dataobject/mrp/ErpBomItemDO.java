@@ -35,6 +35,8 @@ public class ErpBomItemDO extends BaseDO {
 
     private String referenceDesignator;
 
+    private String position;
+
     private Integer issueMode;
 
     private Boolean backflushFlag;

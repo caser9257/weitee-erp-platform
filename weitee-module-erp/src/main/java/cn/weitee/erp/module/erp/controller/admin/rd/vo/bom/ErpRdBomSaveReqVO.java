@@ -60,6 +60,9 @@ public class ErpRdBomSaveReqVO {
         @Schema(description = "位号（如 R1,C2,U3）")
         private String referenceDesignator;
 
+        @Schema(description = "物料位置（安装位置）")
+        private String position;
+
         @Schema(description = "提前期")
         private Integer leadTimeDay;
 

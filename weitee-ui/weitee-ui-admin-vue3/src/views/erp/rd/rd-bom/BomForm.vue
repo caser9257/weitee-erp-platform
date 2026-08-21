@@ -203,6 +203,11 @@
             <el-input v-model="row.referenceDesignator" placeholder="如 R1,C2,U3" />
           </template>
         </el-table-column>
+        <el-table-column label="物料位置" width="200" align="center">
+          <template #default="{ row }">
+            <el-input v-model="row.position" placeholder="如 安装于电源外壳上" />
+          </template>
+        </el-table-column>
         <el-table-column label="提前期(天)" width="140" align="center">
           <template #default="{ row }">
             <el-input-number
@@ -322,6 +327,8 @@ const toFormData = (data: RdBomVO): BomFormData => ({
           unitId: item.unitId,
           usageQty: item.usageQty,
           lossRate: item.lossRate,
+          referenceDesignator: item.referenceDesignator || '',
+          position: item.position || '',
           leadTimeDay: item.leadTimeDay,
           sort: item.sort,
           remark: item.remark || '',

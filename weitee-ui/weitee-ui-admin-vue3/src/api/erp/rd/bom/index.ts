@@ -6,6 +6,7 @@ export interface RdBomItemVO {
   materialId: number
   materialName?: string
   referenceDesignator?: string
+  position?: string
   materialType?: number
   unitId?: number
   unitName?: string
@@ -33,6 +34,7 @@ export interface RdBomItemSaveReqVO {
   itemNo?: number
   materialId?: number
   referenceDesignator?: string
+  position?: string
   materialType?: number
   unitId?: number
   usageQty?: number
@@ -135,6 +137,7 @@ export interface RdBomTreeItemVO {
   usageQty?: number
   lossRate?: number
   referenceDesignator?: string
+  position?: string
   leadTimeDay?: number
   remark?: string
   substitutes?: RdBomTreeSubstituteVO[]

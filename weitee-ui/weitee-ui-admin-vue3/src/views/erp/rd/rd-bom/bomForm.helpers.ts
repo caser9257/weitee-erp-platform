@@ -18,6 +18,7 @@ export type BomItemFormData = {
   usageQty?: number
   lossRate?: number
   referenceDesignator?: string
+  position?: string
   leadTimeDay?: number
   sort?: number
   remark?: string
@@ -39,6 +40,7 @@ export type BomPayload = RdBomSaveReqVO
 export function createEmptyBomItem(): BomItemFormData {
   return {
     referenceDesignator: '',
+    position: '',
     remark: '',
     substitutes: []
   }
@@ -77,6 +79,7 @@ export function normalizeBomFormData(formData: BomFormData): BomFormData {
       lossRate: item.lossRate === undefined || item.lossRate === null ? undefined : item.lossRate,
       referenceDesignator:
         item.referenceDesignator?.trim() || undefined,
+      position: item.position?.trim() || undefined,
       leadTimeDay:
         item.leadTimeDay === undefined || item.leadTimeDay === null ? undefined : item.leadTimeDay,
       sort: item.sort === undefined || item.sort === null ? undefined : item.sort,
@@ -151,6 +154,7 @@ export function buildBomPayload(formData: BomFormData): BomPayload {
       usageQty: item.usageQty,
       lossRate: item.lossRate,
       referenceDesignator: item.referenceDesignator,
+      position: item.position,
       leadTimeDay: item.leadTimeDay,
       sort: item.sort,
       remark: item.remark,
