@@ -183,9 +183,7 @@ const importUrl = computed(() => {
 })
 
 const hasSelectedFile = computed(() => fileList.value.length > 0)
-const canSubmit = computed(
-  () => hasSelectedFile.value && !!formData.productId && !!formData.bomCode && !uploadLoading.value
-)
+const canSubmit = computed(() => hasSelectedFile.value && !uploadLoading.value)
 
 const open = async () => {
   dialogVisible.value = true
