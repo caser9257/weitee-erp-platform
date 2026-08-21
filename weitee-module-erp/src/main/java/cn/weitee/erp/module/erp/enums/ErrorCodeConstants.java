@@ -345,6 +345,10 @@ public interface ErrorCodeConstants {
     ErrorCode RD_BOM_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_061, "研发 BOM 已在审批中，无法重复提交");
     ErrorCode RD_BOM_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_062, "研发 BOM 不在审批中，无法撤回");
     ErrorCode RD_BOM_APPROVE_FAIL = new ErrorCode(1_030_700_063, "研发 BOM 已审批通过，无法重复提交");
+    ErrorCode RD_BOM_APPROVE_LOCKED = new ErrorCode(1_030_700_068, "研发 BOM 已审批通过，不能直接修改，请发起变更");
+    ErrorCode RD_BOM_PUBLISH_NOT_APPROVED = new ErrorCode(1_030_700_069, "仅审批通过的研发 BOM 可以发布到制造 BOM");
+    ErrorCode RD_BOM_CHANGE_NOT_APPROVED = new ErrorCode(1_030_700_070, "仅审批通过的研发 BOM 可以发起变更");
+    ErrorCode BOM_INTEGRITY_INVALID = new ErrorCode(1_030_700_071, "研发 BOM 完整性校验未通过，存在错误项，禁止保存");
     ErrorCode PRODUCT_AUDIT_STATUS_ILLEGAL = new ErrorCode(1_030_700_064, "物料审核状态不合法，无法执行该操作");
     ErrorCode PRODUCT_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_065, "物料已在审批中，无法重复提交");
     ErrorCode PRODUCT_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_066, "物料不在审批中，无法撤回");

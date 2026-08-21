@@ -114,6 +114,13 @@ public class ErpRdBomController {
         return success(true);
     }
 
+    @PostMapping("/start-change")
+    @Operation(summary = "发起升版式变更（仅限已审批通过 BOM，生成新 DRAFT 版本，须重新提交审批）")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:change')")
+    public CommonResult<Long> startChangeRdBom(@RequestParam("id") Long id) {
+        return success(rdBomService.startChangeRdBom(id));
+    }
+
     @PostMapping("/validate")
     @Operation(summary = "校验研发 BOM 完整性（漏件/悬浮件/用量）")
     @PreAuthorize("@ss.hasPermission('erp:rd-bom:query')")
@@ -357,8 +364,9 @@ public class ErpRdBomController {
         Set<Long> missing = new HashSet<>(bomItemIds);
         missing.removeAll(context.substituteCache.keySet());
         if (!missing.isEmpty()) {
+            List<ErpRdBomItemSubstituteDO> substitutes = rdBomService.getRdBomItemSubstituteList(missing);
             Map<Long, List<ErpRdBomItemSubstituteDO>> grouped = new HashMap<>();
-            for (ErpRdBomItemSubstituteDO substitute : rdBomService.getRdBomItemSubstituteList(missing)) {
+            for (ErpRdBomItemSubstituteDO substitute : substitutes) {
                 grouped.computeIfAbsent(substitute.getBomItemId(), key -> new ArrayList<>()).add(substitute);
             }
             for (Long bomItemId : missing) {

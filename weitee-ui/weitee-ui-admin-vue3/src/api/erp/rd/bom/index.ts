@@ -222,6 +222,10 @@ export const RdBomApi = {
     return await request.get<RdBomChangeLogVO[]>({ url: '/erp/rd-bom/change-log', params: { bomId } })
   },
 
+  startChangeRdBom: async (id: number) => {
+    return await request.post<number>({ url: `/erp/rd-bom/start-change?id=${id}` })
+  },
+
   submitRdBom: async (id: number) => {
     return await request.post<string>({ url: `/erp/rd-bom/submit?id=${id}` })
   },

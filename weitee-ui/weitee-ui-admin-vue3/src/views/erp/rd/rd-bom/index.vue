@@ -178,6 +178,17 @@
             发布
           </el-button>
           <el-button
+            v-if="canChange(row)"
+            link
+            type="warning"
+            :loading="startChangeLoadingId === row.id"
+            :disabled="startChangeLoadingId === row.id"
+            @click="handleStartChange(row.id)"
+            v-hasPermi="['erp:rd-bom:change']"
+          >
+            发起变更
+          </el-button>
+          <el-button
             v-if="canDelete(row)"
             link
             type="danger"
@@ -204,7 +215,7 @@
   </ContentWrap>
 
   <BomForm ref="formRef" :product-options="productList" @success="getList" />
-  <BomDetailDrawer ref="detailDrawerRef" />
+  <BomDetailDrawer ref="detailDrawerRef" @success="getList" />
   <RdBomImportForm ref="importFormRef" @success="getList" />
   <WhereUsedDialog ref="whereUsedDialogRef" />
   <RdBomChangeLogDialog ref="changeLogDialogRef" />
@@ -293,11 +304,13 @@ const canDelete = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20
 const canSubmit = (row: RdBomVO) => [0, 30, 60].includes(row.status) && !isApprovalRunning(row)
 const canCancel = (row: RdBomVO) => isApprovalRunning(row)
 const canPublish = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
+const canChange = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
 
 const listLoading = ref(false)
 const productLoading = ref(false)
 const deleteLoadingId = ref<number | undefined>()
 const publishLoadingId = ref<number | undefined>()
+const startChangeLoadingId = ref<number | undefined>()
 const validateLoadingId = ref<number | undefined>()
 const treeLoadingId = ref<number | undefined>()
 const submitLoadingId = ref<number | undefined>()
@@ -474,6 +487,26 @@ const handleDelete = async (id?: number) => {
   } catch {
   } finally {
     deleteLoadingId.value = undefined
+  }
+}
+
+const handleStartChange = async (id?: number) => {
+  if (!id || startChangeLoadingId.value) {
+    return
+  }
+  startChangeLoadingId.value = id
+  try {
+    await message.confirm('确认基于当前已审批 BOM 发起升版式变更吗？将生成新版本草稿，须重新提交审批。')
+    const newId = await RdBomApi.startChangeRdBom(id)
+    message.success('已生成变更版本（草稿），请在新版本上编辑并重新提交审批')
+    await getList()
+    const created = list.value.find((r) => r.id === newId)
+    if (created) {
+      openDetail(newId)
+    }
+  } catch {
+  } finally {
+    startChangeLoadingId.value = undefined
   }
 }
 

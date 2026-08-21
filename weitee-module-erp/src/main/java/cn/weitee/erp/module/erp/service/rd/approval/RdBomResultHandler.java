@@ -2,6 +2,8 @@ package cn.weitee.erp.module.erp.service.rd.approval;
 
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
+import cn.weitee.erp.module.erp.enums.rd.ErpRdBomChangeType;
+import cn.weitee.erp.module.erp.service.rd.ErpRdBomChangeLogService;
 import cn.weitee.erp.module.erp.service.rd.ErpRdBomService;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +17,8 @@ public class RdBomResultHandler implements ApprovalResultHandler {
 
     @Resource
     private ErpRdBomService rdBomService;
+    @Resource
+    private ErpRdBomChangeLogService changeLogService;
 
     @Override
     public String getSceneCode() {
@@ -25,18 +29,21 @@ public class RdBomResultHandler implements ApprovalResultHandler {
     public void onApprove(Long bizId, String processInstanceId, String reason) {
         validateExists(bizId);
         rdBomService.updateRdBomStatusByBpm(bizId, processInstanceId, ErpAuditStatus.APPROVE.getStatus(), reason);
+        changeLogService.logChange(bizId, ErpRdBomChangeType.APPROVE.getType(), "审批通过：" + reason);
     }
 
     @Override
     public void onReject(Long bizId, String processInstanceId, String reason) {
         validateExists(bizId);
         rdBomService.updateRdBomStatusByBpm(bizId, processInstanceId, ErpAuditStatus.REJECT.getStatus(), reason);
+        changeLogService.logChange(bizId, ErpRdBomChangeType.REJECT.getType(), "审批驳回：" + reason);
     }
 
     @Override
     public void onCancel(Long bizId, String processInstanceId, String reason) {
         validateExists(bizId);
         rdBomService.rollbackRdBomStatusToDraftByBpm(bizId, processInstanceId, reason);
+        changeLogService.logChange(bizId, ErpRdBomChangeType.CANCEL.getType(), "撤回审批：" + reason);
     }
 
     private void validateExists(Long bomId) {

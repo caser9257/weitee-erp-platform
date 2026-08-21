@@ -32,6 +32,16 @@ public interface ErpRdBomService {
     void publishRdBom(Long id);
 
     /**
+     * 发起升版式变更：仅限已审批通过的 BOM。
+     * 复制源 BOM 的明细与替代料，生成一条新版本（DRAFT）的研发 BOM，源版本保持不变。
+     * 新版本须经再次提交审批生效。
+     *
+     * @param id 源研发 BOM 编号（须为 APPROVE 状态）
+     * @return 新版本研发 BOM 编号
+     */
+    Long startChangeRdBom(Long id);
+
+    /**
      * 按成品编号获取其最新版本的研发 BOM（用于结构树根节点回退）
      *
      * @param productId 成品编号

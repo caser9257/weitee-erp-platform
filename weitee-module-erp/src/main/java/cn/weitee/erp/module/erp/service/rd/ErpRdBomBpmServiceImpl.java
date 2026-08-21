@@ -6,6 +6,7 @@ import cn.weitee.erp.module.bpm.service.approval.BpmApprovalRuntimeService;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.mysql.rd.ErpRdBomMapper;
 import cn.weitee.erp.module.erp.enums.ErpRdBomBpmConstants;
+import cn.weitee.erp.module.erp.enums.rd.ErpRdBomChangeType;
 import cn.weitee.erp.module.erp.enums.rd.ErpRdBomStatusEnum;
 import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,8 @@ public class ErpRdBomBpmServiceImpl implements ErpRdBomBpmService {
     private ErpRdBomMapper erpRdBomMapper;
     @Resource
     private BpmApprovalRuntimeService approvalRuntimeService;
+    @Resource
+    private ErpRdBomChangeLogService changeLogService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -47,6 +50,8 @@ public class ErpRdBomBpmServiceImpl implements ErpRdBomBpmService {
                 .setId(bomId)
                 .setStatus(ErpRdBomStatusEnum.PROCESS.getStatus())
                 .setProcessInstanceId(null));
+        changeLogService.logChange(bomId, ErpRdBomChangeType.SUBMIT.getType(),
+                "提交审批，当前版本=" + bom.getVersion());
 
         // 事务外：调 BPM 创建流程
         ErpTransactionUtils.afterCommit(() -> {

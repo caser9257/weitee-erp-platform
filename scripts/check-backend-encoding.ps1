@@ -21,6 +21,7 @@ $targets = @(
   (Join-Path $repoRoot 'yudao-module-project'),
   (Join-Path $repoRoot 'yudao-module-report'),
   (Join-Path $repoRoot 'yudao-module-system')
+  (Join-Path $repoRoot 'weitee-module-erp')
 )
 
 $includeExtensions = @('.java', '.xml', '.yml', '.yaml', '.properties', '.sql', '.config')
