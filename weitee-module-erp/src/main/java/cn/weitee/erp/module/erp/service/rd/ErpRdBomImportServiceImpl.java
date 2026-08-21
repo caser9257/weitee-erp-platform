@@ -1,12 +1,18 @@
 package cn.weitee.erp.module.erp.service.rd;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.excel.core.util.FileImportProtector;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomImportResultVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
+import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ProductSaveReqVO;
+import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
+import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductUnitDO;
+import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductCategoryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductMapper;
+import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductUnitMapper;
 import cn.weitee.erp.module.erp.enums.ErrorCodeConstants;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +53,10 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
     private ErpProductService productService;
     @Resource
     private ErpProductMapper productMapper;
+    @Resource
+    private ErpProductCategoryMapper productCategoryMapper;
+    @Resource
+    private ErpProductUnitMapper productUnitMapper;
     @Resource
     private ErpRdBomService rdBomService;
 
@@ -360,6 +370,29 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         if (codeCol == null) codeCol = COL_MATERIAL_CODE;
         String rawCode = getCellString(row, codeCol).trim();
         if (StrUtil.isBlank(rawCode)) {
+            // 合并单元格/列漂移容错：全行扫描匹配编码形态
+            for (int c = 0; c < row.getLastCellNum(); c++) {
+                String v = getCellString(row, c).trim();
+                if (StrUtil.isBlank(v)) continue;
+                String normV = v.replaceAll("\\s+", "");
+                if (normV.matches(".*\\d+.*\\..*") && (normMap.containsKey(normV) || codeMap.containsKey(v.trim()))) {
+                    rawCode = v.trim();
+                    codeCol = c;
+                    break;
+                }
+            }
+        }
+        if (StrUtil.isBlank(rawCode)) {
+            // 仍为空则尝试取整行首个像编码的单元格（兜底）
+            for (int c = 0; c < row.getLastCellNum(); c++) {
+                String v = getCellString(row, c).trim();
+                if (StrUtil.isNotBlank(v) && v.replaceAll("\\s+", "").matches("\\d+\\.\\d+.*")) {
+                    rawCode = v.trim();
+                    break;
+                }
+            }
+        }
+        if (StrUtil.isBlank(rawCode)) {
             throw new IllegalArgumentException("物料编码不能为空");
         }
         String normCode = rawCode.replaceAll("\\s+", "");
@@ -369,7 +402,14 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         ErpProductDO material = normMap.get(normCode);
         if (material == null) material = codeMap.get(rawCode.trim());
         if (material == null) {
-            throw new IllegalArgumentException("物料编码不存在：" + rawCode);
+            material = normMap.get(normCode);
+        }
+        if (material == null) {
+            material = autoCreateProduct(rawCode, row, colIndex);
+            codeMap.put(rawCode.trim(), material);
+            normMap.put(normCode, material);
+            String norm2 = rawCode.trim().replaceAll("\\s+", "");
+            normMap.putIfAbsent(norm2, material);
         }
         Integer qtyCol = colIndex.get("数量");
         if (qtyCol == null) qtyCol = COL_USAGE_QTY;
@@ -479,6 +519,71 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
             }
         }
         return map;
+    }
+
+    private ErpProductDO autoCreateProduct(String rawCode, Row row, Map<String, Integer> colIndex) {
+        String productName = "";
+        Integer nameCol = colIndex.get("产品名称");
+        if (nameCol != null) {
+            productName = getCellString(row, nameCol).trim();
+        }
+        if (StrUtil.isBlank(productName)) {
+            productName = rawCode.trim();
+        }
+        String unitStr = "";
+        Integer unitCol = colIndex.get("单位");
+        if (unitCol != null) {
+            unitStr = getCellString(row, unitCol).trim();
+        }
+        Long unitId = findUnitIdByName(unitStr);
+        Long categoryId = findDefaultCategoryId();
+        ProductSaveReqVO req = new ProductSaveReqVO();
+        req.setName(productName);
+        req.setMaterialCode(rawCode.trim());
+        req.setBarCode(rawCode.trim());
+        req.setCategoryId(categoryId);
+        req.setUnitId(unitId);
+        req.setStatus(1);
+        Long newId = productService.createProduct(req);
+        ErpProductDO created = productMapper.selectById(newId);
+        if (created == null) {
+            throw new IllegalArgumentException("自动创建物料失败：" + rawCode);
+        }
+        log.info("[autoCreateProduct] 自动创建物料成功，code={}, id={}, name={}", rawCode, newId, productName);
+        return created;
+    }
+
+    private Long findUnitIdByName(String unitName) {
+        if (StrUtil.isNotBlank(unitName)) {
+            List<ErpProductUnitDO> units = productUnitMapper.selectList(ErpProductUnitDO::getName, unitName.trim());
+            if (CollUtil.isNotEmpty(units)) {
+                return units.get(0).getId();
+            }
+            List<ErpProductUnitDO> allUnits = productUnitMapper.selectList();
+            for (ErpProductUnitDO u : allUnits) {
+                if (unitName.trim().equalsIgnoreCase(u.getName())) {
+                    return u.getId();
+                }
+            }
+        }
+        List<ErpProductUnitDO> all = productUnitMapper.selectList();
+        if (CollUtil.isNotEmpty(all)) {
+            return all.get(0).getId();
+        }
+        throw new IllegalArgumentException("系统未配置产品单位，无法自动创建物料");
+    }
+
+    private Long findDefaultCategoryId() {
+        List<ErpProductCategoryDO> list = productCategoryMapper.selectList();
+        if (CollUtil.isNotEmpty(list)) {
+            for (ErpProductCategoryDO c : list) {
+                if (!ErpProductCategoryDO.PARENT_ID_ROOT.equals(c.getParentId())) {
+                    return c.getId();
+                }
+            }
+            return list.get(0).getId();
+        }
+        throw new IllegalArgumentException("系统未配置产品分类，无法自动创建物料");
     }
 
     private String getCellString(Row row, int cellIndex) {
