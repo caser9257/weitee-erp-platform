@@ -2,7 +2,9 @@ package cn.weitee.erp.module.erp.service.rd;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.excel.core.util.FileImportProtector;
+import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomImportResultVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
@@ -261,6 +263,13 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         if (topProduct == null) {
             throw exception(ErrorCodeConstants.PRODUCT_NOT_EXISTS);
         }
+        topProduct = ensureProductUsable(topProduct);
+        if (topProduct.getMaterialCode() != null) {
+            materialCodeMap.put(topProduct.getMaterialCode(), topProduct);
+            String tNorm = topProduct.getMaterialCode().replaceAll("\\s+", "");
+            normalizedCodeMap.put(tNorm, topProduct);
+        }
+        finalProductId = topProduct.getId();
         String finalBomCode = StrUtil.isBlank(detectedBomCode) ? topProduct.getMaterialCode() : detectedBomCode.trim();
         if (StrUtil.isBlank(finalBomCode)) {
             finalBomCode = "RD-BOM-" + System.currentTimeMillis();
@@ -444,6 +453,12 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
             normMap.put(normCode, material);
             String norm2 = rawCode.trim().replaceAll("\\s+", "");
             normMap.putIfAbsent(norm2, material);
+        }
+        ErpProductDO ensuredMaterial = ensureProductUsable(material);
+        if (ensuredMaterial != material) {
+            material = ensuredMaterial;
+            codeMap.put(rawCode.trim(), material);
+            normMap.put(normCode, material);
         }
         Integer qtyCol = colIndex.get("数量");
         if (qtyCol == null) qtyCol = COL_USAGE_QTY;
@@ -637,6 +652,32 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
             return list.get(0).getId();
         }
         throw new IllegalArgumentException("系统未配置产品分类，无法自动创建物料");
+    }
+
+    private ErpProductDO ensureProductUsable(ErpProductDO product) {
+        boolean needUpdate = false;
+        ErpProductDO update = new ErpProductDO().setId(product.getId());
+        if (CommonStatusEnum.isDisable(product.getStatus())) {
+            update.setStatus(CommonStatusEnum.ENABLE.getStatus());
+            needUpdate = true;
+        }
+        Integer auditStatus = product.getAuditStatus();
+        if (ErpAuditStatus.PROCESS.getStatus().equals(auditStatus)
+                || ErpAuditStatus.REJECT.getStatus().equals(auditStatus)
+                || ErpAuditStatus.FAILED.getStatus().equals(auditStatus)) {
+            update.setAuditStatus(ErpAuditStatus.DRAFT.getStatus());
+            update.setProcessInstanceId(null);
+            needUpdate = true;
+        }
+        if (needUpdate) {
+            productMapper.updateById(update);
+            ErpProductDO refreshed = productMapper.selectById(product.getId());
+            if (refreshed != null) {
+                log.info("[ensureProductUsable] 已自动启用/重置产品，id={}, code={}, name={}", product.getId(), product.getMaterialCode(), product.getName());
+                return refreshed;
+            }
+        }
+        return product;
     }
 
     private String getCellString(Row row, int cellIndex) {
