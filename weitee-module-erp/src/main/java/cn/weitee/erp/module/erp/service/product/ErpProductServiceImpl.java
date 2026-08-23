@@ -96,20 +96,9 @@ public class ErpProductServiceImpl implements ErpProductService {
             if (CommonStatusEnum.isDisable(product.getStatus())) {
                 throw exception(PRODUCT_NOT_ENABLE, product.getName());
             }
-            // 新物料需审核后才能被 BOM 引用
+            // P5：仅已审批物料可被 BOM 引用（未审核的 DRAFT 也不放行，需先走 erp.product.create 审批）
             Integer auditStatus = product.getAuditStatus();
-            if (auditStatus != null && !ErpAuditStatus.APPROVE.getStatus().equals(auditStatus)
-                    && !ErpAuditStatus.DRAFT.getStatus().equals(auditStatus)) {
-                // 仅草稿(0)与已审批(20)在过渡期放宽；审批中/驳回/失败均阻断
-                if (ErpAuditStatus.PROCESS.getStatus().equals(auditStatus)
-                        || ErpAuditStatus.REJECT.getStatus().equals(auditStatus)
-                        || ErpAuditStatus.FAILED.getStatus().equals(auditStatus)) {
-                    throw exception(PRODUCT_AUDIT_STATUS_ILLEGAL);
-                }
-            }
-            if (ErpAuditStatus.PROCESS.getStatus().equals(auditStatus)
-                    || ErpAuditStatus.REJECT.getStatus().equals(auditStatus)
-                    || ErpAuditStatus.FAILED.getStatus().equals(auditStatus)) {
+            if (!ErpAuditStatus.APPROVE.getStatus().equals(auditStatus)) {
                 throw exception(PRODUCT_AUDIT_STATUS_ILLEGAL);
             }
         }

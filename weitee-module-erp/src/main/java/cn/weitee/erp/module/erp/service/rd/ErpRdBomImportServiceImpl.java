@@ -35,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,35 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         result.setFailDetails(new ArrayList<>());
         result.setValidationIssues(new ArrayList<>());
 
-        Map<String, ErpProductDO> materialCodeMap = buildMaterialCodeMap();
+        // 先收集所有物料编码，按需批量查询（避免全表扫描）
+        java.util.Set<String> allCodes = new java.util.HashSet<>();
+        try {
+            byte[] plainForCodes = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
+            try (Workbook wbForCodes = WorkbookFactory.create(new ByteArrayInputStream(plainForCodes))) {
+                Sheet sForCodes = wbForCodes.getSheetAt(0);
+                int headerRowForCodes = findSmartDetailHeaderRow(sForCodes);
+                if (headerRowForCodes >= 0) {
+                    Map<String, Integer> colIdxForCodes = buildSmartColumnIndex(sForCodes.getRow(headerRowForCodes));
+                    Integer codeColForCodes = colIdxForCodes.getOrDefault("物料编码", COL_MATERIAL_CODE);
+                    for (int r = headerRowForCodes + 1; r <= sForCodes.getLastRowNum(); r++) {
+                        Row rowForCodes = sForCodes.getRow(r);
+                        if (rowForCodes == null || isRowEmpty(rowForCodes)) continue;
+                        String codeForCodes = getCellString(rowForCodes, codeColForCodes);
+                        if (StrUtil.isNotBlank(codeForCodes)) allCodes.add(codeForCodes.trim());
+                    }
+                } else {
+                    for (int r = 1; r <= sForCodes.getLastRowNum(); r++) {
+                        Row rowForCodes = sForCodes.getRow(r);
+                        if (rowForCodes == null || isRowEmpty(rowForCodes)) continue;
+                        String codeForCodes = getCellString(rowForCodes, COL_MATERIAL_CODE);
+                        if (StrUtil.isNotBlank(codeForCodes)) allCodes.add(codeForCodes.trim());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[importRdBom] 预收集物料编码失败，将回退为按需查询", e);
+        }
+        Map<String, ErpProductDO> materialCodeMap = buildMaterialCodeMap(allCodes);
         Map<String, ErpProductDO> normalizedCodeMap = new HashMap<>();
         for (Map.Entry<String, ErpProductDO> e : materialCodeMap.entrySet()) {
             String norm = e.getKey().replaceAll("\\s+", "");
@@ -475,9 +504,21 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         if (qty.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("数量必须大于0");
         }
+        Integer materialType = 0;
+        Integer typeCol = colIndex.get("物料类型");
+        if (typeCol != null) {
+            String typeStr = getCellString(row, typeCol).trim();
+            if (StrUtil.isNotBlank(typeStr)) {
+                try {
+                    materialType = Integer.valueOf(typeStr);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("物料类型只支持 0 或 1：" + typeStr);
+                }
+            }
+        }
         ErpRdBomSaveReqVO.Item item = new ErpRdBomSaveReqVO.Item();
         item.setMaterialId(material.getId());
-        item.setMaterialType(0);
+        item.setMaterialType(materialType);
         item.setUnitId(material.getUnitId());
         item.setUsageQty(qty);
         String positionVal = null;
@@ -576,8 +617,12 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         return item;
     }
 
-    private Map<String, ErpProductDO> buildMaterialCodeMap() {
-        List<ErpProductDO> products = productMapper.selectList();
+    private Map<String, ErpProductDO> buildMaterialCodeMap(Collection<String> codes) {
+        if (CollUtil.isEmpty(codes)) {
+            return new HashMap<>();
+        }
+        List<ErpProductDO> products = productMapper.selectList(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ErpProductDO>()
+                .in(ErpProductDO::getMaterialCode, codes));
         Map<String, ErpProductDO> map = new HashMap<>();
         for (ErpProductDO product : products) {
             if (StrUtil.isNotBlank(product.getMaterialCode())) {
@@ -588,54 +633,11 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
     }
 
     private ErpProductDO autoCreateProduct(String rawCode, Row row, Map<String, Integer> colIndex) {
-        String productName = "";
-        Integer nameCol = colIndex.get("产品名称");
-        if (nameCol != null) {
-            productName = getCellString(row, nameCol).trim();
-        }
-        if (StrUtil.isBlank(productName)) {
-            productName = rawCode.trim();
-        }
-        String unitStr = "";
-        Integer unitCol = colIndex.get("单位");
-        if (unitCol != null) {
-            unitStr = getCellString(row, unitCol).trim();
-        }
-        Long unitId = findUnitIdByName(unitStr);
-        Long categoryId = findDefaultCategoryId();
-        ProductSaveReqVO req = new ProductSaveReqVO();
-        req.setName(productName);
-        req.setMaterialCode(rawCode.trim());
-        req.setBarCode(rawCode.trim());
-        req.setCategoryId(categoryId);
-        req.setUnitId(unitId);
-        req.setStatus(1);
-        Long newId = productService.createProduct(req);
-        ErpProductDO created = productMapper.selectById(newId);
-        if (created == null) {
-            throw new IllegalArgumentException("自动创建物料失败：" + rawCode);
-        }
-        log.info("[autoCreateProduct] 自动创建物料成功，code={}, id={}, name={}", rawCode, newId, productName);
-        return created;
+        throw new IllegalArgumentException("物料编号不存在，需先创建并审核通过：" + rawCode);
     }
 
     private ErpProductDO autoCreateTopProduct(String rawCode, String productName) {
-        Long unitId = findUnitIdByName("");
-        Long categoryId = findDefaultCategoryId();
-        ProductSaveReqVO req = new ProductSaveReqVO();
-        req.setName(StrUtil.isBlank(productName) ? rawCode : productName);
-        req.setMaterialCode(rawCode.trim());
-        req.setBarCode(rawCode.trim());
-        req.setCategoryId(categoryId);
-        req.setUnitId(unitId);
-        req.setStatus(1);
-        Long newId = productService.createProduct(req);
-        ErpProductDO created = productMapper.selectById(newId);
-        if (created == null) {
-            throw new IllegalArgumentException("自动创建顶层物料失败：" + rawCode);
-        }
-        log.info("[autoCreateTopProduct] 自动创建顶层物料成功，code={}, id={}, name={}", rawCode, newId, productName);
-        return created;
+        throw new IllegalArgumentException("顶层物料编号不存在，需先创建并审核通过：" + rawCode);
     }
 
     private Long findUnitIdByName(String unitName) {
@@ -672,27 +674,11 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
     }
 
     private ErpProductDO ensureProductUsable(ErpProductDO product) {
-        boolean needUpdate = false;
-        ErpProductDO update = new ErpProductDO().setId(product.getId());
         if (CommonStatusEnum.isDisable(product.getStatus())) {
-            update.setStatus(CommonStatusEnum.ENABLE.getStatus());
-            needUpdate = true;
+            throw new IllegalArgumentException("物料未启用：" + product.getName());
         }
-        Integer auditStatus = product.getAuditStatus();
-        if (ErpAuditStatus.PROCESS.getStatus().equals(auditStatus)
-                || ErpAuditStatus.REJECT.getStatus().equals(auditStatus)
-                || ErpAuditStatus.FAILED.getStatus().equals(auditStatus)) {
-            update.setAuditStatus(ErpAuditStatus.DRAFT.getStatus());
-            update.setProcessInstanceId(null);
-            needUpdate = true;
-        }
-        if (needUpdate) {
-            productMapper.updateById(update);
-            ErpProductDO refreshed = productMapper.selectById(product.getId());
-            if (refreshed != null) {
-                log.info("[ensureProductUsable] 已自动启用/重置产品，id={}, code={}, name={}", product.getId(), product.getMaterialCode(), product.getName());
-                return refreshed;
-            }
+        if (!ErpAuditStatus.APPROVE.getStatus().equals(product.getAuditStatus())) {
+            throw new IllegalArgumentException("物料未审核通过（需先走物料审核），物料：" + product.getName() + "，当前审核状态=" + product.getAuditStatus());
         }
         return product;
     }

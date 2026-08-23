@@ -16,6 +16,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
 import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
+import cn.weitee.erp.module.erp.dal.mysql.rd.ErpRdBomItemMapper;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.rd.ErpRdBomBpmService;
 import cn.weitee.erp.module.erp.service.rd.ErpRdBomChangeLogService;
@@ -45,6 +46,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
@@ -67,6 +69,8 @@ public class ErpRdBomController {
     private ErpRdBomBpmService rdBomBpmService;
     @Resource
     private ErpRdBomChangeLogService changeLogService;
+    @Resource
+    private ErpRdBomItemMapper rdBomItemMapper;
 
     @PostMapping("/create")
     @Operation(summary = "创建研发 BOM")
@@ -103,7 +107,47 @@ public class ErpRdBomController {
     @PreAuthorize("@ss.hasPermission('erp:rd-bom:query')")
     public CommonResult<PageResult<ErpRdBomRespVO>> getRdBomPage(@Valid ErpRdBomPageReqVO pageReqVO) {
         PageResult<ErpRdBomDO> pageResult = rdBomService.getRdBomPage(pageReqVO);
-        return success(new PageResult<>(buildRespVOList(pageResult.getList()), pageResult.getTotal()));
+        List<ErpRdBomDO> list = pageResult.getList();
+        if (list == null || list.isEmpty()) {
+            return success(new PageResult<>(List.of(), pageResult.getTotal()));
+        }
+        // 批量查询子件与替代料，避免 N+1
+        Set<Long> bomIds = convertSet(list, ErpRdBomDO::getId);
+        List<ErpRdBomItemDO> allItems = rdBomItemMapper.selectListByBomIds(bomIds);
+        Map<Long, List<ErpRdBomItemDO>> itemsByBomId = allItems.stream().collect(Collectors.groupingBy(ErpRdBomItemDO::getBomId));
+        Set<Long> materialIds = convertSet(allItems, ErpRdBomItemDO::getMaterialId);
+        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(materialIds);
+        Set<Long> itemIds = convertSet(allItems, ErpRdBomItemDO::getId);
+        List<ErpRdBomItemSubstituteDO> allSubs = itemIds.isEmpty() ? List.of() : rdBomService.getRdBomItemSubstituteList(itemIds);
+        Map<Long, List<ErpRdBomItemSubstituteDO>> subByItemId = allSubs.stream().collect(Collectors.groupingBy(ErpRdBomItemSubstituteDO::getBomItemId));
+        Map<Long, ErpProductRespVO> subProductMap = productService.getProductVOMap(convertSet(allSubs, ErpRdBomItemSubstituteDO::getSubstituteMaterialId));
+        Map<Long, ErpProductRespVO> headerProductMap = productService.getProductVOMap(convertSet(list, ErpRdBomDO::getProductId));
+        List<ErpRdBomRespVO> voList = new ArrayList<>();
+        for (ErpRdBomDO bom : list) {
+            ErpRdBomRespVO vo = BeanUtils.toBean(bom, ErpRdBomRespVO.class);
+            ErpProductRespVO headerProd = headerProductMap.get(bom.getProductId());
+            if (headerProd != null) vo.setProductName(headerProd.getName());
+            vo.setProcessInstanceId(bom.getProcessInstanceId());
+            List<ErpRdBomItemDO> items = itemsByBomId.getOrDefault(bom.getId(), List.of());
+            vo.setItems(BeanUtils.toBean(items, ErpRdBomRespVO.Item.class, item -> {
+                ErpProductRespVO mat = productMap.get(item.getMaterialId());
+                if (mat != null) {
+                    item.setMaterialName(mat.getName());
+                    item.setUnitName(mat.getUnitName());
+                }
+                List<ErpRdBomItemSubstituteDO> subs = subByItemId.get(item.getId());
+                if (subs == null || subs.isEmpty()) {
+                    item.setSubstitutes(List.of());
+                    return;
+                }
+                item.setSubstitutes(BeanUtils.toBean(subs, ErpRdBomRespVO.Item.Substitute.class, sub -> {
+                    ErpProductRespVO sp = subProductMap.get(sub.getSubstituteMaterialId());
+                    if (sp != null) sub.setSubstituteMaterialName(sp.getName());
+                }));
+            }));
+            voList.add(vo);
+        }
+        return success(new PageResult<>(voList, pageResult.getTotal()));
     }
 
     @PutMapping("/publish")

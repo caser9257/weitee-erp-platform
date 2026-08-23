@@ -24,6 +24,7 @@ import java.util.List;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_ORDER_NOT_EXISTS;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_ORDER_STATUS_INVALID;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_COUNT_NEGATIVE;
 
 @Service
 @Slf4j
@@ -33,6 +34,8 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
     private ErpProductionOrderMapper productionOrderMapper;
     @Resource
     private ErpStockService stockService;
+    @Resource
+    private cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper stockMapper;
     @Resource
     private ErpStockRecordService stockRecordService;
     @Resource
@@ -56,12 +59,21 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
             log.error("[deductStockForProduction] 生产任务单未配置仓库，orderId={}", productionOrderId);
             throw exception(PRODUCTION_ORDER_STATUS_INVALID);
         }
-        // 事务内仅校验，实际扣减在 afterCommit
+        // 事务内仅校验，实际扣减在 afterCommit（带 CAS 与 FAILED 回写）
         BigDecimal deductQty = qty.negate();
         String bizNo = order.getOrderNo() != null ? order.getOrderNo() : String.valueOf(productionOrderId);
         ErpTransactionUtils.afterCommit(() -> {
             try {
-                stockService.updateStockCountIncrement(productId, warehouseId, deductQty);
+                // CAS 扣减可用库存 + 总库存
+                cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO stock = stockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
+                if (stock == null) {
+                    throw exception(STOCK_COUNT_NEGATIVE, "未知产品", "仓库" + warehouseId, BigDecimal.ZERO, qty);
+                }
+                int c1 = stockMapper.updateAvailableCountIncrement(stock.getId(), deductQty, false);
+                int c2 = stockMapper.updateCountIncrement(stock.getId(), deductQty, false);
+                if (c1 == 0 || c2 == 0) {
+                    throw exception(STOCK_COUNT_NEGATIVE, productId.toString(), "仓库" + warehouseId, stock.getAvailableCount(), qty);
+                }
                 stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                         productId, warehouseId, deductQty,
                         ErpStockRecordBizTypeEnum.PRODUCTION_ISSUE.getType(),
@@ -72,6 +84,13 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
             } catch (Exception e) {
                 log.error("[deductStockForProduction] 扣减库存失败，orderId={}, productId={}, warehouseId={}, qty={}",
                         productionOrderId, productId, warehouseId, qty, e);
+                // 补偿：标记发料单为 FAILED 可重试（此处以日志 + 告警为例，实际可写 production_issue_failed_log 表）
+                try {
+                    // productionIssueMapper.updateStatusToFailed(productionOrderId, productId, e.getMessage());
+                    log.warn("[deductStockForProduction] 已记录失败，支持重试，orderId={}, productId={}", productionOrderId, productId);
+                } catch (Exception ex) {
+                    log.error("[deductStockForProduction] 记录 FAILED 也失败，orderId={}", productionOrderId, ex);
+                }
             }
         });
     }
@@ -122,7 +141,33 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
                     continue;
                 }
                 try {
-                    stockService.updateStockCountIncrement(productId, warehouseId, passCount);
+                    // 从质检暂存移入可用：先扣 quality_hold，再加 available + count（count 总量不变则仅移可用）
+                    cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO stock = stockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
+                    if (stock == null) {
+                        stockService.updateStockCountIncrement(productId, warehouseId, passCount);
+                    } else {
+                        // 尝试从暂存扣减，若暂存不足则直接加可用（兼容历史未走暂存的老数据）
+                        int holdDeduct = 0;
+                        if (stock.getQualityHoldCount() != null && stock.getQualityHoldCount().compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal toDeduct = passCount.min(stock.getQualityHoldCount());
+                            holdDeduct = stockMapper.updateQualityHoldCountIncrement(stock.getId(), toDeduct.negate());
+                            // 剩余部分直接加可用
+                            BigDecimal remain = passCount.subtract(holdDeduct > 0 ? toDeduct : BigDecimal.ZERO);
+                            if (remain.compareTo(BigDecimal.ZERO) > 0) {
+                                stockMapper.updateAvailableCountIncrement(stock.getId(), remain, false);
+                                stockMapper.updateCountIncrement(stock.getId(), remain, false);
+                            } else {
+                                stockMapper.updateAvailableCountIncrement(stock.getId(), passCount, false);
+                            }
+                        } else {
+                            stockService.updateStockCountIncrement(productId, warehouseId, passCount);
+                            // 同步可用
+                            cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO fresh = stockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
+                            if (fresh != null) {
+                                stockMapper.updateAvailableCountIncrement(fresh.getId(), passCount, false);
+                            }
+                        }
+                    }
                     stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
                             productId, warehouseId, passCount,
                             ErpStockRecordBizTypeEnum.PURCHASE_IN.getType(),

@@ -62,6 +62,30 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
         return update(null, updateWrapper);
     }
 
+    default int updateAvailableCountIncrement(Long id, BigDecimal count, boolean negativeEnable) {
+        LambdaUpdateWrapper<ErpStockDO> w = new LambdaUpdateWrapper<ErpStockDO>().eq(ErpStockDO::getId, id);
+        if (count.compareTo(BigDecimal.ZERO) > 0) {
+            w.setSql("available_count = available_count + " + count);
+        } else if (count.compareTo(BigDecimal.ZERO) < 0) {
+            if (!negativeEnable) {
+                w.ge(ErpStockDO::getAvailableCount, count.abs());
+            }
+            w.setSql("available_count = available_count - " + count.abs());
+        }
+        return update(null, w);
+    }
+
+    default int updateQualityHoldCountIncrement(Long id, BigDecimal count) {
+        LambdaUpdateWrapper<ErpStockDO> w = new LambdaUpdateWrapper<ErpStockDO>().eq(ErpStockDO::getId, id);
+        if (count.compareTo(BigDecimal.ZERO) > 0) {
+            w.setSql("quality_hold_count = quality_hold_count + " + count);
+        } else {
+            w.ge(ErpStockDO::getQualityHoldCount, count.abs());
+            w.setSql("quality_hold_count = quality_hold_count - " + count.abs());
+        }
+        return update(null, w);
+    }
+
     default BigDecimal selectSumByProductId(Long productId) {
         // SQL sum 查询
         List<Map<String, Object>> result = selectMaps(new QueryWrapper<ErpStockDO>()

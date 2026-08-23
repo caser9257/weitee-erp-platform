@@ -46,6 +46,18 @@ public class ErpStockDO extends BaseDO {
      */
     private BigDecimal count;
     /**
+     * 预占数量
+     */
+    private BigDecimal reservedCount;
+    /**
+     * 可用数量
+     */
+    private BigDecimal availableCount;
+    /**
+     * 质检暂存数量
+     */
+    private BigDecimal qualityHoldCount;
+    /**
      * 加权平均单价
      */
     private BigDecimal averageCost;
