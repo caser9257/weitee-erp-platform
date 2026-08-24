@@ -245,7 +245,6 @@
       size="64%"
       destroy-on-close
       :with-header="false"
-      custom-class="stock-record-drawer"
       modal-class="stock-record-drawer__mask"
       :close-on-click-modal="true"
       :close-on-press-escape="true"
@@ -1174,15 +1173,6 @@ onMounted(async () => {
   transform: translateY(-8px);
 }
 
-:deep(.stock-record-drawer .el-drawer__body) {
-  padding: 0;
-}
-
-:deep(.stock-record-drawer__mask) {
-  backdrop-filter: blur(8px);
-  background: rgba(15, 23, 42, 0.34);
-}
-
 @media (max-width: 1439px) {
   .stock-record-query__grid--primary,
   .stock-record-summary-grid {
@@ -1244,5 +1234,16 @@ onMounted(async () => {
     flex: 1 1 0;
     min-width: 0;
   }
+}
+</style>
+
+<style lang="scss">
+.stock-record-drawer__mask {
+  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.stock-record-drawer__mask .el-drawer__body {
+  padding: 0;
 }
 </style>

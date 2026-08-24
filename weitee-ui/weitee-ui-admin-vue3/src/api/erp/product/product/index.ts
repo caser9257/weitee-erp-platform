@@ -37,6 +37,9 @@ export interface ProductVO {
   batchControlFlag?: boolean // 是否批次管理
   inspectionRequiredFlag?: boolean // 是否来料检验
   assetFlag?: boolean // 是否固定资产候选
+  auditStatus?: number // 审核状态：0草稿 10审批中 20已审批 30已驳回 60失败
+  processInstanceId?: string // 流程实例编号
+  createTime?: Date // 创建时间
 }
 
 // ERP 产品 API

@@ -7,7 +7,6 @@
     :close-on-press-escape="true"
     :destroy-on-close="true"
     append-to-body
-    custom-class="purchase-order-detail-drawer"
     modal-class="purchase-order-detail-drawer__mask"
     @closed="handleDrawerClosed"
   >
@@ -334,7 +333,9 @@ const detailRowSnapshot = ref<Pick<PurchaseOrderVO, 'id'> & Partial<PurchaseOrde
 const accountList = ref<AccountVO[]>([])
 const selectedOrderId = ref<number>()
 
-const detailDrawerSize = computed(() => (width.value < 1024 ? '92%' : '520px'))
+const detailDrawerSize = computed(() =>
+  width.value < 1024 ? Math.round(width.value * 0.92) : 520
+)
 const currentUserId = computed(() => String(userStore.getUser.id || ''))
 
 const numberFormatter = new Intl.NumberFormat('zh-CN', {
@@ -1120,17 +1121,6 @@ defineExpose({
   justify-content: center;
 }
 
-:deep(.purchase-order-detail-drawer .el-drawer__body) {
-  padding: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-:deep(.purchase-order-detail-drawer__mask) {
-  backdrop-filter: blur(4px);
-}
-
 @media (max-width: 1024px) {
   .purchase-order-drawer-summary,
   .base-info-grid {
@@ -1181,5 +1171,18 @@ defineExpose({
   .detail-tabs {
     gap: 16px;
   }
+}
+</style>
+
+<style lang="scss">
+.purchase-order-detail-drawer__mask {
+  backdrop-filter: blur(4px);
+}
+
+.purchase-order-detail-drawer__mask .el-drawer__body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
 }
 </style>

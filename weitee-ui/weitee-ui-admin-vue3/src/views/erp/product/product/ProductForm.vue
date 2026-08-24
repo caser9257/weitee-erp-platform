@@ -3,8 +3,8 @@
   <Dialog
     v-model="dialogVisible"
     :title="dialogTitle"
-    :width="isDetail ? 'min(960px, 92vw)' : 'min(1120px, 92vw)'"
-    :fullscreen="!isDetail"
+    :width="'min(1120px, 92vw)'"
+    :fullscreen="true"
     :scroll="true"
     max-height="calc(100vh - 180px)"
     @closed="resetForm"
@@ -14,7 +14,6 @@
       ref="formRef"
       :model="formData"
       :rules="formRules"
-      :disabled="isDetail"
       label-width="100px"
       v-loading="formLoading"
       class="product-form"
@@ -233,9 +232,7 @@
       </el-row>
     </el-form>
     <template #footer>
-      <el-button v-if="!isDetail" @click="submitForm" type="primary" :disabled="formLoading">
-        确定
-      </el-button>
+      <el-button type="primary" :disabled="formLoading" @click="submitForm"> 确定 </el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
     </template>
   </Dialog>
@@ -265,7 +262,6 @@ const unitList = ref<ProductUnitVO[]>([])
 const supplierList = ref<SupplierVO[]>([])
 const statusOptions = computed(() => getIntDictOptions(DICT_TYPE.COMMON_STATUS))
 const supplyTypeOptions = computed(() => getStrDictOptions(DICT_TYPE.ERP_SUPPLY_TYPE))
-const isDetail = computed(() => formType.value === 'detail')
 
 const createDefaultFormData = () => ({
   id: undefined,
@@ -307,7 +303,7 @@ const formRules = reactive({
 const open = async (type: string, id?: number) => {
   dialogVisible.value = true
   formType.value = type
-  dialogTitle.value = type === 'detail' ? '产品详情' : t('action.' + type)
+  dialogTitle.value = t('action.' + type)
   resetForm()
   if (id) {
     formLoading.value = true
@@ -326,7 +322,7 @@ defineExpose({ open })
 
 const emit = defineEmits(['success'])
 const submitForm = async () => {
-  if (isDetail.value || formLoading.value) {
+  if (formLoading.value) {
     return
   }
   await formRef.value.validate()

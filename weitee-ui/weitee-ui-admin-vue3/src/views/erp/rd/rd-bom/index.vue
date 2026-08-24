@@ -189,6 +189,28 @@
             发起变更
           </el-button>
           <el-button
+            v-if="canVoid(row)"
+            link
+            type="danger"
+            :loading="voidLoadingId === row.id"
+            :disabled="voidLoadingId === row.id"
+            @click="handleVoid(row.id)"
+            v-hasPermi="['erp:rd-bom:void']"
+          >
+            作废
+          </el-button>
+          <el-button
+            v-if="canUnvoid(row)"
+            link
+            type="primary"
+            :loading="unvoidLoadingId === row.id"
+            :disabled="unvoidLoadingId === row.id"
+            @click="handleUnvoid(row.id)"
+            v-hasPermi="['erp:rd-bom:void']"
+          >
+            取消作废
+          </el-button>
+          <el-button
             v-if="canDelete(row)"
             link
             type="danger"
@@ -285,6 +307,7 @@ const RD_BOM_STATUS_OPTIONS = [
   { label: '审批中', value: 10 },
   { label: '已审批', value: 20 },
   { label: '已驳回', value: 30 },
+  { label: '已作废', value: 50 },
   { label: '处理失败', value: 60 }
 ]
 
@@ -293,22 +316,29 @@ const STATUS_META: Record<number, { label: string; type: 'info' | 'success' | 'w
   10: { label: '审批中', type: 'warning' },
   20: { label: '已审批', type: 'success' },
   30: { label: '已驳回', type: 'danger' },
+  50: { label: '已作废', type: 'info' },
   60: { label: '处理失败', type: 'danger' }
 }
 
 const isApprovalRunning = (row: RdBomVO) => row.status === 10 && !!row.processInstanceId
-const canEdit = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20
-const canDelete = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20
-const canSubmit = (row: RdBomVO) => [0, 30, 60].includes(row.status) && !isApprovalRunning(row)
+const isVoid = (row: RdBomVO) => row.status === 50
+const canEdit = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20 && !isVoid(row)
+const canDelete = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20 && !isVoid(row)
+const canSubmit = (row: RdBomVO) =>
+  [0, 30, 60].includes(row.status) && !isApprovalRunning(row) && !isVoid(row)
 const canCancel = (row: RdBomVO) => isApprovalRunning(row)
 const canPublish = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
 const canChange = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
+const canVoid = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
+const canUnvoid = (row: RdBomVO) => isVoid(row)
 
 const listLoading = ref(false)
 const productLoading = ref(false)
 const deleteLoadingId = ref<number | undefined>()
 const publishLoadingId = ref<number | undefined>()
 const startChangeLoadingId = ref<number | undefined>()
+const voidLoadingId = ref<number | undefined>()
+const unvoidLoadingId = ref<number | undefined>()
 const validateLoadingId = ref<number | undefined>()
 const treeLoadingId = ref<number | undefined>()
 const submitLoadingId = ref<number | undefined>()
@@ -502,6 +532,38 @@ const handleStartChange = async (id?: number) => {
   } catch {
   } finally {
     startChangeLoadingId.value = undefined
+  }
+}
+
+const handleVoid = async (id?: number) => {
+  if (!id || voidLoadingId.value) {
+    return
+  }
+  voidLoadingId.value = id
+  try {
+    await message.confirm('确认作废该研发 BOM 吗？版本将保留但退出最新版选择。')
+    await RdBomApi.voidRdBom(id)
+    message.success('已作废')
+    await getList()
+  } catch {
+  } finally {
+    voidLoadingId.value = undefined
+  }
+}
+
+const handleUnvoid = async (id?: number) => {
+  if (!id || unvoidLoadingId.value) {
+    return
+  }
+  unvoidLoadingId.value = id
+  try {
+    await message.confirm('确认取消作废吗？该版本将恢复为已审批并重新参与最新版选择。')
+    await RdBomApi.unvoidRdBom(id)
+    message.success('已取消作废')
+    await getList()
+  } catch {
+  } finally {
+    unvoidLoadingId.value = undefined
   }
 }
 

@@ -73,6 +73,7 @@ const STATUS_META: Record<number, { label: string; type: any }> = {
   10: { label: '审批中', type: 'warning' },
   20: { label: '已审批', type: 'success' },
   30: { label: '已驳回', type: 'danger' },
+  50: { label: '已作废', type: 'info' },
   60: { label: '处理失败', type: 'danger' }
 }
 

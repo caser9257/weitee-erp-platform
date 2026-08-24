@@ -360,7 +360,7 @@
                         link
                         type="primary"
                         :disabled="isProductActionBusy"
-                        @click="openForm('detail', row.id)"
+                        @click="openDetail(row)"
                         v-hasPermi="['erp:product:query']"
                       >
                         {{ PAGE_COPY.detail }}
@@ -445,6 +445,7 @@
     </el-row>
 
     <ProductForm ref="formRef" @success="getList" />
+    <ProductDetailDrawer ref="detailDrawerRef" @refresh="getList" @edit="handleDrawerEdit" />
     <ProductImportForm ref="importFormRef" @success="getList" />
     <ProductCategoryForm ref="categoryFormRef" @success="handleCategoryFormSuccess" />
   </div>
@@ -455,6 +456,7 @@ import download from '@/utils/download'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { ProductCategoryApi, ProductCategoryVO } from '@/api/erp/product/category'
 import ProductForm from './ProductForm.vue'
+import ProductDetailDrawer from './ProductDetailDrawer.vue'
 import ProductImportForm from './ProductImportForm.vue'
 import ProductCategoryForm from '../category/ProductCategoryForm.vue'
 import { DICT_TYPE } from '@/utils/dict'
@@ -536,6 +538,7 @@ const queryParams = reactive({
 const queryFormRef = ref()
 const categoryTreeRef = ref()
 const formRef = ref()
+const detailDrawerRef = ref()
 const importFormRef = ref()
 const categoryFormRef = ref()
 
@@ -672,6 +675,14 @@ const resetQuery = async () => {
 
 const openForm = (type: string, id?: number) => {
   formRef.value?.open(type, id)
+}
+
+const openDetail = (row: ProductVO) => {
+  detailDrawerRef.value?.open(row)
+}
+
+const handleDrawerEdit = (id: number) => {
+  openForm('update', id)
 }
 
 const handleImport = () => {

@@ -19,7 +19,7 @@ SET @mrp_parent_id := COALESCE(
    WHERE `component` = 'erp/mrp/plan-rule/index' AND `deleted` = b'0'
    ORDER BY `id` LIMIT 1),
   (SELECT `parent_id` FROM `system_menu`
-   WHERE `component` = 'erp/rd/bom/index' AND `deleted` = b'0'
+   WHERE `component` = 'erp/mrp/bom/index' AND `deleted` = b'0'
    ORDER BY `id` LIMIT 1),
   (SELECT `parent_id` FROM `system_menu`
    WHERE `component` = 'erp/mrp/suggest/index' AND `deleted` = b'0'
@@ -49,7 +49,7 @@ SET @plan_rule_menu_id := (
 
 SET @bom_menu_id := (
   SELECT `id` FROM `system_menu`
-  WHERE `component` = 'erp/rd/bom/index' AND `deleted` = b'0'
+   WHERE `component` = 'erp/mrp/bom/index' AND `deleted` = b'0'
   ORDER BY `id` LIMIT 1
 );
 
@@ -164,8 +164,8 @@ SET `name` = 'BOM 管理',
     `parent_id` = COALESCE(@mrp_parent_id, `parent_id`),
     `path` = 'bom',
     `icon` = 'ep:operation',
-    `component` = 'erp/rd/bom/index',
-    `component_name` = 'ErpBom',
+    `component` = 'erp/mrp/bom/index',
+    `component_name` = 'ErpManufactureBom',
     `type` = 2,
     `sort` = 15,
     `visible` = b'1',
@@ -180,14 +180,14 @@ INSERT INTO `system_menu`
  `component_name`, `status`, `visible`, `keep_alive`, `always_show`,
  `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM `system_menu` t), 'BOM 管理', '', 2, 15,
-       @mrp_parent_id, 'bom', 'ep:operation', 'erp/rd/bom/index', 'ErpBom',
+       @mrp_parent_id, 'bom', 'ep:operation', 'erp/mrp/bom/index', 'ErpManufactureBom',
        0, b'1', b'1', b'1', '1', NOW(), '1', NOW(), b'0'
 WHERE @mrp_parent_id IS NOT NULL
   AND @bom_menu_id IS NULL;
 
 SET @bom_menu_id := (
   SELECT `id` FROM `system_menu`
-  WHERE `component` = 'erp/rd/bom/index' AND `deleted` = b'0'
+  WHERE `component` = 'erp/mrp/bom/index' AND `deleted` = b'0'
   ORDER BY `id` LIMIT 1
 );
 

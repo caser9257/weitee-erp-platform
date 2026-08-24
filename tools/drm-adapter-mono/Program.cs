@@ -167,7 +167,10 @@ namespace Weitee.DrmAdapterMono
         private static UploadedFile ReadUpload(HttpListenerRequest request)
         {
             long maxSize = ReadLongEnvironment("DRM_MAX_FILE_SIZE", 500L * 1024 * 1024);
-            if (request.ContentLength64 < 0 || request.ContentLength64 > maxSize + 1024 * 1024)
+            // Multipart requests from Spring may use chunked transfer, in which case
+            // ContentLength64 is -1. The bounded ReadBody call below remains the
+            // authoritative size check for both fixed-length and chunked requests.
+            if (request.ContentLength64 > maxSize + 1024 * 1024)
             {
                 throw new AdapterException(413, "文件超过大小限制");
             }
@@ -291,7 +294,14 @@ namespace Weitee.DrmAdapterMono
             byte[] content = File.ReadAllBytes(path);
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/octet-stream";
-            context.Response.AddHeader("Content-Disposition", "attachment; filename=\"" + SafeFileName(fileName) + "\"");
+            string safeFileName = SafeFileName(fileName);
+            // Keep the legacy filename parameter ASCII-only for Mono's header validator;
+            // filename* preserves the original UTF-8 name for clients that support RFC 5987.
+            string asciiFileName = AsciiFileName(safeFileName);
+            string encodedFileName = Uri.EscapeDataString(safeFileName);
+            context.Response.AddHeader(
+                "Content-Disposition",
+                "attachment; filename=\"" + asciiFileName + "\"; filename*=UTF-8''" + encodedFileName);
             context.Response.ContentLength64 = content.Length;
             context.Response.OutputStream.Write(content, 0, content.Length);
             context.Response.OutputStream.Close();
@@ -362,6 +372,43 @@ namespace Weitee.DrmAdapterMono
         private static string SafeFileName(string fileName)
         {
             string value = Path.GetFileName(fileName ?? "file.bin");
+            if (string.IsNullOrWhiteSpace(value)) return "file.bin";
+
+            var builder = new StringBuilder(value.Length);
+            foreach (char ch in value)
+            {
+                // HttpListener rejects control characters in response headers. Replace
+                // them, quotes, and separators while preserving valid Unicode filenames.
+                if (char.IsControl(ch) || ch == '"' || ch == '\\' || ch == '/')
+                {
+                    builder.Append('_');
+                }
+                else
+                {
+                    builder.Append(ch);
+                }
+            }
+
+            value = builder.ToString().Trim();
+            return string.IsNullOrWhiteSpace(value) ? "file.bin" : value;
+        }
+
+        private static string AsciiFileName(string fileName)
+        {
+            var builder = new StringBuilder(fileName.Length);
+            foreach (char ch in fileName)
+            {
+                if (ch >= 0x20 && ch <= 0x7e && ch != '"' && ch != '\\' && ch != ';')
+                {
+                    builder.Append(ch);
+                }
+                else
+                {
+                    builder.Append('_');
+                }
+            }
+
+            string value = builder.ToString().Trim();
             return string.IsNullOrWhiteSpace(value) ? "file.bin" : value;
         }
 
