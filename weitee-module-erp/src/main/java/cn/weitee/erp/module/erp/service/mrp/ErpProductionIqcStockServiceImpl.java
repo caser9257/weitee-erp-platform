@@ -89,11 +89,11 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
         ErpTransactionUtils.afterCommit(() -> {
             try {
                 newStockTxTemplate().executeWithoutResult(
-                        status -> deductCore(productionOrderId, productId, warehouseId, qty));
-                log.info("[deductStockForProduction] 扣减库存成功，orderId={}, productId={}, warehouseId={}, qty={}",
+                        status -> deductCore(productId, warehouseId, qty));
+                log.info("[deductStockForProduction] 可用库存扣减成功，orderId={}, productId={}, warehouseId={}, qty={}",
                         productionOrderId, productId, warehouseId, qty);
             } catch (Exception e) {
-                log.error("[deductStockForProduction] 扣减库存失败，orderId={}, productId={}, warehouseId={}, qty={}",
+                log.error("[deductStockForProduction] 可用库存扣减失败，orderId={}, productId={}, warehouseId={}, qty={}",
                         productionOrderId, productId, warehouseId, qty, e);
                 saveFailureLog(ErpStockTaskFailureLogDO.BIZ_TYPE_PRODUCTION_DEDUCT,
                         productionOrderId, null, productId, warehouseId, qty, e.getMessage());
@@ -102,26 +102,22 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
     }
 
     /**
-     * 扣减核心：行锁下 CAS 扣可用与总量，并同事务写库存流水。
+     * 扣减核心：行锁下 CAS 扣 available_count。
+     *
+     * 分工约定：count 由发料主流程的 createStockRecord 流水机制维护，
+     * 本方法只负责可用余额，避免双重计账；IQC 前置由"未过检不允许入库确认 +
+     * 仅过检入库增加 available"等效保证。
      */
-    private void deductCore(Long productionOrderId, Long productId, Long warehouseId, BigDecimal qty) {
-        ErpProductionOrderDO order = productionOrderMapper.selectById(productionOrderId);
-        String bizNo = order != null && order.getOrderNo() != null ? order.getOrderNo() : String.valueOf(productionOrderId);
+    private void deductCore(Long productId, Long warehouseId, BigDecimal qty) {
         ErpStockDO stock = stockMapper.selectByProductIdAndWarehouseIdForUpdate(productId, warehouseId);
         if (stock == null) {
             throw exception(STOCK_COUNT_NEGATIVE, "未知产品", "仓库" + warehouseId, BigDecimal.ZERO, qty);
         }
-        int c1 = stockMapper.updateAvailableCountIncrement(stock.getId(), qty.negate(), false);
-        int c2 = stockMapper.updateCountIncrement(stock.getId(), qty.negate(), false);
-        if (c1 == 0 || c2 == 0) {
+        int updated = stockMapper.updateAvailableCountIncrement(stock.getId(), qty.negate(), false);
+        if (updated == 0) {
             throw exception(STOCK_COUNT_NEGATIVE, productId.toString(), "仓库" + warehouseId,
                     stock.getAvailableCount(), qty);
         }
-        stockRecordService.createStockRecord(new ErpStockRecordCreateReqBO(
-                productId, warehouseId, qty.negate(),
-                ErpStockRecordBizTypeEnum.PRODUCTION_ISSUE.getType(),
-                productionOrderId, productId, bizNo,
-                null, null));
     }
 
     // ========== IQC 合格移可用 ==========
@@ -258,8 +254,8 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
         }
         try {
             if (ErpStockTaskFailureLogDO.BIZ_TYPE_PRODUCTION_DEDUCT.equals(failureLog.getBizType())) {
-                newStockTxTemplate().executeWithoutResult(status -> deductCore(failureLog.getBizId(),
-                        failureLog.getProductId(), failureLog.getWarehouseId(), failureLog.getQty()));
+                newStockTxTemplate().executeWithoutResult(status -> deductCore(failureLog.getProductId(),
+                        failureLog.getWarehouseId(), failureLog.getQty()));
             } else {
                 String bizNo = resolveIqcBizNo(failureLog.getBizId());
                 newStockTxTemplate().executeWithoutResult(st -> moveAvailableCore(failureLog.getBizId(),

@@ -43,6 +43,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
+import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
+
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -102,6 +104,8 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
     private ErpNoRedisDAO noRedisDAO;
     @Resource
     private ErpProductionIssueVoucherService productionIssueVoucherService;
+    @Resource
+    private ErpProductionIqcStockService iqcStockService;
 
     @Override
     public ErpProductionIssueRecommendRespVO recommend(ErpProductionIssueRecommendReqVO reqVO) {
@@ -226,6 +230,12 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
                 .setId(issue.getId())
                 .setIssueAmount(totalIssueAmount));
         productionIssueVoucherService.createVoucher(issue, createdIssueItems);
+        // 可用库存扣减（关联生产任务单）：事务提交后行锁 CAS 扣 available_count，失败落库可重试；
+        // count 由上方 createStockRecord 流水机制维护，此处只管 available，避免双重计账
+        Long finalOrderId = order.getId();
+        ErpTransactionUtils.afterCommit(() -> createdIssueItems.forEach(issueItem ->
+                iqcStockService.deductStockForProduction(finalOrderId,
+                        issueItem.getMaterialId(), issueItem.getIssueQty())));
         return issue.getId();
     }
 

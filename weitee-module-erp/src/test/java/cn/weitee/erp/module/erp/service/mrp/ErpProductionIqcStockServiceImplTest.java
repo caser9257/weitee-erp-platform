@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ErpProductionIqcStockServiceImplTest {
 
     @Test
-    void deductStockForProduction_shouldCallStockDeductWithNegativeQty() throws Exception {
+    void deductStockForProduction_shouldDeductAvailableOnlyWithNegativeQty() throws Exception {
         Object service = new ErpProductionIqcStockServiceImpl();
         ErpProductionOrderDO order = new ErpProductionOrderDO()
                 .setId(100L).setOrderNo("PO-001").setWarehouseId(10L).setStatus(20);
@@ -35,15 +35,8 @@ class ErpProductionIqcStockServiceImplTest {
             if ("selectById".equals(m)) return order;
             return null;
         }));
-        setField(service, "stockService", createProxy(ErpStockService.class, (m, a) -> {
-            if ("updateStockCountIncrement".equals(m)) {
-                capturedCount.set((BigDecimal) a[2]);
-                return new BigDecimal("90");
-            }
-            return null;
-        }));
         setField(service, "stockMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper.class, (m, a) -> {
-            if ("selectByProductIdAndWarehouseId".equals(m)) return stock;
+            if ("selectByProductIdAndWarehouseIdForUpdate".equals(m)) return stock;
             if ("updateAvailableCountIncrement".equals(m)) {
                 capturedAvailable.set((BigDecimal) a[1]);
                 return 1;
@@ -54,6 +47,9 @@ class ErpProductionIqcStockServiceImplTest {
             }
             return null;
         }));
+        // 行锁新事务：桩事务管理器，直接放行
+        setField(service, "transactionManager", createProxy(org.springframework.transaction.PlatformTransactionManager.class,
+                (m, a) -> null));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (m, a) -> 1));
         setField(service, "purchaseInQualityService", createProxy(ErpPurchaseInQualityService.class, (m, a) -> null));
 
@@ -62,11 +58,12 @@ class ErpProductionIqcStockServiceImplTest {
 
         assertNotNull(capturedAvailable.get());
         assertEquals(0, new BigDecimal("-10").compareTo(capturedAvailable.get()));
-        assertNotNull(capturedCount.get());
+        // 分工约定：count 由发料主流程流水机制维护，本服务不得再扣 count
+        assertNull(capturedCount.get());
     }
 
     @Test
-    void handleIqcPassed_shouldAddStockForPassedItems() throws Exception {
+    void handleIqcPassed_shouldMoveHoldToAvailableUnderRowLock() throws Exception {
         Object service = new ErpProductionIqcStockServiceImpl();
         ErpPurchaseInQualityDO quality = new ErpPurchaseInQualityDO()
                 .setId(1L).setPurchaseInId(10L).setStatus(ErpPurchaseInQualityStatusEnum.DONE.getStatus())
@@ -75,38 +72,43 @@ class ErpProductionIqcStockServiceImplTest {
         ErpPurchaseInQualityItemDO item = new ErpPurchaseInQualityItemDO()
                 .setId(11L).setProductId(200L).setWarehouseId(10L).setQaPassCount(new BigDecimal("5"))
                 .setPurchaseInItemId(100L);
-        AtomicReference<BigDecimal> capturedAdd = new AtomicReference<>();
+        AtomicReference<BigDecimal> capturedHold = new AtomicReference<>();
+        AtomicReference<BigDecimal> capturedAvailable = new AtomicReference<>();
+        AtomicReference<BigDecimal> capturedCount = new AtomicReference<>();
         cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO stock = new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO()
                 .setId(1L).setProductId(200L).setWarehouseId(10L).setCount(new BigDecimal("100")).setAvailableCount(new BigDecimal("90")).setQualityHoldCount(new BigDecimal("10"));
-        setField(service, "productionOrderMapper", createProxy(ErpProductionOrderMapper.class, (m, a) -> null));
         setField(service, "purchaseInQualityService", createProxy(ErpPurchaseInQualityService.class, (m, a) -> {
             if ("getPurchaseInQualityByPurchaseInId".equals(m)) return quality;
             if ("getPurchaseInQualityItemListByQualityId".equals(m)) return List.of(item);
             return null;
         }));
-        setField(service, "stockService", createProxy(ErpStockService.class, (m, a) -> {
-            if ("updateStockCountIncrement".equals(m)) {
-                capturedAdd.set((BigDecimal) a[2]);
-                return new BigDecimal("105");
-            }
-            return null;
-        }));
         setField(service, "stockMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper.class, (m, a) -> {
-            if ("selectByProductIdAndWarehouseId".equals(m)) return stock;
+            if ("selectByProductIdAndWarehouseIdForUpdate".equals(m)) return stock;
             if ("updateQualityHoldCountIncrement".equals(m)) {
-                capturedAdd.set((BigDecimal) a[1]);
+                capturedHold.set((BigDecimal) a[1]);
                 return 1;
             }
-            if ("updateAvailableCountIncrement".equals(m)) return 1;
-            if ("updateCountIncrement".equals(m)) return 1;
+            if ("updateAvailableCountIncrement".equals(m)) {
+                capturedAvailable.set((BigDecimal) a[1]);
+                return 1;
+            }
+            if ("updateCountIncrement".equals(m)) {
+                capturedCount.set((BigDecimal) a[1]);
+                return 1;
+            }
             return null;
         }));
+        setField(service, "transactionManager", createProxy(org.springframework.transaction.PlatformTransactionManager.class,
+                (m, a) -> null));
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (m, a) -> 1));
 
         Method method = service.getClass().getMethod("handleIqcPassed", Long.class);
         method.invoke(service, 10L);
 
-        assertNotNull(capturedAdd.get());
+        // 暂存足额扣减（-5），可用全额增加（+5），总量不变
+        assertEquals(0, new BigDecimal("-5").compareTo(capturedHold.get()));
+        assertEquals(0, new BigDecimal("5").compareTo(capturedAvailable.get()));
+        assertNull(capturedCount.get());
     }
 
     @SuppressWarnings("unchecked")
