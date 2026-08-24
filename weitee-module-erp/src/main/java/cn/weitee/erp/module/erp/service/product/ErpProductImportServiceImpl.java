@@ -32,8 +32,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * ERP 产品导入 Service 实现类
@@ -159,12 +161,14 @@ public class ErpProductImportServiceImpl implements ErpProductImportService {
         result.setSuccessCount(0);
         result.setFailCount(0);
         result.setFailDetails(new ArrayList<>());
+        result.setSuccessCategoryIds(new ArrayList<>());
         boolean overwrite = Boolean.TRUE.equals(updateSupport);
 
         // 预加载分类与单位名称映射（避免 N+1）
         Map<String, Long> categoryNameMap = buildCategoryNameMap();
         Map<String, Long> unitNameMap = buildUnitNameMap();
 
+        Set<Long> successCategoryIds = new LinkedHashSet<>();
         try {
             byte[] plainContent = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
             try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(plainContent))) {
@@ -178,8 +182,9 @@ public class ErpProductImportServiceImpl implements ErpProductImportService {
                     continue;
                 }
                 try {
-                    importRow(row, i, overwrite, categoryNameMap, unitNameMap, result);
+                    Long categoryId = importRow(row, i, overwrite, categoryNameMap, unitNameMap, result);
                     result.setSuccessCount(result.getSuccessCount() + 1);
+                    successCategoryIds.add(categoryId);
                 } catch (Exception e) {
                     result.setFailCount(result.getFailCount() + 1);
                     ErpProductImportResultVO.FailDetail failDetail = new ErpProductImportResultVO.FailDetail();
@@ -190,6 +195,7 @@ public class ErpProductImportServiceImpl implements ErpProductImportService {
                 }
             }
             }
+            result.setSuccessCategoryIds(new ArrayList<>(successCategoryIds));
         } catch (IOException e) {
             log.error("[importProducts] 导入产品失败", e);
             throw new RuntimeException("导入产品失败：" + e.getMessage());
@@ -197,7 +203,7 @@ public class ErpProductImportServiceImpl implements ErpProductImportService {
         return result;
     }
 
-    private void importRow(Row row, int rowIndex, boolean overwrite, Map<String, Long> categoryNameMap,
+    private Long importRow(Row row, int rowIndex, boolean overwrite, Map<String, Long> categoryNameMap,
                            Map<String, Long> unitNameMap, ErpProductImportResultVO result) {
         String name = getCellString(row, COL_NAME);
         String materialCode = getCellString(row, COL_MATERIAL_CODE);
@@ -279,6 +285,7 @@ public class ErpProductImportServiceImpl implements ErpProductImportService {
             erpProductMapper.insert(product);
             log.info("[importProducts] 新增产品，row={}, id={}, barCode={}", rowIndex + 1, product.getId(), barCode);
         }
+        return categoryId;
     }
 
     private Map<String, Long> buildCategoryNameMap() {

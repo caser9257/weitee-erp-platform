@@ -446,7 +446,7 @@
 
     <ProductForm ref="formRef" @success="getList" />
     <ProductDetailDrawer ref="detailDrawerRef" @refresh="getList" @edit="handleDrawerEdit" />
-    <ProductImportForm ref="importFormRef" @success="getList" />
+    <ProductImportForm ref="importFormRef" @success="handleImportSuccess" />
     <ProductCategoryForm ref="categoryFormRef" @success="handleCategoryFormSuccess" />
   </div>
 </template>
@@ -687,6 +687,20 @@ const handleDrawerEdit = (id: number) => {
 
 const handleImport = () => {
   importFormRef.value?.open()
+}
+
+const handleImportSuccess = async (data?: { successCategoryIds?: number[] }) => {
+  const categoryIds = data?.successCategoryIds ?? []
+  if (categoryIds.length === 1) {
+    activeCategoryId.value = categoryIds[0]
+    queryParams.categoryId = categoryIds[0]
+  } else {
+    activeCategoryId.value = undefined
+    queryParams.categoryId = undefined
+  }
+  queryParams.pageNo = 1
+  await syncCurrentCategory()
+  await getList()
 }
 
 const openCategoryForm = (type: string, id?: number, parentId = 0) => {

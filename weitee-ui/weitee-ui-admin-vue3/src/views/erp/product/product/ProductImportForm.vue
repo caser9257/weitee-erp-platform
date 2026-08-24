@@ -80,6 +80,50 @@
       </div>
     </template>
   </Dialog>
+
+  <Dialog v-model="resultVisible" title="导入结果" width="640">
+    <div class="mb-16px grid grid-cols-3 gap-12px">
+      <div class="rounded-lg border border-slate-100 bg-slate-50 px-16px py-12px text-center">
+        <div class="font-mono text-24px font-bold text-slate-700">{{ resultData.totalCount }}</div>
+        <div class="mt-2px text-12px text-slate-500">总行数</div>
+      </div>
+      <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-16px py-12px text-center">
+        <div class="font-mono text-24px font-bold text-emerald-600">
+          {{ resultData.successCount }}
+        </div>
+        <div class="mt-2px text-12px text-slate-500">导入成功</div>
+      </div>
+      <div class="rounded-lg border border-rose-100 bg-rose-50 px-16px py-12px text-center">
+        <div class="font-mono text-24px font-bold text-rose-600">{{ resultData.failCount }}</div>
+        <div class="mt-2px text-12px text-slate-500">导入失败</div>
+      </div>
+    </div>
+    <el-table
+      v-if="resultData.failDetails?.length"
+      :data="resultData.failDetails"
+      :max-height="320"
+      border
+    >
+      <el-table-column align="center" label="行号" width="80">
+        <template #default="{ row }">
+          <span class="font-mono">{{ row.rowNumber }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column align="center" label="条码" width="160">
+        <template #default="{ row }">
+          <span class="font-mono">{{ row.barCode || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="失败原因" min-width="220" show-overflow-tooltip>
+        <template #default="{ row }">
+          <span>{{ row.reason || '-' }}</span>
+        </template>
+      </el-table-column>
+    </el-table>
+    <template #footer>
+      <el-button type="primary" @click="resultVisible = false">知道了</el-button>
+    </template>
+  </Dialog>
 </template>
 
 <script lang="ts" setup>
@@ -98,6 +142,28 @@ const updateSupport = ref(false)
 const fileList = ref<UploadUserFile[]>([])
 const uploadHeaders = ref<Record<string, string>>({})
 const uploadRef = ref<UploadInstance>()
+const resultVisible = ref(false)
+const resultData = ref<ImportResultData>({
+  totalCount: 0,
+  successCount: 0,
+  failCount: 0,
+  failDetails: [],
+  successCategoryIds: []
+})
+
+interface ImportResultData {
+  totalCount: number
+  successCount: number
+  failCount: number
+  failDetails: ImportFailDetail[]
+  successCategoryIds: number[]
+}
+
+interface ImportFailDetail {
+  rowNumber: number
+  barCode?: string
+  reason?: string
+}
 
 const importUrl = computed(() => {
   return (
@@ -138,10 +204,29 @@ const submitFormSuccess: UploadProps['onSuccess'] = (response: any) => {
     message.error(response.msg || '导入失败，请稍后重试')
     return
   }
-  dialogVisible.value = false
-  emit('success')
-  message.success('导入成功！')
-  resetForm()
+  const data: ImportResultData = {
+    totalCount: response.data?.totalCount ?? 0,
+    successCount: response.data?.successCount ?? 0,
+    failCount: response.data?.failCount ?? 0,
+    failDetails: response.data?.failDetails ?? [],
+    successCategoryIds: response.data?.successCategoryIds ?? []
+  }
+  if (data.successCount > 0) {
+    dialogVisible.value = false
+    emit('success', data)
+    resetForm()
+  }
+  if (data.failCount > 0) {
+    resultData.value = data
+    resultVisible.value = true
+    if (data.successCount === 0) {
+      message.warning('本次导入全部失败，请根据失败原因修正后重新上传')
+    }
+  } else if (data.totalCount === 0) {
+    message.warning('文件中没有可导入的数据行')
+  } else {
+    message.success(`导入成功，共 ${data.successCount} 条`)
+  }
 }
 
 /** 上传错误提示 */

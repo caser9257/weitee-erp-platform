@@ -24,6 +24,9 @@ public class ErpProductImportResultVO {
     @Schema(description = "失败详情")
     private List<FailDetail> failDetails;
 
+    @Schema(description = "成功行所属分类编号集合（去重）", example = "[1, 2]")
+    private List<Long> successCategoryIds;
+
     /**
      * 失败详情
      */
