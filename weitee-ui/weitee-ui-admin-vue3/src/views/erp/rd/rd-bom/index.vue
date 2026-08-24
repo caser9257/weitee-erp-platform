@@ -282,7 +282,6 @@ const { t } = useI18n()
 
 const RD_BOM_STATUS_OPTIONS = [
   { label: '草稿', value: 0 },
-  { label: '已发布', value: 1 },
   { label: '审批中', value: 10 },
   { label: '已审批', value: 20 },
   { label: '已驳回', value: 30 },
@@ -291,7 +290,6 @@ const RD_BOM_STATUS_OPTIONS = [
 
 const STATUS_META: Record<number, { label: string; type: 'info' | 'success' | 'warning' | 'danger' | '' }> = {
   0: { label: '草稿', type: 'info' },
-  1: { label: '已发布', type: 'success' },
   10: { label: '审批中', type: 'warning' },
   20: { label: '已审批', type: 'success' },
   30: { label: '已驳回', type: 'danger' },

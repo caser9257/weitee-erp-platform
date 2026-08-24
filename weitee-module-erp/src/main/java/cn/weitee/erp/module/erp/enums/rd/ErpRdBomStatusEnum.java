@@ -8,7 +8,6 @@ import lombok.Getter;
 public enum ErpRdBomStatusEnum {
 
     DRAFT(0),
-    PUBLISHED(1),
     PROCESS(10),
     APPROVE(20),
     REJECT(30),

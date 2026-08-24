@@ -70,7 +70,6 @@ const queried = ref(false)
 
 const STATUS_META: Record<number, { label: string; type: any }> = {
   0: { label: '草稿', type: 'info' },
-  1: { label: '已发布', type: 'success' },
   10: { label: '审批中', type: 'warning' },
   20: { label: '已审批', type: 'success' },
   30: { label: '已驳回', type: 'danger' },
