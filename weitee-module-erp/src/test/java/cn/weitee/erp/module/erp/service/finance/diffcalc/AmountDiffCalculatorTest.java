@@ -1,9 +1,11 @@
 package cn.weitee.erp.module.erp.service.finance.diffcalc;
 
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -150,6 +152,28 @@ class AmountDiffCalculatorTest {
         // SOURCE_MAPPING: returns original
         assertEquals(new BigDecimal("100.00"),
                 factory.calculate(3, new BigDecimal("100.00"), null, null));
+    }
+
+    @Test
+    void factory_calculateExternalAmount_shouldRejectLowerExternalAmount() {
+        AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
+        factory.init(java.util.Arrays.asList(new ProRataAmountDiffCalculator()));
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                factory.calculateExternalAmount(1, new BigDecimal("100.00"),
+                        new BigDecimal("0.85"), null));
+
+        assertEquals(FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID.getCode(), ex.getCode());
+    }
+
+    @Test
+    void factory_calculateExternalAmount_shouldAcceptHigherExternalAmount() {
+        AmountDiffCalculatorFactory factory = new AmountDiffCalculatorFactory();
+        factory.init(java.util.Arrays.asList(new ProRataAmountDiffCalculator()));
+
+        assertEquals(new BigDecimal("115.00"),
+                factory.calculateExternalAmount(1, new BigDecimal("100.00"),
+                        new BigDecimal("1.15"), null));
     }
 
 }

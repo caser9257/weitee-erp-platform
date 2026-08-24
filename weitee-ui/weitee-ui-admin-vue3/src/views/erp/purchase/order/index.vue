@@ -172,8 +172,8 @@
   <ContentWrap class="purchase-order-page__list-card">
     <div class="purchase-order-toolbar">
       <div class="purchase-order-toolbar__actions">
-        <el-button
-          v-if="toolbarState.showCreate && canCreatePurchaseOrder"
+<el-button
+          v-hasPermi="['erp:purchase-order:create']"
           type="primary"
           @click="openForm('create')"
         >

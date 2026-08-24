@@ -67,7 +67,7 @@
           </el-form-item>
         </div>
         <div class="query-form__actions">
-          <el-button :loading="listLoading" @click="handleQuery">
+          <el-button :loading="listLoading" @click="handleQuery" v-hasPermi="['erp:cost:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>

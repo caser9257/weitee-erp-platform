@@ -8,7 +8,9 @@ import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.module.infra.controller.admin.file.vo.file.*;
 import cn.weitee.erp.module.infra.dal.dataobject.file.FileDO;
+import cn.weitee.erp.module.infra.framework.drm.DrmProperties;
 import cn.weitee.erp.module.infra.service.file.FileService;
+import cn.weitee.erp.module.infra.service.file.ProtectedExportService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -42,10 +44,17 @@ public class FileController {
     @Resource
     private FileService fileService;
 
+    @Resource
+    private ProtectedExportService protectedExportService;
+
+    @Resource
+    private DrmProperties drmProperties;
+
     @PostMapping("/upload")
     @Operation(summary = "上传文件", description = "模式一：后端上传文件")
     @Parameter(name = "file", description = "文件附件", required = true,
             schema = @Schema(type = "string", format = "binary"))
+    @PreAuthorize("@ss.hasPermission('infra:file:create')")
     public CommonResult<String> uploadFile(@Valid FileUploadReqVO uploadReqVO) throws Exception {
         MultipartFile file = uploadReqVO.getFile();
         byte[] content = IoUtil.readBytes(file.getInputStream());
@@ -59,6 +68,7 @@ public class FileController {
             @Parameter(name = "name", description = "文件名称", required = true),
             @Parameter(name = "directory", description = "文件目录")
     })
+    @PreAuthorize("@ss.hasPermission('infra:file:create')")
     public CommonResult<FilePresignedUrlRespVO> getFilePresignedUrl(
             @RequestParam("name") String name,
             @RequestParam(value = "directory", required = false) String directory) {
@@ -67,6 +77,7 @@ public class FileController {
 
     @PostMapping("/create")
     @Operation(summary = "创建文件", description = "模式二：前端上传文件：配合 presigned-url 接口，记录上传了上传的文件")
+    @PreAuthorize("@ss.hasPermission('infra:file:create')")
     public CommonResult<Long> createFile(@Valid @RequestBody FileCreateReqVO createReqVO) {
         return success(fileService.createFile(createReqVO));
     }
@@ -106,6 +117,10 @@ public class FileController {
     public void getFileContent(HttpServletRequest request,
                                HttpServletResponse response,
                                @PathVariable("configId") Long configId) throws Exception {
+        if (drmProperties.isEnabled()) {
+            response.sendError(HttpStatus.FORBIDDEN.value());
+            return;
+        }
         String path = StrUtil.subAfter(request.getRequestURI(), "/get/", false);
         if (StrUtil.isEmpty(path)) {
             throw new IllegalArgumentException("结尾的 path 路径必须传递");
@@ -118,7 +133,24 @@ public class FileController {
             response.setStatus(HttpStatus.NOT_FOUND.value());
             return;
         }
+        content = protectedExportService.encryptIfNeeded(content, path);
         writeAttachment(response, path, content);
+    }
+
+    @GetMapping("/download")
+    @Operation(summary = "下载文件")
+    @Parameter(name = "id", description = "文件编号", required = true)
+    @PreAuthorize("@ss.hasPermission('infra:file:query')")
+    public void downloadFile(@RequestParam("id") Long id, HttpServletResponse response) throws Exception {
+        FileDO file = fileService.getFile(id);
+        byte[] content = fileService.getFileContent(file.getConfigId(), file.getPath());
+        if (content == null) {
+            log.warn("[downloadFile][id({}) 文件不存在]", id);
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return;
+        }
+        content = protectedExportService.encryptIfNeeded(content, file.getName());
+        writeAttachment(response, file.getName(), content);
     }
 
     @GetMapping("/page")

@@ -1,6 +1,8 @@
 package cn.weitee.erp.module.erp.service.finance;
 
 import cn.weitee.erp.framework.common.exception.ServiceException;
+import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.module.erp.controller.admin.finance.vo.asset.ErpFinanceAssetCandidatePageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetCandidateDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceAssetDO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceExpenseDO;
@@ -19,6 +21,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Collection;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -27,6 +31,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ErpFinanceAssetCandidateServiceImplTest {
+
+    @Test
+    void getFinanceAssetCandidatePage_whenDeptScopeLimited_shouldUseDeptScopedMapper() throws Exception {
+        ErpFinanceAssetCandidateServiceImpl service = new ErpFinanceAssetCandidateServiceImpl();
+        AtomicReference<Collection<Long>> actualDeptIds = new AtomicReference<>();
+        setField(service, "financeDataPermissionService", createProxy(FinanceDataPermissionService.class, (methodName, args) -> {
+            if ("getPermissionScope".equals(methodName)) {
+                return new cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope(
+                        cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope.Scope.all(),
+                        cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope.Scope.limited(Set.of(9L)),
+                        java.util.Collections.emptyMap(), false, false);
+            }
+            return null;
+        }));
+        setField(service, "financeAssetCandidateMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceAssetCandidateMapper.class, (methodName, args) -> {
+            if ("selectPageByDeptIds".equals(methodName)) {
+                actualDeptIds.set((Collection<Long>) args[1]);
+                return new PageResult<>(List.of(new ErpFinanceAssetCandidateDO().setId(109L).setDeptId(9L)), 1L);
+            }
+            if ("selectPage".equals(methodName)) {
+                throw new AssertionError("受限部门不得调用全量候选资产分页查询");
+            }
+            return null;
+        }));
+
+        PageResult<ErpFinanceAssetCandidateDO> page = service.getFinanceAssetCandidatePage(new ErpFinanceAssetCandidatePageReqVO());
+
+        assertEquals(Set.of(9L), Set.copyOf(actualDeptIds.get()));
+        assertEquals(List.of(109L), page.getList().stream().map(ErpFinanceAssetCandidateDO::getId).toList());
+    }
 
     @Test
     void confirmFinanceAssetCandidate_whenCandidateAlreadyLinkedAsset_shouldFailWithoutCreatingAsset() throws Exception {

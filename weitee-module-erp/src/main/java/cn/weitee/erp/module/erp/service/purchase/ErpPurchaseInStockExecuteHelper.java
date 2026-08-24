@@ -11,11 +11,13 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecut
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemBatchDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseSourceBatchDO;
+import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteItemBatchMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteMapper;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockExecuteStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockInStatusEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
@@ -59,6 +61,8 @@ class ErpPurchaseInStockExecuteHelper {
     private ErpPurchaseInStockExecuteItemMapper erpPurchaseInStockExecuteItemMapper;
     @Resource
     private ErpPurchaseInStockExecuteItemBatchMapper erpPurchaseInStockExecuteItemBatchMapper;
+    @Resource
+    private ErpStockMapper erpStockMapper;
     @Resource
     private ErpStockRecordService stockRecordService;
     @Resource
@@ -175,7 +179,17 @@ class ErpPurchaseInStockExecuteHelper {
                     ErpStockRecordBizTypeEnum.PURCHASE_IN.getType(),
                     purchaseIn.getId(), item.getPurchaseInItemId(), purchaseIn.getNo(),
                     price, amount));
+            // 可用库存同事务维护：入库数量经 IQC 门禁（未过检不允许入库确认），故过检入库即可用
+            increaseAvailableCount(item.getProductId(), item.getWarehouseId(), item.getCount());
         });
+    }
+
+    private void increaseAvailableCount(Long productId, Long warehouseId, BigDecimal count) {
+        ErpStockDO stock = erpStockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
+        if (stock == null) {
+            return;
+        }
+        erpStockMapper.updateAvailableCountIncrement(stock.getId(), count, false);
     }
 
     public void reverseExecutedStockRecords(ErpPurchaseInDO purchaseIn) {

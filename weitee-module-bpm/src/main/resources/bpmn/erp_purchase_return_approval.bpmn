@@ -18,11 +18,23 @@
     <userTask id="task_approve_level1" name="部门经理审批"
               flowable:assignee="${#task.getAssignee()}"
               flowable:skipExpression="${startUserId == '0'}">
+      <extensionElements>
+        <flowable:candidateStrategy>37</flowable:candidateStrategy>
+        <flowable:candidateParam>1</flowable:candidateParam>
+        <flowable:assignStartUserHandlerType>3</flowable:assignStartUserHandlerType>
+        <flowable:assignEmptyHandlerType>4</flowable:assignEmptyHandlerType>
+      </extensionElements>
     </userTask>
 
     <userTask id="task_approve_level2" name="总经理审批"
               flowable:assignee="${#task.getAssignee()}"
               flowable:skipExpression="${startUserId == '0'}">
+      <extensionElements>
+        <flowable:candidateStrategy>38</flowable:candidateStrategy>
+        <flowable:candidateParam>2</flowable:candidateParam>
+        <flowable:assignStartUserHandlerType>3</flowable:assignStartUserHandlerType>
+        <flowable:assignEmptyHandlerType>4</flowable:assignEmptyHandlerType>
+      </extensionElements>
     </userTask>
 
     <endEvent id="end" name="结束">

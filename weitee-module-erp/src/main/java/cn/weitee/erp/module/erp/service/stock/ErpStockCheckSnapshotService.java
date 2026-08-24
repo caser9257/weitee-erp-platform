@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * ERP 盘点快照 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface ErpStockCheckSnapshotService {
 

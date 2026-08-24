@@ -4,12 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BpmBundledProcessDefinitionInitializerTest {
@@ -86,6 +88,35 @@ class BpmBundledProcessDefinitionInitializerTest {
                         && item.contains("erp_expense_type")));
     }
 
+    @Test
+    void purchaseReturnDefinitionShouldRedeployWhenCandidateStrategyConfigIsMissing() throws Exception {
+        Field definitionsField = BpmBundledProcessDefinitionInitializer.class.getDeclaredField("DEFINITIONS");
+        definitionsField.setAccessible(true);
+        List<?> definitions = (List<?>) definitionsField.get(null);
+
+        Object purchaseReturnDefinition = definitions.stream()
+                .filter(definition -> "erp_purchase_return_approval".equals(invokeGetter(definition, "getKey")))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(Boolean.TRUE, invokeGetter(purchaseReturnDefinition, "isRequiresCandidateStrategyCheck"));
+    }
+
+    @Test
+    void saleOrderDefinitionShouldUseTheSharedNoTenantDeploymentPath() throws Exception {
+        Field definitionsField = BpmBundledProcessDefinitionInitializer.class.getDeclaredField("DEFINITIONS");
+        definitionsField.setAccessible(true);
+        List<?> definitions = (List<?>) definitionsField.get(null);
+
+        Object saleOrderDefinition = definitions.stream()
+                .filter(definition -> "erp_sale_order".equals(invokeGetter(definition, "getKey")))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals("bpmn/erp_sale_order_approval.bpmn", invokeGetter(saleOrderDefinition, "getClasspath"));
+        assertEquals(Boolean.TRUE, invokeGetter(saleOrderDefinition, "isRequiresCandidateStrategyCheck"));
+    }
+
     private static class CapturingJdbcTemplate extends JdbcTemplate {
 
         private final List<String> executedSql = new ArrayList<>();
@@ -132,5 +163,15 @@ class BpmBundledProcessDefinitionInitializerTest {
                     }
                     return null;
                 });
+    }
+
+    private static Object invokeGetter(Object target, String methodName) {
+        try {
+            Method method = target.getClass().getDeclaredMethod(methodName);
+            method.setAccessible(true);
+            return method.invoke(target);
+        } catch (ReflectiveOperationException e) {
+            throw new AssertionError(e);
+        }
     }
 }

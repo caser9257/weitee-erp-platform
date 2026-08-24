@@ -43,4 +43,7 @@ public class BpmApprovalSceneSaveReqVO {
     @Schema(description = "备注", example = "付款单提交审批场景")
     private String remark;
 
+    @Schema(description = "通用审批接入配置 JSON（业务表/状态列/状态映射/上下文字段），启用后该场景由通用审批桥驱动")
+    private String genericConfig;
+
 }

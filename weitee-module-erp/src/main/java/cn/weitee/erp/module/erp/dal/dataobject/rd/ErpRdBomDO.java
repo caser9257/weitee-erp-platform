@@ -34,9 +34,16 @@ public class ErpRdBomDO extends BaseDO {
 
     private Integer status;
 
+    private String processInstanceId;
+
     private Long publishedBomId;
 
     private LocalDateTime lastPublishedTime;
+
+    /**
+     * 源版本 BOM 编号（发起升版变更时指向被变更的旧版本，形成版本链；首建为 NULL）
+     */
+    private Long sourceBomId;
 
     private String remark;
 

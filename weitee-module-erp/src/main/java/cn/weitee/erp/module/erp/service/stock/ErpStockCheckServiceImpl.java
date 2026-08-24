@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.number.MoneyUtils;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
+import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.check.ErpStockCheckPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.check.ErpStockCheckSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.stock.vo.warehouse.ErpWarehouseSaveReqVO;
@@ -34,6 +35,7 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -92,8 +94,11 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         }
 
         // 2.1 插入盘点单（使用DRAFT状态）
+        Long deptId = createReqVO.getDeptId() != null
+                ? createReqVO.getDeptId() : SecurityFrameworkUtils.getLoginUserDeptId();
         ErpStockCheckDO stockCheck = BeanUtils.toBean(createReqVO, ErpStockCheckDO.class, in -> in
                 .setNo(no).setStatus(ErpStockCheckStatusEnum.DRAFT.getStatus())
+                .setDeptId(deptId)
                 .setTotalCount(getSumValue(stockCheckItems, ErpStockCheckItemDO::getCount, BigDecimal::add))
                 .setTotalPrice(getSumValue(stockCheckItems, ErpStockCheckItemDO::getTotalPrice, BigDecimal::add, BigDecimal.ZERO)));
         erpStockCheckMapper.insert(stockCheck);
@@ -183,10 +188,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         Set<Long> warehouseIds = checkItems.stream()
                 .map(ErpStockCheckItemDO::getWarehouseId)
                 .collect(Collectors.toSet());
-        warehouseIds.forEach(warehouseId -> {
-            warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
-                    .setId(warehouseId).setFrozen(true));
-        });
+        warehouseIds.forEach(warehouseId -> updateWarehouseFrozen(warehouseId, true));
 
         // 3. 更新状态为 COUNTING，记录快照时间
         erpStockCheckMapper.updateById(new ErpStockCheckDO()
@@ -213,18 +215,18 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     }
 
     /**
-     * 审核通过并关闭（REVIEWING → APPROVED → CLOSED）
+     * 审核通过并关闭（REVIEWING → PROCESSING → CLOSED）
      *
-     * 先写 APPROVED 保留审计轨迹，再执行业务，最后写 CLOSED。
+     * 先写 PROCESSING 中间态，再执行业务，最后写 CLOSED 终态。
      * 包含：更新库存、盘亏结转制造费用、生成凭证、解冻仓库。
      */
     private void approveAndClose(ErpStockCheckDO stockCheck) {
         Long checkId = stockCheck.getId();
 
-        // 0. 先写 APPROVED 状态，保留审计轨迹
+        // 0. 先写 PROCESSING 中间态（业务完成后才能落 CLOSED 终态）
         erpStockCheckMapper.updateById(new ErpStockCheckDO()
                 .setId(checkId)
-                .setStatus(ErpStockCheckStatusEnum.APPROVED.getStatus()));
+                .setStatus(ErpStockCheckStatusEnum.PROCESSING.getStatus()));
 
         // 1. 更新库存
         List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
@@ -273,6 +275,7 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             ErpProductionCostEntryDO costEntry = ErpProductionCostEntryDO.builder()
                     .costType(ErpProductionCostTypeEnum.OTHER.getType())
                     .sourceType(ErpProductionCostSourceTypeEnum.SYSTEM.getType())
+                    .accountingMonth(YearMonth.from(stockCheck.getCheckTime()).toString())
                     .amount(lossAmount)
                     .sourceId(stockCheckItem.getCheckId())
                     .sourceNo(stockCheck.getNo())
@@ -303,12 +306,10 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         Set<Long> warehouseIds = stockCheckItems.stream()
                 .map(ErpStockCheckItemDO::getWarehouseId)
                 .collect(Collectors.toSet());
-        Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
         warehouseIds.forEach(warehouseId -> {
-            ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
+            ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
             if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
-                warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
-                        .setId(warehouseId).setFrozen(false));
+                updateWarehouseFrozen(warehouseId, false);
             }
         });
     }
@@ -331,12 +332,10 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
             Set<Long> warehouseIds = checkItems.stream()
                     .map(ErpStockCheckItemDO::getWarehouseId)
                     .collect(Collectors.toSet());
-            Map<Long, ErpWarehouseDO> warehouseMap = warehouseService.getWarehouseMap(warehouseIds);
             warehouseIds.forEach(warehouseId -> {
-                ErpWarehouseDO warehouse = warehouseMap.get(warehouseId);
+                ErpWarehouseDO warehouse = warehouseService.getWarehouse(warehouseId);
                 if (warehouse != null && Boolean.TRUE.equals(warehouse.getFrozen())) {
-                    warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
-                            .setId(warehouseId).setFrozen(false));
+                    updateWarehouseFrozen(warehouseId, false);
                 }
             });
         } else {
@@ -434,6 +433,21 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
 
     private BigDecimal defaultAmount(BigDecimal amount) {
         return amount != null ? amount : BigDecimal.ZERO;
+    }
+
+    private ErpWarehouseSaveReqVO buildWarehouseUpdateReq(ErpWarehouseDO warehouse, boolean frozen) {
+        return new ErpWarehouseSaveReqVO()
+                .setId(warehouse.getId())
+                .setCategoryId(warehouse.getCategoryId())
+                .setName(warehouse.getName())
+                .setAddress(warehouse.getAddress())
+                .setSort(warehouse.getSort())
+                .setRemark(warehouse.getRemark())
+                .setPrincipal(warehouse.getPrincipal())
+                .setWarehousePrice(warehouse.getWarehousePrice())
+                .setTruckagePrice(warehouse.getTruckagePrice())
+                .setStatus(warehouse.getStatus())
+                .setFrozen(frozen);
     }
 
     private ErpStockCheckDO validateStockCheckExists(Long id) {
@@ -543,6 +557,22 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
         }
 
         return new BigDecimal[]{totalProfit, totalLoss};
+    }
+
+    private void updateWarehouseFrozen(Long warehouseId, boolean frozen) {
+        ErpWarehouseDO warehouse = warehouseService.validWarehouseList(List.of(warehouseId)).get(0);
+        warehouseService.updateWarehouse(new ErpWarehouseSaveReqVO()
+                .setId(warehouse.getId())
+                .setName(warehouse.getName())
+                .setCategoryId(warehouse.getCategoryId())
+                .setAddress(warehouse.getAddress())
+                .setSort(warehouse.getSort())
+                .setRemark(warehouse.getRemark())
+                .setPrincipal(warehouse.getPrincipal())
+                .setWarehousePrice(warehouse.getWarehousePrice())
+                .setTruckagePrice(warehouse.getTruckagePrice())
+                .setStatus(warehouse.getStatus())
+                .setFrozen(frozen));
     }
 
 }

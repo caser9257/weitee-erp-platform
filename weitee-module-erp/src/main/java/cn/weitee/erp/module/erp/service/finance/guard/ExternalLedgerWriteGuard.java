@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.Resource;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
 
 /**
  * 外部账单向依赖安全守卫
@@ -29,13 +30,17 @@ public class ExternalLedgerWriteGuard {
     @Around("@annotation(cn.weitee.erp.module.erp.service.finance.guard.ExternalLedgerWriteOnly)")
     public Object around(ProceedingJoinPoint point) throws Throwable {
         // 检查当前用户是否为审计角色
-        if (financeDataPermissionService.isAuditRole()) {
+        if (financeDataPermissionService.isAuditRole() && rejectAuditWrite()) {
             // 审计角色只能修改外部账，不能修改内部业务数据
             log.info("审计角色执行外部账写入操作");
         }
 
         // 执行原始方法
         return point.proceed();
+    }
+
+    private boolean rejectAuditWrite() {
+        throw exception(FORBIDDEN);
     }
 
 }

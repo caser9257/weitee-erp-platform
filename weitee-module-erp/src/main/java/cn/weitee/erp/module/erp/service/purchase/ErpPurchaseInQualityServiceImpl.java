@@ -133,6 +133,7 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
         if (!ObjectUtil.equal(purchaseIn.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
             throw exception(PURCHASE_IN_QUALITY_CHECK_FAIL_STATUS);
         }
+        validationHelper.validatePurchaseInCanCheck(purchaseIn);
         ErpPurchaseInQualityDO existed = erpPurchaseInQualityMapper.selectByPurchaseInId(purchaseInId);
         if (existed != null) {
             return existed.getId();
@@ -604,6 +605,8 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
         reqVO.setOrderId(purchaseIn.getOrderId());
         reqVO.setAccountId(purchaseIn.getAccountId());
         reqVO.setReturnTime(java.time.LocalDateTime.now());
+        reqVO.setDiscountPercent(BigDecimal.ZERO);
+        reqVO.setOtherPrice(BigDecimal.ZERO);
         reqVO.setRemark("质检不合格退货，质检单号：" + quality.getNo());
 
         List<cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO.Item> returnItems =

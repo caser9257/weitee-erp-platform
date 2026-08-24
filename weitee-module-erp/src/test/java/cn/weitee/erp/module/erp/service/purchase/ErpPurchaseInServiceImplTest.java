@@ -235,6 +235,23 @@ class ErpPurchaseInServiceImplTest {
     }
 
     @Test
+    void createPurchaseIn_shouldTreatOptionalAmountsAsZero() {
+        purchaseOrderRef.set(purchaseOrder(9L, "CGDD-001", 201L, 301L));
+        purchaseOrderItemsRef.set(List.of(purchaseOrderItem(101L, 9L, 1001L, "10", "7")));
+        productListRef.set(List.of(product(1001L, 2001L)));
+        ErpPurchaseInSaveReqVO request = saveReq(null, 9L,
+                saveItem(null, 101L, 9001L, 1001L, 2001L, "3"));
+        request.setDiscountPercent(null);
+        request.setOtherPrice(null);
+
+        Long id = service.createPurchaseIn(request);
+
+        assertEquals(88L, id);
+        assertEquals(BigDecimal.ZERO, insertedPurchaseInRef.get().getOtherPrice());
+        assertEquals(BigDecimal.ZERO, insertedPurchaseInRef.get().getDiscountPercent());
+    }
+
+    @Test
     void updatePurchaseIn_shouldRejectWhenInboundCountExceedsRemaining() {
         purchaseInRef.set(purchaseIn(1L, 9L, "PI-001", ErpAuditStatus.REJECT.getStatus(), null));
         purchaseOrderRef.set(purchaseOrder(9L, "CGDD-001", 201L, 301L));

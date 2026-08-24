@@ -65,7 +65,7 @@
           </el-form-item>
         </div>
         <div class="filter-actions">
-          <el-button type="primary" :loading="loading" @click="handleQuery">
+          <el-button type="primary" :loading="loading" @click="handleQuery" v-hasPermi="['erp:cost-report:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>
@@ -113,7 +113,7 @@
       <div class="table-header">
         <div class="table-header__title">成本数据明细</div>
         <div class="table-header__actions">
-          <el-button type="primary" plain @click="handleExport">
+          <el-button type="primary" plain @click="handleExport" v-hasPermi="['erp:cost-report:query']">
             <Icon icon="ep:download" class="mr-5px" />
             导出报表
           </el-button>

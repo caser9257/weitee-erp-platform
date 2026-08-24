@@ -9,11 +9,13 @@ ARG ALL_PROXY
 ARG NO_PROXY
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ARG PNPM_REGISTRY=https://registry.npmmirror.com
+ARG VITE_APP_CAPTCHA_ENABLE=false
 
 ENV HTTP_PROXY=${HTTP_PROXY}
 ENV HTTPS_PROXY=${HTTPS_PROXY}
 ENV ALL_PROXY=${ALL_PROXY}
 ENV NO_PROXY=${NO_PROXY}
+ENV VITE_APP_CAPTCHA_ENABLE=${VITE_APP_CAPTCHA_ENABLE}
 
 RUN npm config set registry ${NPM_REGISTRY} \
     && npm install -g pnpm \

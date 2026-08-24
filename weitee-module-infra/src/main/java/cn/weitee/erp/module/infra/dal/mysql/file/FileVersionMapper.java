@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * 文件版本 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FileVersionMapper extends BaseMapperX<FileVersionDO> {
@@ -29,9 +29,9 @@ public interface FileVersionMapper extends BaseMapperX<FileVersionDO> {
     }
 
     /**
-     * 获取最大版本号（使用 FOR UPDATE 锁定，防止并发竞争）
+     * 获取最大版本号（使鐢?FOR UPDATE 锁定，防止并发竞争）
      */
-    @Select("SELECT MAX(version) FROM file_version WHERE file_id = #{fileId} FOR UPDATE")
+    @Select("SELECT MAX(version) FROM infra_file_version WHERE file_id = #{fileId} FOR UPDATE")
     Integer getMaxVersionForUpdate(Long fileId);
 
 }

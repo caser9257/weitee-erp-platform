@@ -44,3 +44,33 @@ export const createFile = (data: any) => {
 export const updateFile = (data: any, onUploadProgress?: Function) => {
   return request.upload({ url: '/infra/file/upload', data, onUploadProgress })
 }
+
+// ========== 文件版本管理 ==========
+
+// 文件版本 Response VO
+export interface FileVersionRespVO {
+  id: number
+  fileId: number
+  version: number
+  name: string
+  url: string
+  size: number
+  type: string
+  description: string
+  createTime: string
+}
+
+// 查询文件版本列表
+export const getFileVersionList = (fileId: number) => {
+  return request.get<FileVersionRespVO[]>({ url: '/infra/file-version/list', params: { fileId } })
+}
+
+// 获取文件最新版本号
+export const getLatestFileVersion = (fileId: number) => {
+  return request.get<number>({ url: '/infra/file-version/latest', params: { fileId } })
+}
+
+// 回溯文件到指定版本
+export const rollbackFileVersion = (data: { fileId: number; version: number }) => {
+  return request.post({ url: '/infra/file-version/rollback', data })
+}

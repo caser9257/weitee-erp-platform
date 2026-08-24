@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 部署内置的财务、供应链审批 BPMN，保证 Docker 空库启动后可直接提交审批。
@@ -41,16 +42,37 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                     "finance", "/finance/payment", "/finance/payment", false),
             new BundledProcessDefinition("erp_finance_expense", "费用报销审批", "bpmn/erp_finance_expense.bpmn",
                     "finance", "/finance/expense", "/finance/expense", false),
+            new BundledProcessDefinition("erp_sale_order", "销售订单审批", "bpmn/erp_sale_order_approval.bpmn",
+                    "erp_sale", "/erp/sale/order", "/erp/sale/order", true),
             new BundledProcessDefinition("erp_purchase_return_approval", "采购退货审批",
                     "bpmn/erp_purchase_return_approval.bpmn", "erp_purchase",
-                    "/scm/purchase-return", "/scm/purchase-return", false),
+                    "/scm/purchase-return", "/scm/purchase-return", true),
+            new BundledProcessDefinition("erp_purchase_in_approval", "采购入库审批",
+                    "bpmn/erp_purchase_in_approval.bpmn", "erp_purchase",
+                    "/scm/purchase-in", "/scm/purchase-in", false),
             new BundledProcessDefinition("erp_stock_in_approval", "其它入库审批",
                     "bpmn/erp_stock_in_approval.bpmn", "erp_stock",
                     "/scm/stock-in", "/scm/stock-in", true),
             new BundledProcessDefinition("erp_stock_out_approval", "其它出库审批",
                     "bpmn/erp_stock_out_approval.bpmn", "erp_stock",
-                    "/scm/stock-out", "/scm/stock-out", true)
+                    "/scm/stock-out", "/scm/stock-out", true),
+            new BundledProcessDefinition("erp_rd_bom_approval", "研发BOM审批",
+                    "bpmn/erp_rd_bom_approval.bpmn", "erp_rd",
+                    "/erp/rd/rd-bom", "/erp/rd/rd-bom/RdBomApprovalPanel", true),
+            new BundledProcessDefinition("erp_product_approval", "物料新建审核",
+                    "bpmn/erp_product_approval.bpmn", "erp_product",
+                    "/erp/product/product", "/erp/product/product", true)
     );
+
+    /**
+     * 需要精确校验候选策略参数的内置流程定义：
+     * key -> taskId -> [期望 candidateStrategy, 期望 candidateParam]。
+     * bpmn 内置内容变更（如审批人从岗位切角色）时，靠此表触发存量环境自动重部署。
+     */
+    private static final Map<String, Map<String, String[]>> EXPECTED_CANDIDATE_PARAMS = Map.of(
+            "erp_rd_bom_approval", Map.of(
+                    "task_approve_level1", new String[]{"10", "910005"},
+                    "task_approve_level2", new String[]{"10", "910004"}));
 
     private final RepositoryService repositoryService;
     private final BpmProcessDefinitionInfoMapper processDefinitionInfoMapper;
@@ -88,8 +110,29 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
             return false;
         }
         BpmnModel deployedModel = repositoryService.getBpmnModel(activeDefinition.getId());
+        Map<String, String[]> expected = EXPECTED_CANDIDATE_PARAMS.get(definition.getKey());
+        if (expected != null) {
+            // 有精确期望值：策略或参数不一致即重部署（支撑审批人岗位→角色等内置配置迁移）
+            return !matchesCandidate(expected.get("task_approve_level1"), deployedModel, "task_approve_level1")
+                    || !matchesCandidate(expected.get("task_approve_level2"), deployedModel, "task_approve_level2");
+        }
         return !hasCandidateStrategy(deployedModel, "task_approve_level1")
                 || !hasCandidateStrategy(deployedModel, "task_approve_level2");
+    }
+
+    /**
+     * 精确校验指定任务的候选策略与参数是否与期望一致；期望缺失时退回"存在即通过"。
+     */
+    private boolean matchesCandidate(String[] expectation, BpmnModel model, String taskId) {
+        if (expectation == null) {
+            return hasCandidateStrategy(model, taskId);
+        }
+        FlowElement task = BpmnModelUtils.getFlowElementById(model, taskId);
+        return task != null
+                && expectation[0].equals(String.valueOf(BpmnModelUtils.parseCandidateStrategy(task)))
+                && expectation[1].equals(BpmnModelUtils.parseCandidateParam(task))
+                && BpmnModelUtils.parseAssignStartUserHandlerType(task) != null
+                && BpmnModelUtils.parseAssignEmptyHandlerType(task) != null;
     }
 
     private boolean hasCandidateStrategy(BpmnModel model, String taskId) {
@@ -265,6 +308,8 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
     }
 
     private void ensureSupplyChainBpmSchema() {
+        addColumnIfMissing("erp_purchase_in", "process_instance_id",
+                "`process_instance_id` varchar(64) DEFAULT NULL COMMENT 'BPM 流程实例 ID' AFTER `status`");
         addColumnIfMissing("erp_purchase_return", "process_instance_id",
                 "`process_instance_id` varchar(64) DEFAULT NULL COMMENT 'BPM 流程实例 ID' AFTER `status`");
         addColumnIfMissing("erp_stock_in", "process_instance_id",

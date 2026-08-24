@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherTemplateMapper">
+    <select id="selectPageByVisibleLedgerIdsAndSubjectCodes" resultType="cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherTemplateDO">
+        SELECT t.* FROM erp_finance_voucher_template t WHERE t.deleted = 0
+        <if test="ledgerIds != null and !ledgerIds.isEmpty()">AND t.ledger_id IN <foreach collection="ledgerIds" item="ledgerId" open="(" separator="," close=")">#{ledgerId}</foreach></if>
+        <if test="reqVO.ledgerId != null">AND t.ledger_id = #{reqVO.ledgerId}</if>
+        <if test="reqVO.bizType != null">AND t.biz_type = #{reqVO.bizType}</if>
+        <if test="reqVO.name != null and reqVO.name != ''">AND t.name LIKE CONCAT('%', #{reqVO.name}, '%')</if>
+        <if test="reqVO.status != null">AND t.status = #{reqVO.status}</if>
+        <if test="reqVO.autoGenerate != null">AND t.auto_generate = #{reqVO.autoGenerate}</if>
+        <if test="subjectCodesByLedger != null and !subjectCodesByLedger.isEmpty()">
+            AND (<foreach collection="subjectCodesByLedger" index="ledgerId" item="subjectCodes" separator=" AND ">
+                (t.ledger_id != #{ledgerId} OR NOT EXISTS (SELECT 1 FROM erp_finance_voucher_template_item i
+                WHERE i.template_id = t.id AND i.deleted = 0 AND i.subject_code NOT IN
+                <foreach collection="subjectCodes" item="subjectCode" open="(" separator="," close=")">#{subjectCode}</foreach>))
+            </foreach>)
+        </if>
+        ORDER BY t.id DESC
+    </select>
+</mapper>

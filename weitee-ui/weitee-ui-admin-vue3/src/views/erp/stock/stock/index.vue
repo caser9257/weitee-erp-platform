@@ -232,7 +232,6 @@
       size="52%"
       destroy-on-close
       :with-header="false"
-      custom-class="premium-drawer"
       modal-class="premium-drawer__mask"
       :close-on-click-modal="!isAnyBatchActionLoading"
       :close-on-press-escape="!isAnyBatchActionLoading"
@@ -2083,16 +2082,6 @@ watch(
   border: 1px solid var(--erp-primary-100);
 }
 
-:deep(.premium-drawer .el-drawer__body) {
-  padding: 0;
-  overflow: hidden;
-}
-
-:deep(.premium-drawer) {
-  width: min(52vw, 760px) !important;
-  min-width: 620px;
-}
-
 :deep(.premium-drawer__mask) {
   backdrop-filter: blur(8px);
   background: var(--erp-overlay-strong);
@@ -2175,11 +2164,6 @@ watch(
     border-left: 0;
     text-align: left;
   }
-
-  :deep(.premium-drawer) {
-    width: 100% !important;
-    min-width: 0;
-  }
 }
 
 @media (max-width: 767px) {
@@ -2199,6 +2183,54 @@ watch(
     padding-left: 0;
     border-left: 0;
     text-align: left;
+  }
+}
+</style>
+
+<style lang="scss">
+.premium-drawer__mask {
+  backdrop-filter: blur(8px);
+  background: var(--erp-overlay-strong);
+}
+
+.premium-drawer__mask .el-drawer__body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.premium-drawer__mask .el-drawer {
+  width: min(52vw, 760px) !important;
+  min-width: 620px;
+}
+
+@media (max-width: 767px) {
+  .premium-drawer__mask .el-drawer {
+    width: 100% !important;
+    min-width: 0;
+  }
+}
+</style>
+
+<style lang="scss">
+.premium-drawer__mask {
+  backdrop-filter: blur(8px);
+  background: var(--erp-overlay-strong);
+}
+
+.premium-drawer__mask .el-drawer__body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.premium-drawer__mask .el-drawer {
+  width: min(52vw, 760px) !important;
+  min-width: 620px;
+}
+
+@media (max-width: 1279px) {
+  .premium-drawer__mask .el-drawer {
+    width: 100% !important;
+    min-width: 0;
   }
 }
 </style>

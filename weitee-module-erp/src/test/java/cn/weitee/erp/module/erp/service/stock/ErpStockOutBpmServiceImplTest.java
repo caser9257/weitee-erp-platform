@@ -47,6 +47,31 @@ class ErpStockOutBpmServiceImplTest {
     }
 
     @Test
+    void submitStockOut_shouldMarkFailedWhenBpmSubmitThrows() throws Exception {
+        Object service = createService();
+        AtomicReference<ErpStockOutDO> entityRef = new AtomicReference<>(
+                new ErpStockOutDO()
+                        .setId(8L).setNo("SO-008")
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus()));
+        List<ErpStockOutDO> updateObjects = new ArrayList<>();
+
+        injectField(service, "erpStockOutMapper", createMapperObjectProxy(entityRef, updateObjects));
+        injectField(service, "stockOutService", createServiceProxy());
+        injectField(service, "approvalRuntimeService", createApprovalFailureProxy());
+
+        Object reqVO = createSubmitReqVO(8L, Map.of());
+        Method method = service.getClass().getMethod("submitStockOut", Long.class, reqVO.getClass());
+        Object result = method.invoke(service, 9527L, reqVO);
+
+        assertNull(result);
+        assertEquals(2, updateObjects.size());
+        assertEquals(ErpAuditStatus.PROCESS.getStatus(), updateObjects.get(0).getStatus());
+        assertNull(updateObjects.get(0).getProcessInstanceId());
+        assertEquals(ErpAuditStatus.FAILED.getStatus(), updateObjects.get(1).getStatus());
+        assertNull(updateObjects.get(1).getProcessInstanceId());
+    }
+
+    @Test
     void submitStockOut_shouldThrowWhenAlreadyApproved() throws Exception {
         Object service = createService();
         AtomicReference<ErpStockOutDO> entityRef = new AtomicReference<>(
@@ -81,6 +106,26 @@ class ErpStockOutBpmServiceImplTest {
         Method method = service.getClass().getMethod("submitStockOut", Long.class, reqVO.getClass());
         assertThrows(java.lang.reflect.InvocationTargetException.class,
                 () -> method.invoke(service, 9527L, reqVO));
+    }
+
+    @Test
+    void submitStockOut_shouldThrowWhenDraftIsAlreadyClaimedByAnotherRequest() throws Exception {
+        Object service = createService();
+        AtomicReference<ErpStockOutDO> entityRef = new AtomicReference<>(
+                new ErpStockOutDO().setId(9L).setNo("SO-009")
+                        .setStatus(ErpAuditStatus.DRAFT.getStatus()));
+        AtomicReference<String> submittedSceneCode = new AtomicReference<>();
+
+        injectField(service, "erpStockOutMapper", createMapperClaimConflictProxy(entityRef));
+        injectField(service, "stockOutService", createServiceProxy());
+        injectField(service, "approvalRuntimeService", createApprovalProxy(submittedSceneCode));
+
+        Object reqVO = createSubmitReqVO(9L, Map.of());
+        Method method = service.getClass().getMethod("submitStockOut", Long.class, reqVO.getClass());
+
+        assertThrows(java.lang.reflect.InvocationTargetException.class,
+                () -> method.invoke(service, 9527L, reqVO));
+        assertNull(submittedSceneCode.get());
     }
 
     // ========== cancel tests ==========
@@ -202,7 +247,35 @@ class ErpStockOutBpmServiceImplTest {
                 updates.add(new int[]{doObj.getId().intValue()});
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updates.add(new int[]{((Long) args[0]).intValue()});
+                return 1;
+            }
             if ("clearProcessInstanceId".equals(methodName)) return 1;
+            return null;
+        });
+    }
+
+    private Object createMapperObjectProxy(AtomicReference<ErpStockOutDO> entityRef, List<ErpStockOutDO> updates) {
+        return createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) return entityRef.get();
+            if ("updateById".equals(methodName)) {
+                updates.add((ErpStockOutDO) args[0]);
+                return 1;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updates.add((ErpStockOutDO) args[2]);
+                return 1;
+            }
+            if ("clearProcessInstanceId".equals(methodName)) return 1;
+            return null;
+        });
+    }
+
+    private Object createMapperClaimConflictProxy(AtomicReference<ErpStockOutDO> entityRef) {
+        return createProxy(ErpStockOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) return entityRef.get();
+            if ("updateByIdAndStatus".equals(methodName)) return 0;
             return null;
         });
     }
@@ -219,6 +292,15 @@ class ErpStockOutBpmServiceImplTest {
             }
             if ("cancel".equals(methodName)) {
                 if (sceneCodeRef != null) sceneCodeRef.set((String) args[0]);
+            }
+            return null;
+        });
+    }
+
+    private Object createApprovalFailureProxy() {
+        return createProxy(BpmApprovalRuntimeService.class, (methodName, args) -> {
+            if ("submit".equals(methodName)) {
+                throw new IllegalStateException("flowable submit failed");
             }
             return null;
         });

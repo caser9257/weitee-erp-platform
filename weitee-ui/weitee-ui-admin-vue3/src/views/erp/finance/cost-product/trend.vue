@@ -2,8 +2,9 @@
   <div class="cost-trend-page">
     <ContentWrap class="page-header-card">
       <div class="page-header">
-        <div class="page-header__main">
+        <div>
           <div class="page-header__title">产品成本趋势分析</div>
+          <div class="page-header__desc">按月查看产品成本结构、趋势和对比结果</div>
         </div>
         <div class="page-header__actions">
           <el-button :loading="loading" @click="loadData">
@@ -28,13 +29,12 @@
             >
               <el-option
                 v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
+                :key="item.productId"
+                :label="item.productName || `产品${item.productId}`"
+                :value="item.productId"
               />
             </el-select>
           </el-form-item>
-
           <el-form-item label="时间范围">
             <el-date-picker
               v-model="dateRange"
@@ -46,7 +46,6 @@
               @change="handleQuery"
             />
           </el-form-item>
-
           <el-form-item label="对比产品">
             <el-select
               v-model="queryParams.compareProductIds"
@@ -59,20 +58,19 @@
             >
               <el-option
                 v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
+                :key="item.productId"
+                :label="item.productName || `产品${item.productId}`"
+                :value="item.productId"
               />
             </el-select>
           </el-form-item>
         </div>
-
         <div class="filter-actions">
-          <el-button type="primary" :loading="loading" @click="handleQuery">
+          <el-button type="primary" :loading="loading" @click="handleQuery" v-hasPermi="['erp:cost-product:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>
-          <el-button @click="resetQuery">
+          <el-button :disabled="loading" @click="resetQuery">
             <Icon icon="ep:refresh-left" class="mr-5px" />
             重置
           </el-button>
@@ -80,29 +78,31 @@
       </el-form>
     </ContentWrap>
 
-    <div class="chart-row">
-      <ContentWrap class="chart-card chart-card--main">
+    <div class="chart-grid">
+      <ContentWrap class="chart-card">
         <div class="chart-header">
-          <div class="chart-header__title">成本趋势</div>
+          <div>
+            <div class="chart-header__title">成本趋势</div>
+            <div class="chart-header__desc">展示所选产品在所选期间内的成本变化</div>
+          </div>
           <div class="chart-header__legend">
-            <span class="legend-dot legend-dot--blue"></span>
-            直接材料
-            <span class="legend-dot legend-dot--green"></span>
-            直接人工
-            <span class="legend-dot legend-dot--amber"></span>
-            制造费用
-            <span class="legend-dot legend-dot--red"></span>
-            总成本
+            <span><i class="legend-dot" style="background: #3b82f6"></i> 直接材料</span>
+            <span><i class="legend-dot" style="background: #10b981"></i> 直接人工</span>
+            <span><i class="legend-dot" style="background: #f59e0b"></i> 制造费用</span>
+            <span><i class="legend-dot" style="background: #ef4444"></i> 总成本</span>
           </div>
         </div>
-        <div ref="trendChartRef" class="chart-container"></div>
+        <div ref="trendChartRef" class="chart-instance"></div>
       </ContentWrap>
 
-      <ContentWrap class="chart-card chart-card--side">
+      <ContentWrap class="chart-card">
         <div class="chart-header">
-          <div class="chart-header__title">成本构成</div>
+          <div>
+            <div class="chart-header__title">成本构成</div>
+            <div class="chart-header__desc">展示当前期间的成本结构占比</div>
+          </div>
         </div>
-        <div ref="pieChartRef" class="chart-container"></div>
+        <div ref="compositionChartRef" class="chart-instance"></div>
         <div class="composition-legend">
           <div v-for="item in avgComposition" :key="item.label" class="legend-item">
             <div class="legend-dot" :style="{ backgroundColor: item.color }"></div>
@@ -113,46 +113,76 @@
       </ContentWrap>
     </div>
 
-    <ContentWrap class="cost-table-card">
+    <ContentWrap class="chart-card chart-card--full">
+      <div class="chart-header">
+        <div>
+          <div class="chart-header__title">产品成本对比</div>
+          <div class="chart-header__desc">比较同一期间内不同产品的成本差异</div>
+        </div>
+      </div>
+      <div ref="compareChartRef" class="chart-instance chart-instance--wide"></div>
+    </ContentWrap>
+
+    <ContentWrap class="data-table-card">
       <div class="table-header">
-        <div class="table-header__title">月度成本明细</div>
-        <div class="table-header__count">
-          当前 <strong>{{ trendData.length }}</strong> 条
+        <div class="table-header__title">成本数据明细</div>
+        <div class="table-header__actions">
+          <el-button type="primary" plain @click="handleExport">
+            <Icon icon="ep:download" class="mr-5px" />
+            导出报表
+          </el-button>
         </div>
       </div>
 
-      <el-table :data="trendData" v-loading="loading" stripe class="cost-table">
-        <el-table-column label="月份" width="100" prop="accountingMonth" />
-        <el-table-column label="产品" min-width="150" prop="productName" />
+      <el-table :data="tableData" v-loading="loading" stripe class="data-table">
+        <el-table-column label="期间" min-width="100" align="center">
+          <template #default="{ row }">
+            <span class="font-mono">{{ row.period }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="产品名称" min-width="150">
+          <template #default="{ row }">
+            <span class="font-semibold">{{ row.productName || '-' }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="关联工单" min-width="120" align="center">
+          <template #default="{ row }">
+            <span v-if="row.orderNo" class="font-mono text-blue-600">{{ row.orderNo }}</span>
+            <span v-else class="text-slate-400">-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="直接材料" min-width="120" align="right">
           <template #default="{ row }">
-            <span class="font-mono">{{ formatMoney(row.materialCost) }}</span>
+            <span v-if="row.materialCost > 0" class="font-mono">{{ formatMoney(row.materialCost) }}</span>
+            <span v-else class="text-xs text-slate-400">-</span>
           </template>
         </el-table-column>
         <el-table-column label="直接人工" min-width="120" align="right">
           <template #default="{ row }">
-            <span class="font-mono">{{ formatMoney(row.laborCost) }}</span>
+            <span v-if="row.laborCost > 0" class="font-mono">{{ formatMoney(row.laborCost) }}</span>
+            <span v-else class="text-xs text-slate-400">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="制造费用" min-width="120" align="right">
+        <el-table-column label="折旧" min-width="100" align="right">
           <template #default="{ row }">
-            <span class="font-mono">{{ formatMoney(row.overheadCost) }}</span>
+            <span v-if="row.depreciationCost > 0" class="font-mono">{{ formatMoney(row.depreciationCost) }}</span>
+            <span v-else class="text-xs text-slate-400">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="总成本" min-width="130" align="right">
+        <el-table-column label="电费" min-width="100" align="right">
+          <template #default="{ row }">
+            <span v-if="row.powerCost > 0" class="font-mono">{{ formatMoney(row.powerCost) }}</span>
+            <span v-else class="text-xs text-slate-400">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="其他制造费" min-width="120" align="right">
+          <template #default="{ row }">
+            <span class="font-mono">{{ formatMoney(row.otherCost) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="成本合计" min-width="130" align="right">
           <template #default="{ row }">
             <span class="font-mono font-bold text-red-600">{{ formatMoney(row.totalCost) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="环比" width="100" align="right">
-          <template #default="{ row }">
-            <span
-              v-if="row.momChange !== null && row.momChange !== undefined"
-              :class="row.momChange > 0 ? 'text-red-500' : 'text-emerald-500'"
-            >
-              {{ row.momChange > 0 ? '+' : '' }}{{ row.momChange }}%
-            </span>
-            <span v-else class="text-slate-400">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -161,131 +191,94 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import * as echarts from 'echarts'
-import { ProductionCostApi } from '@/api/erp/production-cost'
+import {
+  FinanceCostAnalysisApi,
+  type ProductionCostProductVO,
+  type ProductionCostTrendRespVO
+} from '@/api/erp/finance/cost-analysis'
 
 defineOptions({ name: 'ErpProductCostTrend' })
 
-type ProductOption = {
-  id: number
-  name: string
-}
-
 type TrendRow = {
-  accountingMonth: string
+  period: string
   productId?: number
   productName?: string
-  materialCost?: number | string
-  laborCost?: number | string
-  depreciationCost?: number | string
-  powerCost?: number | string
-  otherCost?: number | string
-  overheadCost?: number | string
-  totalCost?: number | string
-  momChange?: number | null
-}
-
-type CompositionItem = {
-  label: string
-  value: number
-  color: string
-  percentage: number
+  orderNo?: string | null
+  materialCost: number
+  laborCost: number
+  depreciationCost: number
+  powerCost: number
+  otherCost: number
+  totalCost: number
 }
 
 const loading = ref(false)
-const trendData = ref<TrendRow[]>([])
-const productList = ref<ProductOption[]>([])
+const productList = ref<ProductionCostProductVO[]>([])
+const tableData = ref<TrendRow[]>([])
+const trendResp = ref<ProductionCostTrendRespVO>({})
 
 const queryParams = reactive({
   productId: undefined as number | undefined,
-  compareProductIds: [] as number[]
+  compareProductIds: [] as number[],
+  startMonth: (() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - 5)
+    return d.toISOString().slice(0, 7)
+  })(),
+  endMonth: new Date().toISOString().slice(0, 7),
+  dimension: 'month' as 'month' | 'quarter'
 })
 
-const dateRange = ref<[string, string]>([
-  (() => {
-    const date = new Date()
-    date.setMonth(date.getMonth() - 5)
-    return date.toISOString().slice(0, 7)
-  })(),
-  new Date().toISOString().slice(0, 7)
-])
+const dateRange = ref<[string, string]>([queryParams.startMonth, queryParams.endMonth])
 
 const trendChartRef = ref<HTMLElement>()
-const pieChartRef = ref<HTMLElement>()
-
+const compositionChartRef = ref<HTMLElement>()
+const compareChartRef = ref<HTMLElement>()
 let trendChart: echarts.ECharts | null = null
-let pieChart: echarts.ECharts | null = null
+let compositionChart: echarts.ECharts | null = null
+let compareChart: echarts.ECharts | null = null
 
-const avgComposition = computed<CompositionItem[]>(() => {
-  if (trendData.value.length === 0) {
-    return []
-  }
+const colorMap = ['#3B82F6', '#10B981', '#F59E0B', '#06B6D4', '#14B8A6']
 
-  const totals = trendData.value.reduce(
-    (accumulator, item) => ({
-      material: accumulator.material + Number(item.materialCost || 0),
-      labor: accumulator.labor + Number(item.laborCost || 0),
-      depreciation: accumulator.depreciation + Number(item.depreciationCost || 0),
-      power: accumulator.power + Number(item.powerCost || 0),
-      other: accumulator.other + Number(item.otherCost || 0)
-    }),
-    { material: 0, labor: 0, depreciation: 0, power: 0, other: 0 }
+const formatMoney = (value?: number | string | null) => {
+  const n = Number(value || 0)
+  return `¥${n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+const toNumber = (value?: number | string | null) => Number(value || 0)
+
+const productNameMap = computed(() => {
+  return new Map(
+    productList.value
+      .filter((item) => item.productId != null)
+      .map((item) => [item.productId as number, item.productName || `产品${item.productId}`])
   )
+})
 
-  const total = totals.material + totals.labor + totals.depreciation + totals.power + totals.other
-  if (total === 0) {
-    return []
-  }
-
+const avgComposition = computed(() => {
+  const comp = trendResp.value.compositionData
+  if (!comp) return []
   const items = [
-    { label: '直接材料', value: totals.material, color: '#3B82F6' },
-    { label: '直接人工', value: totals.labor, color: '#10B981' },
-    { label: '折旧', value: totals.depreciation, color: '#F59E0B' },
-    { label: '电费', value: totals.power, color: '#06B6D4' },
-    { label: '其他', value: totals.other, color: '#14B8A6' }
+    { label: '直接材料', value: toNumber(comp.materialCost), color: colorMap[0] },
+    { label: '直接人工', value: toNumber(comp.laborCost), color: colorMap[1] },
+    { label: '折旧', value: toNumber(comp.depreciationCost), color: colorMap[2] },
+    { label: '电费', value: toNumber(comp.powerCost), color: colorMap[3] },
+    { label: '其他', value: toNumber(comp.otherCost), color: colorMap[4] }
   ]
-
+  const total = items.reduce((sum, item) => sum + item.value, 0)
+  if (total <= 0) return []
   return items.map((item) => ({
     ...item,
     percentage: Math.round((item.value / total) * 100)
   }))
 })
 
-const formatMoney = (value?: number | string | null) => {
-  const amount = Number(value || 0)
-  return `¥${amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
-
-const getPreviousMonth = (month: string) => {
-  const date = new Date(`${month}-01`)
-  date.setMonth(date.getMonth() - 1)
-  return date.toISOString().slice(0, 7)
-}
-
-const generateMonths = (start: string, end: string) => {
-  const months: string[] = []
-  const current = new Date(`${start}-01`)
-  const endDate = new Date(`${end}-01`)
-
-  while (current <= endDate) {
-    months.push(current.toISOString().slice(0, 7))
-    current.setMonth(current.getMonth() + 1)
-  }
-
-  return months
-}
-
-const getDisplayProductIds = () => {
-  if (queryParams.productId) {
-    return [queryParams.productId]
-  }
-
-  if (queryParams.compareProductIds.length > 0) {
-    return queryParams.compareProductIds
-  }
-
-  return [...new Set(trendData.value.map((item) => item.productId).filter(Boolean) as number[])].slice(0, 5)
+const syncDateRange = () => {
+  if (!dateRange.value?.[0] || !dateRange.value?.[1]) return
+  queryParams.startMonth = dateRange.value[0]
+  queryParams.endMonth = dateRange.value[1]
 }
 
 const handleQuery = () => {
@@ -295,223 +288,273 @@ const handleQuery = () => {
 const resetQuery = () => {
   queryParams.productId = undefined
   queryParams.compareProductIds = []
-  const date = new Date()
-  date.setMonth(date.getMonth() - 5)
-  dateRange.value = [date.toISOString().slice(0, 7), new Date().toISOString().slice(0, 7)]
+  const d = new Date()
+  d.setMonth(d.getMonth() - 5)
+  queryParams.startMonth = d.toISOString().slice(0, 7)
+  queryParams.endMonth = new Date().toISOString().slice(0, 7)
+  queryParams.dimension = 'month'
+  dateRange.value = [queryParams.startMonth, queryParams.endMonth]
   loadData()
 }
 
-const renderTrendChart = () => {
-  if (!trendChartRef.value) {
+const loadProductOptions = async () => {
+  const data = await FinanceCostAnalysisApi.getCostProducts()
+  productList.value = data || []
+}
+
+const buildTableData = () => {
+  const periods = trendResp.value.periods || []
+  const rows: TrendRow[] = []
+
+  if (!queryParams.productId) {
+    for (const product of trendResp.value.productCompareData || []) {
+      rows.push({
+        period: `${queryParams.startMonth} ~ ${queryParams.endMonth}`,
+        productId: product.productId,
+        productName:
+          product.productName ||
+          (product.productId != null ? productNameMap.value.get(product.productId) : '-') ||
+          '-',
+        orderNo: null,
+        materialCost: toNumber(product.materialCost),
+        laborCost: toNumber(product.laborCost),
+        depreciationCost: 0,
+        powerCost: 0,
+        otherCost: toNumber(product.overheadCost),
+        totalCost: toNumber(product.totalCost)
+      })
+    }
+    tableData.value = rows
     return
   }
 
+  const orderData = trendResp.value.productOrderData || {}
+  for (let i = 0; i < periods.length; i++) {
+    const period = periods[i]
+    const orderInfo = orderData[period] || {}
+    rows.push({
+      period,
+      productId: queryParams.productId,
+      productName:
+        productNameMap.value.get(queryParams.productId) || `产品${queryParams.productId}`,
+      orderNo: orderInfo.orderNo || null,
+      materialCost: toNumber(trendResp.value.materialCosts?.[i]),
+      laborCost: toNumber(trendResp.value.laborCosts?.[i]),
+      depreciationCost: toNumber(trendResp.value.depreciationCosts?.[i]),
+      powerCost: toNumber(trendResp.value.powerCosts?.[i]),
+      otherCost: toNumber(trendResp.value.otherCosts?.[i]),
+      totalCost: toNumber(trendResp.value.totalCosts?.[i])
+    })
+  }
+  tableData.value = rows
+}
+
+const renderTrendChart = () => {
+  if (!trendChartRef.value || !trendResp.value.periods?.length) return
   if (!trendChart) {
     trendChart = echarts.init(trendChartRef.value)
   }
 
-  const months = [...new Set(trendData.value.map((item) => item.accountingMonth))].sort()
-  const productIds = getDisplayProductIds()
-  const series: echarts.SeriesOption[] = []
-  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4']
-
-  productIds.forEach((productId, index) => {
-    const productData = trendData.value.filter((item) => item.productId === productId)
-    const productName = productData[0]?.productName || `产品${productId}`
-    const color = colors[index % colors.length]
-
-    series.push({
-      name: `${productName} - 材料`,
-      type: 'line',
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 6,
-      lineStyle: { width: 2, color },
-      itemStyle: { color },
-      data: months.map((month) => {
-        const item = productData.find((entry) => entry.accountingMonth === month)
-        return item ? Number(item.materialCost || 0) : null
-      })
-    })
-
-    series.push({
-      name: `${productName} - 总成本`,
-      type: 'line',
-      smooth: true,
-      symbol: 'diamond',
-      symbolSize: 8,
-      lineStyle: { width: 2, type: 'dashed', color },
-      itemStyle: { color },
-      data: months.map((month) => {
-        const item = productData.find((entry) => entry.accountingMonth === month)
-        return item ? Number(item.totalCost || 0) : null
-      })
-    })
-  })
-
-  trendChart.setOption(
-    {
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          if (!params || params.length === 0) {
-            return ''
-          }
-          let html = `<div style="font-weight:600;margin-bottom:4px">${params[0].axisValue}</div>`
-          params.forEach((item: any) => {
-            html += `<div>${item.marker} ${item.seriesName}: ¥${Number(item.value || 0).toLocaleString()}</div>`
-          })
-          return html
-        }
-      },
-      grid: {
-        left: 60,
-        right: 20,
-        top: 20,
-        bottom: 30
-      },
-      xAxis: {
-        type: 'category',
-        data: months,
-        axisLine: { lineStyle: { color: '#E2E8F0' } },
-        axisLabel: { color: '#64748B', fontSize: 12 }
-      },
-      yAxis: {
-        type: 'value',
-        axisLine: { show: false },
-        splitLine: { lineStyle: { color: '#F1F5F9' } },
-        axisLabel: {
-          color: '#64748B',
-          fontSize: 12,
-          formatter: (value: number) => `¥${(value / 1000).toFixed(0)}k`
-        }
-      },
-      series
+  const option = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: {
+      data: ['直接材料', '直接人工', '折旧', '电费', '其他', '总成本'],
+      bottom: 0
     },
-    true
-  )
+    grid: { left: '3%', right: '4%', bottom: '12%', top: '6%', containLabel: true },
+    xAxis: { type: 'category', data: trendResp.value.periods },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: (value: number) => `¥${(value / 10000).toFixed(1)}万`
+      }
+    },
+    series: [
+      {
+        name: '直接材料',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.18 },
+        data: trendResp.value.materialCosts || [],
+        itemStyle: { color: colorMap[0] }
+      },
+      {
+        name: '直接人工',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.18 },
+        data: trendResp.value.laborCosts || [],
+        itemStyle: { color: colorMap[1] }
+      },
+      {
+        name: '折旧',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.18 },
+        data: trendResp.value.depreciationCosts || [],
+        itemStyle: { color: colorMap[2] }
+      },
+      {
+        name: '电费',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.18 },
+        data: trendResp.value.powerCosts || [],
+        itemStyle: { color: colorMap[3] }
+      },
+      {
+        name: '其他',
+        type: 'line',
+        smooth: true,
+        areaStyle: { opacity: 0.18 },
+        data: trendResp.value.otherCosts || [],
+        itemStyle: { color: colorMap[4] }
+      },
+      {
+        name: '总成本',
+        type: 'line',
+        smooth: true,
+        symbol: 'diamond',
+        symbolSize: 8,
+        lineStyle: { width: 2, type: 'dashed' },
+        data: trendResp.value.totalCosts || [],
+        itemStyle: { color: '#ef4444' }
+      }
+    ]
+  }
+
+  trendChart.setOption(option, true)
 }
 
-const renderPieChart = () => {
-  if (!pieChartRef.value || avgComposition.value.length === 0) {
-    return
+const renderCompositionChart = () => {
+  if (!compositionChartRef.value || !avgComposition.value.length) return
+  if (!compositionChart) {
+    compositionChart = echarts.init(compositionChartRef.value)
   }
 
-  if (!pieChart) {
-    pieChart = echarts.init(pieChartRef.value)
-  }
-
-  pieChart.setOption(
-    {
-      tooltip: {
-        trigger: 'item',
-        formatter: '{b}: {c} ({d}%)'
-      },
-      series: [
-        {
-          type: 'pie',
-          radius: ['40%', '70%'],
-          center: ['50%', '50%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 6,
-            borderColor: '#fff',
-            borderWidth: 2
-          },
-          label: { show: false },
-          emphasis: {
-            label: { show: true, fontSize: 14, fontWeight: 'bold' }
-          },
-          data: avgComposition.value.map((item) => ({
-            value: item.value,
-            name: item.label,
-            itemStyle: { color: item.color }
-          }))
-        }
-      ]
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      formatter: '{b}: {c} ({d}%)'
     },
-    true
-  )
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 10,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
+        label: { show: false },
+        data: avgComposition.value.map((item) => ({
+          name: item.label,
+          value: item.value,
+          itemStyle: { color: item.color }
+        }))
+      }
+    ]
+  }
+
+  compositionChart.setOption(option, true)
+}
+
+const renderCompareChart = () => {
+  if (!compareChartRef.value || !trendResp.value.productCompareData?.length) return
+  if (!compareChart) {
+    compareChart = echarts.init(compareChartRef.value)
+  }
+
+  const compareData = trendResp.value.productCompareData || []
+  const selectedCompareIds = queryParams.compareProductIds.length
+    ? new Set(queryParams.compareProductIds)
+    : null
+  const visibleData = selectedCompareIds
+    ? compareData.filter((item) => item.productId != null && selectedCompareIds.has(item.productId))
+    : compareData.slice(0, 5)
+
+  const option = {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: {
+      data: ['直接材料', '直接人工', '制造费用'],
+      bottom: 0
+    },
+    grid: { left: '3%', right: '4%', bottom: '12%', top: '6%', containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: visibleData.map((item) => item.productName || `产品${item.productId}`)
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: {
+        formatter: (value: number) => `¥${(value / 10000).toFixed(1)}万`
+      }
+    },
+    series: [
+      {
+        name: '直接材料',
+        type: 'bar',
+        stack: 'Total',
+        data: visibleData.map((item) => toNumber(item.materialCost)),
+        itemStyle: { color: colorMap[0] }
+      },
+      {
+        name: '直接人工',
+        type: 'bar',
+        stack: 'Total',
+        data: visibleData.map((item) => toNumber(item.laborCost)),
+        itemStyle: { color: colorMap[1] }
+      },
+      {
+        name: '制造费用',
+        type: 'bar',
+        stack: 'Total',
+        data: visibleData.map((item) => toNumber(item.overheadCost)),
+        itemStyle: { color: colorMap[2] }
+      }
+    ]
+  }
+
+  compareChart.setOption(option, true)
+}
+
+const handleResize = () => {
+  trendChart?.resize()
+  compositionChart?.resize()
+  compareChart?.resize()
 }
 
 const loadData = async () => {
-  if (!dateRange.value?.[0] || !dateRange.value?.[1]) {
-    return
-  }
+  if (!dateRange.value?.[0] || !dateRange.value?.[1]) return
+  syncDateRange()
 
   loading.value = true
   try {
-    const [startMonth, endMonth] = dateRange.value
-    const months = generateMonths(startMonth, endMonth)
-    const paramsList = months.map((month) => {
-      const params: Record<string, unknown> = { accountingMonth: month }
-      if (queryParams.productId) {
-        params.productId = queryParams.productId
-      }
-      return params
+    const data = await FinanceCostAnalysisApi.getCostTrend({
+      productId: queryParams.productId,
+      startMonth: queryParams.startMonth,
+      endMonth: queryParams.endMonth,
+      dimension: queryParams.dimension
     })
-
-    const results = await Promise.all(
-      paramsList.map((params) => ProductionCostApi.getProductSummaryV2(params))
-    )
-
-    const allData: TrendRow[] = []
-    results.forEach((data, index) => {
-      if (Array.isArray(data)) {
-        data.forEach((item: TrendRow) => {
-          allData.push({ ...item, accountingMonth: months[index] })
-        })
-      }
-    })
-
-    trendData.value = allData.sort((left, right) => {
-      if (left.accountingMonth !== right.accountingMonth) {
-        return left.accountingMonth.localeCompare(right.accountingMonth)
-      }
-      return (left.productId || 0) - (right.productId || 0)
-    })
-
-    trendData.value.forEach((current) => {
-      const prevMonth = getPreviousMonth(current.accountingMonth)
-      const prev = trendData.value.find(
-        (item) => item.accountingMonth === prevMonth && item.productId === current.productId
-      )
-
-      if (prev && Number(prev.totalCost) > 0) {
-        current.momChange = Math.round(
-          ((Number(current.totalCost) - Number(prev.totalCost)) / Number(prev.totalCost)) * 100
-        )
-      } else {
-        current.momChange = null
-      }
-    })
-
+    trendResp.value = data || {}
+    buildTableData()
     await nextTick()
     renderTrendChart()
-    renderPieChart()
+    renderCompositionChart()
+    renderCompareChart()
   } finally {
     loading.value = false
   }
 }
 
-const handleResize = () => {
-  trendChart?.resize()
-  pieChart?.resize()
+const handleExport = () => {
+  console.info('成本趋势导出暂由统一导出能力接管')
 }
 
 onMounted(async () => {
-  try {
-    const costProducts = await ProductionCostApi.getCostProductList()
-    productList.value = costProducts
-      .filter((item): item is ProductOption => !!item.id && !!item.name)
-      .map((item) => ({
-        id: item.id,
-        name: item.name
-      }))
-  } catch {
-    productList.value = []
-  }
-
+  await loadProductOptions()
   await loadData()
   window.addEventListener('resize', handleResize)
 })
@@ -519,48 +562,44 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   trendChart?.dispose()
-  pieChart?.dispose()
+  compositionChart?.dispose()
+  compareChart?.dispose()
 })
-
-watch(
-  () => dateRange.value,
-  () => {
-    if (dateRange.value?.[0] && dateRange.value?.[1]) {
-      loadData()
-    }
-  }
-)
 </script>
 
 <style scoped lang="scss">
 .cost-trend-page {
   display: flex;
-  min-height: 100vh;
   flex-direction: column;
   gap: 16px;
   padding: 16px;
   background: var(--erp-slate-50);
+  min-height: 100vh;
 }
 
-.page-header-card {
-  .page-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
 
-  .page-header__title {
-    color: var(--erp-slate-900);
-    font-size: 20px;
-    font-weight: 800;
-  }
+.page-header__title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--erp-slate-900);
+}
 
-  .page-header__actions {
-    display: flex;
-    gap: 12px;
-  }
+.page-header__desc {
+  margin-top: 4px;
+  color: var(--erp-slate-500);
+  font-size: 12px;
+}
+
+.page-header__actions {
+  display: flex;
+  gap: 12px;
 }
 
 .filter-card {
@@ -572,7 +611,7 @@ watch(
 
   .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 16px;
   }
 
@@ -583,129 +622,117 @@ watch(
   }
 }
 
-.chart-row {
+.chart-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-.chart-card {
-  min-width: 0;
+.chart-card--full {
+  grid-column: 1 / -1;
 }
 
 .chart-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
 }
 
 .chart-header__title {
-  color: var(--erp-slate-700);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--erp-slate-700);
+}
+
+.chart-header__desc {
+  margin-top: 4px;
+  color: var(--erp-slate-500);
+  font-size: 12px;
 }
 
 .chart-header__legend {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  gap: 12px;
   color: var(--erp-slate-500);
   font-size: 12px;
 }
 
 .legend-dot {
-  display: inline-flex;
-  width: 10px;
-  height: 10px;
-  flex: none;
-  border-radius: 999px;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 4px;
 }
 
-.legend-dot--blue {
-  background: #3b82f6;
-}
-
-.legend-dot--green {
-  background: #10b981;
-}
-
-.legend-dot--amber {
-  background: #f59e0b;
-}
-
-.legend-dot--red {
-  background: #ef4444;
-}
-
-.chart-container {
+.chart-instance {
   width: 100%;
-  height: 360px;
+  height: 350px;
+}
+
+.chart-instance--wide {
+  height: 340px;
 }
 
 .composition-legend {
-  display: grid;
-  gap: 10px;
-  margin-top: 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .legend-item {
-  display: grid;
-  grid-template-columns: 10px 1fr auto;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  font-size: 13px;
 }
 
-.legend-label,
-.legend-value {
+.legend-label {
+  flex: 1;
   color: var(--erp-slate-600);
-  font-size: 12px;
 }
 
 .legend-value {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  color: var(--erp-slate-900);
 }
 
-.cost-table-card {
+.data-table-card {
   .table-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
     gap: 12px;
+    margin-bottom: 16px;
   }
 
   .table-header__title {
-    color: var(--erp-slate-700);
     font-size: 14px;
-    font-weight: 600;
-  }
-
-  .table-header__count {
-    color: var(--erp-slate-500);
-    font-size: 12px;
+    font-weight: 700;
+    color: var(--erp-slate-700);
   }
 }
 
-.cost-table {
+.data-table {
   :deep(.el-table__header-wrapper th) {
     background: var(--erp-slate-50);
     color: var(--erp-slate-600);
-    font-size: 12px;
     font-weight: 600;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 1024px) {
-  .chart-row {
+  .chart-grid {
     grid-template-columns: 1fr;
   }
 
-  .chart-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .chart-card--full {
+    grid-column: 1 / -1;
   }
 }
 </style>

@@ -307,6 +307,66 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'sale/return',
+        component: () => import('@/views/erp/sale/return/index.vue'),
+        name: 'ErpSaleReturnCompatPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '销售退货',
+          activeMenu: '/sales/return'
+        }
+      },
+      {
+        path: 'sale/customer',
+        component: () => import('@/views/erp/sale/customer/index.vue'),
+        name: 'ErpSaleCustomerCompatPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '客户管理',
+          activeMenu: '/sales/customer'
+        }
+      },
+      {
+        path: 'sale/shipment-release',
+        component: () => import('@/views/erp/sale/shipment-release/index.vue'),
+        name: 'ErpShipmentReleaseCompatPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '发货放行审核',
+          activeMenu: '/sales/shipment-release'
+        }
+      },
+      {
+        path: 'sale/market-ledger',
+        component: () => import('@/views/erp/sale/market-ledger/index.vue'),
+        name: 'ErpMarketLedgerCompatPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '市场执行台账',
+          activeMenu: '/sales/market-ledger'
+        }
+      },
+      {
+        path: 'sale/market-alert',
+        component: () => import('@/views/erp/sale/market-alert/index.vue'),
+        name: 'ErpMarketAlertCompatPage',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '市场预警与统计',
+          activeMenu: '/sales/market-alert'
+        }
+      },
+      {
         path: 'purchase/order',
         component: () => import('@/views/erp/purchase/order/index.vue'),
         name: 'ErpPurchaseOrderCompatPage',

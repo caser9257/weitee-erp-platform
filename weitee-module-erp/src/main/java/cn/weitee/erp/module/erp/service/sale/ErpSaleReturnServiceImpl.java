@@ -214,14 +214,8 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
             throw exception(SALE_RETURN_PROCESS_FAIL_EXISTS_REFUND);
         }
 
-        // 2. 更新状态
-        int updateCount = erpSaleReturnMapper.updateByIdAndStatus(id, saleReturn.getStatus(),
-                new ErpSaleReturnDO().setStatus(status));
-        if (updateCount == 0) {
-            throw exception(approve ? SALE_RETURN_APPROVE_FAIL : SALE_RETURN_PROCESS_FAIL);
-        }
-
-        // 3. 变更库存
+        // 2. 先执行业务操作（库存变更、财务凭证、应收台账）
+        //    原则：先业务成功，后落终态，避免终态已落但业务失败后无法重试
         List<ErpSaleReturnItemDO> saleReturnItems = erpSaleReturnItemMapper.selectListByReturnId(id);
         Integer bizType = approve ? ErpStockRecordBizTypeEnum.SALE_RETURN.getType()
                 : ErpStockRecordBizTypeEnum.SALE_RETURN_CANCEL.getType();
@@ -250,6 +244,13 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
                     null, "销售退货反审核关闭双账套凭证");
             // 新增：关闭应收台账
             arStatementService.closeStatementByBiz(ErpBizTypeEnum.SALE_RETURN.getType(), id, "销售退货反审核");
+        }
+
+        // 3. 最后落终态（CAS 更新，防止并发覆盖）
+        int updateCount = erpSaleReturnMapper.updateByIdAndStatus(id, saleReturn.getStatus(),
+                new ErpSaleReturnDO().setStatus(status));
+        if (updateCount == 0) {
+            throw exception(approve ? SALE_RETURN_APPROVE_FAIL : SALE_RETURN_PROCESS_FAIL);
         }
     }
 

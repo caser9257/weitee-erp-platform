@@ -40,6 +40,10 @@ public interface ErpStockMoveService {
      */
     void updateStockMoveStatus(Long id, Integer status);
 
+    void updateStockMoveStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
+
+    void rollbackStockMoveStatusToDraftByBpm(Long id, String processInstanceId, String reason);
+
     /**
      * 删除库存调拨单
      *

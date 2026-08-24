@@ -8,7 +8,7 @@ import org.springframework.context.ApplicationEvent;
  *
  * 用于异步触发项目生命周期状态刷新，避免阻塞主业务流程
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Getter
 public class ProjectLifecycleRefreshEvent extends ApplicationEvent {

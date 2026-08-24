@@ -10,9 +10,9 @@ import java.util.Arrays;
  * ERP 盘点单状态枚举
  *
  * 场景 A 简化状态机：
- * DRAFT(0) → COUNTING(10) → REVIEWING(20) → APPROVED(30) → CLOSED(40)
+ * DRAFT(0) → COUNTING(10) → REVIEWING(20) → PROCESSING(25) → CLOSED(40)
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @RequiredArgsConstructor
 @Getter
@@ -32,6 +32,11 @@ public enum ErpStockCheckStatusEnum implements ArrayValuable<Integer> {
      * 审核中 - 已提交，等待审核
      */
     REVIEWING(20, "审核中"),
+
+    /**
+     * 处理中 - 审批通过，正在执行业务（库存更新、凭证生成）
+     */
+    PROCESSING(25, "处理中"),
 
     /**
      * 已审核 - 审核通过，已生成凭证
@@ -93,7 +98,8 @@ public enum ErpStockCheckStatusEnum implements ArrayValuable<Integer> {
         return switch (this) {
             case DRAFT -> target == COUNTING;
             case COUNTING -> target == REVIEWING || target == DRAFT;
-            case REVIEWING -> target == APPROVED || target == COUNTING;
+            case REVIEWING -> target == PROCESSING || target == APPROVED || target == COUNTING;
+            case PROCESSING -> target == CLOSED;
             case APPROVED -> target == CLOSED;
             case CLOSED -> false; // 终态，不允许流转
         };

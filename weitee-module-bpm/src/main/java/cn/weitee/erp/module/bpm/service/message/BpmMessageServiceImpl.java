@@ -13,7 +13,6 @@ import cn.weitee.erp.module.bpm.service.message.dto.BpmMessageSendWhenTaskTransf
 import cn.weitee.erp.module.bpm.service.message.dto.BpmMessageSendWhenTaskUrgeReqDTO;
 import cn.weitee.erp.module.system.api.notify.NotifyMessageSendApi;
 import cn.weitee.erp.module.system.api.notify.dto.NotifySendSingleToUserReqDTO;
-import cn.weitee.erp.module.system.api.sms.SmsSendApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
@@ -32,8 +31,6 @@ import java.util.Map;
 @Slf4j
 public class BpmMessageServiceImpl implements BpmMessageService {
 
-    @Resource
-    private SmsSendApi smsSendApi;
     @Resource
     private NotifyMessageSendApi notifyMessageSendApi;
 

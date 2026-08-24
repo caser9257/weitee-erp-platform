@@ -6,34 +6,34 @@ import cn.weitee.erp.module.infra.dal.dataobject.file.FileFolderDO;
 import java.util.List;
 
 /**
- * 文件夹 Service 接口
+ * 文件澶?Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface FileFolderService {
 
     /**
-     * 创建文件夹
+     * 创建文件澶?
      */
     Long createFileFolder(FileFolderSaveReqVO reqVO);
 
     /**
-     * 更新文件夹
+     * 更新文件澶?
      */
     void updateFileFolder(FileFolderSaveReqVO reqVO);
 
     /**
-     * 删除文件夹
+     * 删除文件澶?
      */
     void deleteFileFolder(Long id);
 
     /**
-     * 获取文件夹
+     * 获取文件澶?
      */
     FileFolderDO getFileFolder(Long id);
 
     /**
-     * 获取文件夹列表
+     * 获取文件夹列琛?
      */
     List<FileFolderDO> getFileFolderList();
 

@@ -6,6 +6,7 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.productdualcost.ErpF
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.productdualcost.ErpFinanceDualProductCostRespVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.productdualcost.ErpFinanceDualProductCostRebuildReqVO;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceDualProductCostService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,8 @@ import java.io.IOException;
 import java.util.List;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
 
 @Tag(name = "管理后台 - 产品双账成本")
@@ -30,12 +33,17 @@ public class ErpFinanceDualProductCostController {
 
     @Resource
     private ErpFinanceDualProductCostService productCostService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @GetMapping("/page")
     @Operation(summary = "获得产品双账成本分页")
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-product-cost:query')")
     public CommonResult<PageResult<ErpFinanceDualProductCostRespVO>> getProductDualCostPage(
             @Valid ErpFinanceDualProductCostPageReqVO pageReqVO) {
+        if (!canAccessProductDualCost()) {
+            return success(PageResult.empty(0L));
+        }
         return success(productCostService.getProductDualCostPage(pageReqVO));
     }
 
@@ -44,6 +52,9 @@ public class ErpFinanceDualProductCostController {
     @Parameter(name = "id", description = "主键", required = true)
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-product-cost:query')")
     public CommonResult<ErpFinanceDualProductCostRespVO> getProductDualCost(@RequestParam("id") Long id) {
+        if (!canAccessProductDualCost()) {
+            return success(null);
+        }
         return success(productCostService.getProductDualCost(id));
     }
 
@@ -53,6 +64,9 @@ public class ErpFinanceDualProductCostController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-product-cost:query')")
     public CommonResult<List<ErpFinanceDualProductCostRespVO>> getProductDualCostItems(
             @RequestParam("resultId") Long resultId) {
+        if (!canAccessProductDualCost()) {
+            return success(java.util.Collections.emptyList());
+        }
         return success(productCostService.getProductDualCostItems(resultId));
     }
 
@@ -61,6 +75,7 @@ public class ErpFinanceDualProductCostController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-product-cost:rebuild')")
     public CommonResult<Boolean> rebuildProductDualCost(
             @Valid @RequestBody ErpFinanceDualProductCostRebuildReqVO reqVO) {
+        requireProductDualCostAccessForWrite();
         productCostService.rebuildProductDualCost(getLoginUserId(), reqVO);
         return success(true);
     }
@@ -71,6 +86,7 @@ public class ErpFinanceDualProductCostController {
     public void exportExternalProductCost(
             @Valid ErpFinanceDualProductCostPageReqVO pageReqVO,
             HttpServletResponse response) throws IOException {
+        requireProductDualCostAccessForWrite();
         productCostService.exportExternalProductCost(pageReqVO, response);
     }
 
@@ -80,6 +96,7 @@ public class ErpFinanceDualProductCostController {
     public void exportInternalProductCost(
             @Valid ErpFinanceDualProductCostPageReqVO pageReqVO,
             HttpServletResponse response) throws IOException {
+        requireProductDualCostAccessForWrite();
         productCostService.exportInternalProductCost(pageReqVO, response);
     }
 
@@ -89,6 +106,21 @@ public class ErpFinanceDualProductCostController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-product-cost:rebuild')")
     public CommonResult<Integer> rebuildBatchByPeriod(@RequestParam("period") String period,
                                                       @RequestParam(value = "remark", required = false) String remark) {
+        requireProductDualCostAccessForWrite();
         return success(productCostService.rebuildBatchByPeriod(getLoginUserId(), period, remark));
+    }
+
+    private boolean canAccessProductDualCost() {
+        Long userId = getLoginUserId();
+        return financeDataPermissionService.canAccessDualLedger(userId,
+                cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum.PRODUCTION_INBOUND.getType())
+                && financeDataPermissionService.canAccessDualLedger(userId,
+                cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum.OUTSOURCE_INBOUND.getType());
+    }
+
+    private void requireProductDualCostAccessForWrite() {
+        if (!canAccessProductDualCost()) {
+            throw exception(NOT_FOUND);
+        }
     }
 }

@@ -6,6 +6,9 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 @TableName("erp_bom")
 @KeySequence("erp_bom_seq")
 @Data
@@ -23,9 +26,17 @@ public class ErpBomDO extends BaseDO {
 
     private Long productId;
 
+    private Long routeId;
+
     private String version;
 
+    private BigDecimal yieldRate;
+
     private Integer status;
+
+    private LocalDate effectiveDate;
+
+    private LocalDate expireDate;
 
     private Long sourceRdBomId;
 

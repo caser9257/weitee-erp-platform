@@ -7,9 +7,9 @@ import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
 
 /**
- * 文件夹 Mapper
+ * 文件澶?Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FileFolderMapper extends BaseMapperX<FileFolderDO> {

@@ -26,3 +26,9 @@ assert.match(
   /path:\s*'warning'[\s\S]*name:\s*'项目预警'[\s\S]*componentName:\s*'ProjectPmoWarning'/,
   'projectDriven.ts 应该保留项目预警菜单入口'
 )
+
+assert.match(
+  projectDrivenSource,
+  /path:\s*'ar-statement'[\s\S]*component:\s*'erp\/finance\/ar-statement\/index'[\s\S]*componentName:\s*'ErpArStatement'/,
+  'projectDriven.ts 应该提供应收台账页面入口'
+)

@@ -101,6 +101,24 @@
     </el-table>
   </ContentWrap>
 
+  <ContentWrap v-if="canQueryReturnHistory" title="退料历史">
+    <el-table v-loading="historyLoading" :data="historyList" border stripe>
+      <el-table-column label="退料单号" prop="returnNo" min-width="180" />
+      <el-table-column label="工单编号" prop="productionOrderId" min-width="120" />
+      <el-table-column label="退料时间" prop="returnTime" min-width="180" />
+      <el-table-column label="状态" min-width="100" align="center">
+        <template #default="{ row }"><el-tag type="success">{{ row.status === 20 ? '已完成' : '-' }}</el-tag></template>
+      </el-table-column>
+      <el-table-column label="备注" prop="remark" min-width="220" show-overflow-tooltip />
+    </el-table>
+    <Pagination
+      :total="historyTotal"
+      v-model:page="historyQuery.pageNo"
+      v-model:limit="historyQuery.pageSize"
+      @pagination="getHistoryList"
+    />
+  </ContentWrap>
+
   <ReturnBatchDialog ref="returnDialogRef" @success="handleReturnSuccess" />
 </template>
 
@@ -109,6 +127,8 @@ import { reactive, ref } from 'vue'
 import { erpCountInputFormatter } from '@/utils'
 import { ProductionOrderApi, ProductionOrderVO } from '@/api/erp/mrp/production-order'
 import { ProductionMaterialApi, ProductionMaterialVO } from '@/api/erp/mrp/production-material'
+import { ProductionReturnApi, ProductionReturnVO } from '@/api/erp/manufacturing/material-return'
+import { hasPermission } from '@/directives/permission/hasPermi'
 import ReturnBatchDialog from './ReturnBatchDialog.vue'
 
 defineOptions({ name: 'ErpManufacturingMaterialReturn' })
@@ -120,10 +140,13 @@ const returnDialogRef = ref<InstanceType<typeof ReturnBatchDialog>>()
 
 const orderLoading = ref(false)
 const materialLoading = ref(false)
+const historyLoading = ref(false)
 const total = ref(0)
+const historyTotal = ref(0)
 const currentOrderId = ref<number>()
 const orderList = ref<ProductionOrderVO[]>([])
 const materialList = ref<ProductionMaterialVO[]>([])
+const historyList = ref<ProductionReturnVO[]>([])
 
 const queryParams = reactive({
   pageNo: 1,
@@ -132,12 +155,16 @@ const queryParams = reactive({
   status: undefined as number | undefined
 })
 
+const historyQuery = reactive({ pageNo: 1, pageSize: 10 })
+
 const statusOptions = [
   { label: '已创建', value: 0 },
   { label: '已下达', value: 10 },
   { label: '已完工', value: 20 },
   { label: '已关闭', value: 30 }
 ]
+
+const canQueryReturnHistory = hasPermission(['erp:production-material-return:query'])
 
 const resolveStatusLabel = (status?: number) => {
   if (status === 0) return '已创建'
@@ -202,9 +229,24 @@ const openReturnDialog = (row: ProductionMaterialVO) => {
 
 const handleReturnSuccess = async () => {
   await loadMaterials(currentOrderId.value)
+  await getHistoryList()
+}
+
+const getHistoryList = async () => {
+  historyLoading.value = true
+  try {
+    const data = await ProductionReturnApi.getProductionReturnPage(historyQuery)
+    historyList.value = data.list || []
+    historyTotal.value = data.total || 0
+  } finally {
+    historyLoading.value = false
+  }
 }
 
 onMounted(() => {
   getOrderList()
+  if (canQueryReturnHistory) {
+    getHistoryList()
+  }
 })
 </script>

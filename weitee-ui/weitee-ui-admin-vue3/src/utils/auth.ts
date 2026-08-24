@@ -7,10 +7,20 @@ const { wsCache } = useCache()
 const AccessTokenKey = 'ACCESS_TOKEN'
 const RefreshTokenKey = 'REFRESH_TOKEN'
 
+const isDevLoginBypassEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_APP_LOGIN_ENABLE === 'false'
+
+const getDevMockAccessToken = () => {
+  if (!isDevLoginBypassEnabled) {
+    return ''
+  }
+  return import.meta.env.VITE_APP_MOCK_ACCESS_TOKEN || 'test1'
+}
+
 // 鑾峰彇token
 export const getAccessToken = () => {
   const accessToken = wsCache.get(AccessTokenKey)
-  return accessToken ? accessToken : wsCache.get('ACCESS_TOKEN')
+  return accessToken || wsCache.get('ACCESS_TOKEN') || getDevMockAccessToken()
 }
 
 // 鍒锋柊token
@@ -64,11 +74,16 @@ const TenantIdKey = 'tenantId'
 const VisitTenantIdKey = 'visitTenantId'
 
 export const getTenantId = () => {
-  return wsCache.get((CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey)
+  return wsCache.get(
+    (CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey
+  )
 }
 
 export const setTenantId = (tenantId: number | string) => {
-  wsCache.set((CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey, tenantId)
+  wsCache.set(
+    (CACHE_KEY as typeof CACHE_KEY & { TenantId?: string }).TenantId || TenantIdKey,
+    tenantId
+  )
 }
 
 export const getVisitTenantId = () => {

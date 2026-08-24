@@ -13,6 +13,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceDualLedgerConfigService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceLedgerService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 
@@ -43,11 +46,15 @@ public class ErpFinanceDualLedgerConfigController {
     private ErpFinanceDualLedgerConfigService dualLedgerConfigService;
     @Resource
     private ErpFinanceLedgerService financeLedgerService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @PostMapping("/create")
     @Operation(summary = "创建双账套账簿映射")
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-config:create')")
     public CommonResult<Long> createDualLedgerConfig(@Valid @RequestBody ErpFinanceDualLedgerConfigSaveReqVO createReqVO) {
+        requireDualLedgerAccessForWrite(createReqVO.getBizType(), createReqVO.getExternalLedgerId(),
+                createReqVO.getInternalLedgerId());
         return success(dualLedgerConfigService.createDualLedgerConfig(createReqVO));
     }
 
@@ -55,6 +62,8 @@ public class ErpFinanceDualLedgerConfigController {
     @Operation(summary = "更新双账套账簿映射")
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-config:update')")
     public CommonResult<Boolean> updateDualLedgerConfig(@Valid @RequestBody ErpFinanceDualLedgerConfigSaveReqVO updateReqVO) {
+        requireDualLedgerAccessForWrite(updateReqVO.getBizType(), updateReqVO.getExternalLedgerId(),
+                updateReqVO.getInternalLedgerId());
         dualLedgerConfigService.updateDualLedgerConfig(updateReqVO);
         return success(true);
     }
@@ -64,6 +73,10 @@ public class ErpFinanceDualLedgerConfigController {
     @Parameter(name = "id", description = "编号", required = true)
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-config:delete')")
     public CommonResult<Boolean> deleteDualLedgerConfig(@RequestParam("id") Long id) {
+        ErpFinanceDualLedgerConfigDO config = dualLedgerConfigService.getDualLedgerConfig(id);
+        if (config != null) {
+            requireDualLedgerAccessForWrite(config.getBizType(), config.getExternalLedgerId(), config.getInternalLedgerId());
+        }
         dualLedgerConfigService.deleteDualLedgerConfig(id);
         return success(true);
     }
@@ -76,6 +89,9 @@ public class ErpFinanceDualLedgerConfigController {
         if (config == null) {
             return success(null);
         }
+        if (!isConfigVisible(config)) {
+            return success(null);
+        }
         return success(buildResp(config, loadLedgerMap(config)));
     }
 
@@ -85,6 +101,7 @@ public class ErpFinanceDualLedgerConfigController {
     public CommonResult<List<ErpFinanceDualLedgerConfigRespVO>> getDualLedgerConfigSimpleList() {
         List<ErpFinanceDualLedgerConfigDO> list = dualLedgerConfigService
                 .getDualLedgerConfigListByStatus(CommonStatusEnum.ENABLE.getStatus());
+        list = list.stream().filter(this::isConfigVisible).toList();
         Map<Long, ErpFinanceLedgerDO> ledgerMap = loadLedgerMap(list);
         return success(convertList(list, config -> buildResp(config, ledgerMap)));
     }
@@ -94,7 +111,8 @@ public class ErpFinanceDualLedgerConfigController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-config:query')")
     public CommonResult<PageResult<ErpFinanceDualLedgerConfigRespVO>> getDualLedgerConfigPage(
             @Valid ErpFinanceDualLedgerConfigPageReqVO pageReqVO) {
-        PageResult<ErpFinanceDualLedgerConfigDO> pageResult = dualLedgerConfigService.getDualLedgerConfigPage(pageReqVO);
+        PageResult<ErpFinanceDualLedgerConfigDO> pageResult = dualLedgerConfigService.getDualLedgerConfigPage(
+                pageReqVO, financeDataPermissionService.getVisibleLedgerIds());
         if (CollUtil.isEmpty(pageResult.getList())) {
             return success(PageResult.empty(pageResult.getTotal()));
         }
@@ -141,5 +159,18 @@ public class ErpFinanceDualLedgerConfigController {
             }
         }
         return null;
+    }
+
+    private boolean isConfigVisible(ErpFinanceDualLedgerConfigDO config) {
+        return config != null
+                && financeDataPermissionService.canAccessLedger(config.getExternalLedgerId())
+                && financeDataPermissionService.canAccessLedger(config.getInternalLedgerId());
+    }
+
+    private void requireDualLedgerAccessForWrite(Integer bizType, Long externalLedgerId, Long internalLedgerId) {
+        if (!financeDataPermissionService.canAccessLedger(externalLedgerId)
+                || !financeDataPermissionService.canAccessLedger(internalLedgerId)) {
+            throw exception(NOT_FOUND);
+        }
     }
 }

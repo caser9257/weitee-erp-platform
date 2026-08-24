@@ -7,10 +7,10 @@
           <div class="page-header__title">市场执行台账</div>
         </div>
         <div class="page-header__actions">
-          <el-button :loading="loading" @click="loadData">
+          <el-button :loading="loading" @click="loadData" v-hasPermi="['erp:market-ledger:query']">
             <Icon icon="ep:refresh" class="mr-5px" /> 刷新
           </el-button>
-          <el-button @click="handleExport">
+          <el-button @click="handleExport" v-hasPermi="['erp:market-ledger:export']">
             <Icon icon="ep:download" class="mr-5px" /> 导出
           </el-button>
         </div>
@@ -123,7 +123,7 @@
           </div>
         </transition>
         <div class="query-form__actions">
-          <el-button type="primary" :loading="loading" @click="loadData">
+          <el-button type="primary" :loading="loading" @click="loadData" v-hasPermi="['erp:market-ledger:query']">
             <Icon icon="ep:search" class="mr-5px" /> 查询
           </el-button>
           <el-button @click="resetQuery">

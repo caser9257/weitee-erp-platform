@@ -13,13 +13,14 @@ import org.springframework.validation.annotation.Validated;
 import jakarta.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * 文件权限 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -65,10 +66,9 @@ public class FilePermissionServiceImpl implements FilePermissionService {
 
     @Override
     public boolean hasPermission(Long fileId, Long userId, String permission) {
-        // 获取用户的所有权限
-        // NOTE: LoginUser does not expose roleIds/deptId directly in weitee framework.
-        // Using empty roleIds and deptId from SecurityFrameworkUtils as fallback.
-        List<Long> roleIds = java.util.Collections.emptyList();
+        // 获取用户角色列表（当前框架 LoginUser 未直接暴露 roleIds，
+        // 传空列表时角色权限维度无法匹配，仅支持 USER 和 DEPT 维度的权限检查）
+        List<Long> roleIds = Collections.emptyList();
         Long deptId = SecurityFrameworkUtils.getLoginUserDeptId();
 
         List<FilePermissionDO> permissions = filePermissionMapper.selectListByFileIdAndUserId(fileId, userId, roleIds, deptId);
@@ -90,7 +90,7 @@ public class FilePermissionServiceImpl implements FilePermissionService {
     public List<String> getUserPermissions(Long fileId, Long userId, List<Long> roleIds, Long deptId) {
         List<FilePermissionDO> permissions = filePermissionMapper.selectListByFileIdAndUserId(fileId, userId, roleIds, deptId);
 
-        // 合并所有权限
+        // 合并所有权�?
         return permissions.stream()
                 .filter(perm -> StrUtil.isNotEmpty(perm.getPermissions()))
                 .flatMap(perm -> Arrays.stream(perm.getPermissions().split(",")))

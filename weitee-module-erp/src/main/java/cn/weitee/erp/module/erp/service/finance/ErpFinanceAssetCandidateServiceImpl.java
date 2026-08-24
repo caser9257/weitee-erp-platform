@@ -19,6 +19,8 @@ import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseAccountingTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceExpenseTypeEnum;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseInService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -27,8 +29,11 @@ import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceAsset.ASSET_CANDIDATE_CONFIRM_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceAsset.ASSET_CANDIDATE_NOT_EXISTS;
 
@@ -48,9 +53,18 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
     private ErpPurchaseInService purchaseInService;
     @Resource
     private ErpProductService productService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @Override
     public PageResult<ErpFinanceAssetCandidateDO> getFinanceAssetCandidatePage(ErpFinanceAssetCandidatePageReqVO pageReqVO) {
+        FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService.getPermissionScope().deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            return financeAssetCandidateMapper.selectPageByDeptIds(pageReqVO, deptScope.values());
+        }
         return financeAssetCandidateMapper.selectPage(pageReqVO);
     }
 
@@ -58,6 +72,7 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
     @Transactional(rollbackFor = Exception.class)
     public Long confirmFinanceAssetCandidate(ErpFinanceAssetCandidateConfirmReqVO reqVO) {
         ErpFinanceAssetCandidateDO candidate = validateCandidateExists(reqVO.getCandidateId());
+        validateDeptAccess(candidate.getDeptId());
         if (!ErpFinanceAssetCandidateStatusEnum.PENDING_CONFIRM.getStatus().equals(candidate.getStatus())) {
             throw exception(ASSET_CANDIDATE_CONFIRM_FAIL);
         }
@@ -109,12 +124,15 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
             financeAssetCandidateMapper.insert(candidate);
             return candidate.getId();
         }
+        Map<Long, ErpFinanceAssetCandidateDO> existedCandidateMap = convertMap(
+                financeAssetCandidateMapper.selectListBySource(ErpFinanceAssetSourceTypeEnum.FINANCE_EXPENSE.getType(), expenseId),
+                candidate -> candidate.getSourceItemId() == null ? 0L : candidate.getSourceItemId());
         for (ErpFinanceExpenseItemDO item : items) {
             if (!isExpenseItemAssetCandidate(item)) {
                 continue;
             }
             Long sourceItemId = item.getId() == null ? 0L : item.getId();
-            if (financeAssetCandidateMapper.selectBySource(ErpFinanceAssetSourceTypeEnum.FINANCE_EXPENSE.getType(), expenseId, sourceItemId) != null) {
+            if (existedCandidateMap.containsKey(sourceItemId)) {
                 continue;
             }
             ErpFinanceAssetCandidateDO candidate = buildExpenseCandidate(expense, item, sourceItemId,
@@ -153,9 +171,12 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
             return candidate.getId();
         }
         var productMap = productService.getProductVOMap(items.stream().map(ErpPurchaseInItemDO::getProductId).toList());
+        Map<Long, ErpFinanceAssetCandidateDO> existedCandidateMap = convertMap(
+                financeAssetCandidateMapper.selectListBySource(ErpFinanceAssetSourceTypeEnum.PURCHASE_IN.getType(), purchaseInId),
+                candidate -> candidate.getSourceItemId() == null ? 0L : candidate.getSourceItemId());
         for (ErpPurchaseInItemDO item : items) {
             Long sourceItemId = item.getId() == null ? 0L : item.getId();
-            if (financeAssetCandidateMapper.selectBySource(ErpFinanceAssetSourceTypeEnum.PURCHASE_IN.getType(), purchaseInId, sourceItemId) != null) {
+            if (existedCandidateMap.containsKey(sourceItemId)) {
                 continue;
             }
             var product = productMap.get(item.getProductId());
@@ -186,6 +207,16 @@ public class ErpFinanceAssetCandidateServiceImpl implements ErpFinanceAssetCandi
             throw exception(ASSET_CANDIDATE_NOT_EXISTS);
         }
         return candidate;
+    }
+
+    private void validateDeptAccess(Long deptId) {
+        FinancePermissionScope permissionScope = FinanceDataPermissionContext.getPermissionScope();
+        if (permissionScope == null || permissionScope.deptScope().mode() == FinancePermissionScope.ScopeMode.ALL) {
+            return;
+        }
+        if (deptId == null || !permissionScope.deptScope().values().contains(deptId)) {
+            throw exception(FORBIDDEN);
+        }
     }
 
     private LocalDate resolveLocalDate(java.time.LocalDateTime value) {

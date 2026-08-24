@@ -13,7 +13,7 @@ import jakarta.annotation.Resource;
  *
  * 异步处理项目生命周期状态刷新，避免阻塞主业务流程
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Component
 @Slf4j

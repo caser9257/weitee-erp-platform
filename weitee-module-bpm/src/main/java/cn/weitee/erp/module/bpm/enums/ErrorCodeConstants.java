@@ -103,6 +103,7 @@ public interface ErrorCodeConstants {
     ErrorCode APPROVAL_SCHEME_DEFAULT_RULE_DUPLICATE = new ErrorCode(1_009_015_005, "默认兜底规则只能存在一条");
     ErrorCode APPROVAL_SCHEME_VERSION_NOT_PENDING_PUBLISH = new ErrorCode(1_009_015_006, "当前版本不是待发布状态，不能发布");
     ErrorCode APPROVAL_SCHEME_VERSION_NOT_ACTIVE = new ErrorCode(1_009_015_007, "当前版本不是生效状态，不能停用");
+    ErrorCode APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS = new ErrorCode(1_009_015_008, "审批规则引用的流程定义 Key【{}】不存在或未激活");
 
     // ========== BPM 审批场景 1-009-016-000 ==========
     ErrorCode APPROVAL_SCENE_NOT_EXISTS = new ErrorCode(1_009_016_000, "审批场景不存在");
@@ -121,6 +122,7 @@ public interface ErrorCodeConstants {
     ErrorCode APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS = new ErrorCode(1_009_017_000, "审批运行时快照不存在");
     ErrorCode APPROVAL_INSTANCE_NOT_PROCESSING = new ErrorCode(1_009_017_001, "审批实例不在审批中状态");
     ErrorCode APPROVAL_PROCESS_INSTANCE_NOT_EXISTS = new ErrorCode(1_009_017_002, "流程实例不存在");
+    ErrorCode APPROVAL_INSTANCE_SNAPSHOT_STATUS_CONFLICT = new ErrorCode(1_009_017_003, "审批运行时快照状态已被其他事务修改");
     ErrorCode APPROVAL_INSTANCE_ALREADY_PROCESSING = new ErrorCode(1_009_017_003, "场景【{}】业务【{}】已有审批中的实例，不允许重复提交");
 
     // ========== BPM 运行时 1-009-018-000 ==========

@@ -2,6 +2,7 @@ package cn.weitee.erp.module.bpm.service.approval;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
@@ -18,6 +19,9 @@ import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSceneMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeMapper;
 import cn.weitee.erp.module.bpm.dal.mysql.approval.BpmApprovalSchemeVersionMapper;
 import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
+import cn.weitee.erp.module.bpm.service.definition.BpmProcessDefinitionService;
+import cn.weitee.erp.module.system.api.permission.PermissionApi;
+import org.flowable.engine.repository.ProcessDefinition;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -51,6 +55,12 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
 
     @Resource
     private BpmApprovalSceneMapper bpmApprovalSceneMapper;
+
+    @Resource
+    private PermissionApi permissionApi;
+
+    @Resource
+    private BpmProcessDefinitionService bpmProcessDefinitionService;
 
     @Override
     public PageResult<BpmApprovalSchemeRespVO> getSchemePage(BpmApprovalSchemePageReqVO pageReqVO) {
@@ -152,6 +162,7 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         validateDefaultRule(version.getId());
         BpmApprovalSchemeDO scheme = validateSchemeExists(version.getSchemeId());
         validateSchemeOwnership(scheme);
+        validateProcessDefinitions(version.getId());
 
         if (scheme.getActiveVersionId() != null && !ObjUtil.equal(scheme.getActiveVersionId(), version.getId())) {
             bpmApprovalSchemeVersionMapper.updateById(new BpmApprovalSchemeVersionDO()
@@ -244,6 +255,20 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
         }
     }
 
+    private void validateProcessDefinitions(Long versionId) {
+        List<BpmApprovalRuleDO> rules = bpmApprovalRuleMapper.selectListBySchemeVersionId(versionId);
+        for (BpmApprovalRuleDO rule : rules) {
+            String processKey = StrUtil.trim(rule.getProcessJson());
+            if (StrUtil.isBlank(processKey)) {
+                throw exception(APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS, processKey);
+            }
+            ProcessDefinition processDefinition = bpmProcessDefinitionService.getActiveProcessDefinition(processKey);
+            if (processDefinition == null) {
+                throw exception(APPROVAL_RULE_PROCESS_DEFINITION_NOT_EXISTS, processKey);
+            }
+        }
+    }
+
     private void updateSchemeBase(Long schemeId, BpmApprovalSchemeSaveReqVO reqVO) {
         bpmApprovalSchemeMapper.updateById(new BpmApprovalSchemeDO()
                 .setId(schemeId)
@@ -286,13 +311,29 @@ public class BpmApprovalSchemeServiceImpl implements BpmApprovalSchemeService {
      */
     private void validateSchemeOwnership(BpmApprovalSchemeDO scheme) {
         Long currentUserId = SecurityFrameworkUtils.getLoginUserId();
-        // 如果 ownerUserId 为空或者是当前用户，则允许操作
-        if (scheme.getOwnerUserId() == null || scheme.getOwnerUserId().equals(currentUserId)) {
+        // 如果 ownerUserId 为空（含 0 兜底）或者是当前用户，则允许操作
+        if (scheme.getOwnerUserId() == null || scheme.getOwnerUserId() == 0L
+                || scheme.getOwnerUserId().equals(currentUserId)) {
             return;
         }
-        // TODO: 这里可以添加更复杂的权限校验逻辑，如检查用户角色
-        // 暂时简单校验：只有归属用户才能操作
+        // 如果用户是流程管理员（拥有审批场景/方案管理权限），则允许操作
+        if (isBpmAdmin(currentUserId)) {
+            return;
+        }
         throw exception(APPROVAL_SCENE_NO_PERMISSION);
+    }
+
+    /**
+     * 判断用户是否为流程管理员
+     *
+     * 拥有审批场景或审批方案任一管理权限即视为流程管理员；超管自动放行
+     */
+    private boolean isBpmAdmin(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        return permissionApi.hasAnyPermissions(userId,
+                "bpm:approval-scene:create", "bpm:approval-scheme:create");
     }
 
     private BpmApprovalSchemeVersionDO validateVersionExists(Long id) {

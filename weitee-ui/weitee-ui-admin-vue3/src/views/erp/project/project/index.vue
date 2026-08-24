@@ -1,29 +1,38 @@
 <template>
   <div class="project-page-shell">
+    <doc-alert :title="pageDocTitle" url="https://doc.iocoder.cn/erp/project/" />
 
     <ContentWrap class="project-page-shell__hero">
-      <div class="page-hero page-hero--compact">
-        <div class="page-hero__header">
+      <div class="page-hero">
+        <div class="page-hero__main">
+          <p class="page-hero__eyebrow">Project Initiation Workbench</p>
           <h1 class="page-hero__title">{{
             isProjectInitiationPage ? '销售项目立项' : '项目中心'
           }}</h1>
+          <p class="page-hero__desc">
+            围绕立项、风险、PC / MC 协同与交付时间组织项目台账，让销售侧能快速判断当前项目推进状态。
+          </p>
         </div>
-        <div class="page-hero__stats page-hero__stats--row">
-          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--blue">
+        <div class="page-hero__stats">
+          <div class="hero-stat-card">
             <span class="hero-stat-card__label">当前结果</span>
             <strong class="hero-stat-card__value">{{ total }}</strong>
+            <span class="hero-stat-card__meta">本次筛选项目数</span>
           </div>
-          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--rose">
+          <div class="hero-stat-card">
             <span class="hero-stat-card__label">高风险</span>
             <strong class="hero-stat-card__value">{{ projectStats.highRiskCount }}</strong>
+            <span class="hero-stat-card__meta">当前页高风险项目</span>
           </div>
-          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--amber">
+          <div class="hero-stat-card">
             <span class="hero-stat-card__label">PC 待确认</span>
             <strong class="hero-stat-card__value">{{ projectStats.pcPendingCount }}</strong>
+            <span class="hero-stat-card__meta">PC 状态为待确认</span>
           </div>
-          <div class="hero-stat-card hero-stat-card--compact hero-stat-card--amber">
+          <div class="hero-stat-card">
             <span class="hero-stat-card__label">MC 待确认</span>
             <strong class="hero-stat-card__value">{{ projectStats.mcPendingCount }}</strong>
+            <span class="hero-stat-card__meta">MC 状态为待确认</span>
           </div>
         </div>
       </div>
@@ -33,6 +42,9 @@
       <div class="search-card__header">
         <div>
           <div class="search-card__title">立项筛选</div>
+          <div class="search-card__subtitle"
+            >按项目编号、名称、业务类型与风险等级快速定位协同中的销售项目。</div
+          >
         </div>
       </div>
 
@@ -89,7 +101,7 @@
           <div class="table-toolbar__title">{{
             isProjectInitiationPage ? '立项项目列表' : '项目列表'
           }}</div>
-          <div class="table-toolbar__meta">当前共 {{ total }} 条</div>
+          <div class="table-toolbar__meta">当前共 {{ total }} 条，点击行可直接打开详情抽屉</div>
         </div>
         <div class="table-toolbar__actions">
           <el-button type="primary" @click="openForm('create')" v-hasPermi="['erp:project:create']">
@@ -238,6 +250,9 @@
         <template v-if="detailProject">
           <div class="drawer-context">
             <div class="drawer-context__main">
+              <div class="drawer-context__eyebrow">{{
+                isProjectInitiationPage ? '销售项目立项' : '项目中心'
+              }}</div>
               <div class="drawer-context__title">{{ detailProject.name }}</div>
               <div class="drawer-context__meta">
                 <span>项目编号：{{ detailProject.no || '-' }}</span>
@@ -288,6 +303,7 @@
                 >
                   PC 确认
                 </el-button>
+                <span class="hint">仅当当前 PC 负责人且状态未完成时可确认</span>
               </div>
             </el-card>
 
@@ -322,6 +338,7 @@
                 >
                   MC 确认
                 </el-button>
+                <span class="hint">仅当当前 MC 负责人且状态未完成时可确认</span>
               </div>
             </el-card>
           </div>
@@ -919,46 +936,56 @@ onMounted(() => {
 
 .page-hero {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 20px;
+  align-items: stretch;
+  justify-content: space-between;
 }
 
-.page-hero__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.page-hero__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-hero__eyebrow {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .page-hero__title {
   margin: 0;
   color: #0f172a;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.page-hero__desc {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .page-hero__stats {
   display: grid;
-  width: 100%;
+  width: min(540px, 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-}
-
-.page-hero__stats--row {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .hero-stat-card {
   display: flex;
+  min-height: 116px;
   flex-direction: column;
   justify-content: space-between;
-  padding: 14px 16px;
-  border: 1px solid var(--erp-slate-200, #e2e8f0);
+  padding: 16px 18px;
+  border: 1px solid #dbeafe;
   border-radius: 14px;
-  background: var(--erp-stat-gradient-slate);
-}
-
-.hero-stat-card--compact {
-  min-height: 80px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
 }
 
 .hero-stat-card__label {
@@ -969,44 +996,14 @@ onMounted(() => {
 
 .hero-stat-card__value {
   color: #0f172a;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   line-height: 1.1;
 }
 
-.hero-stat-card--blue {
-  background: var(--erp-stat-gradient-blue);
-  border-color: var(--erp-stat-border-blue);
-}
-
-.hero-stat-card--green {
-  background: var(--erp-stat-gradient-green);
-  border-color: var(--erp-stat-border-green);
-}
-
-.hero-stat-card--teal {
-  background: var(--erp-stat-gradient-teal);
-  border-color: var(--erp-stat-border-teal);
-}
-
-.hero-stat-card--slate {
-  background: var(--erp-stat-gradient-slate);
-  border-color: var(--erp-stat-border-slate);
-}
-
-.hero-stat-card--gold {
-  background: var(--erp-stat-gradient-gold);
-  border-color: var(--erp-stat-border-gold);
-}
-
-.hero-stat-card--amber {
-  background: var(--erp-stat-gradient-amber);
-  border-color: var(--erp-stat-border-amber);
-}
-
-.hero-stat-card--rose {
-  background: var(--erp-stat-gradient-rose);
-  border-color: var(--erp-stat-border-rose);
+.hero-stat-card__meta {
+  color: #94a3b8;
+  font-size: 12px;
 }
 
 .search-card__header,
@@ -1024,6 +1021,7 @@ onMounted(() => {
   font-weight: 700;
 }
 
+.search-card__subtitle,
 .table-toolbar__meta {
   margin-top: 4px;
   color: #64748b;
@@ -1176,7 +1174,16 @@ onMounted(() => {
   flex: 1;
 }
 
+.drawer-context__eyebrow {
+  color: rgb(191 219 254 / 0.85);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .drawer-context__title {
+  margin-top: 10px;
   font-size: 24px;
   font-weight: 800;
   line-height: 1.3;
@@ -1246,6 +1253,11 @@ onMounted(() => {
   flex-direction: column;
   gap: 8px;
   margin-top: 20px;
+}
+
+.role-actions .hint {
+  color: #64748b;
+  font-size: 12px;
 }
 
 .drawer-tabs {
@@ -1328,10 +1340,11 @@ onMounted(() => {
 }
 
 @media (max-width: 1280px) {
-  .page-hero__stats--row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .page-hero {
+    flex-direction: column;
   }
 
+  .page-hero__stats,
   .query-form__grid,
   .role-grid,
   .info-grid {
@@ -1344,10 +1357,7 @@ onMounted(() => {
     padding: 0 0 18px;
   }
 
-  .page-hero__stats--row {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-
+  .page-hero__stats,
   .query-form__grid,
   .role-grid,
   .info-grid {

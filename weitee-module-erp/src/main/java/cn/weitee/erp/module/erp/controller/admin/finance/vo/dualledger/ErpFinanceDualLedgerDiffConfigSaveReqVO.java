@@ -50,10 +50,10 @@ public class ErpFinanceDualLedgerDiffConfigSaveReqVO {
     @InEnum(ErpFinanceDiffCalculationTypeEnum.class)
     private Integer calculationType;
 
-    @Schema(description = "比例系数（计算类型为按比例分摊时使用）", example = "0.85")
+    @Schema(description = "比例系数（必须大于 1）", example = "1.20")
     private BigDecimal ratio;
 
-    @Schema(description = "固定差额（计算类型为固定差额时使用）", example = "20.00")
+    @Schema(description = "固定差额（必须小于 0）", example = "-20.00")
     private BigDecimal fixedAmount;
 
     @Schema(description = "状态", requiredMode = Schema.RequiredMode.REQUIRED, example = "0")

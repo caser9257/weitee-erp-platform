@@ -402,6 +402,12 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
                     orderId, saleOrder.getStatus());
             return;
         }
+        // 校验 processInstanceId 是否匹配，防止旧快照事件误伤新一轮审批
+        if (processInstanceId != null && !processInstanceId.equals(saleOrder.getProcessInstanceId())) {
+            log.warn("[rollbackSaleOrderStatusToDraftByBpm] processInstanceId 不匹配，忽略回调，orderId={}, expected={}, actual={}",
+                    orderId, processInstanceId, saleOrder.getProcessInstanceId());
+            return;
+        }
         int updateCount = erpSaleOrderMapper.resetStatusToDraftByBpm(orderId, processInstanceId);
         if (updateCount == 0) {
             throw exception(SALE_ORDER_STATUS_UPDATE_ILLEGAL);

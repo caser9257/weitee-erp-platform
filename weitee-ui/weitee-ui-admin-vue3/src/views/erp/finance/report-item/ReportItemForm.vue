@@ -11,7 +11,7 @@
       <div class="finance-shell__dialog-grid">
         <el-form-item label="账簿" prop="ledgerId">
           <el-select v-model="formData.ledgerId" placeholder="请选择账簿" filterable class="!w-full">
-            <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+            <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="报表类型" prop="reportType">
@@ -83,6 +83,7 @@ import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinanceReportItemSaveReqVO, FinanceReportItemApi } from '@/api/erp/finance/report-item'
 import { ErpFinanceSubjectVO, FinanceSubjectApi } from '@/api/erp/finance/subject'
 import { findDemoReportItem, getDemoSubjectOptions, reportItemDemoLedgers } from './demo'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ReportItemForm' })
 

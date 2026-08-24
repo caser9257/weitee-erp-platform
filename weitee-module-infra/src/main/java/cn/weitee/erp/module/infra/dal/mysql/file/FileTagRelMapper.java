@@ -9,7 +9,7 @@ import java.util.List;
 /**
  * 文件-标签关联 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FileTagRelMapper extends BaseMapperX<FileTagRelDO> {

@@ -17,6 +17,9 @@ public class ErpStockCheckSaveReqVO {
     @Schema(description = "盘点编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "11756")
     private Long id;
 
+    @Schema(description = "归属部门ID（数据权限），为空时默认取创建人所属部门", example = "1024")
+    private Long deptId;
+
     @Schema(description = "盘点时间", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "盘点时间不能为空")
     private LocalDateTime checkTime;

@@ -133,3 +133,75 @@ CALL add_columns_if_not_exists();
 
 -- 删除存储过程
 DROP PROCEDURE IF EXISTS add_columns_if_not_exists;
+
+-- =====================================================
+-- 文件版本表
+-- =====================================================
+CREATE TABLE IF NOT EXISTS `infra_file_version` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '编号',
+  `file_id` bigint NOT NULL COMMENT '文件ID',
+  `version` int NOT NULL COMMENT '版本号',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文件名',
+  `url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件URL',
+  `size` bigint DEFAULT NULL COMMENT '文件大小',
+  `type` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '文件类型',
+  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '版本说明',
+  `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '创建者',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '更新者',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_file_id` (`file_id`) USING BTREE,
+  UNIQUE KEY `uk_file_version` (`file_id`, `version`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件版本表';
+
+-- 远端文件清理补偿表
+CREATE TABLE IF NOT EXISTS `infra_file_cleanup_compensation` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '编号',
+  `config_id` bigint NOT NULL COMMENT '文件配置ID',
+  `path` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '远端文件路径',
+  `url` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '远端文件URL',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '状态：PENDING-待清理，PROCESSING-清理中，SUCCESS-成功，FAILED-失败',
+  `retry_count` int NOT NULL DEFAULT 0 COMMENT '已重试次数',
+  `max_retry_count` int NOT NULL DEFAULT 10 COMMENT '最大重试次数',
+  `next_retry_time` datetime NOT NULL COMMENT '下次重试时间',
+  `last_error` varchar(1000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '最后一次错误',
+  `creator` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '创建者',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updater` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT '更新者',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '是否删除',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_config_path` (`config_id`, `path`) USING BTREE,
+  KEY `idx_status_retry_time` (`status`, `next_retry_time`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='远端文件清理补偿表';
+
+-- 已存在的文件版本表补齐唯一约束，避免重复执行脚本时报索引已存在
+-- 前置处理：删除重复 (file_id, version) 行，保留 id 最大的记录
+DELETE t1 FROM `infra_file_version` t1
+INNER JOIN `infra_file_version` t2
+ON t1.`file_id` = t2.`file_id` AND t1.`version` = t2.`version` AND t1.`id` < t2.`id`;
+
+DELIMITER //
+CREATE PROCEDURE IF NOT EXISTS add_file_version_unique_key()
+BEGIN
+    IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.STATISTICS
+                   WHERE TABLE_SCHEMA = DATABASE()
+                     AND TABLE_NAME = 'infra_file_version'
+                     AND INDEX_NAME = 'uk_file_version') THEN
+        ALTER TABLE `infra_file_version`
+            ADD UNIQUE KEY `uk_file_version` (`file_id`, `version`) USING BTREE;
+    END IF;
+END //
+DELIMITER ;
+CALL add_file_version_unique_key();
+DROP PROCEDURE IF EXISTS add_file_version_unique_key;
+
+-- 文件清理补偿任务：每 5 分钟执行一次，使用处理器名称幂等插入
+INSERT INTO `infra_job` (`name`, `status`, `handler_name`, `handler_param`, `cron_expression`,
+                         `retry_count`, `retry_interval`, `monitor_timeout`, `creator`, `updater`)
+SELECT '文件清理补偿 Job', 1, 'fileCleanupCompensationJob', '', '0 0/5 * * * ?', 3, 0, 0, '1', '1'
+WHERE NOT EXISTS (
+    SELECT 1 FROM `infra_job` WHERE `handler_name` = 'fileCleanupCompensationJob' AND `deleted` = b'0'
+);

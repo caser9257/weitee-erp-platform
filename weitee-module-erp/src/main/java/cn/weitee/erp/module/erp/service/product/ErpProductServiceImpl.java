@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.service.product;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.collection.MapUtils;
@@ -12,7 +13,11 @@ import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductUnitDO;
 import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductMapper;
+import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -24,6 +29,7 @@ import java.util.Map;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCT_AUDIT_STATUS_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCT_NOT_ENABLE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCT_NOT_EXISTS;
 
@@ -34,6 +40,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCT_NOT_EXIS
  */
 @Service
 @Validated
+@Slf4j
 public class ErpProductServiceImpl implements ErpProductService {
 
     @Resource
@@ -47,8 +54,10 @@ public class ErpProductServiceImpl implements ErpProductService {
     @Override
     public Long createProduct(ProductSaveReqVO createReqVO) {
         // TODO 芋艿：校验分类
-        // 插入
-        ErpProductDO product = BeanUtils.toBean(createReqVO, ErpProductDO.class);
+        // 插入（新物料默认草稿，需审核后才能被 BOM 引用）
+        ErpProductDO product = BeanUtils.toBean(createReqVO, ErpProductDO.class)
+                .setAuditStatus(ErpAuditStatus.DRAFT.getStatus())
+                .setProcessInstanceId(null);
         erpProductMapper.insert(product);
         // 返回
         return product.getId();
@@ -87,8 +96,67 @@ public class ErpProductServiceImpl implements ErpProductService {
             if (CommonStatusEnum.isDisable(product.getStatus())) {
                 throw exception(PRODUCT_NOT_ENABLE, product.getName());
             }
+            // P5：仅已审批物料可被 BOM 引用（未审核的 DRAFT 也不放行，需先走 erp.product.create 审批）
+            Integer auditStatus = product.getAuditStatus();
+            if (!ErpAuditStatus.APPROVE.getStatus().equals(auditStatus)) {
+                throw exception(PRODUCT_AUDIT_STATUS_ILLEGAL);
+            }
         }
         return list;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateProductAuditStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
+        ErpProductDO product = erpProductMapper.selectById(id);
+        if (product == null) {
+            throw exception(PRODUCT_NOT_EXISTS);
+        }
+        if (!StrUtil.equals(processInstanceId, product.getProcessInstanceId())) {
+            throw exception(PRODUCT_AUDIT_STATUS_ILLEGAL);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(product.getAuditStatus())) {
+            log.warn("[updateProductAuditStatusByBpm] 忽略非审批中回调，id={}, auditStatus={}", id, product.getAuditStatus());
+            return;
+        }
+        int count = erpProductMapper.update(null, new LambdaUpdateWrapper<ErpProductDO>()
+                .eq(ErpProductDO::getId, id)
+                .eq(ErpProductDO::getAuditStatus, ErpAuditStatus.PROCESS.getStatus())
+                .eq(ErpProductDO::getProcessInstanceId, processInstanceId)
+                .set(ErpProductDO::getAuditStatus, status)
+                .set(ErpProductDO::getProcessInstanceId, processInstanceId));
+        if (count == 0) {
+            throw exception(PRODUCT_AUDIT_STATUS_ILLEGAL);
+        }
+        // 审批通过时同步启用
+        if (ErpAuditStatus.APPROVE.getStatus().equals(status)) {
+            erpProductMapper.updateById(new ErpProductDO().setId(id).setStatus(CommonStatusEnum.ENABLE.getStatus()));
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void rollbackProductAuditStatusToDraftByBpm(Long id, String processInstanceId, String reason) {
+        ErpProductDO product = erpProductMapper.selectById(id);
+        if (product == null) {
+            throw exception(PRODUCT_NOT_EXISTS);
+        }
+        if (!ErpAuditStatus.PROCESS.getStatus().equals(product.getAuditStatus())) {
+            log.warn("[rollbackProductAuditStatusToDraftByBpm] 忽略非审批中回退，id={}, auditStatus={}", id, product.getAuditStatus());
+            return;
+        }
+        if (processInstanceId != null && !processInstanceId.equals(product.getProcessInstanceId())) {
+            log.warn("[rollbackProductAuditStatusToDraftByBpm] processInstanceId 不匹配，id={}, expected={}, actual={}", id, processInstanceId, product.getProcessInstanceId());
+            return;
+        }
+        int count = erpProductMapper.update(null, new LambdaUpdateWrapper<ErpProductDO>()
+                .eq(ErpProductDO::getId, id)
+                .eq(ErpProductDO::getAuditStatus, ErpAuditStatus.PROCESS.getStatus())
+                .set(ErpProductDO::getAuditStatus, ErpAuditStatus.DRAFT.getStatus())
+                .set(ErpProductDO::getProcessInstanceId, null));
+        if (count == 0) {
+            throw exception(PRODUCT_AUDIT_STATUS_ILLEGAL);
+        }
     }
 
     private void validateProductExists(Long id) {
@@ -150,6 +218,15 @@ public class ErpProductServiceImpl implements ErpProductService {
     @Override
     public Long getProductCountByUnitId(Long unitId) {
         return erpProductMapper.selectCountByUnitId(unitId);
+    }
+
+    @Override
+    public List<ErpProductRespVO> getApprovedProductSimpleList() {
+        List<ErpProductDO> list = erpProductMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<ErpProductDO>()
+                        .eq(ErpProductDO::getAuditStatus, ErpAuditStatus.APPROVE.getStatus())
+                        .eq(ErpProductDO::getStatus, CommonStatusEnum.ENABLE.getStatus()));
+        return buildProductVOList(list);
     }
 
 }

@@ -9,6 +9,7 @@ export interface StockMoveVO {
   totalPrice: number // 合计金额，单位：元
   status: number // 状态
   remark: string // 备注
+  processInstanceId?: string
 }
 
 export interface StockMoveItemVO {
@@ -77,17 +78,13 @@ export const StockMoveApi = {
   },
 
   // 更新库存调拨单的状态
-  updateStockMoveStatus: async (id: number, status: number) => {
-    return await request.put({
-      url: `/erp/stock-move/update-status`,
-      params: {
-        id,
-        status
-      }
-    })
-  },
-
   // 删除库存调度单
+  submitStockMove: async (id: number) =>
+    await request.post({ url: '/erp/stock-move/submit', data: { id } }),
+
+  cancelStockMoveApproval: async (id: number, reason?: string) =>
+    await request.delete({ url: '/erp/stock-move/cancel-approval', data: { id, reason } }),
+
   deleteStockMove: async (ids: number[]) => {
     return await request.delete({
       url: `/erp/stock-move/delete`,

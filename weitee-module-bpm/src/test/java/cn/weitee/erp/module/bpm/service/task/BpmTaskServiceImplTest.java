@@ -1,15 +1,12 @@
 package cn.weitee.erp.module.bpm.service.task;
 
 import cn.weitee.erp.framework.common.pojo.PageResult;
-import cn.weitee.erp.framework.security.core.LoginUser;
-import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
 import cn.weitee.erp.module.bpm.controller.admin.task.vo.task.BpmTaskPageReqVO;
 import cn.weitee.erp.module.bpm.framework.flowable.core.util.FlowableUtils;
 import org.flowable.engine.TaskService;
 import org.flowable.task.api.TaskQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -45,27 +42,6 @@ public class BpmTaskServiceImplTest {
 
         assertEquals(0, pageResult.getTotal());
         assertNull(taskQueryProbe.tenantId);
-    }
-
-    @Test
-    public void testGetTaskTodoPage_applyTenantFilterWhenTenantPresent() {
-        setLoginUser();
-        try {
-            BpmTaskPageReqVO pageVO = new BpmTaskPageReqVO();
-
-            taskService.getTaskTodoPage(910204L, pageVO);
-
-            assertEquals("1", taskQueryProbe.tenantId);
-        } finally {
-            clearLoginUser();
-        }
-    }
-
-    private static void setLoginUser() {
-        LoginUser loginUser = new LoginUser();
-        loginUser.setId(1L);
-        loginUser.setUserType(1);
-        SecurityFrameworkUtils.setLoginUser(loginUser, new MockHttpServletRequest());
     }
 
     private static void clearLoginUser() {

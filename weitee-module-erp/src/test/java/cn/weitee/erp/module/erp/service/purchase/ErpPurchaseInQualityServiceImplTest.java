@@ -159,6 +159,15 @@ class ErpPurchaseInQualityServiceImplTest {
     }
 
     @Test
+    void createQualityOrderIfAbsent_shouldRejectCompletedPurchaseInQuality() {
+        purchaseInRef.set(purchaseIn(1L, ErpAuditStatus.APPROVE.getStatus(), ErpQaStatusEnum.PASSED.getStatus()));
+
+        assertThatThrownBy(() -> service.createQualityOrderIfAbsent(1L))
+                .isInstanceOf(ServiceException.class);
+        assertThat(insertedQualityRef.get()).isNull();
+    }
+
+    @Test
     void assignChecker_shouldUpdateAssignedChecker() {
         qualityRef.set(quality(66L, 1L, ErpPurchaseInQualityStatusEnum.FIRST_CHECKING.getStatus()));
         purchaseInRef.set(purchaseIn(1L, ErpAuditStatus.APPROVE.getStatus(), ErpQaStatusEnum.TO_INSPECT.getStatus()));

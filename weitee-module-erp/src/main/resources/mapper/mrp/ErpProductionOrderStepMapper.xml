@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionOrderStepMapper">
+
+    <update id="updateStepQtyByCas">
+        UPDATE erp_production_order_step
+        SET reported_qty = reported_qty + #{reportedQty},
+            qualified_qty = qualified_qty + #{qualifiedQty},
+            scrap_qty = scrap_qty + #{scrapQty}
+        WHERE id = #{id}
+          AND deleted = 0
+          AND step_status = 1
+          AND reported_qty + scrap_qty + #{reportedQty} + #{scrapQty} &lt;= plan_qty
+    </update>
+
+</mapper>

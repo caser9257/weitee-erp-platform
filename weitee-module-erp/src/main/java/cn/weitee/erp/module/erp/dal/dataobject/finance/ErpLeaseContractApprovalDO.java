@@ -7,9 +7,9 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.*;
 
 /**
- * 租赁合同审批记录 DO
+ * 绉熻祦鍚堝悓瀹℃壒璁板綍 DO
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("erp_lease_contract_approval")
 @KeySequence("erp_lease_contract_approval_seq")
@@ -25,42 +25,42 @@ public class ErpLeaseContractApprovalDO extends BaseDO {
     private Long id;
 
     /**
-     * 租赁合同ID
+     * 绉熻祦鍚堝悓ID
      */
     private Long leaseContractId;
 
     /**
-     * 租赁合同编号
+     * 绉熻祦鍚堝悓缂栧彿
      */
     private String leaseContractNo;
 
     /**
-     * 操作：SUBMIT/APPROVE/REJECT
+     * 鎿嶄綔锛歋UBMIT/APPROVE/REJECT
      */
     private String action;
 
     /**
-     * 操作前状态
+     * 鎿嶄綔鍓嶇姸鎬?
      */
     private Integer statusBefore;
 
     /**
-     * 操作后状态
+     * 鎿嶄綔鍚庣姸鎬?
      */
     private Integer statusAfter;
 
     /**
-     * 操作人ID
+     * 鎿嶄綔浜篒D
      */
     private Long operatorId;
 
     /**
-     * 操作人名称
+     * 鎿嶄綔浜哄悕绉?
      */
     private String operatorName;
 
     /**
-     * 备注
+     * 澶囨敞
      */
     private String remark;
 

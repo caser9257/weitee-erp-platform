@@ -48,7 +48,7 @@
               class="!w-full"
               @change="handleLedgerChange"
             >
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="期间" prop="periodId">
@@ -225,7 +225,7 @@
               </template>
               <template #default="{ row }">
                 <div class="finance-shell__primary-cell">
-                  <span class="finance-shell__primary-text">{{ row.ledgerName || '-' }}</span>
+                  <span class="finance-shell__primary-text">{{ displayLedgerName(row.ledgerName) }}</span>
                   <span class="finance-shell__muted-text">{{ row.periodCode || '-' }}</span>
                 </div>
               </template>
@@ -247,7 +247,7 @@
                 </span>
               </template>
             </el-table-column>
-            <el-table-column label="操作" fixed="right" align="center" width="220">
+            <el-table-column label="操作" fixed="right" align="center" width="280">
               <template #default="{ row }">
                 <div class="finance-shell__row-actions">
                   <el-button
@@ -260,11 +260,23 @@
                     查看
                   </el-button>
                   <el-button
+                    v-if="canRecompute(row)"
+                    link
+                    type="primary"
+                    :disabled="rowBusy(row.id)"
+                    :loading="rowActionLoading(row.id, 'recompute')"
+                    @click="handleRecompute(row)"
+                    v-hasPermi="['erp:finance-voucher:update']"
+                  >
+                    <Icon icon="ep:refresh" class="mr-3px" />
+                    重算凭证
+                  </el-button>
+                  <el-button
                     v-if="canReverse(row)"
                     link
                     type="danger"
                     :disabled="rowBusy(row.id)"
-                    :loading="rowActionLoadingId === row.id"
+                    :loading="rowActionLoading(row.id, 'reverse')"
                     @click="handleReverse(row)"
                     v-hasPermi="['erp:finance-voucher:update']"
                   >
@@ -313,7 +325,7 @@
         <div class="finance-shell__dialog-grid">
           <el-form-item label="账簿" prop="ledgerId">
             <el-select v-model="generateForm.ledgerId" placeholder="请选择账簿" filterable class="!w-full" @change="handleGenerateLedgerChange">
-              <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+              <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="业务类型" prop="bizType">
@@ -391,7 +403,7 @@
             </div>
             <div class="finance-shell__context-meta-item">
               <span>账簿</span>
-              <span>{{ detailData.ledgerName || '-' }}</span>
+              <span>{{ displayLedgerName(detailData.ledgerName) }}</span>
             </div>
             <div class="finance-shell__context-meta-item">
               <span>期间</span>
@@ -468,6 +480,8 @@ import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinancePeriodVO, FinancePeriodApi } from '@/api/erp/finance/period'
 import { FinanceVoucherTemplateApi, ErpFinanceVoucherTemplateVO } from '@/api/erp/finance/voucher-template'
 import { ErpFinanceVoucherPageReqVO, ErpFinanceVoucherVO, FinanceVoucherApi } from '@/api/erp/finance/voucher'
+import { canRecomputeVoucher } from './voucherStatus.helpers'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceVoucher' })
 
@@ -499,6 +513,7 @@ const reverseTarget = ref<ErpFinanceVoucherVO>()
 const currentVoucherId = ref<number>()
 const selectedIds = ref<number[]>([])
 const rowActionLoadingId = ref<number>()
+const rowActionLoadingType = ref<'reverse' | 'recompute' | ''>('')
 const batchAction = ref<'approve' | 'cancelApprove' | 'post' | 'cancelPost' | ''>('')
 const viewportWidth = ref(typeof window === 'undefined' ? 1440 : window.innerWidth)
 const queryForm = reactive<ErpFinanceVoucherPageReqVO>({
@@ -543,6 +558,8 @@ const reverseFormRules = { remark: [{ required: false }] }
 
 const isActionCanceled = (error: unknown) => error === 'cancel' || error === 'close'
 const rowBusy = (id?: number) => id != null && rowActionLoadingId.value === id
+const rowActionLoading = (id: number | undefined, action: 'reverse' | 'recompute') =>
+  id != null && rowActionLoadingId.value === id && rowActionLoadingType.value === action
 const selectedRows = computed(() => list.value.filter((row) => row.id && selectedIds.value.includes(row.id)))
 const canBatchApprove = computed(() => selectedIds.value.length > 0 && !batchAction.value && selectedRows.value.every((row) => row.status === 10))
 const canBatchCancelApprove = computed(() => selectedIds.value.length > 0 && !batchAction.value && selectedRows.value.every((row) => row.status === 20))
@@ -552,10 +569,10 @@ const voucherBusy = computed(() => listLoading.value || detailLoading.value || g
 const postedCount = computed(() => list.value.filter((row) => row.status === 30).length)
 const reverseReadyCount = computed(() => list.value.filter((row) => row.status === 30 && !row.reverseVoucherId && !row.reverseFromVoucherId).length)
 const canQuery = computed(
-  () => !listLoading.value && !refreshing.value && !batchAction.value && !generateSubmitting.value && !reverseSubmitting.value
+  () => !listLoading.value && !refreshing.value && !batchAction.value && !generateSubmitting.value && !reverseSubmitting.value && !rowActionLoadingId.value
 )
 const canRefresh = computed(
-  () => !listLoading.value && !refreshing.value && !batchAction.value && !generateSubmitting.value && !reverseSubmitting.value
+  () => !listLoading.value && !refreshing.value && !batchAction.value && !generateSubmitting.value && !reverseSubmitting.value && !rowActionLoadingId.value
 )
 const hasActiveFilters = computed(() => !!queryParams.ledgerId || !!queryParams.periodId || !!queryParams.voucherNo || !!queryParams.bizNo || queryParams.status !== undefined || !!queryParams.voucherTime)
 const canReset = computed(() => (hasActiveFilters.value || queryParams.pageNo !== 1) && canQuery.value)
@@ -744,11 +761,48 @@ const handleBatchAction = async (action: 'approve' | 'cancelApprove' | 'post' | 
   }
 }
 
+const canRecompute = (row: ErpFinanceVoucherVO) =>
+  row.id != null && canRecomputeVoucher(row) && [10, 20, 30].includes(row.status || 0)
+
 const canReverse = (row: ErpFinanceVoucherVO) => row.status === 30 && !row.reverseFromVoucherId && !row.reverseVoucherId
+
+const handleRecompute = async (row: ErpFinanceVoucherVO) => {
+  if (!canRecompute(row) || rowActionLoadingId.value) return
+  try {
+    await message.confirm('重算将根据当前业务单据更新自动凭证，是否继续？')
+  } catch (error) {
+    if (isActionCanceled(error)) return
+    throw error
+  }
+  rowActionLoadingId.value = row.id
+  rowActionLoadingType.value = 'recompute'
+  try {
+    const recomputedVoucherId = await FinanceVoucherApi.recomputeVoucher({
+      bizType: row.bizType!,
+      bizId: row.bizId!
+    })
+    if (!recomputedVoucherId) {
+      message.warning('未生成新凭证')
+      return
+    }
+    message.success('重算成功')
+    await getList()
+    if (detailDrawerOpen.value && currentVoucherId.value === row.id) {
+      currentVoucherId.value = recomputedVoucherId
+      await loadDetail(recomputedVoucherId)
+    }
+  } catch (error: any) {
+    message.error(error?.message || '凭证重算失败')
+  } finally {
+    rowActionLoadingId.value = undefined
+    rowActionLoadingType.value = ''
+  }
+}
 
 const handleReverse = async (row: ErpFinanceVoucherVO) => {
   if (!row.id || rowActionLoadingId.value) return
   rowActionLoadingId.value = row.id
+  rowActionLoadingType.value = 'reverse'
   reverseTarget.value = row
   reverseForm.voucherTime = undefined
   reverseForm.remark = ''
@@ -823,6 +877,7 @@ const clearGenerateDialog = () => {
 const clearReverseDialog = () => {
   reverseTarget.value = undefined
   rowActionLoadingId.value = undefined
+  rowActionLoadingType.value = ''
   reverseSubmitting.value = false
   reverseFormRef.value?.clearValidate?.()
   reverseForm.voucherTime = undefined

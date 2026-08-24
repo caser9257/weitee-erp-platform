@@ -8,9 +8,9 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpServiceReceiptDO;
 import java.util.List;
 
 /**
- * 服务接收单 Service 接口
+ * 服务接收鍗?Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface ErpServiceReceiptService {
 
@@ -27,7 +27,7 @@ public interface ErpServiceReceiptService {
     List<ErpServiceReceiptDO> getServiceReceiptList();
 
     /**
-     * 确认服务接收单
+     * 确认服务接收鍗?
      */
     void confirmServiceReceipt(Long id);
 

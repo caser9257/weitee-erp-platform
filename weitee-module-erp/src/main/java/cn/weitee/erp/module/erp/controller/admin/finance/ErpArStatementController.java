@@ -13,6 +13,8 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.arstatement.ErpArSta
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpArStatementMapper;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpArStatementService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermission;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +32,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static cn.weitee.erp.framework.apilog.core.enums.OperateTypeEnum.EXPORT;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
@@ -51,6 +54,7 @@ public class ErpArStatementController {
     private ErpArStatementMapper erpArStatementMapper;
 
     @GetMapping("/page")
+    @FinanceDataPermission
     @PreAuthorize("@ss.hasPermission('erp:ar-statement:query')")
     @Operation(summary = "分页查询应收台账")
     public CommonResult<PageResult<ErpArStatementRespVO>> getStatementPage(@Validated ErpArStatementPageReqVO reqVO) {
@@ -58,6 +62,7 @@ public class ErpArStatementController {
     }
 
     @GetMapping("/get")
+    @FinanceDataPermission
     @PreAuthorize("@ss.hasPermission('erp:ar-statement:query')")
     @Operation(summary = "获取应收台账详情")
     @Parameter(name = "id", description = "台账ID", required = true, example = "1024")
@@ -66,6 +71,7 @@ public class ErpArStatementController {
     }
 
     @GetMapping("/summary")
+    @FinanceDataPermission
     @PreAuthorize("@ss.hasPermission('erp:ar-statement:query')")
     @Operation(summary = "获取应收台账汇总（按客户）")
     @Parameter(name = "customerId", description = "客户ID（可选）", example = "1024")
@@ -75,13 +81,17 @@ public class ErpArStatementController {
     }
 
     @GetMapping("/summary-by-order")
+    @FinanceDataPermission
     @PreAuthorize("@ss.hasPermission('erp:ar-statement:query')")
     @Operation(summary = "按订单汇总应收台账")
     @Parameter(name = "orderId", description = "销售订单ID", required = true, example = "1024")
     public CommonResult<ErpArStatementSummaryRespVO> getStatementSummaryByOrderId(
             @RequestParam("orderId") Long orderId) {
         // 使用 SQL 聚合查询，避免全量加载到内存
-        Map<String, BigDecimal> summaryMap = erpArStatementMapper.selectSummaryBySourceOrderId(orderId);
+        Set<Long> visibleLedgerIds = currentVisibleLedgerIds();
+        Map<String, BigDecimal> summaryMap = visibleLedgerIds == null
+                ? erpArStatementMapper.selectSummaryBySourceOrderId(orderId)
+                : erpArStatementMapper.selectSummaryBySourceOrderId(orderId, visibleLedgerIds);
 
         ErpArStatementSummaryRespVO summary = new ErpArStatementSummaryRespVO();
         summary.setCustomerId(null); // 按订单维度，不需要客户ID
@@ -93,6 +103,7 @@ public class ErpArStatementController {
     }
 
     @GetMapping("/export-excel")
+    @FinanceDataPermission
     @Operation(summary = "导出应收台账 Excel")
     @PreAuthorize("@ss.hasAnyPermissions('erp:ar-statement:export', 'erp:ar-statement:query')")
     @ApiAccessLog(operateType = EXPORT)
@@ -161,6 +172,11 @@ public class ErpArStatementController {
             case 2 -> "已开票";
             default -> "未知";
         };
+    }
+
+    private Set<Long> currentVisibleLedgerIds() {
+        List<Long> visibleLedgerIds = FinanceDataPermissionContext.getVisibleLedgerIds();
+        return visibleLedgerIds == null ? null : Set.copyOf(visibleLedgerIds);
     }
 
 }

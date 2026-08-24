@@ -7,6 +7,7 @@ import cn.weitee.erp.framework.common.pojo.CommonResult;
 import cn.weitee.erp.framework.common.pojo.PageParam;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.excel.core.util.ExcelUtils;
+import cn.weitee.erp.module.infra.service.file.IncomingFileProtectionService;
 import cn.weitee.erp.module.system.controller.admin.user.vo.user.*;
 import cn.weitee.erp.module.system.convert.user.UserConvert;
 import cn.weitee.erp.module.system.dal.dataobject.dept.DeptDO;
@@ -27,6 +28,8 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +48,8 @@ public class UserController {
     private AdminUserService userService;
     @Resource
     private DeptService deptService;
+    @Resource
+    private IncomingFileProtectionService incomingFileProtectionService;
 
     @PostMapping("/create")
     @Operation(summary = "新增用户")
@@ -174,7 +179,11 @@ public class UserController {
     @PreAuthorize("@ss.hasPermission('system:user:import')")
     public CommonResult<UserImportRespVO> importExcel(@RequestParam("file") MultipartFile file,
                                                       @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport) throws Exception {
-        List<UserImportExcelVO> list = ExcelUtils.read(file, UserImportExcelVO.class);
+        byte[] plainContent = incomingFileProtectionService.preparePlainContent(file.getBytes(), file.getOriginalFilename());
+        List<UserImportExcelVO> list;
+        try (InputStream inputStream = new ByteArrayInputStream(plainContent)) {
+            list = ExcelUtils.read(inputStream, UserImportExcelVO.class);
+        }
         return success(userService.importUserList(list, updateSupport));
     }
 

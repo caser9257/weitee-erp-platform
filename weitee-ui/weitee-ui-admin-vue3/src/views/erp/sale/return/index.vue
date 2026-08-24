@@ -1,31 +1,40 @@
 <template>
   <div class="sales-ledger-page">
+    <doc-alert title="【销售】销售订单、出库、退货" url="https://doc.iocoder.cn/erp/sale/" />
 
     <ContentWrap class="sales-ledger-page__hero">
-      <div class="ledger-hero ledger-hero--compact">
-        <div class="ledger-hero__header">
+      <div class="ledger-hero">
+        <div class="ledger-hero__main">
+          <p class="ledger-hero__eyebrow">Sales Return Ledger</p>
           <h1 class="ledger-hero__title">销售退货</h1>
+          <p class="ledger-hero__desc">
+            把退货单、客户、退款进度、审核状态和应退金额统一为单据台账视图，减少字段平铺带来的噪音。
+          </p>
         </div>
-        <div class="ledger-hero__stats ledger-hero__stats--row">
-          <div class="stat-card stat-card--compact stat-card--blue">
+        <div class="ledger-hero__stats">
+          <div class="stat-card">
             <span class="stat-card__label">当前结果</span>
             <strong class="stat-card__value">{{ total }}</strong>
+            <span class="stat-card__meta">本次筛选退货单数</span>
           </div>
-          <div class="stat-card stat-card--compact stat-card--teal">
+          <div class="stat-card">
             <span class="stat-card__label">应退总额</span>
             <strong class="stat-card__value stat-card__value--mono">
               {{ formatMoney(returnStats.totalPrice) }}
             </strong>
+            <span class="stat-card__meta">当前页累计应退金额</span>
           </div>
-          <div class="stat-card stat-card--compact stat-card--green">
+          <div class="stat-card">
             <span class="stat-card__label">已退金额</span>
             <strong class="stat-card__value stat-card__value--mono">
               {{ formatMoney(returnStats.refundPrice) }}
             </strong>
+            <span class="stat-card__meta">当前页累计已退款</span>
           </div>
-          <div class="stat-card stat-card--compact stat-card--amber">
+          <div class="stat-card">
             <span class="stat-card__label">待审核</span>
             <strong class="stat-card__value">{{ returnStats.pendingAuditCount }}</strong>
+            <span class="stat-card__meta">状态为待审核的单据数</span>
           </div>
         </div>
       </div>
@@ -35,6 +44,7 @@
       <div class="search-card__header">
         <div>
           <div class="search-card__title">筛选条件</div>
+          <div class="search-card__subtitle">首屏只保留高频条件，其余条件折叠到更多筛选中。</div>
         </div>
         <el-button text type="primary" @click="advancedExpanded = !advancedExpanded">
           {{ advancedExpanded ? '收起高级筛选' : '展开高级筛选' }}
@@ -352,7 +362,7 @@
                 审核
               </el-button>
               <el-button
-                v-else
+                v-else-if="row.status === 20"
                 link
                 type="danger"
                 @click="handleUpdateStatus(row.id, 10)"
@@ -604,46 +614,56 @@ onMounted(async () => {
 
 .ledger-hero {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 20px;
+  align-items: stretch;
+  justify-content: space-between;
 }
 
-.ledger-hero__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.ledger-hero__main {
+  min-width: 0;
+  flex: 1;
+}
+
+.ledger-hero__eyebrow {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 .ledger-hero__title {
   margin: 0;
   color: #0f172a;
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.3;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.ledger-hero__desc {
+  max-width: 720px;
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .ledger-hero__stats {
   display: grid;
-  width: 100%;
+  width: min(540px, 100%);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-}
-
-.ledger-hero__stats--row {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .stat-card {
   display: flex;
+  min-height: 116px;
   flex-direction: column;
   justify-content: space-between;
-  padding: 14px 16px;
-  border: 1px solid var(--erp-slate-200, #e2e8f0);
+  padding: 16px 18px;
+  border: 1px solid #dbeafe;
   border-radius: 14px;
-  background: var(--erp-stat-gradient-slate);
-}
-
-.stat-card--compact {
-  min-height: 80px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f5f9 100%);
 }
 
 .stat-card__label {
@@ -654,49 +674,19 @@ onMounted(async () => {
 
 .stat-card__value {
   color: #0f172a;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   line-height: 1.1;
 }
 
 .stat-card__value--mono {
-  font-size: 18px;
+  font-size: 22px;
   font-family: 'DIN Alternate', 'Roboto Mono', 'Courier New', monospace;
 }
 
-.stat-card--blue {
-  background: var(--erp-stat-gradient-blue);
-  border-color: var(--erp-stat-border-blue);
-}
-
-.stat-card--green {
-  background: var(--erp-stat-gradient-green);
-  border-color: var(--erp-stat-border-green);
-}
-
-.stat-card--teal {
-  background: var(--erp-stat-gradient-teal);
-  border-color: var(--erp-stat-border-teal);
-}
-
-.stat-card--slate {
-  background: var(--erp-stat-gradient-slate);
-  border-color: var(--erp-stat-border-slate);
-}
-
-.stat-card--gold {
-  background: var(--erp-stat-gradient-gold);
-  border-color: var(--erp-stat-border-gold);
-}
-
-.stat-card--amber {
-  background: var(--erp-stat-gradient-amber);
-  border-color: var(--erp-stat-border-amber);
-}
-
-.stat-card--rose {
-  background: var(--erp-stat-gradient-rose);
-  border-color: var(--erp-stat-border-rose);
+.stat-card__meta {
+  color: #94a3b8;
+  font-size: 12px;
 }
 
 .search-card__header,
@@ -714,6 +704,7 @@ onMounted(async () => {
   font-weight: 700;
 }
 
+.search-card__subtitle,
 .table-toolbar__meta {
   margin-top: 4px;
   color: #64748b;
@@ -905,8 +896,12 @@ onMounted(async () => {
 }
 
 @media (max-width: 1280px) {
-  .ledger-hero__stats--row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .ledger-hero {
+    flex-direction: column;
+  }
+
+  .ledger-hero__stats {
+    width: 100%;
   }
 
   .query-form__grid {
@@ -919,10 +914,7 @@ onMounted(async () => {
     padding: 0 0 18px;
   }
 
-  .ledger-hero__stats--row {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
-
+  .ledger-hero__stats,
   .query-form__grid {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }

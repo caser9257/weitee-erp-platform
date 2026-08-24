@@ -66,6 +66,27 @@ export type ModelVO = {
   notificationPolicySetting?: NotificationPolicySetting
 }
 
+export type BpmModelSaveReqVO = {
+  id?: string | number
+  key: string
+  name: string
+  category?: string
+  type: number
+  formType: number
+  formId?: number
+  formCustomCreatePath?: string
+  formCustomViewPath?: string
+  visible?: boolean
+  startUserIds?: number[]
+  startDeptIds?: number[]
+  managerUserIds?: number[]
+  allowCancelRunningProcess?: boolean
+  allowWithdrawTask?: boolean
+  processIdRule?: unknown
+  simpleModel?: unknown
+  [key: string]: unknown
+}
+
 export const getModelList = async (name: string | undefined) => {
   return await request.get({ url: '/bpm/model/list', params: { name } })
 }
@@ -74,7 +95,7 @@ export const getModel = async (id: string) => {
   return await request.get({ url: '/bpm/model/get?id=' + id })
 }
 
-export const updateModel = async (data: ModelVO) => {
+export const updateModel = async (data: BpmModelSaveReqVO) => {
   return await request.put({ url: '/bpm/model/update', data: data })
 }
 
@@ -101,7 +122,7 @@ export const updateModelState = async (id: number, state: number) => {
   return await request.put({ url: '/bpm/model/update-state', data: data })
 }
 
-export const createModel = async (data: ModelVO) => {
+export const createModel = async (data: BpmModelSaveReqVO) => {
   return await request.post({ url: '/bpm/model/create', data: data })
 }
 
@@ -109,7 +130,7 @@ export const deleteModel = async (id: number) => {
   return await request.delete({ url: '/bpm/model/delete?id=' + id })
 }
 
-export const deployModel = async (id: number) => {
+export const deployModel = async (id: string | number) => {
   return await request.post({ url: '/bpm/model/deploy?id=' + id })
 }
 

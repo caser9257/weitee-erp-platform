@@ -405,6 +405,7 @@
             </template>
             <el-dropdown
               v-if="getOverflowActionDescriptors(row).length"
+              trigger="click"
               @command="(command) => handleCommand(command, row)"
             >
               <el-button link type="primary" class="ledger-actions__more" title="更多操作">
@@ -555,6 +556,7 @@
             </template>
             <el-dropdown
               v-if="getOverflowActionDescriptors(row).length"
+              trigger="click"
               @command="(command) => handleCommand(command, row)"
             >
               <el-button link type="primary" class="purchase-in-mobile-card__more" title="更多操作">
@@ -615,6 +617,7 @@
   <PurchaseInSubmitDialog ref="submitDialogRef" @success="getList" />
   <PurchaseInStockExecuteDialog ref="stockExecuteDialogRef" @success="getList" />
   <PurchaseInPrintDialog ref="printDialogRef" />
+  <PurchaseInSourceBatchTraceDrawer ref="sourceBatchTraceDrawerRef" />
 </template>
 
 <script setup lang="ts">
@@ -627,6 +630,7 @@ import PurchaseInBatchEditDrawer from './components/PurchaseInBatchEditDrawer.vu
 import PurchaseInSubmitDialog from './PurchaseInSubmitDialog.vue'
 import PurchaseInStockExecuteDialog from './PurchaseInStockExecuteDialog.vue'
 import PurchaseInPrintDialog from './PurchaseInPrintDialog.vue'
+import PurchaseInSourceBatchTraceDrawer from './components/PurchaseInSourceBatchTraceDrawer.vue'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { UserVO } from '@/api/system/user'
 import * as UserApi from '@/api/system/user'
@@ -646,6 +650,7 @@ import { resolvePurchaseInRouteOpen } from './purchaseInRouteOpen.helpers'
 import {
   getPurchaseInMainControlActions,
   getPurchaseInMainControlStageQuery,
+  getPurchaseInPrimarySourceBatchId,
   getPurchaseInPrimaryStockContext,
   PURCHASE_IN_MAIN_CONTROL_STAGES,
   STOCK_RECORD_BIZ_TYPE,
@@ -709,6 +714,7 @@ const canCancelPurchaseInApproval = checkPermi(['erp:purchase-in:cancel-approval
 const canDeletePurchaseIn = checkPermi(['erp:purchase-in:delete'])
 const canUpdatePurchaseInStatus = checkPermi(['erp:purchase-in:update-status'])
 const canQueryPurchaseInQuality = checkPermi(['erp:purchase-in-quality:query'])
+const canQueryPurchaseSourceBatch = checkPermi(['erp:purchase-source-batch:query'])
 const canCreatePurchaseInQuality = checkPermi(['erp:purchase-in-quality:create'])
 const message = useMessage()
 const { t } = useI18n()
@@ -753,6 +759,7 @@ const batchEditDrawerRef = ref()
 const submitDialogRef = ref()
 const stockExecuteDialogRef = ref()
 const printDialogRef = ref()
+const sourceBatchTraceDrawerRef = ref()
 const currentUserId = computed(() => String(userStore.getUser.id || ''))
 const isCompactLayout = computed(() => width.value < 1180)
 const canRetryList = computed(() => listLoadFailed.value && !loading.value)
@@ -1025,7 +1032,12 @@ const getOverflowActionDescriptors = (row: PurchaseInVO): PurchaseInActionDescri
   const inlineActionKeys = new Set(getInlineActionDescriptors(row).map((item) => item.key))
   const actions: PurchaseInActionDescriptor[] = []
   getPurchaseInMainControlActions(row)
-    .filter((action) => !inlineActionKeys.has(action.key))
+    .filter((action) => {
+      if (action.key === 'traceBatch' && !canQueryPurchaseSourceBatch) {
+        return false
+      }
+      return !inlineActionKeys.has(action.key)
+    })
     .forEach((action) =>
       actions.push({
         key: action.key,
@@ -1294,6 +1306,8 @@ const handleMainControlAction = (command: PurchaseInMainControlActionKey, row: P
       message.warning('当前采购入库缺少关联订单')
     } else if (action?.reason === 'missing-stock-context') {
       message.warning('缺少库存上下文')
+    } else if (action?.reason === 'missing-source-batch') {
+      message.warning('缺少采购来源批次')
     } else {
       message.warning('缺少库存流水上下文')
     }
@@ -1326,18 +1340,11 @@ const handleMainControlAction = (command: PurchaseInMainControlActionKey, row: P
     return
   }
 
-  if (command === 'traceBatch' && stockContext) {
-    push({
-      path: '/scm/stock',
-      query: {
-        productId: String(stockContext.productId),
-        warehouseId: String(stockContext.warehouseId),
-        batchNo: stockContext.batchNo,
-        openAction: 'batch-trace',
-        returnFrom: 'purchase-in',
-        purchaseInId: row.id ? String(row.id) : undefined
-      }
-    })
+  if (command === 'traceBatch') {
+    const sourceBatchId = getPurchaseInPrimarySourceBatchId(row)
+    if (sourceBatchId) {
+      sourceBatchTraceDrawerRef.value?.open(sourceBatchId)
+    }
     return
   }
 

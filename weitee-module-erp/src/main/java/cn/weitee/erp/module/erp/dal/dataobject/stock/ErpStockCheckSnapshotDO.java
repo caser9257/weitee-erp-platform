@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  *
  * 记录盘点时点的库存账面数据，用于差异分析
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @TableName("erp_stock_check_snapshot")
 @KeySequence("erp_stock_check_snapshot_seq")
@@ -64,7 +64,7 @@ public class ErpStockCheckSnapshotDO extends BaseDO {
     private BigDecimal bookAmount;
 
     /**
-     * 快照时加权平均单价
+     * 快照时加权平均单浠?
      */
     private BigDecimal averageCost;
 

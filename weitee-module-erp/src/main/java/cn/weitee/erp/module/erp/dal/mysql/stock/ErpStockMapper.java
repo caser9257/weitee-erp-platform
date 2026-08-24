@@ -62,6 +62,30 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
         return update(null, updateWrapper);
     }
 
+    default int updateAvailableCountIncrement(Long id, BigDecimal count, boolean negativeEnable) {
+        LambdaUpdateWrapper<ErpStockDO> w = new LambdaUpdateWrapper<ErpStockDO>().eq(ErpStockDO::getId, id);
+        if (count.compareTo(BigDecimal.ZERO) > 0) {
+            w.setSql("available_count = available_count + " + count);
+        } else if (count.compareTo(BigDecimal.ZERO) < 0) {
+            if (!negativeEnable) {
+                w.ge(ErpStockDO::getAvailableCount, count.abs());
+            }
+            w.setSql("available_count = available_count - " + count.abs());
+        }
+        return update(null, w);
+    }
+
+    default int updateQualityHoldCountIncrement(Long id, BigDecimal count) {
+        LambdaUpdateWrapper<ErpStockDO> w = new LambdaUpdateWrapper<ErpStockDO>().eq(ErpStockDO::getId, id);
+        if (count.compareTo(BigDecimal.ZERO) > 0) {
+            w.setSql("quality_hold_count = quality_hold_count + " + count);
+        } else {
+            w.ge(ErpStockDO::getQualityHoldCount, count.abs());
+            w.setSql("quality_hold_count = quality_hold_count - " + count.abs());
+        }
+        return update(null, w);
+    }
+
     default BigDecimal selectSumByProductId(Long productId) {
         // SQL sum 查询
         List<Map<String, Object>> result = selectMaps(new QueryWrapper<ErpStockDO>()
@@ -117,6 +141,38 @@ public interface ErpStockMapper extends BaseMapperX<ErpStockDO> {
                     BigDecimal.valueOf(MapUtil.getDouble(row, "sum_count", 0D)));
         }
         return stockCountMap;
+    }
+
+    /**
+     * 批量查询产品库存（基于产品ID + 仓库ID）
+     *
+     * @param productIds 产品编号集合
+     * @param warehouseId 仓库编号
+     * @return 产品库存列表
+     */
+    default List<ErpStockDO> selectListByProductIdsAndWarehouseId(Collection<Long> productIds, Long warehouseId) {
+        if (CollUtil.isEmpty(productIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapperX<ErpStockDO>()
+                .in(ErpStockDO::getProductId, productIds)
+                .eq(ErpStockDO::getWarehouseId, warehouseId));
+    }
+
+    /**
+     * 批量查询产品库存（基于产品ID + 仓库ID列表）
+     *
+     * @param productId 产品编号
+     * @param warehouseIds 仓库编号集合
+     * @return 产品库存列表
+     */
+    default List<ErpStockDO> selectListByProductIdAndWarehouseIds(Long productId, Collection<Long> warehouseIds) {
+        if (CollUtil.isEmpty(warehouseIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapperX<ErpStockDO>()
+                .eq(ErpStockDO::getProductId, productId)
+                .in(ErpStockDO::getWarehouseId, warehouseIds));
     }
 
 }

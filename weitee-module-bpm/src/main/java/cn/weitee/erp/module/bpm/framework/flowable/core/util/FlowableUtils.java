@@ -1,8 +1,13 @@
 package cn.weitee.erp.module.bpm.framework.flowable.core.util;
 
 import cn.hutool.core.map.MapUtil;
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.spring.SpringUtil;
+import cn.hutool.json.JSONArray;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import cn.weitee.erp.framework.common.core.KeyValue;
 import cn.weitee.erp.framework.common.util.json.JsonUtils;
 import cn.weitee.erp.framework.security.core.LoginUser;
@@ -23,14 +28,13 @@ import org.flowable.engine.impl.util.CommandContextUtil;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.TaskInfo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
-
-import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 
 /**
  * Flowable 相关的工具方法
@@ -215,34 +219,72 @@ public class FlowableUtils {
             return null;
         }
 
-        // 解析表单配置
-        Map<String, BpmFormFieldVO> formFieldsMap = new HashMap<>();
-        processDefinitionInfo.getFormFields().forEach(formFieldStr -> {
-            BpmFormFieldVO formField = JsonUtils.parseObject(formFieldStr, BpmFormFieldVO.class);
-            if (formField != null) {
-                formFieldsMap.put(formField.getField(), formField);
-            }
-        });
+        // 递归扁平化表单配置，按表单顺序收集真实字段（含栅格/分组布局内的嵌套字段），跳过展示类组件
+        List<BpmFormFieldVO> formFields = flattenFormFields(processDefinitionInfo.getFormFields());
 
         // 情况一：当自定义了摘要
         if (ObjectUtil.isNotNull(processDefinitionInfo.getSummarySetting())
                 && Boolean.TRUE.equals(processDefinitionInfo.getSummarySetting().getEnable())) {
-            return convertList(processDefinitionInfo.getSummarySetting().getSummary(), item -> {
-                BpmFormFieldVO formField = formFieldsMap.get(item);
+            List<KeyValue<String, String>> summary = new ArrayList<>();
+            for (String item : processDefinitionInfo.getSummarySetting().getSummary()) {
+                BpmFormFieldVO formField = formFields.stream()
+                        .filter(field -> field.getField().equals(item))
+                        .findFirst()
+                        .orElse(null);
                 if (formField != null) {
-                    return new KeyValue<String, String>(formField.getTitle(),
-                            processVariables.getOrDefault(item, "").toString());
+                    summary.add(new KeyValue<>(formField.getTitle(),
+                            processVariables.getOrDefault(item, "").toString()));
                 }
-                return null;
-            });
+            }
+            return summary;
         }
 
-        // 情况二：默认摘要展示前三个表单字段
-        return formFieldsMap.entrySet().stream()
+        // 情况二：默认摘要展示前三个真实表单字段（按表单配置顺序）
+        return formFields.stream()
                 .limit(3)
-                .map(entry -> new KeyValue<>(entry.getValue().getTitle(),
-                        MapUtil.getStr(processVariables, entry.getValue().getField(), "")))
+                .map(field -> new KeyValue<>(field.getTitle(),
+                        MapUtil.getStr(processVariables, field.getField(), "")))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 递归扁平化表单字段配置
+     *
+     * form-create 的表单配置中，字段可能嵌套在栅格布局（elRow/elCol）、分组（elCard）等容器内；
+     * 展示类组件（分割线、文字、标签）的 children 为字符串数组，无 field 属性，应被跳过。
+     * 按出现顺序收集，保证默认摘要的前三个字段与表单顺序一致。
+     */
+    private static List<BpmFormFieldVO> flattenFormFields(List<String> formFields) {
+        List<BpmFormFieldVO> fields = new ArrayList<>();
+        if (CollUtil.isEmpty(formFields)) {
+            return fields;
+        }
+        for (String formFieldStr : formFields) {
+            collectFormFields(JSONUtil.parseObj(formFieldStr), fields);
+        }
+        return fields;
+    }
+
+    private static void collectFormFields(JSONObject node, List<BpmFormFieldVO> fields) {
+        if (node == null) {
+            return;
+        }
+        String field = node.getStr("field");
+        String title = node.getStr("title");
+        if (StrUtil.isNotBlank(field) && StrUtil.isNotBlank(title)) {
+            fields.add(new BpmFormFieldVO()
+                    .setType(node.getStr("type"))
+                    .setField(field)
+                    .setTitle(title));
+        }
+        JSONArray children = node.getJSONArray("children");
+        if (children != null) {
+            for (Object child : children) {
+                if (child instanceof JSONObject) {
+                    collectFormFields((JSONObject) child, fields);
+                }
+            }
+        }
     }
 
     // ========== Task 相关的工具方法 ==========

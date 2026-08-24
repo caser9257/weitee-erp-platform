@@ -18,6 +18,7 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherEntryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceVoucherMapper;
 import cn.weitee.erp.module.erp.enums.ErpFinanceVoucherStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -51,6 +52,8 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
     private ErpFinanceLedgerService financeLedgerService;
     @Resource
     private ErpFinancePeriodService financePeriodService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -72,19 +75,43 @@ public class ErpFinanceGeneralLedgerServiceImpl implements ErpFinanceGeneralLedg
 
     @Override
     public PageResult<ErpFinanceSubjectBalanceDO> getSubjectBalancePage(ErpFinanceSubjectBalancePageReqVO reqVO) {
+        if (financeDataPermissionService != null
+                && !financeDataPermissionService.canAccessLedger(reqVO.getLedgerId())) {
+            return PageResult.empty(0L);
+        }
         financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
+        FinancePermissionScope.Scope<String> subjectScope = financeDataPermissionService.getPermissionScope()
+                .subjectScopesByLedger().getOrDefault(reqVO.getLedgerId(), FinancePermissionScope.Scope.all());
+        if (subjectScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return PageResult.empty(0L);
+        }
+        if (subjectScope.mode() == FinancePermissionScope.ScopeMode.LIMITED) {
+            return erpFinanceSubjectBalanceMapper.selectPageBySubjectCodes(reqVO, subjectScope.values());
+        }
         return erpFinanceSubjectBalanceMapper.selectPage(reqVO);
     }
 
     @Override
     public ErpFinanceGeneralLedgerDetailRespVO getGeneralLedgerDetail(ErpFinanceGeneralLedgerDetailReqVO reqVO) {
+        if (financeDataPermissionService != null
+                && (!financeDataPermissionService.canAccessLedger(reqVO.getLedgerId())
+                || !financeDataPermissionService.canAccessSubject(reqVO.getLedgerId(), reqVO.getSubjectCode()))) {
+            return null;
+        }
         ErpFinanceLedgerDO ledger = financeLedgerService.validateFinanceLedger(reqVO.getLedgerId());
         ErpFinancePeriodDO period = validatePeriod(reqVO.getLedgerId(), reqVO.getPeriodId());
         ErpFinanceSubjectBalanceDO balance = erpFinanceSubjectBalanceMapper.selectByLedgerIdAndPeriodIdAndSubjectCode(
                 reqVO.getLedgerId(), reqVO.getPeriodId(), reqVO.getSubjectCode());
-        List<ErpFinanceVoucherDO> voucherList = erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodId(
-                reqVO.getLedgerId(), reqVO.getPeriodId());
+        FinancePermissionScope.Scope<Long> deptScope = financeDataPermissionService == null
+                ? FinancePermissionScope.Scope.all() : financeDataPermissionService.getPermissionScope().deptScope();
+        if (deptScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return null;
+        }
+        List<ErpFinanceVoucherDO> voucherList = deptScope.mode() == FinancePermissionScope.ScopeMode.LIMITED
+                ? erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodIdAndDeptIds(
+                reqVO.getLedgerId(), reqVO.getPeriodId(), deptScope.values())
+                : erpFinanceVoucherMapper.selectPostedListByLedgerIdAndPeriodId(reqVO.getLedgerId(), reqVO.getPeriodId());
         List<LedgerEntryRow> rows = buildLedgerEntryRows(voucherList, reqVO.getSubjectCode());
 
         BalanceSnapshot openingSnapshot = new BalanceSnapshot(

@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 文件权限 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface FilePermissionService {
 
@@ -30,7 +30,7 @@ public interface FilePermissionService {
     void revokePermission(Long fileId, String grantType, Long grantTargetId);
 
     /**
-     * 获取文件的权限列表
+     * 获取文件的权限列琛?
      */
     List<FilePermissionDO> getFilePermissions(Long fileId);
 
@@ -40,17 +40,17 @@ public interface FilePermissionService {
      * @param fileId     文件ID
      * @param userId     用户ID
      * @param permission 权限类型
-     * @return 是否有权限
+     * @return 是否有权闄?
      */
     boolean hasPermission(Long fileId, Long userId, String permission);
 
     /**
-     * 获取用户对指定文件的所有权限
+     * 获取用户对指定文件的所有权闄?
      */
     List<String> getUserPermissions(Long fileId, Long userId, List<Long> roleIds, Long deptId);
 
     /**
-     * 删除文件的所有权限
+     * 删除文件的所有权闄?
      */
     void deleteFilePermissions(Long fileId);
 

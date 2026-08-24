@@ -8,6 +8,8 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.ledger.ErpFinanceLed
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceLedgerMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePeriodMapper;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -82,6 +84,9 @@ public class ErpFinanceLedgerServiceImpl implements ErpFinanceLedgerService {
 
     @Override
     public ErpFinanceLedgerDO getFinanceLedger(Long id) {
+        if (!isCurrentLedgerVisible(id)) {
+            return null;
+        }
         return erpFinanceLedgerMapper.selectById(id);
     }
 
@@ -110,17 +115,61 @@ public class ErpFinanceLedgerServiceImpl implements ErpFinanceLedgerService {
 
     @Override
     public List<ErpFinanceLedgerDO> getFinanceLedgerListByStatus(Integer status) {
+        Collection<Long> visibleLedgerIds = getCurrentVisibleLedgerIds();
+        if (visibleLedgerIds != null) {
+            if (visibleLedgerIds.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return erpFinanceLedgerMapper.selectListByStatusAndIds(status, visibleLedgerIds);
+        }
         return erpFinanceLedgerMapper.selectListByStatus(status);
     }
 
     @Override
     public List<ErpFinanceLedgerDO> getFinanceLedgerList(Collection<Long> ids) {
+        Collection<Long> visibleLedgerIds = getCurrentVisibleLedgerIds();
+        if (visibleLedgerIds != null) {
+            if (visibleLedgerIds.isEmpty() || ids == null || ids.isEmpty()) {
+                return Collections.emptyList();
+            }
+            ids = ids.stream().filter(visibleLedgerIds::contains).toList();
+            if (ids.isEmpty()) {
+                return Collections.emptyList();
+            }
+        }
         return erpFinanceLedgerMapper.selectByIds(ids);
     }
 
     @Override
     public PageResult<ErpFinanceLedgerDO> getFinanceLedgerPage(ErpFinanceLedgerPageReqVO pageReqVO) {
+        Collection<Long> visibleLedgerIds = getCurrentVisibleLedgerIds();
+        if (visibleLedgerIds != null) {
+            if (visibleLedgerIds.isEmpty()) {
+                return PageResult.empty(0L);
+            }
+            return erpFinanceLedgerMapper.selectPageByVisibleLedgerIds(pageReqVO, visibleLedgerIds);
+        }
         return erpFinanceLedgerMapper.selectPage(pageReqVO);
+    }
+
+    private Collection<Long> getCurrentVisibleLedgerIds() {
+        if (FinanceDataPermissionContext.getPermissionScope() == null) {
+            return null;
+        }
+        FinancePermissionScope.Scope<Long> ledgerScope =
+                FinanceDataPermissionContext.getPermissionScope().ledgerScope();
+        if (ledgerScope.mode() == FinancePermissionScope.ScopeMode.ALL) {
+            return null;
+        }
+        if (ledgerScope.mode() == FinancePermissionScope.ScopeMode.NONE) {
+            return Collections.emptyList();
+        }
+        return ledgerScope.values();
+    }
+
+    private boolean isCurrentLedgerVisible(Long ledgerId) {
+        Collection<Long> visibleLedgerIds = getCurrentVisibleLedgerIds();
+        return visibleLedgerIds == null || ledgerId != null && visibleLedgerIds.contains(ledgerId);
     }
 
     private ErpFinanceLedgerDO validateFinanceLedgerExists(Long id) {

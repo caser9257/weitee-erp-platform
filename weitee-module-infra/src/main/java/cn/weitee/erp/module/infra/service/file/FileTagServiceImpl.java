@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 /**
  * 文件标签 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -58,7 +58,7 @@ public class FileTagServiceImpl implements FileTagService {
     @Override
     public void deleteFileTag(Long id) {
         fileTagMapper.deleteById(id);
-        // 同时删除该标签的所有关联关系
+        // 同时删除该标签的所有关联关绯?
         fileTagRelMapper.deleteByTagId(id);
     }
 

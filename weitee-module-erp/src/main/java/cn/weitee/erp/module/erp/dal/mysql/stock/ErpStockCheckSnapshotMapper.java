@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * ERP 盘点快照 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface ErpStockCheckSnapshotMapper extends BaseMapperX<ErpStockCheckSnapshotDO> {

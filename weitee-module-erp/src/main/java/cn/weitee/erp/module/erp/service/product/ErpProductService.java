@@ -51,6 +51,16 @@ public interface ErpProductService {
     List<ErpProductDO> validProductList(Collection<Long> ids);
 
     /**
+     * BPM 回调：更新物料审核状态
+     */
+    void updateProductAuditStatusByBpm(Long id, String processInstanceId, Integer status, String reason);
+
+    /**
+     * BPM 回调：撤回审核，回退为草稿
+     */
+    void rollbackProductAuditStatusToDraftByBpm(Long id, String processInstanceId, String reason);
+
+    /**
      * 获得产品
      *
      * @param id 编号
@@ -107,5 +117,7 @@ public interface ErpProductService {
      * @return 产品数量
      */
     Long getProductCountByUnitId(Long unitId);
+
+    List<ErpProductRespVO> getApprovedProductSimpleList();
 
 }

@@ -54,6 +54,40 @@ public class ErpFinanceLedgerRoleController {
         return success(true);
     }
 
+    @PostMapping("/set-role-depts")
+    @Operation(summary = "设置角色可访问的部门")
+    @PreAuthorize("@ss.hasPermission('erp:finance:ledger-role:update')")
+    public CommonResult<Boolean> setRoleDeptIds(@RequestParam("roleId") Long roleId,
+                                                @RequestParam("deptIds") List<Long> deptIds) {
+        ledgerRoleService.setRoleDeptIds(roleId, deptIds);
+        return success(true);
+    }
+
+    @GetMapping("/role-depts")
+    @Operation(summary = "获取角色可访问的部门")
+    @PreAuthorize("@ss.hasPermission('erp:finance:ledger-role:query')")
+    public CommonResult<List<Long>> getRoleDeptIds(@RequestParam("roleId") Long roleId) {
+        return success(ledgerRoleService.getRoleDeptIds(roleId));
+    }
+
+    @PostMapping("/set-role-subjects")
+    @Operation(summary = "设置角色在账簿下可访问的科目")
+    @PreAuthorize("@ss.hasPermission('erp:finance:ledger-role:update')")
+    public CommonResult<Boolean> setRoleSubjectCodes(@RequestParam("roleId") Long roleId,
+                                                      @RequestParam("ledgerId") Long ledgerId,
+                                                      @RequestParam("subjectCodes") List<String> subjectCodes) {
+        ledgerRoleService.setRoleSubjectCodes(roleId, ledgerId, subjectCodes);
+        return success(true);
+    }
+
+    @GetMapping("/role-subjects")
+    @Operation(summary = "获取角色在账簿下可访问的科目")
+    @PreAuthorize("@ss.hasPermission('erp:finance:ledger-role:query')")
+    public CommonResult<List<String>> getRoleSubjectCodes(@RequestParam("roleId") Long roleId,
+                                                          @RequestParam("ledgerId") Long ledgerId) {
+        return success(ledgerRoleService.getRoleSubjectCodes(roleId, ledgerId));
+    }
+
     @GetMapping("/visible-ledgers")
     @Operation(summary = "获取指定角色可见的账簿ID列表")
     @PreAuthorize("@ss.hasPermission('erp:finance:ledger-role:query')")

@@ -20,7 +20,7 @@ import static cn.weitee.erp.module.infra.enums.ErrorCodeConstants.FILE_VERSION_N
 /**
  * 文件版本 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -36,8 +36,14 @@ public class FileVersionServiceImpl implements FileVersionService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long saveFileVersion(Long fileId, String name, String url, Long size, String type, String description) {
-        // 获取当前最大版本号（使用 SELECT FOR UPDATE 防止并发竞争）
-        Integer maxVersion = fileVersionMapper.getMaxVersionForUpdate(fileId);
+        // 锁定主文件记录，防止并发版本号竞争（主文件记录在首次版本写入前已存在，保证锁生效）
+        FileDO file = fileMapper.selectOneForUpdate(new LambdaQueryWrapperX<FileDO>().eq(FileDO::getId, fileId));
+        if (file == null) {
+            throw exception(FILE_NOT_EXISTS);
+        }
+
+        // 获取当前最大版本号
+        Integer maxVersion = fileVersionMapper.getMaxVersion(fileId);
         int newVersion = (maxVersion == null ? 0 : maxVersion) + 1;
 
         FileVersionDO version = FileVersionDO.builder()
@@ -68,6 +74,13 @@ public class FileVersionServiceImpl implements FileVersionService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void rollbackToVersion(Long fileId, Integer version) {
+        // 锁定主文件记录，防止并发版本号竞争
+        FileDO lockedFile = fileMapper.selectOneForUpdate(
+                new LambdaQueryWrapperX<FileDO>().eq(FileDO::getId, fileId));
+        if (lockedFile == null) {
+            throw exception(FILE_NOT_EXISTS);
+        }
+
         // 1. 校验文件版本是否存在
         FileVersionDO fileVersion = fileVersionMapper.selectOne(
                 new LambdaQueryWrapperX<FileVersionDO>()
@@ -78,7 +91,7 @@ public class FileVersionServiceImpl implements FileVersionService {
             throw exception(FILE_VERSION_NOT_EXISTS);
         }
 
-        // 2. 查询主文件记录
+        // 2. 查询主文件记�?
         FileDO file = fileMapper.selectById(fileId);
         if (file == null) {
             throw exception(FILE_NOT_EXISTS);
@@ -92,7 +105,7 @@ public class FileVersionServiceImpl implements FileVersionService {
         fileMapper.updateById(file);
 
         // 4. 创建新的版本记录（标记为回滚操作）
-        Integer maxVersion = fileVersionMapper.getMaxVersionForUpdate(fileId);
+        Integer maxVersion = fileVersionMapper.getMaxVersion(fileId);
         int newVersion = (maxVersion == null ? 0 : maxVersion) + 1;
         FileVersionDO rollbackVersion = FileVersionDO.builder()
                 .fileId(fileId)
@@ -101,7 +114,7 @@ public class FileVersionServiceImpl implements FileVersionService {
                 .url(fileVersion.getUrl())
                 .size(fileVersion.getSize())
                 .type(fileVersion.getType())
-                .description("回滚到版本 " + version)
+                .description("回滚到版�?" + version)
                 .build();
         fileVersionMapper.insert(rollbackVersion);
 

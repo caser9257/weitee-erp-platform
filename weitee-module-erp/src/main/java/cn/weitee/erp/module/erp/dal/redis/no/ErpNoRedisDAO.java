@@ -91,6 +91,8 @@ public class ErpNoRedisDAO {
     public static final String PRODUCTION_INBOUND_NO_PREFIX = "ZZRK";
     public static final String PRODUCTION_ISSUE_VOUCHER_NO_PREFIX = "CKPZ";
     public static final String PRODUCTION_COST_ALLOCATION_NO_PREFIX = "CBFT";
+    public static final String PRODUCTION_REPORT_NO_PREFIX = "BGDG";
+    public static final String PRODUCTION_STEP_QUALITY_NO_PREFIX = "GXZJ";
     public static final String OUTSOURCE_ORDER_NO_PREFIX = "WWDD";
     public static final String OUTSOURCE_ISSUE_NO_PREFIX = "WWFL";
     public static final String OUTSOURCE_RETURN_NO_PREFIX = "WWTL";

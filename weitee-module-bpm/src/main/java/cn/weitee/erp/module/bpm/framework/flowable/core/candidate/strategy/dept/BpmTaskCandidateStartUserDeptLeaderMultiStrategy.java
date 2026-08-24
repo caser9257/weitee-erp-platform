@@ -44,16 +44,33 @@ public class BpmTaskCandidateStartUserDeptLeaderMultiStrategy extends AbstractBp
 
     @Override
     public Set<Long> calculateUsersByTask(DelegateExecution execution, String param) {
-        int level = Integer.parseInt(param); // 参数是部门的层级
-        // 获得流程发起人
-        ProcessInstance processInstance = processInstanceService.getProcessInstance(execution.getProcessInstanceId());
-        Long startUserId = NumberUtils.parseLong(processInstance.getStartUserId());
-        // 获取发起人的 multi 部门负责人
+        int level = Integer.parseInt(param);
+        // 从流程变量获取发起人（不依赖 processInstance 查询，兼容异步线程）
+        Long startUserId = resolveStartUserId(execution);
+        if (startUserId == null || startUserId == 0) {
+            return new HashSet<>();
+        }
         DeptRespDTO dept = super.getStartUserDept(startUserId);
         if (dept == null) {
             return new HashSet<>();
         }
         return super.getMultiLevelDeptLeaderIds(toList(dept.getId()), level);
+    }
+
+    /**
+     * 解析发起人 ID：优先从 processInstance 获取，失败时从流程变量备用取值
+     */
+    private Long resolveStartUserId(DelegateExecution execution) {
+        try {
+            ProcessInstance processInstance = processInstanceService.getProcessInstance(execution.getProcessInstanceId());
+            if (processInstance != null) {
+                return NumberUtils.parseLong(processInstance.getStartUserId());
+            }
+        } catch (Exception e) {
+            // 异步线程中获取 processInstance 可能失败，降级到从流程变量取
+        }
+        Object var = execution.getVariable("startUserId");
+        return var != null ? NumberUtils.parseLong(String.valueOf(var)) : null;
     }
 
     @Override

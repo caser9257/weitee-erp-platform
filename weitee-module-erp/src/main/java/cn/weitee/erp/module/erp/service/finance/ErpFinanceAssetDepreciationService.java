@@ -14,5 +14,7 @@ public interface ErpFinanceAssetDepreciationService {
 
     ErpFinanceAssetDepreciationDO getFinanceAssetDepreciation(Long id);
 
+    void bindVoucher(Long id, Long voucherId);
+
     PageResult<ErpFinanceAssetDepreciationDO> getFinanceAssetDepreciationPage(ErpFinanceAssetDepreciationPageReqVO pageReqVO);
 }

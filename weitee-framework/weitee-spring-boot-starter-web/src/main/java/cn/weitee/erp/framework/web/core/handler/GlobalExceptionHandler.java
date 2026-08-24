@@ -23,6 +23,8 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.Assert;
@@ -50,9 +52,15 @@ import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeCons
 /**
  * 全局异常处理器，将 Exception 翻译成 CommonResult + 对应的异常编号
  *
+ * <p>注意：必须声明 {@link Order#HIGHEST_PRECEDENCE} 最高优先级，
+ * 否则会被第三方依赖（如积木报表 jimureport 自带的 {@code JimuGlobalExceptionHandler}）
+ * 的同级 {@code @RestControllerAdvice} 抢占，导致 AccessDeniedException 等异常
+ * 被第三方处理器捕获后返回 code=500、无业务消息（而非本框架的 403 + 明确消息）。
+ *
  * @author WeTai
  */
 @RestControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 @AllArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {

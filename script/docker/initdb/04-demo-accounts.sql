@@ -58,6 +58,55 @@ WHERE u.username = 'finance01'
       WHERE ur.user_id = u.id AND ur.role_id = r.role_id AND ur.deleted = b'0'
   );
 
+-- The finance supervisor needs the voucher state-transition actions used by
+-- the acceptance flow. Keep this grant separate from the finance accountant
+-- and all supply-chain roles.
+SET @experience_finance_voucher_menu_id := (
+    SELECT page.id
+    FROM system_menu page
+    WHERE page.component = 'erp/finance/voucher/index'
+      AND page.deleted = b'0'
+      AND EXISTS (
+          SELECT 1
+          FROM system_menu button
+          WHERE button.parent_id = page.id
+            AND button.permission = 'erp:finance-voucher:query'
+            AND button.deleted = b'0'
+      )
+    ORDER BY page.id DESC
+    LIMIT 1
+);
+
+SET @experience_next_menu_id := @experience_next_menu_id + 1;
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0xE587ADE8AF81E69BB4E696B0,
+       'erp:finance-voucher:update', 3, 2, @experience_finance_voucher_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_finance_voucher_menu_id IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM system_menu
+      WHERE permission = 'erp:finance-voucher:update' AND deleted = b'0'
+  );
+
+SET @experience_finance_voucher_update_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE permission = 'erp:finance-voucher:update' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT 940002, @experience_finance_voucher_update_menu_id, 'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_finance_voucher_update_menu_id IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM system_role_menu
+      WHERE role_id = 940002
+        AND menu_id = @experience_finance_voucher_update_menu_id
+        AND deleted = b'0'
+  );
+
 -- Ensure the MES production-order page and its backend permission points exist
 -- in a clean experience database. The backup may predate the MES menu seed.
 SET @experience_next_menu_id := (SELECT IFNULL(MAX(id), 0) + 1 FROM system_menu);
@@ -390,6 +439,65 @@ SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE588
 WHERE @experience_bom_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:delete' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
 
+-- The stock BPM endpoints are executable experience workflows. Older backups
+-- contain the page buttons for direct status updates only, so add the missing
+-- submit and withdraw permissions under their existing pages.
+SET @experience_stock_in_menu_id := (
+    SELECT id FROM system_menu
+    WHERE component = 'erp/stock/in/index' AND deleted = b'0'
+    ORDER BY id LIMIT 1
+);
+SET @experience_stock_out_menu_id := (
+    SELECT id FROM system_menu
+    WHERE component = 'erp/stock/out/index' AND deleted = b'0'
+    ORDER BY id LIMIT 1
+);
+SET @experience_iqc_menu_id := (
+    SELECT id FROM system_menu
+    WHERE component = 'qms/iqc/IqcEntry' AND deleted = b'0'
+    ORDER BY id LIMIT 1
+);
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE68F90E4BAA4E5AEA1E689B9,
+       'erp:stock-in:submit', 3, 7, @experience_stock_in_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_stock_in_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-in:submit' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE692A4E59B9EE5AEA1E689B9,
+       'erp:stock-in:cancel-approval', 3, 8, @experience_stock_in_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_stock_in_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-in:cancel-approval' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE68F90E4BAA4E5AEA1E689B9,
+       'erp:stock-out:submit', 3, 7, @experience_stock_out_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_stock_out_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-out:submit' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE692A4E59B9EE5AEA1E689B9,
+       'erp:stock-out:cancel-approval', 3, 8, @experience_stock_out_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_stock_out_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-out:cancel-approval' AND deleted = b'0');
+
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE8B4A8E6A380E98080E8B4A7,
+       'erp:purchase-in-quality:update', 3, 7, @experience_iqc_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_iqc_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:purchase-in-quality:update' AND deleted = b'0');
+
 -- The supply-chain experience account receives the core business trees and a
 -- small manufacturing action allowlist. Finance, system administration,
 -- user/permission management, and research/engineering trees are excluded.
@@ -567,3 +675,51 @@ LEFT JOIN erp_finance_period period
       AND period.period_sort = YEAR(CURDATE()) * 100 + MONTH(CURDATE())
       AND period.deleted = b'0'
 WHERE period.id IS NULL;
+
+-- Supply-chain approvers need only their own workflow inbox and task action.
+-- Keep this separate from the scm01 operator role so an applicant cannot
+-- approve its own stock and manufacturing documents.
+SET @experience_bpm_todo_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'bpm/task/todo/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+SET @experience_next_menu_id := (SELECT IFNULL(MAX(id), 0) + 1 FROM system_menu);
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0xE5BE85E58AA1E5AEA1, 'bpm:task:query', 2, 10, 3000,
+       'task-todo', 'ep:checked', 'bpm/task/todo/index', 'BpmTaskTodo', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bpm_todo_menu_id IS NULL
+  AND EXISTS (SELECT 1 FROM system_menu WHERE id = 3000 AND deleted = b'0');
+
+SET @experience_bpm_todo_menu_id := (
+    SELECT id
+    FROM system_menu
+    WHERE component = 'bpm/task/todo/index' AND deleted = b'0'
+    ORDER BY id
+    LIMIT 1
+);
+SET @experience_next_menu_id := @experience_next_menu_id + 1;
+INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
+                         status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
+SELECT @experience_next_menu_id, _utf8mb4 0xE5AEA1E689B9, 'bpm:task:update', 3, 1, @experience_bpm_todo_menu_id,
+       '', '', '', '', 0, b'1', b'1', b'1',
+       'tester', NOW(), 'tester', NOW(), b'0'
+WHERE @experience_bpm_todo_menu_id IS NOT NULL
+  AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'bpm:task:update' AND deleted = b'0');
+
+INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
+SELECT 920003, menu.id, 'tester', NOW(), 'tester', NOW(), b'0'
+FROM system_menu menu
+WHERE menu.permission IN ('bpm:task:query', 'bpm:task:update')
+  AND menu.deleted = b'0'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM system_role_menu role_menu
+      WHERE role_menu.role_id = 920003
+        AND role_menu.menu_id = menu.id
+        AND role_menu.deleted = b'0'
+  );

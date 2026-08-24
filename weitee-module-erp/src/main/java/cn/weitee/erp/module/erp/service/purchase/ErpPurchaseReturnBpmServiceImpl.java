@@ -87,6 +87,7 @@ public class ErpPurchaseReturnBpmServiceImpl implements ErpPurchaseReturnBpmServ
                 // 不在此处清理 processInstanceId，由 ResultHandler.onCancel() 统一处理状态回写
             } catch (Exception e) {
                 log.warn("[cancelPurchaseReturnApproval] BPM 撤回失败，purchaseReturnId={}", purchaseReturnId, e);
+                throw e;
             }
         });
     }

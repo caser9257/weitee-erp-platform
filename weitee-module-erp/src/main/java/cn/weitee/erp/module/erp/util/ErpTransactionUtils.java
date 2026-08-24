@@ -6,7 +6,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 /**
  * ERP 事务工具类
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public class ErpTransactionUtils {
 

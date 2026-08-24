@@ -3,11 +3,17 @@ package cn.weitee.erp.module.erp.dal.mysql.finance;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.weitee.erp.framework.mybatis.core.util.MyBatisUtils;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.voucher.ErpFinanceVoucherTemplatePageReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceVoucherTemplateDO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Mapper
 public interface ErpFinanceVoucherTemplateMapper extends BaseMapperX<ErpFinanceVoucherTemplateDO> {
@@ -21,6 +27,30 @@ public interface ErpFinanceVoucherTemplateMapper extends BaseMapperX<ErpFinanceV
                 .eqIfPresent(ErpFinanceVoucherTemplateDO::getAutoGenerate, reqVO.getAutoGenerate())
                 .orderByDesc(ErpFinanceVoucherTemplateDO::getId));
     }
+
+    default PageResult<ErpFinanceVoucherTemplateDO> selectPageByVisibleLedgerIds(ErpFinanceVoucherTemplatePageReqVO reqVO, List<Long> ledgerIds) {
+        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceVoucherTemplateDO>()
+                .in(ErpFinanceVoucherTemplateDO::getLedgerId, ledgerIds)
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getLedgerId, reqVO.getLedgerId())
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getBizType, reqVO.getBizType())
+                .likeIfPresent(ErpFinanceVoucherTemplateDO::getName, reqVO.getName())
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getStatus, reqVO.getStatus())
+                .eqIfPresent(ErpFinanceVoucherTemplateDO::getAutoGenerate, reqVO.getAutoGenerate())
+                .orderByDesc(ErpFinanceVoucherTemplateDO::getId));
+    }
+
+    default PageResult<ErpFinanceVoucherTemplateDO> selectPageByVisibleLedgerIdsAndSubjectCodes(
+            ErpFinanceVoucherTemplatePageReqVO reqVO, Collection<Long> ledgerIds,
+            Map<Long, Set<String>> subjectCodesByLedger) {
+        Page<ErpFinanceVoucherTemplateDO> page = MyBatisUtils.buildPage(reqVO);
+        selectPageByVisibleLedgerIdsAndSubjectCodes(page, reqVO, ledgerIds, subjectCodesByLedger);
+        return new PageResult<>(page.getRecords(), page.getTotal());
+    }
+
+    Page<ErpFinanceVoucherTemplateDO> selectPageByVisibleLedgerIdsAndSubjectCodes(
+            Page<ErpFinanceVoucherTemplateDO> page, @Param("reqVO") ErpFinanceVoucherTemplatePageReqVO reqVO,
+            @Param("ledgerIds") Collection<Long> ledgerIds,
+            @Param("subjectCodesByLedger") Map<Long, Set<String>> subjectCodesByLedger);
 
     default List<ErpFinanceVoucherTemplateDO> selectListByLedgerIdAndBizType(Long ledgerId, Integer bizType) {
         return selectList(new LambdaQueryWrapperX<ErpFinanceVoucherTemplateDO>()

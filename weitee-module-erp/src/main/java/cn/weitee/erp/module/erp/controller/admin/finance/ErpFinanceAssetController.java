@@ -27,6 +27,7 @@ import cn.weitee.erp.module.erp.enums.ErpResearchExpenseCategoryEnum;
 import cn.weitee.erp.module.erp.enums.ErpFinanceAssetSourceTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceAssetService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermission;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceExpenseService;
 import cn.weitee.erp.module.erp.service.project.ErpProjectService;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseInService;
@@ -65,6 +66,7 @@ import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 @RestController
 @RequestMapping("/erp/finance-asset")
 @Validated
+@FinanceDataPermission
 public class ErpFinanceAssetController {
 
     @Resource

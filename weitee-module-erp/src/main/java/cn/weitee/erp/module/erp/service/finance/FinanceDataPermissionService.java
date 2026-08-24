@@ -1,5 +1,7 @@
 package cn.weitee.erp.module.erp.service.finance;
 
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinancePermissionScope;
+
 import java.util.List;
 
 /**
@@ -7,6 +9,20 @@ import java.util.List;
  * 用于控制用户对财务账簿的访问权限
  */
 public interface FinanceDataPermissionService {
+
+    /**
+     * 获取当前用户的完整财务权限范围。
+     */
+    FinancePermissionScope getPermissionScope();
+
+    /**
+     * 获取指定用户的完整财务权限范围。
+     */
+    FinancePermissionScope getPermissionScope(Long userId);
+
+    boolean canAccessDept(Long deptId);
+
+    boolean canAccessSubject(Long ledgerId, String subjectCode);
 
     /**
      * 获取当前用户可见的账簿ID列表
@@ -30,6 +46,16 @@ public interface FinanceDataPermissionService {
      * @return 是否可访问
      */
     boolean canAccessLedger(Long ledgerId);
+
+    /**
+     * 检查指定用户是否可以访问指定账簿
+     */
+    boolean canAccessLedger(Long userId, Long ledgerId);
+
+    /**
+     * 检查指定用户是否可以访问双账套
+     */
+    boolean canAccessDualLedger(Long userId, Integer bizType);
 
     /**
      * 检查当前用户是否为审计角色

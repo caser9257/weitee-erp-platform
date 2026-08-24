@@ -25,7 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import java.io.IOException;
 
-import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.FORBIDDEN;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
@@ -49,7 +49,9 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:query')")
     public CommonResult<PageResult<ErpFinanceDualLedgerResultRespVO>> getDualLedgerResultPage(
             @Valid ErpFinanceDualLedgerResultPageReqVO pageReqVO) {
-        validateDualLedgerAccess();
+        if (!canAccessDualLedger(pageReqVO.getBizType())) {
+            return success(PageResult.empty(0L));
+        }
         return success(dualLedgerResultService.getDualLedgerResultPage(pageReqVO));
     }
 
@@ -60,7 +62,9 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:query')")
     public CommonResult<ErpFinanceDualLedgerResultRespVO> getDualLedgerResult(@RequestParam("bizType") Integer bizType,
                                                                                @RequestParam("bizId") Long bizId) {
-        validateDualLedgerAccess();
+        if (!canAccessDualLedger(bizType)) {
+            return success(null);
+        }
         return success(dualLedgerResultService.getDualLedgerResult(bizType, bizId));
     }
 
@@ -69,7 +73,7 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:recompute')")
     public CommonResult<ErpFinanceDualLedgerResultRespVO> recomputeDualLedgerResult(
             @Valid @RequestBody ErpFinanceDualLedgerRecomputeReqVO reqVO) {
-        validateDualLedgerAccess();
+        requireDualLedgerAccessForWrite(reqVO.getBizType());
         return success(dualLedgerResultService.recomputeDualLedgerResult(getLoginUserId(), reqVO));
     }
 
@@ -78,7 +82,7 @@ public class ErpFinanceDualLedgerResultController {
     @Parameter(name = "bizType", required = true, description = "业务类型")
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:recompute')")
     public CommonResult<Integer> recomputeDualLedgerVouchers(@RequestParam("bizType") Integer bizType) {
-        validateDualLedgerAccess();
+        requireDualLedgerAccessForWrite(bizType);
         return success(dualWriteService.recomputeDualLedgerVouchers(bizType));
     }
 
@@ -89,7 +93,7 @@ public class ErpFinanceDualLedgerResultController {
     @PreAuthorize("@ss.hasPermission('erp:finance-dual-ledger-result:recompute')")
     public CommonResult<Boolean> recomputeByBizId(@RequestParam("bizType") Integer bizType,
                                                   @RequestParam("bizId") Long bizId) {
-        validateDualLedgerAccess();
+        requireDualLedgerAccessForWrite(bizType);
         return success(dualWriteService.recomputeByBizId(bizType, bizId));
     }
 
@@ -103,13 +107,17 @@ public class ErpFinanceDualLedgerResultController {
                                    @RequestParam("bizId") Long bizId,
                                    @RequestParam("ledgerSide") String ledgerSide,
                                    HttpServletResponse response) throws IOException {
-        validateDualLedgerAccess();
+        requireDualLedgerAccessForWrite(bizType);
         dualLedgerResultService.exportSingleLedger(bizType, bizId, ledgerSide, response);
     }
 
-    private void validateDualLedgerAccess() {
-        if (financeDataPermissionService.isAuditRole()) {
-            throw exception(FORBIDDEN);
+    private boolean canAccessDualLedger(Integer bizType) {
+        return financeDataPermissionService.canAccessDualLedger(getLoginUserId(), bizType);
+    }
+
+    private void requireDualLedgerAccessForWrite(Integer bizType) {
+        if (!canAccessDualLedger(bizType)) {
+            throw exception(NOT_FOUND);
         }
     }
 }

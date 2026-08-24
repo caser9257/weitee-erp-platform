@@ -188,7 +188,7 @@ service.interceptors.response.use(
         return handleAuthorized()
       }
       ElNotification.error({ title: msg })
-      return Promise.reject('error')
+      return Promise.reject(new Error(msg))
     }
 
     return data

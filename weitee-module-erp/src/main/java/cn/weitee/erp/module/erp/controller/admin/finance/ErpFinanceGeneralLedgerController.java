@@ -16,6 +16,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceSubjectBalanceD
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceGeneralLedgerService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceLedgerService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinancePeriodService;
+import cn.weitee.erp.module.erp.service.finance.FinanceDataPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +32,8 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
+import static cn.weitee.erp.framework.common.exception.enums.GlobalErrorCodeConstants.NOT_FOUND;
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertList;
 
 @Tag(name = "管理后台 - 财务总账")
@@ -45,12 +48,17 @@ public class ErpFinanceGeneralLedgerController {
     private ErpFinanceLedgerService financeLedgerService;
     @Resource
     private ErpFinancePeriodService financePeriodService;
+    @Resource
+    private FinanceDataPermissionService financeDataPermissionService;
 
     @GetMapping("/subject-balance-page")
     @Operation(summary = "获得科目余额分页")
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
     public CommonResult<PageResult<ErpFinanceSubjectBalanceRespVO>> getSubjectBalancePage(
             @Valid ErpFinanceSubjectBalancePageReqVO reqVO) {
+        if (!financeDataPermissionService.canAccessLedger(reqVO.getLedgerId())) {
+            return success(PageResult.empty(0L));
+        }
         PageResult<ErpFinanceSubjectBalanceDO> pageResult = financeGeneralLedgerService.getSubjectBalancePage(reqVO);
         ErpFinanceLedgerDO ledger = financeLedgerService.getFinanceLedger(reqVO.getLedgerId());
         ErpFinancePeriodDO period = financePeriodService.getFinancePeriod(reqVO.getPeriodId());
@@ -68,6 +76,10 @@ public class ErpFinanceGeneralLedgerController {
     @PreAuthorize("@ss.hasAnyPermissions('erp:finance-report:query', 'erp:finance-voucher:query')")
     public CommonResult<ErpFinanceGeneralLedgerDetailRespVO> getGeneralLedgerDetail(
             @Valid ErpFinanceGeneralLedgerDetailReqVO reqVO) {
+        if (!financeDataPermissionService.canAccessLedger(reqVO.getLedgerId())
+                || !financeDataPermissionService.canAccessSubject(reqVO.getLedgerId(), reqVO.getSubjectCode())) {
+            return success(null);
+        }
         ErpFinanceGeneralLedgerDetailRespVO respVO = financeGeneralLedgerService.getGeneralLedgerDetail(reqVO);
         if (respVO != null && ObjectUtil.isEmpty(respVO.getItems())) {
             respVO.setItems(java.util.Collections.emptyList());
@@ -80,7 +92,14 @@ public class ErpFinanceGeneralLedgerController {
     @PreAuthorize("@ss.hasPermission('erp:finance-voucher:update')")
     public CommonResult<ErpFinanceGeneralLedgerRebuildRespVO> rebuildSubjectBalance(
             @Valid @RequestBody ErpFinanceGeneralLedgerRebuildReqVO reqVO) {
+        requireLedgerAccessForWrite(reqVO.getLedgerId());
         return success(financeGeneralLedgerService.rebuildSubjectBalance(reqVO));
+    }
+
+    private void requireLedgerAccessForWrite(Long ledgerId) {
+        if (!financeDataPermissionService.canAccessLedger(ledgerId)) {
+            throw exception(NOT_FOUND);
+        }
     }
 
 }

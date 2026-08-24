@@ -18,6 +18,7 @@ export type BomItemFormData = {
   unitId?: number
   usageQty?: number
   lossRate?: number
+  referenceDesignator?: string
   leadTimeDay?: number
   mrpEnableFlag?: boolean
   supplyOwner?: string
@@ -42,6 +43,7 @@ export function createEmptyBomItem(): BomItemFormData {
   return {
     mrpEnableFlag: true,
     supplyOwner: 'COMPANY',
+    referenceDesignator: '',
     remark: '',
     substitutes: []
   }
@@ -129,6 +131,8 @@ export function normalizeBomFormData(formData: BomFormData): BomFormData {
       ...item,
       remark: item.remark?.trim() || undefined,
       lossRate: item.lossRate === undefined || item.lossRate === null ? undefined : item.lossRate,
+      referenceDesignator:
+        item.referenceDesignator?.trim() || undefined,
       leadTimeDay:
         item.leadTimeDay === undefined || item.leadTimeDay === null ? undefined : item.leadTimeDay,
       mrpEnableFlag: item.mrpEnableFlag ?? true,
@@ -186,6 +190,7 @@ export function buildBomPayload(formData: BomFormData): BomPayload {
       unitId: item.unitId,
       usageQty: item.usageQty,
       lossRate: item.lossRate,
+      referenceDesignator: item.referenceDesignator,
       leadTimeDay: item.leadTimeDay,
       mrpEnableFlag: item.mrpEnableFlag,
       supplyOwner: item.supplyOwner,

@@ -84,8 +84,7 @@ export const DUAL_LEDGER_DIFF_SOURCE_TYPE_OPTIONS = [
 
 export const DUAL_LEDGER_DIFF_CALCULATION_TYPE_OPTIONS = [
   { label: '按比例分摊', value: 1 },
-  { label: '固定差额', value: 2 },
-  { label: '来源映射', value: 3 }
+  { label: '固定差额', value: 2 }
 ]
 
 export const FinanceDualLedgerDiffConfigApi = {

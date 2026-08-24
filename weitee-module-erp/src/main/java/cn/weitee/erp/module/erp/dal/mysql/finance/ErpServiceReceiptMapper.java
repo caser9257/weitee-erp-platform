@@ -8,9 +8,9 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpServiceReceiptDO;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 服务接收单 Mapper
+ * 鏈嶅姟鎺ユ敹鍗?Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface ErpServiceReceiptMapper extends BaseMapperX<ErpServiceReceiptDO> {

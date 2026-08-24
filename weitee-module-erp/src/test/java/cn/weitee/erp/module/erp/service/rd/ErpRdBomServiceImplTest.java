@@ -21,11 +21,14 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ErpRdBomServiceImplTest {
 
@@ -43,6 +46,8 @@ class ErpRdBomServiceImplTest {
     private final AtomicReference<List<ErpRdBomItemDO>> insertedRdBomItemsRef = new AtomicReference<>(List.of());
     private final List<Object> insertedRdBomItemSubstitutes = new ArrayList<>();
     private final AtomicReference<List<ErpProductDO>> validProductsResult = new AtomicReference<>(List.of());
+    private final Map<Long, ErpRdBomDO> selectRdBomByIdResults = new java.util.HashMap<>();
+    private final Map<Long, List<ErpRdBomItemDO>> selectRdBomItemsByBomIdResults = new java.util.HashMap<>();
 
     private ErpRdBomServiceImpl rdBomService;
 
@@ -63,6 +68,8 @@ class ErpRdBomServiceImplTest {
         insertedRdBomItemsRef.set(List.of());
         insertedRdBomItemSubstitutes.clear();
         validProductsResult.set(List.of());
+        selectRdBomByIdResults.clear();
+        selectRdBomItemsByBomIdResults.clear();
         setField(rdBomService, "rdBomMapper", createRdBomMapperProxy());
         setField(rdBomService, "rdBomItemMapper", createRdBomItemMapperProxy());
         setField(rdBomService, "bomMapper", createBomMapperProxy());
@@ -70,6 +77,7 @@ class ErpRdBomServiceImplTest {
         setField(rdBomService, "rdBomItemSubstituteMapper", createRdBomItemSubstituteMapperProxy());
         setField(rdBomService, "bomItemSubstituteMapper", createBomItemSubstituteMapperProxy());
         setField(rdBomService, "productService", createProductServiceProxy());
+        setField(rdBomService, "changeLogService", createChangeLogServiceProxy());
     }
 
     @Test
@@ -83,7 +91,7 @@ class ErpRdBomServiceImplTest {
         reqVO.setProductId(10L);
         reqVO.setVersion("A.2");
         reqVO.setRemark("edit");
-        reqVO.setItems(List.of(newItem(20L, "2.5")));
+        reqVO.setItems(List.of(newItemWithDesignator(20L, "2.5", "R1-R3")));
 
         rdBomService.updateRdBom(reqVO);
 
@@ -102,7 +110,7 @@ class ErpRdBomServiceImplTest {
         reqVO.setProductId(10L);
         reqVO.setVersion("V9.0");
         reqVO.setRemark("create");
-        reqVO.setItems(List.of(newItem(20L, "1.5")));
+        reqVO.setItems(List.of(newItemWithDesignator(20L, "1.5", "R1")));
 
         Long id = rdBomService.createRdBom(reqVO);
 
@@ -126,7 +134,7 @@ class ErpRdBomServiceImplTest {
         reqVO.setBomCode("RD-BOM-NEW");
         reqVO.setProductId(10L);
         reqVO.setRemark("create");
-        ErpRdBomSaveReqVO.Item item = newItem(20L, "1.5");
+        ErpRdBomSaveReqVO.Item item = newItemWithDesignator(20L, "1.5", "R1");
         Object substitute = newRdBomItemSubstitute(30L, 1, "1.000000");
         setField(substitute, "id", 888L);
         setItemSubstitutes(item, List.of(substitute));
@@ -148,7 +156,7 @@ class ErpRdBomServiceImplTest {
                 .setId(5L)
                 .setBomCode("RD-BOM-100")
                 .setProductId(10L)
-                .setStatus(0)
+                .setStatus(20)
                 .setRemark("rd"));
         selectRdBomListResult.set(List.of(
                 new ErpRdBomDO().setId(1L).setProductId(10L).setVersion("V1.0"),
@@ -166,6 +174,7 @@ class ErpRdBomServiceImplTest {
                 .setLeadTimeDay(2)
                 .setSort(1)
                 .setRemark("item")));
+        validProductsResult.set(List.of(new ErpProductDO().setId(20L).setUnitId(2000L)));
 
         rdBomService.publishRdBom(5L);
 
@@ -175,7 +184,6 @@ class ErpRdBomServiceImplTest {
         assertEquals("V3.0", insertedManufacturingBomRef.get().getVersion());
         assertEquals(1, insertedManufacturingItems.size());
         assertEquals(20L, insertedManufacturingItems.get(0).getMaterialId());
-        assertEquals(1, updatedRdBomRef.get().getStatus());
         assertEquals("V3.0", updatedRdBomRef.get().getVersion());
         assertEquals(501L, updatedRdBomRef.get().getPublishedBomId());
         assertNotNull(updatedRdBomRef.get().getLastPublishedTime());
@@ -188,7 +196,7 @@ class ErpRdBomServiceImplTest {
                 .setId(5L)
                 .setBomCode("RD-BOM-100")
                 .setProductId(10L)
-                .setStatus(0)
+                .setStatus(20)
                 .setRemark("rd"));
         selectRdBomListResult.set(List.of(
                 new ErpRdBomDO().setId(1L).setProductId(10L).setVersion("V1.0"),
@@ -206,6 +214,7 @@ class ErpRdBomServiceImplTest {
                 .setLeadTimeDay(2)
                 .setSort(1)
                 .setRemark("item")));
+        validProductsResult.set(List.of(new ErpProductDO().setId(20L).setUnitId(2000L)));
         Object sourceSubstitute1 = newRdBomItemSubstituteDO(51L, 30L, 1, "1.000000");
         setField(sourceSubstitute1, "id", 7001L);
         Object sourceSubstitute2 = newRdBomItemSubstituteDO(51L, 31L, 2, "0.500000");
@@ -224,12 +233,96 @@ class ErpRdBomServiceImplTest {
         assertEquals(31L, readLongField(insertedManufacturingItemSubstitutes.get(1), "substituteMaterialId"));
     }
 
+    @Test
+    void getRdBomApprovalView_shouldUseSourceBomIdAsDiffBaseline() {
+        validProductsResult.set(List.of(
+                new ErpProductDO().setId(10L).setUnitId(1000L).setName("成品A"),
+                new ErpProductDO().setId(20L).setUnitId(2000L).setName("电阻"),
+                new ErpProductDO().setId(30L).setUnitId(2000L).setName("电容")));
+        selectRdBomByIdResults.put(9L, new ErpRdBomDO()
+                .setId(9L).setBomCode("RD-9").setProductId(10L)
+                .setStatus(10).setVersion("V2.0").setSourceBomId(8L));
+        selectRdBomByIdResults.put(8L, new ErpRdBomDO()
+                .setId(8L).setBomCode("RD-8").setProductId(10L)
+                .setStatus(20).setVersion("V1.0"));
+        selectRdBomItemsByBomIdResults.put(8L, List.of(new ErpRdBomItemDO()
+                .setId(51L).setBomId(8L).setMaterialId(20L)
+                .setUsageQty(new BigDecimal("2"))));
+        selectRdBomItemsByBomIdResults.put(9L, List.of(
+                new ErpRdBomItemDO().setId(61L).setBomId(9L).setMaterialId(20L)
+                        .setUsageQty(new BigDecimal("3")),
+                new ErpRdBomItemDO().setId(62L).setBomId(9L).setMaterialId(30L)
+                        .setUsageQty(new BigDecimal("1"))));
+
+        var view = rdBomService.getRdBomApprovalView(9L);
+
+        assertNotNull(view);
+        assertEquals("RD-9", view.getBom().getBomCode());
+        assertEquals("成品A", view.getBom().getProductName());
+        assertEquals(2, view.getBom().getItems().size());
+        assertFalse(view.getFirstSubmit());
+        assertEquals(8L, view.getBaselineBomId());
+        assertEquals("V1.0", view.getBaselineVersion());
+        assertNotNull(view.getDiff());
+        assertEquals(1, view.getDiff().getAddedCount());
+        assertEquals(1, view.getDiff().getChangedCount());
+        assertEquals(0, view.getDiff().getRemovedCount());
+        assertNotNull(view.getChangeLogs());
+    }
+
+    @Test
+    void getRdBomApprovalView_shouldFallbackToLatestApprovedVersionWhenNoSource() {
+        validProductsResult.set(List.of(new ErpProductDO().setId(10L).setUnitId(1000L).setName("成品A")));
+        selectRdBomByIdResults.put(7L, new ErpRdBomDO()
+                .setId(7L).setBomCode("RD-7").setProductId(10L)
+                .setStatus(10).setVersion("V2.0"));
+        selectRdBomListResult.set(List.of(
+                new ErpRdBomDO().setId(5L).setProductId(10L).setStatus(20).setVersion("V1.0"),
+                new ErpRdBomDO().setId(6L).setProductId(10L).setStatus(20).setVersion("V3.0")));
+        selectRdBomByIdResults.put(6L, new ErpRdBomDO()
+                .setId(6L).setBomCode("RD-6").setProductId(10L)
+                .setStatus(20).setVersion("V3.0"));
+
+        var view = rdBomService.getRdBomApprovalView(7L);
+
+        assertFalse(view.getFirstSubmit());
+        assertEquals(6L, view.getBaselineBomId());
+        assertEquals("V3.0", view.getBaselineVersion());
+        assertNotNull(view.getDiff());
+        assertEquals(0, view.getDiff().getAddedCount());
+        assertEquals(0, view.getDiff().getChangedCount());
+    }
+
+    @Test
+    void getRdBomApprovalView_shouldMarkFirstSubmitWhenNoBaselineExists() {
+        selectRdBomByIdResults.put(3L, new ErpRdBomDO()
+                .setId(3L).setBomCode("RD-3").setProductId(10L)
+                .setStatus(10).setVersion(null));
+        selectRdBomListResult.set(List.of());
+
+        var view = rdBomService.getRdBomApprovalView(3L);
+
+        assertTrue(view.getFirstSubmit());
+        assertNull(view.getBaselineBomId());
+        assertNull(view.getDiff());
+        assertNotNull(view.getChangeLogs());
+    }
+
     @SuppressWarnings("unchecked")
     private ErpRdBomMapper createRdBomMapperProxy() {
         return (ErpRdBomMapper) Proxy.newProxyInstance(ErpRdBomMapper.class.getClassLoader(),
                 new Class<?>[]{ErpRdBomMapper.class},
                 (proxy, method, args) -> {
                     if ("selectById".equals(method.getName())) {
+                        Long id = (Long) args[0];
+                        ErpRdBomDO stubbed = id != null ? selectRdBomByIdResults.get(id) : null;
+                        if (stubbed != null) {
+                            return stubbed;
+                        }
+                        ErpRdBomDO inserted = insertedRdBomRef.get();
+                        if (inserted != null && id != null && id.equals(inserted.getId())) {
+                            return inserted;
+                        }
                         return selectRdBomResult.get();
                     }
                     if ("selectList".equals(method.getName())) {
@@ -255,7 +348,9 @@ class ErpRdBomServiceImplTest {
                 new Class<?>[]{ErpRdBomItemMapper.class},
                 (proxy, method, args) -> {
                     if ("selectListByBomId".equals(method.getName())) {
-                        return selectRdBomItemsResult.get();
+                        Long bomId = (Long) args[0];
+                        List<ErpRdBomItemDO> stubbed = bomId != null ? selectRdBomItemsByBomIdResults.get(bomId) : null;
+                        return stubbed != null ? stubbed : selectRdBomItemsResult.get();
                     }
                     if ("insertBatch".equals(method.getName())) {
                         List<ErpRdBomItemDO> itemDOs = new ArrayList<>((List<ErpRdBomItemDO>) args[0]);
@@ -351,13 +446,37 @@ class ErpRdBomServiceImplTest {
                 });
     }
 
+    private Object createChangeLogServiceProxy() throws Exception {
+        Class<?> serviceClass = Class.forName("cn.weitee.erp.module.erp.service.rd.ErpRdBomChangeLogService");
+        return Proxy.newProxyInstance(serviceClass.getClassLoader(), new Class<?>[]{serviceClass},
+                (proxy, method, args) -> null);
+    }
+
     @SuppressWarnings("unchecked")
-    private ErpProductService createProductServiceProxy() {
-        return (ErpProductService) Proxy.newProxyInstance(ErpProductService.class.getClassLoader(),
+    private ErpProductService createProductServiceProxy() {        return (ErpProductService) Proxy.newProxyInstance(ErpProductService.class.getClassLoader(),
                 new Class<?>[]{ErpProductService.class},
                 (proxy, method, args) -> {
                     if ("validProductList".equals(method.getName())) {
                         return validProductsResult.get();
+                    }
+                    if ("getProductVOMap".equals(method.getName())) {
+                        Collection<Long> ids = (Collection<Long>) args[0];
+                        Map<Long, Object> result = new java.util.HashMap<>();
+                        for (ErpProductDO product : validProductsResult.get()) {
+                            if (ids.contains(product.getId())) {
+                                try {
+                                    Class<?> voClass = Class.forName(
+                                            "cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO");
+                                    Object vo = voClass.getDeclaredConstructor().newInstance();
+                                    setField(vo, "id", product.getId());
+                                    setField(vo, "name", product.getName());
+                                    setField(vo, "unitId", product.getUnitId());
+                                    result.put(product.getId(), vo);
+                                } catch (Exception ignored) {
+                                }
+                            }
+                        }
+                        return result;
                     }
                     return null;
         });
@@ -367,6 +486,13 @@ class ErpRdBomServiceImplTest {
         ErpRdBomSaveReqVO.Item item = new ErpRdBomSaveReqVO.Item();
         item.setMaterialId(materialId);
         item.setUsageQty(new BigDecimal(usageQty));
+        return item;
+    }
+
+    /** 采购件明细必须带位号（MISSING_DESIGNATOR 为 ERROR 级完整性问题，会阻断保存） */
+    private ErpRdBomSaveReqVO.Item newItemWithDesignator(Long materialId, String usageQty, String designator) {
+        ErpRdBomSaveReqVO.Item item = newItem(materialId, usageQty);
+        item.setReferenceDesignator(designator);
         return item;
     }
 

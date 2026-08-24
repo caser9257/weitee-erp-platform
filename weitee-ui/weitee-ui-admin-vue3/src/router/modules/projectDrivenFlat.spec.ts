@@ -72,6 +72,15 @@ const remoteMenus = [
         keepAlive: false
       },
       {
+        path: 'ar-statement',
+        name: '应收台账',
+        component: 'erp/finance/ar-statement/index',
+        componentName: 'ErpArStatement',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
         path: 'cost-report',
         name: '产品成本分析报表',
         component: 'erp/finance/cost-report/index',
@@ -98,53 +107,45 @@ const financeRoute = mergedMenus.find((item: any) => item.path === '/finance')
 
 assert.equal(financeRoute?.path, '/finance')
 assert.equal(financeRoute?.redirect, '/finance/project-cost')
-assert.deepEqual(
-  financeRoute?.children?.map((item: any) => item.path),
-  [
-    'subject',
-    'period',
-    'account',
-    'ledger',
-    'dual-ledger-config',
-    'dual-ledger-diff-config',
-    'report-item',
-    'apar',
-    'receipt',
-    'payment',
-    'prepayment',
-    'ap-estimate',
-    'ap-invoice',
-    'expense',
-    'voucher',
-    'general-ledger',
-    'assets',
-    'voucher-template',
-    'reports',
-    'cost',
-    'cost-product-trend',
-    'dual-ledger-result',
-    'dual-project-cost',
-    'dual-product-cost',
-    'cost-report',
-    'project-cost'
-  ]
-)
+// 权限边界约束：remote 未授权的子菜单不得通过本地增强注入。
+// 合并后仅保留 remote 已声明的 8 个子菜单；subject/period/account/ledger/ap-*
+// 等本地增强独有项一律剔除；remote 已有的 child 仍可合并本地 decoration/组件兜底
+const financeMergedPaths = financeRoute?.children?.map((item: any) => item.path) || []
+assert.equal(financeMergedPaths.length, 8)
+const overInjectedPaths = [
+  'subject',
+  'period',
+  'account',
+  'ledger',
+  'apar',
+  'ap-estimate',
+  'ap-invoice',
+  'expense',
+  'voucher',
+  'general-ledger',
+  'voucher-template',
+  'assets',
+  'reports',
+  'payment',
+  'prepayment',
+  'receipt'
+]
+overInjectedPaths.forEach((path) => {
+  assert.ok(!financeMergedPaths.includes(path), `不应注入未授权子菜单: ${path}`)
+})
+assert.equal(financeRoute?.children?.find((item: any) => item.path === 'project-cost')?.component, 'common/menu-placeholder/index')
 
 const financeGroups = financeRoute?.children?.filter((item: any) => item.meta?.menuGroupKey) || []
 assert.deepEqual(
-  [...new Set(financeGroups.map((item: any) => item.meta?.menuGroupTitle))],
-  ['基础设置', '往来与收付', '费用与采购管理', '总账与核算', '报表与分析']
+  [...new Set(financeGroups.map((item: any) => item.meta?.menuGroupTitle))].sort(),
+  ['基础设置', '报表与分析'].sort()
 )
-assert.equal(financeGroups.find((item: any) => item.meta?.menuGroupKey === '/finance/__group__/basic-settings')?.path, 'subject')
-assert.equal(financeGroups.find((item: any) => item.meta?.menuGroupKey === '/finance/__group__/expense-procurement')?.path, 'ap-estimate')
-assert.equal(financeGroups.find((item: any) => item.path === 'ap-invoice')?.component, 'erp/finance/ap-invoice/index')
-assert.equal(financeGroups.find((item: any) => item.path === 'expense')?.component, 'erp/finance/expense/index')
-assert.equal(financeGroups.find((item: any) => item.meta?.menuGroupKey === '/finance/__group__/report-analysis')?.path, 'reports')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-ledger-config')?.meta?.menuGroupKey, '/finance/__group__/basic-settings')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-ledger-diff-config')?.meta?.menuGroupKey, '/finance/__group__/basic-settings')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-ledger-result')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-project-cost')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.equal(financeGroups.find((item: any) => item.path === 'dual-product-cost')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
+assert.equal(financeGroups.find((item: any) => item.path === 'ar-statement')?.component, 'erp/finance/ar-statement/index')
 assert.equal(financeGroups.find((item: any) => item.path === 'cost-report')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.equal(financeGroups.find((item: any) => item.path === 'cost-product-trend')?.meta?.menuGroupKey, '/finance/__group__/report-analysis')
 assert.deepEqual(
@@ -201,9 +202,10 @@ assert.deepEqual(
     'plan',
     'suggest',
     'purchase-request',
+    'netting-policy',
+    'substitute-material',
     'purchase-order',
     'inbound',
-    'outsource-inbound',
     'return',
     'stock-in',
     'stock-out',
@@ -213,9 +215,7 @@ assert.deepEqual(
     'warehouse',
     'stock',
     'stock-record',
-    'stock-analysis',
-    'netting-policy',
-    'substitute-material'
+    'stock-analysis'
   ]
 )
 
@@ -234,7 +234,7 @@ assert.equal(scmGroups.find((item: any) => item.meta?.menuGroupKey === '/scm/__g
 assert.equal(scmGroups.find((item: any) => item.path === 'purchase-order')?.name, '采购订单台账')
 assert.equal(scmGroups.find((item: any) => item.path === 'return')?.name, '采购退货')
 assert.equal(scmGroups.find((item: any) => item.path === 'return')?.meta?.menuGroupKey, '/scm/__group__/procurement')
-assert.equal(scmGroups.find((item: any) => item.path === 'outsource-inbound')?.name, '委外入库')
+assert.equal(scmGroups.find((item: any) => item.path === 'outsource-inbound'), undefined)
 assert.equal(scmGroups.find((item: any) => item.meta?.menuGroupKey === '/scm/__group__/inventory-warehouse')?.path, 'stock-in')
 assert.equal(scmGroups.find((item: any) => item.path === 'stock-out')?.name, '其他出库')
 assert.equal(scmGroups.find((item: any) => item.path === 'warehouse')?.name, '仓库信息')

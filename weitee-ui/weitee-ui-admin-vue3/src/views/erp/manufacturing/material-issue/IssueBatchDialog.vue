@@ -34,7 +34,9 @@
             </el-col>
             <el-col :xs="24" :md="12">
               <el-form-item label="应领数量">
-                <div class="issue-dialog__readonly">{{ erpCountInputFormatter(currentMaterial.requiredQty || 0) }}</div>
+                <div class="issue-dialog__readonly">{{
+                  erpCountInputFormatter(currentMaterial.requiredQty || 0)
+                }}</div>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="12">
@@ -55,6 +57,24 @@
                   :max="Number(currentMaterial.remainingIssueQty || 0)"
                   class="!w-100%"
                 />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="12">
+              <el-form-item label="领料工序">
+                <el-select
+                  v-model="productionOrderStepId"
+                  filterable
+                  clearable
+                  class="!w-100%"
+                  placeholder="请选择领料工序（可选）"
+                >
+                  <el-option
+                    v-for="step in stepOptions"
+                    :key="step.id"
+                    :label="`${step.stepNo} · ${step.stepName}`"
+                    :value="step.id"
+                  />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :md="12">
@@ -90,10 +110,14 @@
           <el-table-column label="生产日期" min-width="130" prop="produceDate" />
           <el-table-column label="失效日期" min-width="130" prop="expireDate" />
           <el-table-column label="可用数量" min-width="120" align="right">
-            <template #default="{ row }">{{ erpCountInputFormatter(row.availableQty || 0) }}</template>
+            <template #default="{ row }">{{
+              erpCountInputFormatter(row.availableQty || 0)
+            }}</template>
           </el-table-column>
           <el-table-column label="推荐数量" min-width="120" align="right">
-            <template #default="{ row }">{{ erpCountInputFormatter(row.recommendedQty || 0) }}</template>
+            <template #default="{ row }">{{
+              erpCountInputFormatter(row.recommendedQty || 0)
+            }}</template>
           </el-table-column>
           <el-table-column label="本次领料数量" min-width="180">
             <template #default="{ row }">
@@ -113,7 +137,12 @@
     </div>
     <template #footer>
       <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" :disabled="!canSubmit" :loading="submitLoading" @click="handleSubmit">
+      <el-button
+        type="primary"
+        :disabled="!canSubmit"
+        :loading="submitLoading"
+        @click="handleSubmit"
+      >
         确认领料
       </el-button>
     </template>
@@ -137,6 +166,10 @@ import {
   ProductionMaterialVO
 } from '@/api/erp/mrp/production-material'
 import { ProductionIssueApi } from '@/api/erp/manufacturing/material-issue'
+import {
+  ProductionOrderStepVO,
+  ProductionReportApi
+} from '@/api/erp/manufacturing/production-report'
 
 defineOptions({ name: 'IssueBatchDialog' })
 
@@ -162,6 +195,8 @@ const currentOrderId = ref<number>()
 const warehouseId = ref<number>()
 const issueQty = ref<number>(0)
 const remark = ref('')
+const productionOrderStepId = ref<number>()
+const stepOptions = ref<ProductionOrderStepVO[]>([])
 const batchRows = ref<IssueBatchRow[]>([])
 
 const totalAssignedQty = computed(() =>
@@ -170,10 +205,15 @@ const totalAssignedQty = computed(() =>
 
 const isBalanced = computed(() => {
   const precision = getQuantityPrecision(currentMaterial.value?.materialId)
-  return roundQuantityByPrecision(totalAssignedQty.value, precision) === roundQuantityByPrecision(issueQty.value, precision)
+  return (
+    roundQuantityByPrecision(totalAssignedQty.value, precision) ===
+    roundQuantityByPrecision(issueQty.value, precision)
+  )
 })
 
-const canRecommend = computed(() => Number(issueQty.value || 0) > 0 && Number(warehouseId.value || 0) > 0)
+const canRecommend = computed(
+  () => Number(issueQty.value || 0) > 0 && Number(warehouseId.value || 0) > 0
+)
 
 const canSubmit = computed(() => {
   if (submitLoading.value || !currentMaterial.value || !currentOrderId.value) return false
@@ -206,7 +246,10 @@ const loadBatchCandidates = async () => {
   }
   candidateLoading.value = true
   try {
-    const data = await ProductionMaterialApi.getBatchCandidates(currentMaterial.value.id, warehouseId.value)
+    const data = await ProductionMaterialApi.getBatchCandidates(
+      currentMaterial.value.id,
+      warehouseId.value
+    )
     batchRows.value = (data.batchCandidates || []).map((item) => ({
       ...item,
       recommendedQty: 0,
@@ -224,7 +267,13 @@ const open = async (material: ProductionMaterialVO, orderId: number) => {
   warehouseId.value = material.supplyWarehouseId
   issueQty.value = Number(material.remainingIssueQty || 0)
   remark.value = ''
+  productionOrderStepId.value = undefined
   dialogVisible.value = true
+  try {
+    stepOptions.value = await ProductionReportApi.getProductionOrderStepList(orderId)
+  } catch {
+    stepOptions.value = []
+  }
   await loadBatchCandidates()
 }
 
@@ -289,6 +338,7 @@ const handleSubmit = async () => {
       items: [
         {
           productionMaterialId: currentMaterial.value.id,
+          productionOrderStepId: productionOrderStepId.value,
           materialId: currentMaterial.value.materialId,
           warehouseId: warehouseId.value,
           issueQty: Number(issueQty.value || 0),

@@ -34,6 +34,9 @@ import java.util.*;
 @Slf4j
 public class RuleConditionEvaluator {
 
+    private static final Set<String> NUMERIC_FIELDS = Set.of(
+            "amount", "deptId", "projectId", "startUserId", "organId", "bizId");
+
     /**
      * 评估规则条件是否匹配
      *
@@ -107,27 +110,27 @@ public class RuleConditionEvaluator {
         switch (operator) {
             case "==":
             case "equals":
-                return compareValues(actualValue, expectedValue) == 0;
+                return compareValues(field, actualValue, expectedValue) == 0;
 
             case "!=":
             case "not_equals":
-                return compareValues(actualValue, expectedValue) != 0;
+                return compareValues(field, actualValue, expectedValue) != 0;
 
             case ">":
             case "gt":
-                return compareValues(actualValue, expectedValue) > 0;
+                return compareValues(field, actualValue, expectedValue) > 0;
 
             case "<":
             case "lt":
-                return compareValues(actualValue, expectedValue) < 0;
+                return compareValues(field, actualValue, expectedValue) < 0;
 
             case ">=":
             case "gte":
-                return compareValues(actualValue, expectedValue) >= 0;
+                return compareValues(field, actualValue, expectedValue) >= 0;
 
             case "<=":
             case "lte":
-                return compareValues(actualValue, expectedValue) <= 0;
+                return compareValues(field, actualValue, expectedValue) <= 0;
 
             case "in":
                 return evaluateIn(actualValue, expectedValue);
@@ -183,18 +186,42 @@ public class RuleConditionEvaluator {
      *
      * @return 负数：actual < expected；0：相等；正数：actual > expected
      */
-    private int compareValues(Object actual, Object expected) {
-        // 数值比较
-        if (actual instanceof Number && expected instanceof Number) {
-            BigDecimal actualDecimal = new BigDecimal(String.valueOf(actual));
-            BigDecimal expectedDecimal = new BigDecimal(String.valueOf(expected));
-            return actualDecimal.compareTo(expectedDecimal);
+    private int compareValues(String field, Object actual, Object expected) {
+        // 数值字段可能来自 JSON 字符串，避免回退到字典序比较
+        if ((actual instanceof Number || expected instanceof Number || isNumericField(field))
+                && isNumericValue(actual) && isNumericValue(expected)) {
+            try {
+                BigDecimal actualDecimal = new BigDecimal(String.valueOf(actual));
+                BigDecimal expectedDecimal = new BigDecimal(String.valueOf(expected));
+                return actualDecimal.compareTo(expectedDecimal);
+            } catch (NumberFormatException ignored) {
+                // 非法数字按字符串比较，最终由规则结果决定是否命中
+            }
         }
 
         // 字符串比较
         String actualStr = String.valueOf(actual);
         String expectedStr = String.valueOf(expected);
         return actualStr.compareTo(expectedStr);
+    }
+
+    private boolean isNumericField(String field) {
+        return NUMERIC_FIELDS.contains(field);
+    }
+
+    private boolean isNumericValue(Object value) {
+        if (value instanceof Number) {
+            return true;
+        }
+        if (!(value instanceof CharSequence) || StrUtil.isBlank(value.toString())) {
+            return false;
+        }
+        try {
+            new BigDecimal(value.toString().trim());
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
     }
 
     /**

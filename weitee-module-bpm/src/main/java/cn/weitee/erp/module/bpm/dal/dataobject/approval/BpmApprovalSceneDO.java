@@ -78,4 +78,11 @@ public class BpmApprovalSceneDO extends BaseDO {
      */
     private String remark;
 
+    /**
+     * 通用审批接入配置 JSON
+     *
+     * 配置驱动的新单据接入（无需编写 Java 三件套）。格式见 GenericApprovalConfig。
+     */
+    private String genericConfig;
+
 }

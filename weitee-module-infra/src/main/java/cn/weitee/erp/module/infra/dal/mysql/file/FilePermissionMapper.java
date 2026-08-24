@@ -11,13 +11,13 @@ import java.util.List;
 /**
  * 文件权限 Mapper
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Mapper
 public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
 
     /**
-     * 获取文件的权限列表
+     * 获取文件的权限列琛?
      */
     default List<FilePermissionDO> selectListByFileId(Long fileId) {
         return selectList(new LambdaQueryWrapperX<FilePermissionDO>()
@@ -33,7 +33,10 @@ public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
                 .eq(FilePermissionDO::getFileId, fileId)
                 .eq(FilePermissionDO::getGrantType, "USER")
                 .eq(FilePermissionDO::getGrantTargetId, userId)
-                .le(FilePermissionDO::getExpireTime, LocalDateTime.now()));
+                .and(w -> w
+                        .isNull(FilePermissionDO::getExpireTime)
+                        .or()
+                        .ge(FilePermissionDO::getExpireTime, LocalDateTime.now())));
     }
 
     /**
@@ -52,11 +55,14 @@ public interface FilePermissionMapper extends BaseMapperX<FilePermissionDO> {
                         .or(w -> w
                                 .eq(FilePermissionDO::getGrantType, "DEPT")
                                 .eq(FilePermissionDO::getGrantTargetId, deptId)))
-                .le(FilePermissionDO::getExpireTime, LocalDateTime.now()));
+                .and(w -> w
+                        .isNull(FilePermissionDO::getExpireTime)
+                        .or()
+                        .ge(FilePermissionDO::getExpireTime, LocalDateTime.now())));
     }
 
     /**
-     * 删除文件的所有权限
+     * 删除文件的所有权闄?
      */
     default int deleteByFileId(Long fileId) {
         return delete(new LambdaQueryWrapperX<FilePermissionDO>()

@@ -14,7 +14,7 @@ import java.util.List;
 /**
  * 字典数据 Service 接口
  *
- * @author ruoyi
+ * @author weitee
  */
 public interface DictDataService {
 
@@ -58,9 +58,9 @@ public interface DictDataService {
     /**
      * 获得字典数据列表
      *
-     * @param status   状态
+     * @param status   状�?
      * @param dictType 字典类型
-     * @return 字典数据全列表
+     * @return 字典数据全列�?
      */
     List<DictDataDO> getDictDataList(@Nullable Integer status, @Nullable String dictType);
 
@@ -81,7 +81,7 @@ public interface DictDataService {
     DictDataDO getDictData(Long id);
 
     /**
-     * 获得指定字典类型的数据数量
+     * 获得指定字典类型的数据数�?
      *
      * @param dictType 字典类型
      * @return 数据数量
@@ -107,10 +107,10 @@ public interface DictDataService {
     void validateDictDataList(String dictType, Collection<String> values);
 
     /**
-     * 获得指定的字典数据
+     * 获得指定的字典数�?
      *
      * @param dictType 字典类型
-     * @param value    字典数据值
+     * @param value    字典数据�?
      * @return 字典数据
      */
     DictDataDO getDictData(String dictType, String value);
@@ -125,7 +125,7 @@ public interface DictDataService {
     DictDataDO parseDictData(String dictType, String label);
 
     /**
-     * 获得指定数据类型的字典数据列表
+     * 获得指定数据类型的字典数据列�?
      *
      * @param dictType 字典类型
      * @return 字典数据列表

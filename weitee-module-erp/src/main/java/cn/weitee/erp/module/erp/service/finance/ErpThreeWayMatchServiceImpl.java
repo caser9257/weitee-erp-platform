@@ -24,7 +24,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 /**
  * 三单匹配 Service 实现
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -151,7 +151,7 @@ public class ErpThreeWayMatchServiceImpl implements ErpThreeWayMatchService {
         }
 
         // TODO: 生成应付台账 - 需要实现 AP Statement 生成逻辑
-        // 当前实现：确认后状态变为"已确认"(10)，而非"已生成应付"(20)
+        // 当前实现：确认后状态变为已确认(10)，而非"已生成应付(20)"
         // 待 AP Statement 功能实现后，应在生成成功后才将状态更新为 20
         log.warn("[confirmMatch] 应付台账生成功能尚未实现，matchId={}", id);
 

@@ -7,20 +7,34 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.dualledger.ErpFinanc
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceDualLedgerConfigDO;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Collection;
 import java.util.List;
 
 @Mapper
 public interface ErpFinanceDualLedgerConfigMapper extends BaseMapperX<ErpFinanceDualLedgerConfigDO> {
 
     default PageResult<ErpFinanceDualLedgerConfigDO> selectPage(ErpFinanceDualLedgerConfigPageReqVO reqVO) {
-        return selectPage(reqVO, new LambdaQueryWrapperX<ErpFinanceDualLedgerConfigDO>()
-                .eqIfPresent(ErpFinanceDualLedgerConfigDO::getBizType, reqVO.getBizType())
-                .eqIfPresent(ErpFinanceDualLedgerConfigDO::getExternalLedgerId, reqVO.getExternalLedgerId())
-                .eqIfPresent(ErpFinanceDualLedgerConfigDO::getInternalLedgerId, reqVO.getInternalLedgerId())
-                .eqIfPresent(ErpFinanceDualLedgerConfigDO::getStatus, reqVO.getStatus())
-                .likeIfPresent(ErpFinanceDualLedgerConfigDO::getRemark, reqVO.getRemark())
-                .orderByAsc(ErpFinanceDualLedgerConfigDO::getBizType)
-                .orderByDesc(ErpFinanceDualLedgerConfigDO::getId));
+        return selectPage(reqVO, null);
+    }
+
+    default PageResult<ErpFinanceDualLedgerConfigDO> selectPageByVisibleLedgerIds(
+            ErpFinanceDualLedgerConfigPageReqVO reqVO, Collection<Long> visibleLedgerIds) {
+        if (visibleLedgerIds != null && visibleLedgerIds.isEmpty()) {
+            return PageResult.empty(0L);
+        }
+        LambdaQueryWrapperX<ErpFinanceDualLedgerConfigDO> query = new LambdaQueryWrapperX<>();
+        query.eqIfPresent(ErpFinanceDualLedgerConfigDO::getBizType, reqVO.getBizType());
+        query.eqIfPresent(ErpFinanceDualLedgerConfigDO::getExternalLedgerId, reqVO.getExternalLedgerId());
+        query.eqIfPresent(ErpFinanceDualLedgerConfigDO::getInternalLedgerId, reqVO.getInternalLedgerId());
+        query.eqIfPresent(ErpFinanceDualLedgerConfigDO::getStatus, reqVO.getStatus());
+        query.likeIfPresent(ErpFinanceDualLedgerConfigDO::getRemark, reqVO.getRemark());
+        query.orderByAsc(ErpFinanceDualLedgerConfigDO::getBizType);
+        query.orderByDesc(ErpFinanceDualLedgerConfigDO::getId);
+        if (visibleLedgerIds != null) {
+            query.in(ErpFinanceDualLedgerConfigDO::getExternalLedgerId, visibleLedgerIds)
+                    .in(ErpFinanceDualLedgerConfigDO::getInternalLedgerId, visibleLedgerIds);
+        }
+        return selectPage(reqVO, query);
     }
 
     default ErpFinanceDualLedgerConfigDO selectByBizType(Integer bizType) {

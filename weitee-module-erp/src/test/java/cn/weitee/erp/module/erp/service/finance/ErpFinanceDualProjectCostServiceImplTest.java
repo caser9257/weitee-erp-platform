@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -251,7 +252,7 @@ class ErpFinanceDualProjectCostServiceImplTest {
                     return null;
                 }));
 
-        // Mock diffConfigService：costType=20(人工) 配置按比例 0.85
+        // Mock diffConfigService：costType=20(人工) 配置按比例 1.15
         setField(service, "dualLedgerDiffConfigService", createProxy(
                 ErpFinanceDualLedgerDiffConfigService.class,
                 (methodName, args) -> {
@@ -259,7 +260,7 @@ class ErpFinanceDualProjectCostServiceImplTest {
                         return List.of(new ErpFinanceDualLedgerDiffConfigDO()
                                 .setBizType(60).setDiffItemType(20)
                                 .setCalculationType(ErpFinanceDiffCalculationTypeEnum.PRO_RATA.getType())
-                                .setRatio(new BigDecimal("0.85")));
+                                .setRatio(new BigDecimal("1.15")));
                     }
                     return List.of();
                 }));
@@ -279,19 +280,65 @@ class ErpFinanceDualProjectCostServiceImplTest {
         reqVO.setPeriod("2026-05");
         service.rebuildProjectDualCost(1L, reqVO);
 
-        // 验证：内部账 10000，外部账 = 10000 × 0.85 = 8500
+        // 验证：内部账 10000，外部账 = 10000 × 1.15 = 11500
         assertEquals(1, insertedResults.size());
         ErpFinanceDualProjectCostResultDO result = insertedResults.get(0);
         assertEquals(new BigDecimal("10000.00"), result.getInternalAmount());
-        assertEquals(new BigDecimal("8500.00"), result.getExternalAmount(), "外部账 = 内部账 × 0.85");
-        assertEquals(new BigDecimal("1500.00"), result.getDiffAmount(), "差异 = 10000 - 8500");
+        assertEquals(new BigDecimal("11500.00"), result.getExternalAmount(), "外部账 = 内部账 × 1.15");
+        assertEquals(new BigDecimal("-1500.00"), result.getDiffAmount(), "差异 = 10000 - 11500");
 
         // 验证明细
         assertEquals(1, insertedItems.size());
         ErpFinanceDualProjectCostItemDO item = insertedItems.get(0);
         assertEquals(new BigDecimal("10000.00"), item.getInternalAmount());
-        assertEquals(new BigDecimal("8500.00"), item.getExternalAmount());
-        assertEquals(new BigDecimal("1500.00"), item.getDiffAmount());
+        assertEquals(new BigDecimal("11500.00"), item.getExternalAmount());
+        assertEquals(new BigDecimal("-1500.00"), item.getDiffAmount());
+    }
+
+    @Test
+    void rebuildProjectDualCost_shouldPhysicallyRemoveOldResultsBeforeRebuild() throws Exception {
+        ErpFinanceDualProjectCostServiceImpl service = new ErpFinanceDualProjectCostServiceImpl();
+        AtomicBoolean physicalDeleteCalled = new AtomicBoolean(false);
+
+        setField(service, "projectCostResultMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProjectCostResultMapper.class,
+                (methodName, args) -> {
+                    if ("selectList".equals(methodName)) {
+                        return List.of(new ErpFinanceDualProjectCostResultDO().setId(9L)
+                                .setProjectId(1L).setPeriod("2026-05").setCostType(50));
+                    }
+                    if ("hardDeleteByIds".equals(methodName)) {
+                        physicalDeleteCalled.set(true);
+                        return 1;
+                    }
+                    if ("delete".equals(methodName)) return 1;
+                    if ("insert".equals(methodName)) return 1;
+                    return null;
+                }));
+        setField(service, "projectCostItemMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProjectCostItemMapper.class,
+                (methodName, args) -> "delete".equals(methodName) ? 1 : null));
+        setField(service, "rebuildLogMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualProjectCostRebuildLogMapper.class,
+                (methodName, args) -> {
+                    if ("insert".equals(methodName)) return 1;
+                    if ("updateById".equals(methodName)) return 1;
+                    return null;
+                }));
+        setField(service, "expenseMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceExpenseMapper.class,
+                (methodName, args) -> "selectList".equals(methodName) ? List.of() : null));
+        setField(service, "dualLedgerDiffConfigService", createProxy(
+                ErpFinanceDualLedgerDiffConfigService.class,
+                (methodName, args) -> List.of()));
+
+        ErpFinanceDualProjectCostRebuildReqVO reqVO = new ErpFinanceDualProjectCostRebuildReqVO();
+        reqVO.setProjectId(1L);
+        reqVO.setPeriod("2026-05");
+
+        service.rebuildProjectDualCost(1L, reqVO);
+
+        assertTrue(physicalDeleteCalled.get(), "重跑前必须物理清理旧结果，避免逻辑删除唯一键冲突");
     }
 
     // ========== 辅助方法 ==========

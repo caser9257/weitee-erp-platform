@@ -1,6 +1,28 @@
 server:
   port: 48080
 
+--- #################### DRM 文件保护配置 ####################
+drm:
+  enabled: ${DRM_ENABLED:false}
+  service-url: ${DRM_SERVICE_URL:}
+  detect-path: ${DRM_DETECT_PATH:/detect}
+  decrypt-path: ${DRM_DECRYPT_PATH:/decrypt}
+  encrypt-path: ${DRM_ENCRYPT_PATH:/encrypt}
+  auth-token: ${DRM_AUTH_TOKEN:}
+  connect-timeout: ${DRM_CONNECT_TIMEOUT:3000}
+  read-timeout: ${DRM_READ_TIMEOUT:60000}
+  max-file-size: ${DRM_MAX_FILE_SIZE:524288000}
+  default-secret-level-id: ${DRM_DEFAULT_SECRET_LEVEL_ID:5}
+  default-permission: ${DRM_DEFAULT_PERMISSION:1}
+
+--- #################### MES 模块配置 ####################
+# PaddleOCR 服务（SOP 图片识别）。可通过 PADDLE_OCR_URL/PADDLE_OCR_MOCK 覆盖
+mes:
+  paddle-ocr-url: ${PADDLE_OCR_URL:http://10.0.0.30:8900/ocr}
+paddle:
+  ocr:
+    mock: ${PADDLE_OCR_MOCK:false}
+
 --- #################### 数据库相关配�?####################
 spring:
   autoconfigure:

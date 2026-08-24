@@ -4,6 +4,7 @@ import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderFinishReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderSaveReqVO;
+import cn.weitee.erp.module.erp.controller.admin.mrp.vo.production.ErpProductionOrderSummaryRespVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionSuggestDO;
 
@@ -28,5 +29,7 @@ public interface ErpProductionOrderService {
     List<ErpProductionOrderDO> getProductionOrderList(Collection<Long> ids);
 
     PageResult<ErpProductionOrderDO> getProductionOrderPage(ErpProductionOrderPageReqVO pageReqVO);
+
+    ErpProductionOrderSummaryRespVO getSummary();
 
 }

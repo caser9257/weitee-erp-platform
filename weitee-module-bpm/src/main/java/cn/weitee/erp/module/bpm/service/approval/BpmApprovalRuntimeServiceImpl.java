@@ -25,6 +25,8 @@ import cn.weitee.erp.module.bpm.enums.approval.BpmApprovalSchemeStatusEnum;
 import cn.weitee.erp.module.bpm.enums.task.BpmProcessInstanceStatusEnum;
 import cn.weitee.erp.module.bpm.framework.flowable.core.event.BpmProcessInstanceEventPublisher;
 import cn.weitee.erp.module.bpm.service.approval.handler.ApprovalResultHandler;
+import cn.weitee.erp.module.bpm.service.approval.generic.GenericApprovalConfigService;
+import cn.weitee.erp.module.bpm.service.approval.generic.GenericApprovalContextProvider;
 import cn.weitee.erp.module.bpm.service.approval.provider.ApprovalContext;
 import cn.weitee.erp.module.bpm.service.approval.provider.ApprovalContextProvider;
 import cn.weitee.erp.module.bpm.service.approval.engine.RuleConditionEvaluator;
@@ -81,6 +83,12 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
     private Map<String, ApprovalContextProvider> contextProviderMap;
     private Map<String, ApprovalResultHandler> resultHandlerMap;
 
+    @Resource
+    private GenericApprovalConfigService genericConfigService;
+
+    @Resource
+    private GenericApprovalContextProvider genericApprovalContextProvider;
+
     /**
      * 注入所有 ApprovalContextProvider
      */
@@ -130,14 +138,22 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             approvalInstanceSnapshotService.deleteSnapshot(existingSnapshot.getId());
         }
 
-        // 3. 获取上下文提供者
+        // 3. 获取上下文提供者（精确匹配；未命中时兜底通用审批接入）
         ApprovalContextProvider contextProvider = contextProviderMap.get(sceneCode);
+        if (contextProvider == null && genericConfigService.isGenericEnabled(sceneCode)) {
+            contextProvider = genericApprovalContextProvider;
+        }
         if (contextProvider == null) {
             throw exception(APPROVAL_CONTEXT_PROVIDER_NOT_FOUND, sceneCode);
         }
 
         // 4. 获取业务上下文
-        ApprovalContext context = contextProvider.getContext(bizId);
+        ApprovalContext context;
+        if (contextProvider instanceof GenericApprovalContextProvider genericProvider) {
+            context = genericProvider.getContext(sceneCode, bizId);
+        } else {
+            context = contextProvider.getContext(bizId);
+        }
         if (context == null) {
             throw exception(APPROVAL_CONTEXT_IS_NULL, sceneCode, bizId);
         }

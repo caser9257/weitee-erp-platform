@@ -376,6 +376,17 @@ const financeMenuDecorations = new Map<string, MenuDecoration>([
     }
   ],
   [
+    'ar-statement',
+    {
+      menuGroupKey: '/finance/__group__/receivables-payables',
+      menuGroupTitle: '往来与收付',
+      menuGroupIcon: 'ep:wallet',
+      menuGroupOrder: 20,
+      menuOrder: 15,
+      routeName: '应收台账'
+    }
+  ],
+  [
     'receipt',
     {
       menuGroupKey: '/finance/__group__/receivables-payables',
@@ -633,6 +644,46 @@ const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
     alwaysShow: true,
     children: [
       {
+        path: 'todo',
+        name: '待我审批',
+        icon: 'ep:clock',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalTodo',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'submitted',
+        name: '我发起的',
+        icon: 'ep:promotion',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalSubmitted',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'done',
+        name: '已审批',
+        icon: 'ep:circle-check',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalDone',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
+        path: 'cc',
+        name: '抄送我',
+        icon: 'ep:message',
+        component: 'bpm/approval/portal/index',
+        componentName: 'BpmApprovalPortalCc',
+        meta: {},
+        visible: true,
+        keepAlive: false
+      },
+      {
         path: 'statistics',
         name: '审批统计看板',
         icon: 'ep:data-analysis',
@@ -767,6 +818,23 @@ const flatMenuAugmentations: AppCustomRouteRecordRaw[] = [
               menuGroupIcon: 'ep:wallet',
               menuGroupOrder: 20,
               menuOrder: 10
+            },
+            visible: true,
+            keepAlive: false
+          },
+          {
+            path: 'ar-statement',
+            name: '应收台账',
+            icon: 'ep:money',
+            component: 'erp/finance/ar-statement/index',
+            componentName: 'ErpArStatement',
+            redirect: '',
+            meta: {
+              menuGroupKey: '/finance/__group__/receivables-payables',
+              menuGroupTitle: '往来与收付',
+              menuGroupIcon: 'ep:wallet',
+              menuGroupOrder: 20,
+              menuOrder: 15
             },
             visible: true,
             keepAlive: false
@@ -1234,7 +1302,8 @@ const mergeRouteTree = (
         (item) => normalizeRoutePath(item.path) === normalizeRoutePath(child.path)
       )
       if (childIndex === -1) {
-        mergedChildren.push(cloneRouteTree(child))
+        // 权限边界约束：远端菜单（后端按角色授权精确返回）不含该子菜单时，
+        // 不得通过本地增强注入（避免受限角色看到未授权子菜单）。
         continue
       }
       consumedChildren.add(childIndex)
@@ -1302,17 +1371,29 @@ const shouldRetainFormalAugmentation = (
   route: AppCustomRouteRecordRaw,
   normalizedMenus: AppCustomRouteRecordRaw[] = []
 ) => {
-  const routePath = normalizeRoutePath(route.path)
-  const remoteRoute = normalizedMenus.find((item) => normalizeRoutePath(item.path) === routePath)
-  if (!remoteRoute) {
+  // 1. 权限根存在性约束：augmentation 只为远端已授权的模块补充路由组件，
+  //    不能凭空为未授权模块（如受限角色看到的财务/供应链）注入顶级菜单。
+  const rootPath = getRouteRootPath(normalizeRoutePath(route.path))
+  const remoteHasRoot = normalizedMenus.some(
+    (item) => getRouteRootPath(normalizeRoutePath(item.path)) === rootPath
+  )
+  if (!remoteHasRoot) {
     return false
   }
 
-  if (routePath !== '/scm') {
+  // 2. 原有 scm 兼容逻辑：flat 场景 remote 有 children 时不注入 scm 增强
+  if (normalizeRoutePath(route.path) !== '/scm') {
     return true
   }
 
-  return !remoteRoute.children?.length
+  const remoteScmRoute = normalizedMenus.find((item) => normalizeRoutePath(item.path) === '/scm')
+  return !remoteScmRoute?.children?.length
+}
+
+const getRouteRootPath = (path?: string) => {
+  const normalizedPath = normalizeRoutePath(path)
+  const [firstSegment] = normalizedPath.split('/').filter(Boolean)
+  return firstSegment ? `/${firstSegment}` : ''
 }
 
 const filterEmbeddedScmCapabilities = (
@@ -1385,11 +1466,11 @@ export const mergeProjectDrivenMenus = (
   const normalizedMenus = formalized
     ? mergeMenusByPath(flattenedMenus).filter((route) => shouldRetainRouteWhenFormalized(route))
     : flattenedMenus
-  const menuAugmentations = formalized
-    ? mergeMenusByPath(flattenErpRootMenus(flatMenuAugmentations)).filter((route) =>
-        shouldRetainRouteWhenFormalized(route) && shouldRetainFormalAugmentation(route, normalizedMenus)
-      )
-    : flatMenuAugmentations
+  const menuAugmentations = mergeMenusByPath(flattenErpRootMenus(flatMenuAugmentations)).filter(
+    (route) =>
+      shouldRetainRouteWhenFormalized(route) &&
+      shouldRetainFormalAugmentation(route, normalizedMenus)
+  )
 
   return decorateScmMenus(
     decorateFinanceMenus(

@@ -1,0 +1,16 @@
+# Local validation fallback. It uses the supplied dootask-drm-bridge image as
+# a Mono base when docker.io/library/mono:6.12 cannot be downloaded.
+FROM dootask-drm-bridge:local
+
+WORKDIR /app
+COPY Program.cs /app/Program.cs
+COPY drm.edi.dll /app/drm.edi.dll
+
+RUN mcs -out:/app/DrmBridge.exe \
+    -reference:/app/drm.edi.dll \
+    -r:System.Net.Http.dll \
+    -r:System.Web.Extensions.dll \
+    Program.cs
+
+EXPOSE 8081
+ENTRYPOINT ["mono", "/app/DrmBridge.exe"]

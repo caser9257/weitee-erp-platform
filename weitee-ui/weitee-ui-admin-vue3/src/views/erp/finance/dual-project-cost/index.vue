@@ -4,11 +4,11 @@
     <ContentWrap class="finance-shell__header-card">
       <div class="finance-shell__page-header">
         <div class="finance-shell__page-header-main">
-          <div class="finance-shell__page-title">项目双账套成本</div>
+          <div class="finance-shell__page-title">{{ financeDisplayLabel('项目双账套成本', '项目账目成本') }}</div>
           <div class="finance-shell__page-metrics">
             <span class="finance-shell__metric-chip">结果 {{ total }}</span>
-            <span class="finance-shell__metric-chip">外部金额{{ formatAmount(totalExternal) }}</span>
-            <span class="finance-shell__metric-chip">内部金额{{ formatAmount(totalInternal) }}</span>
+            <span class="finance-shell__metric-chip">{{ financeDisplayLabel('外部金额', '金额一') }}{{ formatAmount(totalExternal) }}</span>
+            <span class="finance-shell__metric-chip">{{ financeDisplayLabel('内部金额', '金额二') }}{{ formatAmount(totalInternal) }}</span>
             <span class="finance-shell__metric-chip">差异 {{ formatAmount(totalDiff) }}</span>
           </div>
         </div>
@@ -44,7 +44,7 @@
           </el-form-item>
         </div>
         <div class="finance-shell__query-actions">
-          <el-button type="primary" :loading="loadingList" @click="handleQuery">
+          <el-button type="primary" :loading="loadingList" @click="handleQuery" v-hasPermi="['erp:dual-project-cost:query']">
             <Icon icon="ep:search" class="mr-5px" />
             查询
           </el-button>
@@ -60,7 +60,7 @@
     <ContentWrap class="finance-shell__table-card">
       <div class="finance-shell__toolbar">
         <div class="finance-shell__table-toolbar-main">
-          <div class="finance-shell__section-title">项目双账套成本列表</div>
+          <div class="finance-shell__section-title">{{ financeDisplayLabel('项目双账套成本列表', '项目账目成本列表') }}</div>
           <div class="finance-shell__toolbar-count">当前共<strong>{{ total }}</strong> 条</div>
         </div>
         <div class="finance-shell__toolbar-actions">
@@ -69,10 +69,10 @@
             项目级重跑          </el-button>
           <el-button plain :disabled="!total" @click="handleExportExternal">
             <Icon icon="ep:download" class="mr-5px" />
-            瀵煎嚭外部金额          </el-button>
+            {{ financeDisplayLabel('导出外部金额', '导出账目一') }}          </el-button>
           <el-button plain :disabled="!total" @click="handleExportInternal">
             <Icon icon="ep:download" class="mr-5px" />
-            瀵煎嚭内部金额          </el-button>
+            {{ financeDisplayLabel('导出内部金额', '导出账目二') }}          </el-button>
         </div>
       </div>
 
@@ -113,7 +113,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  外部账金额                </span>
+                  {{ financeDisplayLabel('外部账金额', '账目一金额') }}                </span>
               </template>
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalAmount) }}</span>
@@ -123,7 +123,7 @@
               <template #header>
                 <span class="finance-shell__column-header finance-shell__column-header--pipeline">
                   <Icon icon="ep:money" class="finance-shell__column-icon" />
-                  内部账金额                </span>
+                  {{ financeDisplayLabel('内部账金额', '账目二金额') }}                </span>
               </template>
               <template #default="{ row }">
                 <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalAmount) }}</span>
@@ -161,7 +161,7 @@
         <Pagination v-if="total > 0" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize" :total="total" @pagination="getList" />
       </template>
       <div v-else class="project-dual-cost-page__empty">
-        <el-empty description="暂无项目双账套成本数据">
+        <el-empty :description="financeDisplayLabel('暂无项目双账套成本数据', '暂无项目账目成本数据')">
           <template #image>
             <div class="finance-shell__empty-icon">
               <Icon icon="ep:files" />
@@ -184,7 +184,7 @@
         <div class="finance-shell__context-card">
           <div class="finance-shell__context-main">
             <div class="finance-shell__context-title">{{ detailData?.projectName || '-' }}</div>
-            <div class="finance-shell__context-subtitle">{{ detailData?.projectNo || '项目双账套成本明细' }}</div>
+            <div class="finance-shell__context-subtitle">{{ detailData?.projectNo || financeDisplayLabel('项目双账套成本明细', '项目账目成本明细') }}</div>
           </div>
           <div class="finance-shell__context-meta">
             <span class="finance-shell__page-chip">{{ detailData?.period || '-' }}</span>
@@ -199,11 +199,11 @@
           <div class="project-dual-cost-page__drawer-body">
             <div class="finance-shell__metric-grid project-dual-cost-page__drawer-metrics">
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">外部金额</div>
+                <div class="finance-shell__metric-label">{{ financeDisplayLabel('外部金额', '金额一') }}</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.externalAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
-                <div class="finance-shell__metric-label">内部金额</div>
+                <div class="finance-shell__metric-label">{{ financeDisplayLabel('内部金额', '金额二') }}</div>
                 <div class="finance-shell__metric-value">{{ formatAmount(detailData?.internalAmount) }}</div>
               </div>
               <div class="finance-shell__metric-card">
@@ -224,12 +224,12 @@
                     <span>{{ row.costTypeName || '-' }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="外部金额" min-width="120" align="right">
+                <el-table-column :label="financeDisplayLabel('外部金额', '金额一')" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.externalAmount) }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column label="内部金额" min-width="120" align="right">
+                <el-table-column :label="financeDisplayLabel('内部金额', '金额二')" min-width="120" align="right">
                   <template #default="{ row }">
                     <span class="finance-shell__amount finance-shell__mono">{{ formatAmount(row.internalAmount) }}</span>
                   </template>
@@ -286,6 +286,7 @@ import {
   type DualProjectCostPageReqVO,
   COST_TYPE_OPTIONS
 } from '@/api/erp/finance/project-dual-cost'
+import { financeDisplayLabel } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'ErpFinanceDualProjectCost' })
 
@@ -343,7 +344,7 @@ const getList = async () => {
   } catch {
     list.value = []
     total.value = 0
-    listError.value = '项目双账套成本数据加载失败'
+    listError.value = financeDisplayLabel('项目双账套成本数据加载失败', '项目账目成本数据加载失败')
   } finally {
     loadingList.value = false
   }
@@ -418,7 +419,7 @@ const confirmRebuild = async () => {
 const handleExportExternal = async () => {
   try {
     const data = await DualProjectCostApi.exportExternalProjectCost(queryParams)
-    download.excel(data, '项目外部账成本.xlsx')
+    download.excel(data, financeDisplayLabel('项目外部账成本.xlsx', '项目账目一成本.xlsx'))
   } catch {
     // 导出失败
   }
@@ -427,7 +428,7 @@ const handleExportExternal = async () => {
 const handleExportInternal = async () => {
   try {
     const data = await DualProjectCostApi.exportInternalProjectCost(queryParams)
-    download.excel(data, '项目内部账成本.xlsx')
+    download.excel(data, financeDisplayLabel('项目内部账成本.xlsx', '项目账目二成本.xlsx'))
   } catch {
     // 导出失败
   }

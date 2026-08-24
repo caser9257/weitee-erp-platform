@@ -60,6 +60,13 @@
             <version>${revision}</version>
         </dependency>
 
+        <!-- MES 相关模块 -->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>weitee-module-mes</artifactId>
+            <version>${revision}</version>
+        </dependency>
+
         <!-- 项目管理相关模块 -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>

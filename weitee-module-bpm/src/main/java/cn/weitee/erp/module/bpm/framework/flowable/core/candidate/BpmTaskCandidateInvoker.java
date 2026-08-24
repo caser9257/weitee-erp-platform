@@ -17,6 +17,7 @@ import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import cn.weitee.erp.module.system.api.user.dto.AdminUserRespDTO;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
+import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.*;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -104,8 +105,10 @@ public class BpmTaskCandidateInvoker {
         Integer strategy = BpmnModelUtils.parseCandidateStrategy(flowElement);
         String param = BpmnModelUtils.parseCandidateParam(flowElement);
         Set<Long> userIds = getCandidateStrategy(strategy).calculateUsersByTask(execution, param);
+        log.info("[calculateUsersByTask] strategy={}, param={}, userIds={}", strategy, param, userIds);
         // 1.2 移除被禁用的用户
         removeDisableUsers(userIds);
+        log.info("[calculateUsersByTask] after removeDisableUsers userIds={}", userIds);
 
         // 2. 候选人为空时，根据"审批人为空"的配置补充
         if (CollUtil.isEmpty(userIds)) {
@@ -118,6 +121,9 @@ public class BpmTaskCandidateInvoker {
         ProcessInstance processInstance = SpringUtil.getBean(BpmProcessInstanceService.class)
                 .getProcessInstance(execution.getProcessInstanceId());
         Assert.notNull(processInstance, "流程实例({}) 不存在", execution.getProcessInstanceId());
+        Long startUserId = Long.parseLong(processInstance.getStartUserId());
+        userIds.removeIf(id -> id.equals(startUserId));
+        log.info("[calculateUsersByTask] after remove startUserId={}, final userIds={}", startUserId, userIds);
         removeStartUserIfSkip(userIds, flowElement, Long.valueOf(processInstance.getStartUserId()));
         return userIds;
     }

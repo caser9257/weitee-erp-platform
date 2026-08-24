@@ -2,6 +2,7 @@ package cn.weitee.erp.module.erp.dal.mysql.finance;
 
 import cn.weitee.erp.framework.mybatis.core.mapper.BaseMapperX;
 import cn.weitee.erp.framework.mybatis.core.query.LambdaQueryWrapperX;
+import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinanceLedgerRoleDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -22,6 +23,7 @@ public interface ErpFinanceLedgerRoleMapper extends BaseMapperX<ErpFinanceLedger
     default List<Long> selectLedgerIdsByRoleId(Long roleId) {
         List<ErpFinanceLedgerRoleDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceLedgerRoleDO>()
                 .eq(ErpFinanceLedgerRoleDO::getRoleId, roleId)
+                .eq(ErpFinanceLedgerRoleDO::getStatus, CommonStatusEnum.ENABLE.getStatus())
                 .select(ErpFinanceLedgerRoleDO::getLedgerId));
         if (list == null || list.isEmpty()) {
             return Collections.emptyList();
@@ -38,6 +40,7 @@ public interface ErpFinanceLedgerRoleMapper extends BaseMapperX<ErpFinanceLedger
         }
         List<ErpFinanceLedgerRoleDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceLedgerRoleDO>()
                 .in(ErpFinanceLedgerRoleDO::getRoleId, roleIds)
+                .eq(ErpFinanceLedgerRoleDO::getStatus, CommonStatusEnum.ENABLE.getStatus())
                 .select(ErpFinanceLedgerRoleDO::getLedgerId));
         if (list == null || list.isEmpty()) {
             return Collections.emptyList();
@@ -51,6 +54,7 @@ public interface ErpFinanceLedgerRoleMapper extends BaseMapperX<ErpFinanceLedger
     default List<Long> selectRoleIdsByLedgerId(Long ledgerId) {
         List<ErpFinanceLedgerRoleDO> list = selectList(new LambdaQueryWrapperX<ErpFinanceLedgerRoleDO>()
                 .eq(ErpFinanceLedgerRoleDO::getLedgerId, ledgerId)
+                .eq(ErpFinanceLedgerRoleDO::getStatus, CommonStatusEnum.ENABLE.getStatus())
                 .select(ErpFinanceLedgerRoleDO::getRoleId));
         if (list == null || list.isEmpty()) {
             return Collections.emptyList();

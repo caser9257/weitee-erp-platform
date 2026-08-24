@@ -90,11 +90,19 @@ UPDATE `system_menu` SET `name`='研发 BOM',`type`=2,`sort`=10,`parent_id`=@rd_
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
 SELECT 930121,'研发 BOM','',2,10,@rd_root_id,'rd-bom','ep:collection-tag','erp/rd/rd-bom/index','FormalRdBom',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE @rd_rd_bom_menu_id IS NULL;
-SET @rd_bom_menu_id := (SELECT `id` FROM `system_menu` WHERE `component`='erp/rd/bom/index' AND `deleted`=b'0' ORDER BY `id` LIMIT 1);
-UPDATE `system_menu` SET `name`='标准 BOM',`type`=2,`sort`=20,`parent_id`=@rd_root_id,`path`='bom',`icon`='ep:collection',`component`='erp/rd/bom/index',`component_name`='FormalStandardBom',`status`=0,`visible`=b'1',`keep_alive`=b'1',`always_show`=b'1',`updater`='1',`update_time`=NOW() WHERE `id`=@rd_bom_menu_id;
-INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
-SELECT 930122,'标准 BOM','',2,20,@rd_root_id,'bom','ep:collection','erp/rd/bom/index','FormalStandardBom',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
-WHERE @rd_bom_menu_id IS NULL;
+SET @legacy_rd_bom_menu_id := (
+  SELECT `id`
+  FROM `system_menu`
+  WHERE `parent_id`=@rd_root_id
+    AND `path`='bom'
+    AND `component`='erp/rd/bom/index'
+    AND `deleted`=b'0'
+  ORDER BY `id`
+  LIMIT 1
+);
+UPDATE `system_menu`
+SET `deleted`=b'1',`updater`='1',`update_time`=NOW()
+WHERE `id`=@legacy_rd_bom_menu_id;
 INSERT INTO `system_menu` (`id`,`name`,`permission`,`type`,`sort`,`parent_id`,`path`,`icon`,`component`,`component_name`,`status`,`visible`,`keep_alive`,`always_show`,`creator`,`create_time`,`updater`,`update_time`,`deleted`)
 SELECT 930123,'研发文档与图纸库','',2,30,@rd_root_id,'document','ep:folder-opened','erp/rd/document/index','FormalRdDocument',0,b'1',b'1',b'1','1',NOW(),'1',NOW(),b'0'
 WHERE NOT EXISTS (SELECT 1 FROM `system_menu` WHERE `component`='erp/rd/document/index' AND `deleted`=b'0');

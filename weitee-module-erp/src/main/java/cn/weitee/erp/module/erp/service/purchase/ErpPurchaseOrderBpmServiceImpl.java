@@ -106,8 +106,9 @@ public class ErpPurchaseOrderBpmServiceImpl implements ErpPurchaseOrderBpmServic
         ErpTransactionUtils.afterCommit(() -> {
             try {
                 approvalRuntimeService.cancel("erp.purchase.order.submit", orderId, userId, reqVO.getReason());
-            } catch (Exception e) {
+} catch (Exception e) {
                 log.warn("[cancelPurchaseOrderApproval] BPM 撤回失败，orderId={}", orderId, e);
+                throw e;
             }
         });
     }

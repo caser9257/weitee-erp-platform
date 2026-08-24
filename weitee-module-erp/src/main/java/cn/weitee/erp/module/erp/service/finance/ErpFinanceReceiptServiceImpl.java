@@ -187,7 +187,6 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateFinanceReceiptStatus(Long id, Integer status) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         boolean process = ErpAuditStatus.PROCESS.getStatus().equals(status);
@@ -201,36 +200,44 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
         }
 
-        // 2. 审批通过时，按 bizType+bizId 加锁防止并发超收
+        // 在事务外获取 Redisson 锁，防止锁在事务内获取导致锁超时前无法释放
         List<ErpFinanceReceiptItemDO> receiptItems = erpFinanceReceiptItemMapper.selectListByReceiptId(id);
         List<RLock> locks = approve ? lockBizEntities(receiptItems) : Collections.emptyList();
         try {
-            // 3. 审批通过时重新校验剩余可收金额
-            if (approve) {
-                reValidateReceiptAmounts(receipt, receiptItems);
-            }
-
-            // 4. 更新状态
-            int updateCount = erpFinanceReceiptMapper.updateByIdAndStatus(id, receipt.getStatus(),
-                    new ErpFinanceReceiptDO().setStatus(status));
-            if (updateCount == 0) {
-                throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
-            }
-
-            // 5. 按审批后口径刷新销售出库、退货的收款金额情况
-            updateSalePrice(receiptItems);
-
-            // 6. 审批通过或驳回/作废时，事务提交后更新关联销售订单收款状态
-            Long finalReceiptId = id;
-            ErpTransactionUtils.afterCommit(() -> {
-                if (approve) {
-                    triggerProjectLifecycleRefresh(finalReceiptId);
-                }
-                updateRelatedSaleOrderReceipt(finalReceiptId);
+            executeInRequiredTransaction(() -> {
+                doUpdateFinanceReceiptStatus(id, status, receipt, receiptItems, locks, approve);
             });
         } finally {
-            unlockAfterTransaction(locks);
+            unlockNow(locks);
         }
+    }
+
+    private void doUpdateFinanceReceiptStatus(Long id, Integer status, ErpFinanceReceiptDO receipt,
+                                               List<ErpFinanceReceiptItemDO> receiptItems,
+                                               List<RLock> locks, boolean approve) {
+        // 3. 审批通过时重新校验剩余可收金额
+        if (approve) {
+            reValidateReceiptAmounts(receipt, receiptItems);
+        }
+
+        // 4. 更新状态
+        int updateCount = erpFinanceReceiptMapper.updateByIdAndStatus(id, receipt.getStatus(),
+                new ErpFinanceReceiptDO().setStatus(status));
+        if (updateCount == 0) {
+            throw exception(approve ? FINANCE_RECEIPT_APPROVE_FAIL : FINANCE_RECEIPT_PROCESS_FAIL);
+        }
+
+        // 5. 按审批后口径刷新销售出库、退货的收款金额情况
+        updateSalePrice(receiptItems);
+
+        // 6. 审批通过或驳回/作废时，事务提交后更新关联销售订单收款状态
+        Long finalReceiptId = id;
+        ErpTransactionUtils.afterCommit(() -> {
+            if (approve) {
+                triggerProjectLifecycleRefresh(finalReceiptId);
+            }
+            updateRelatedSaleOrderReceipt(finalReceiptId);
+        });
     }
 
     private void reValidateReceiptAmounts(ErpFinanceReceiptDO receipt, List<ErpFinanceReceiptItemDO> receiptItems) {

@@ -15,13 +15,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-
-import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
+import java.util.stream.Collectors;
 
 /**
- * ERP 盘点快照 Service 实现类
+ * ERP 盘点快照 Service 实现�?
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 @Service
 @Validated
@@ -50,12 +49,33 @@ public class ErpStockCheckSnapshotServiceImpl implements ErpStockCheckSnapshotSe
         // 2. 删除已有快照（防止重复生成）
         snapshotMapper.deleteByCheckId(checkId);
 
-        // 3. 生成快照
+        // 3. 批量查询库存（避免 N+1 查询）
+        // 按仓库分组，批量查询每个仓库的库存
+        Map<Long, List<ErpStockCheckItemDO>> itemsByWarehouse = checkItems.stream()
+                .collect(Collectors.groupingBy(ErpStockCheckItemDO::getWarehouseId));
+        
+        // 存储库存信息：key = "productId:warehouseId", value = ErpStockDO
+        Map<String, ErpStockDO> stockMap = new java.util.HashMap<>();
+        
+        for (Map.Entry<Long, List<ErpStockCheckItemDO>> entry : itemsByWarehouse.entrySet()) {
+            Long warehouseId = entry.getKey();
+            List<ErpStockCheckItemDO> items = entry.getValue();
+            List<Long> productIds = items.stream()
+                    .map(ErpStockCheckItemDO::getProductId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            // 批量查询该仓库下所有产品的库存
+            List<ErpStockDO> stocks = stockService.getStockListByProductIdsAndWarehouseId(productIds, warehouseId);
+            for (ErpStockDO stock : stocks) {
+                String key = stock.getProductId() + ":" + stock.getWarehouseId();
+                stockMap.put(key, stock);
+            }
+        }
+
+        // 4. 生成快照
         LocalDateTime snapshotTime = LocalDateTime.now();
         int count = 0;
-        Map<String, ErpStockDO> stockMap = stockService.getStockMapByProductAndWarehouseIds(
-                convertSet(checkItems, ErpStockCheckItemDO::getProductId),
-                convertSet(checkItems, ErpStockCheckItemDO::getWarehouseId));
 
         for (ErpStockCheckItemDO item : checkItems) {
             // 获取当前库存

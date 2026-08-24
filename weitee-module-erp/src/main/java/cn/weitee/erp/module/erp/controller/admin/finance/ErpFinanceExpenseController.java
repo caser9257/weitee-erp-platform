@@ -38,6 +38,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpFinanceExpenseBpmService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceExpenseService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceExpenseTypeService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinancePaymentService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermission;
 import cn.weitee.erp.module.erp.service.project.ErpProjectService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.system.api.dept.DeptApi;
@@ -82,6 +83,7 @@ import static cn.weitee.erp.module.erp.util.ErpUserIdUtils.parseUserId;
 @RestController
 @RequestMapping("/erp/finance-expense")
 @Validated
+@FinanceDataPermission
 public class ErpFinanceExpenseController {
 
     @Resource

@@ -23,9 +23,14 @@ public class ErpRdBomRespVO {
 
     private Integer status;
 
+    private String processInstanceId;
+
     private Long publishedBomId;
 
     private LocalDateTime lastPublishedTime;
+
+    @Schema(description = "源版本 BOM 编号（发起升版变更时指向旧版本，首建为空）")
+    private Long sourceBomId;
 
     private String remark;
 
@@ -51,6 +56,10 @@ public class ErpRdBomRespVO {
         private BigDecimal usageQty;
 
         private BigDecimal lossRate;
+
+        private String referenceDesignator;
+
+        private String position;
 
         private Integer leadTimeDay;
 

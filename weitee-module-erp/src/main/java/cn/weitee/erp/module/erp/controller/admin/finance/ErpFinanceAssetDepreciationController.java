@@ -7,6 +7,7 @@ import cn.weitee.erp.module.erp.controller.admin.finance.vo.asset.ErpFinanceAsse
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.asset.ErpFinanceAssetDepreciationPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.finance.vo.asset.ErpFinanceAssetDepreciationRespVO;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceAssetDepreciationService;
+import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,6 +27,7 @@ import static cn.weitee.erp.framework.common.pojo.CommonResult.success;
 @RestController
 @RequestMapping("/erp/finance-asset-depreciation")
 @Validated
+@FinanceDataPermission
 public class ErpFinanceAssetDepreciationController {
 
     @Resource

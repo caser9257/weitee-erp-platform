@@ -1,5 +1,8 @@
 package cn.weitee.erp.module.erp.service.finance.diffcalc;
 
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstantsFinanceLedger.FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID;
+
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
@@ -51,6 +54,27 @@ public class AmountDiffCalculatorFactory {
             return internalAmount;
         }
         return calculator.calculate(internalAmount, ratio, fixedAmount);
+    }
+
+    /**
+     * 计算并校验外部账金额。所有差异成本重算都必须经过此方法，保证内账金额严格小于外账金额。
+     */
+    public BigDecimal calculateExternalAmount(Integer calculationType, BigDecimal internalAmount,
+                                              BigDecimal ratio, BigDecimal fixedAmount) {
+        BigDecimal externalAmount = calculate(calculationType, internalAmount, ratio, fixedAmount);
+        if (internalAmount == null) {
+            return null;
+        }
+        BigDecimal normalizedInternalAmount = internalAmount.setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal normalizedExternalAmount = externalAmount == null
+                ? BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP)
+                : externalAmount.setScale(2, java.math.RoundingMode.HALF_UP);
+        if (normalizedInternalAmount.compareTo(BigDecimal.ZERO) != 0
+                && normalizedExternalAmount.compareTo(normalizedInternalAmount) <= 0) {
+            throw exception(FINANCE_DUAL_LEDGER_DIFF_CALCULATION_DIRECTION_INVALID,
+                    normalizedInternalAmount, normalizedExternalAmount);
+        }
+        return normalizedExternalAmount;
     }
 
 }

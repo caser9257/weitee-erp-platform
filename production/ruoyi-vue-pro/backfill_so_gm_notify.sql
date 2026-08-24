@@ -1,4 +1,4 @@
-USE `ruoyi-vue-pro`;
+USE `weitee-erp`;
 
 INSERT INTO `system_notify_message`
 (`user_id`, `user_type`, `template_id`, `template_code`, `template_nickname`, `template_content`,

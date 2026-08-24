@@ -33,6 +33,11 @@ public class ErpFinanceVoucherDO extends BaseDO {
 
     private Long ledgerId;
 
+    /**
+     * 凭证生成时固化的业务归属部门；空值表示历史或来源无法可靠识别，待归属。
+     */
+    private Long deptId;
+
     private Long periodId;
 
     private Long templateId;

@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * 文件版本 Service 接口
  *
- * @author ruoyi-vue-pro
+ * @author weitee
  */
 public interface FileVersionService {
 
@@ -22,12 +22,12 @@ public interface FileVersionService {
     List<FileVersionDO> getFileVersions(Long fileId);
 
     /**
-     * 获取最新版本
+     * 获取最新版鏈?
      */
     Integer getLatestVersion(Long fileId);
 
     /**
-     * 回溯到指定版本
+     * 回溯到指定版鏈?
      */
     void rollbackToVersion(Long fileId, Integer version);
 

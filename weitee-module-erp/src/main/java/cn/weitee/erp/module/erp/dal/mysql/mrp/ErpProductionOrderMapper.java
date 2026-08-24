@@ -40,4 +40,9 @@ public interface ErpProductionOrderMapper extends BaseMapperX<ErpProductionOrder
                 .in(ErpProductionOrderDO::getStatus, 0, 10));
     }
 
+    default Long selectCount(Integer status) {
+        return selectCount(new LambdaQueryWrapperX<ErpProductionOrderDO>()
+                .eq(ErpProductionOrderDO::getStatus, status));
+    }
+
 }

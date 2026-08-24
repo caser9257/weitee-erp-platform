@@ -297,7 +297,7 @@ type StockMoveListRow = StockMoveVO & {
   creatorName?: string
 }
 
-type StockMoveActionKey = 'detail' | 'edit' | 'toggleStatus' | 'delete'
+type StockMoveActionKey = 'detail' | 'edit' | 'submit' | 'cancelApproval' | 'delete'
   | 'print'
 
 type StockMoveActionDescriptor = {
@@ -312,7 +312,8 @@ type StockMoveActionDescriptor = {
 const canQueryStockMove = checkPermi(['erp:stock-move:query'])
 const canCreateStockMove = checkPermi(['erp:stock-move:create'])
 const canUpdateStockMove = checkPermi(['erp:stock-move:update'])
-const canUpdateStockMoveStatus = checkPermi(['erp:stock-move:update-status'])
+const canSubmitStockMove = checkPermi(['erp:stock-move:submit'])
+const canCancelStockMoveApproval = checkPermi(['erp:stock-move:cancel-approval'])
 const canDeleteStockMove = checkPermi(['erp:stock-move:delete'])
 const canExportStockMove = checkPermi(['erp:stock-move:export'])
 
@@ -376,8 +377,10 @@ const formatCurrency = (value?: number | string | null) =>
     maximumFractionDigits: 2
   }).format(Number(value || 0))
 
-const canEdit = (row: StockMoveListRow) => row.status !== 20
-const canApprove = (row: StockMoveListRow) => row.status === 10
+const isApprovalRunning = (row: StockMoveListRow) => row.status === 10 && !!row.processInstanceId
+const canEdit = (row: StockMoveListRow) => row.status === 0 || row.status === 60
+const canSubmit = (row: StockMoveListRow) => canEdit(row)
+const canApprove = (row: StockMoveListRow) => canSubmit(row)
 const isDeletingRow = (id?: number) => !!id && deletingIds.value.includes(id)
 const isUpdatingStatus = (id?: number) => !!id && statusUpdatingIds.value.includes(id)
 const isPrintingRow = (id?: number) => !!id && printingIds.value.includes(id)
@@ -398,16 +401,24 @@ const getAllActionDescriptors = (row: StockMoveListRow): StockMoveActionDescript
   if (canUpdateStockMove && canEdit(row)) {
     actions.push({ key: 'edit', label: '编辑' })
   }
-  if (canUpdateStockMoveStatus) {
+  if (canSubmitStockMove && canSubmit(row)) {
     actions.push({
-      key: 'toggleStatus',
+      key: 'submit',
       label: canApprove(row) ? '审批' : '反审批',
       type: canApprove(row) ? 'primary' : 'danger',
       disabled: isUpdatingStatus(row.id),
       loading: isUpdatingStatus(row.id)
     })
   }
-  if (canDeleteStockMove) {
+  if (canCancelStockMoveApproval && isApprovalRunning(row)) {
+    actions.push({
+      key: 'cancelApproval',
+      label: '撤回审批',
+      disabled: isUpdatingStatus(row.id),
+      loading: isUpdatingStatus(row.id)
+    })
+  }
+  if (canDeleteStockMove && !isApprovalRunning(row)) {
     actions.push({
       key: 'delete',
       label: '删除',
@@ -509,7 +520,7 @@ const handleUpdateStatus = async (row: StockMoveListRow) => {
   try {
     await message.confirm(`确定${actionText}该调拨单吗？`)
     setIdsLoading(statusUpdatingIds, [row.id], true)
-    await StockMoveApi.updateStockMoveStatus(row.id, nextStatus)
+    await StockMoveApi.submitStockMove(row.id)
     message.success(`${actionText}成功`)
     await getList()
   } catch {
@@ -545,8 +556,14 @@ const handleCommand = async (command: StockMoveActionKey | string, row: StockMov
     case 'edit':
       openForm('update', row.id)
       break
-    case 'toggleStatus':
+    case 'submit':
       await handleUpdateStatus(row)
+      break
+    case 'cancelApproval':
+      if (row.id) {
+        await StockMoveApi.cancelStockMoveApproval(row.id)
+        await getList()
+      }
       break
     case 'delete':
       await handleDelete(row.id ? [row.id] : [])

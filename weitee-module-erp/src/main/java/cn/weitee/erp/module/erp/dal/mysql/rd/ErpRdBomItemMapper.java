@@ -13,6 +13,18 @@ public interface ErpRdBomItemMapper extends BaseMapperX<ErpRdBomItemDO> {
         return selectList(ErpRdBomItemDO::getBomId, bomId);
     }
 
+    default List<ErpRdBomItemDO> selectListByMaterialId(Long materialId) {
+        return selectList(ErpRdBomItemDO::getMaterialId, materialId);
+    }
+
+    default List<ErpRdBomItemDO> selectListByMaterialIds(java.util.Collection<Long> materialIds) {
+        return selectList(ErpRdBomItemDO::getMaterialId, materialIds);
+    }
+
+    default List<ErpRdBomItemDO> selectListByBomIds(java.util.Collection<Long> bomIds) {
+        return selectList(ErpRdBomItemDO::getBomId, bomIds);
+    }
+
     default void deleteByBomId(Long bomId) {
         delete(ErpRdBomItemDO::getBomId, bomId);
     }

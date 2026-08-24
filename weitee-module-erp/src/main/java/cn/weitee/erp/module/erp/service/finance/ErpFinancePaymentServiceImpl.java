@@ -177,7 +177,6 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateFinancePaymentStatus(Long id, Integer status) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         boolean process = ErpAuditStatus.PROCESS.getStatus().equals(status);
@@ -191,9 +190,21 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         if (payment.getStatus().equals(status)) {
             throw exception(approve ? FINANCE_PAYMENT_APPROVE_FAIL : FINANCE_PAYMENT_PROCESS_FAIL);
         }
+        // 在事务外获取 Redisson 锁，防止锁在事务内获取导致锁超时前无法释放
         List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
         List<RLock> locks = approve ? lockApStatements(paymentItems) : Collections.emptyList();
         try {
+            executeInRequiredTransaction(() -> {
+                doUpdateFinancePaymentStatus(id, status, payment, paymentItems, locks, approve, process);
+            });
+        } finally {
+            unlockNow(locks);
+        }
+    }
+
+    private void doUpdateFinancePaymentStatus(Long id, Integer status, ErpFinancePaymentDO payment,
+                                               List<ErpFinancePaymentItemDO> paymentItems,
+                                               List<RLock> locks, boolean approve, boolean process) {
         Map<Long, ErpApStatementDO> statementMap = approve
                 ? validateApprovePaymentItems(payment.getSupplierId(), paymentItems)
                 : Collections.emptyMap();
@@ -217,9 +228,6 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
                 approve ? buildAllocateAmountMap(paymentItems, statementMap) : buildRollbackAmountMap(approvedAllocates),
                 approve ? ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus()
                         : ErpApStatementItemTypeEnum.PAYMENT_ALLOCATE_ROLLBACK.getStatus());
-        } finally {
-            unlockAfterTransaction(locks);
-        }
     }
 
     /**
@@ -245,7 +253,6 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void updateFinancePaymentStatusByBpm(Long id, String processInstanceId, Integer status, String reason) {
         boolean approve = ErpAuditStatus.APPROVE.getStatus().equals(status);
         boolean reject = ErpAuditStatus.REJECT.getStatus().equals(status);
@@ -257,15 +264,26 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             throw exception(FINANCE_PAYMENT_STATUS_UPDATE_ILLEGAL);
         }
         if (!ErpAuditStatus.PROCESS.getStatus().equals(payment.getStatus())) {
-            // 非处理中状态：已审批/已驳回/已作废，忽略迟到的 BPM 回调
             log.warn("[updateFinancePaymentStatusByBpm] 忽略非处理中付款单回调，id={}, currentStatus={}, callbackStatus={}",
                     id, payment.getStatus(), status);
             return;
         }
-
+        // 在事务外获取 Redisson 锁
         List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
         List<RLock> locks = approve ? lockApStatements(paymentItems) : Collections.emptyList();
         try {
+            executeInRequiredTransaction(() -> {
+                doUpdateFinancePaymentStatusByBpm(id, processInstanceId, status, payment, paymentItems, locks, approve);
+            });
+        } finally {
+            unlockNow(locks);
+        }
+    }
+
+    private void doUpdateFinancePaymentStatusByBpm(Long id, String processInstanceId, Integer status,
+                                                    ErpFinancePaymentDO payment,
+                                                    List<ErpFinancePaymentItemDO> paymentItems,
+                                                    List<RLock> locks, boolean approve) {
         Map<Long, ErpApStatementDO> statementMap = approve
                 ? validateApprovePaymentItems(payment.getSupplierId(), paymentItems)
                 : Collections.emptyMap();
@@ -285,9 +303,6 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
                     ErpApStatementItemTypeEnum.PAYMENT_ALLOCATED.getStatus());
         }
         updateRelatedPurchaseOrderPayment(paymentItems);
-        } finally {
-            unlockAfterTransaction(locks);
-        }
     }
 
     @Override

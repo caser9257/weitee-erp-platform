@@ -8,6 +8,7 @@ import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.Deployment;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * 采购退货 / 其它入库 / 其它出库 — 3 个 BPMN 流程定义自动部署工具
+ * 销售订单、采购入库、采购退货、其它入库、其它出库 — BPMN 流程定义自动部署工具
  *
  * 使用方式：运行此测试即可自动部署 3 个 BPMN 流程定义到 Flowable 引擎，
  * 同时在 bpm_process_definition_info 表中插入扩展元数据。
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  *   - erp_stock_out_approval
  */
 @Transactional
+@Disabled("手动部署工具：需真实 Flowable 引擎环境（RepositoryService），单元测试环境跳过")
 class SupplyChainBpmnDeployTest extends BaseDbUnitTest {
 
     @Resource
@@ -39,6 +41,8 @@ class SupplyChainBpmnDeployTest extends BaseDbUnitTest {
     private BpmProcessDefinitionInfoMapper processDefinitionInfoMapper;
 
     private static final String[][] BPMN_FILES = {
+            {"erp_sale_order", "销售订单审批", "bpmn/erp_sale_order_approval.bpmn"},
+            {"erp_purchase_in_approval", "采购入库审批", "bpmn/erp_purchase_in_approval.bpmn"},
             {"erp_purchase_return_approval", "采购退货审批", "bpmn/erp_purchase_return_approval.bpmn"},
             {"erp_stock_in_approval", "其它入库审批", "bpmn/erp_stock_in_approval.bpmn"},
             {"erp_stock_out_approval", "其它出库审批", "bpmn/erp_stock_out_approval.bpmn"},

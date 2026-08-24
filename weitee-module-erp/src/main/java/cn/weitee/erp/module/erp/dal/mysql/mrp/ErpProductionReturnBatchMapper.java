@@ -29,4 +29,13 @@ public interface ErpProductionReturnBatchMapper extends BaseMapperX<ErpProductio
                 .in(ErpProductionReturnBatchDO::getIssueBatchId, issueBatchIds));
     }
 
+    default List<ErpProductionReturnBatchDO> selectListByIssueBatchIdsForUpdate(Collection<Long> issueBatchIds) {
+        if (CollUtil.isEmpty(issueBatchIds)) {
+            return Collections.emptyList();
+        }
+        return selectList(new LambdaQueryWrapper<ErpProductionReturnBatchDO>()
+                .in(ErpProductionReturnBatchDO::getIssueBatchId, issueBatchIds)
+                .last("FOR UPDATE"));
+    }
+
 }

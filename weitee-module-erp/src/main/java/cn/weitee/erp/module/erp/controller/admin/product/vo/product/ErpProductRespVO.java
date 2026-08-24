@@ -46,6 +46,30 @@ public class ErpProductRespVO {
     @Schema(description = "数量精度，继承自产品单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3")
     private Integer quantityPrecision;
 
+    @Schema(description = "产品类型")
+    private Integer productType;
+
+    @Schema(description = "生产方式")
+    private Integer produceType;
+
+    @Schema(description = "是否启用批次")
+    private Boolean batchEnable;
+
+    @Schema(description = "是否启用序列号")
+    private Boolean snEnable;
+
+    @Schema(description = "默认工艺路线编号")
+    private Long defaultRouteId;
+
+    @Schema(description = "是否启用质检")
+    private Boolean qcEnable;
+
+    @Schema(description = "是否支持委外")
+    private Boolean outsourceEnable;
+
+    @Schema(description = "成本方式")
+    private Integer costMethod;
+
     @Schema(description = "Status", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     @ExcelProperty("Status")
     private Integer status;
@@ -53,6 +77,22 @@ public class ErpProductRespVO {
     @Schema(description = "Standard", example = "1.2mm")
     @ExcelProperty("Standard")
     private String standard;
+
+    @Schema(description = "产品封装")
+    @ExcelProperty("Packaging")
+    private String packaging;
+
+    @Schema(description = "质量等级")
+    @ExcelProperty("Quality Grade")
+    private String qualityGrade;
+
+    @Schema(description = "品牌/制造商")
+    @ExcelProperty("Brand/Manufacturer")
+    private String brandManufacturer;
+
+    @Schema(description = "替代型号")
+    @ExcelProperty("Alternative Model")
+    private String alternativeModel;
 
     @Schema(description = "Remark", example = "Key material")
     @ExcelProperty("Remark")
@@ -86,8 +126,17 @@ public class ErpProductRespVO {
     @ExcelProperty("Min Price")
     private BigDecimal minPrice;
 
+    @Schema(description = "Whether to participate in MRP", example = "true")
+    private Boolean mrpEnable;
+
     @Schema(description = "Asset candidate flag", example = "true")
     private Boolean assetFlag;
+
+    @Schema(description = "审核状态：0草稿 10审批中 20已审批 30已驳回 60处理失败")
+    private Integer auditStatus;
+
+    @Schema(description = "流程实例编号")
+    private String processInstanceId;
 
     @Schema(description = "Create time", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("Create Time")

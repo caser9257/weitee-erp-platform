@@ -79,7 +79,7 @@ WHERE NOT EXISTS (
 
 SET @rd_parent_id := COALESCE(
   (SELECT `parent_id` FROM `system_menu`
-   WHERE `component` = 'erp/rd/bom/index' AND `deleted` = b'0'
+   WHERE `component` = 'erp/mrp/bom/index' AND `deleted` = b'0'
    ORDER BY `id` LIMIT 1),
   (SELECT `id` FROM `system_menu`
    WHERE `parent_id` = @erp_root_menu_id AND `path` = 'rd' AND `deleted` = b'0'
@@ -107,7 +107,7 @@ SET @mrp_parent_id := (
 SET @manufacture_bom_menu_id := (
   SELECT `id`
   FROM `system_menu`
-  WHERE `component` IN ('erp/mrp/bom/index', 'erp/rd/bom/index')
+  WHERE `component` = 'erp/mrp/bom/index'
     AND `deleted` = b'0'
   ORDER BY `id`
   LIMIT 1

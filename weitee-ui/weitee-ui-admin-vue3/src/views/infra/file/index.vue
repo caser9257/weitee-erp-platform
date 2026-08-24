@@ -41,7 +41,7 @@
       <el-form-item>
         <el-button @click="handleQuery"><Icon icon="ep:search" class="mr-5px" /> 搜索</el-button>
         <el-button @click="resetQuery"><Icon icon="ep:refresh" class="mr-5px" /> 重置</el-button>
-        <el-button type="primary" plain @click="openForm">
+        <el-button type="primary" plain @click="openForm" v-hasPermi="['infra:file:create']">
           <Icon icon="ep:upload" class="mr-5px" /> 上传文件
         </el-button>
         <el-button
@@ -103,10 +103,13 @@
         width="180"
         :formatter="dateFormatter"
       />
-      <el-table-column label="操作" align="center">
+      <el-table-column label="操作" align="center" width="220">
         <template #default="scope">
-          <el-button link type="primary" @click="copyToClipboard(scope.row.url)">
+          <el-button link type="primary" @click="copyToClipboard(scope.row.url)" v-hasPermi="['infra:file:query']">
             复制链接
+          </el-button>
+          <el-button link type="primary" @click="openVersionDialog(scope.row)" v-hasPermi="['infra:file:query']">
+            版本历史
           </el-button>
           <el-button
             link
@@ -130,6 +133,30 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <FileForm ref="formRef" @success="getList" />
+
+  <!-- 版本历史弹窗 -->
+  <Dialog v-model="versionDialogVisible" title="文件版本历史" width="700px">
+    <el-table v-loading="versionLoading" :data="versionList" max-height="400px">
+      <el-table-column label="版本号" align="center" prop="version" width="80" />
+      <el-table-column label="文件名" align="center" prop="name" :show-overflow-tooltip="true" />
+      <el-table-column label="文件大小" align="center" width="100" :formatter="fileSizeFormatter" />
+      <el-table-column label="版本说明" align="center" prop="description" :show-overflow-tooltip="true" />
+      <el-table-column label="创建时间" align="center" prop="createTime" width="160" :formatter="dateFormatter" />
+      <el-table-column label="操作" align="center" width="120">
+        <template #default="{ row }">
+          <el-button link type="primary" @click="handleRollback(row)">
+            回溯
+          </el-button>
+          <el-button link type="primary" :href="row.url" target="_blank">
+            下载
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <template #footer>
+      <el-button @click="versionDialogVisible = false">关 闭</el-button>
+    </template>
+  </Dialog>
 </template>
 <script lang="ts" setup>
 import { fileSizeFormatter } from '@/utils'
@@ -235,4 +262,35 @@ const handleDeleteBatch = async () => {
 onMounted(() => {
   getList()
 })
+
+/** 文件版本历史 */
+const versionDialogVisible = ref(false)
+const versionLoading = ref(false)
+const versionList = ref<FileApi.FileVersionRespVO[]>([])
+const currentFile = ref<{ id: number; name: string } | null>(null)
+
+const openVersionDialog = async (row: any) => {
+  currentFile.value = { id: row.id, name: row.name }
+  versionDialogVisible.value = true
+  versionLoading.value = true
+  try {
+    const data = await FileApi.getFileVersionList(row.id)
+    versionList.value = data
+  } finally {
+    versionLoading.value = false
+  }
+}
+
+const handleRollback = async (row: FileApi.FileVersionRespVO) => {
+  try {
+    await message.confirm(
+      `确定要将文件「${currentFile.value?.name}」回溯到版本 ${row.version} 吗？`,
+      '回溯确认'
+    )
+    await FileApi.rollbackFileVersion({ fileId: row.fileId, version: row.version })
+    message.success('回溯成功')
+    versionDialogVisible.value = false
+    await getList()
+  } catch {}
+}
 </script>

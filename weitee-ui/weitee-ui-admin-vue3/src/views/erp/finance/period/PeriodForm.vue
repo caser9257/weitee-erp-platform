@@ -10,7 +10,7 @@
     >
       <el-form-item label="账簿" prop="ledgerId">
         <el-select v-model="formData.ledgerId" placeholder="请选择账簿" filterable class="!w-full">
-          <el-option v-for="item in ledgerOptions" :key="item.id" :label="item.name" :value="item.id" />
+          <el-option v-for="item in ledgerOptions" :key="item.id" :label="displayLedgerName(item.name)" :value="item.id" />
         </el-select>
       </el-form-item>
       <div class="finance-period-form__grid">
@@ -38,6 +38,7 @@
 import type { FormRules } from 'element-plus'
 import { ErpFinanceLedgerVO, FinanceLedgerApi } from '@/api/erp/finance/ledger'
 import { ErpFinancePeriodSaveReqVO, FinancePeriodApi } from '@/api/erp/finance/period'
+import { displayLedgerName } from '@/utils/financeDisplay'
 
 defineOptions({ name: 'PeriodForm' })
 

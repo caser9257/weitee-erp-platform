@@ -3,7 +3,9 @@ package cn.weitee.erp.module.erp.service.mrp;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.weitee.erp.framework.common.util.collection.CollectionUtils;
+import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnCreateReqVO;
+import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.returning.ErpProductionReturnableBatchesRespVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionIssueBatchDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionIssueItemDO;
@@ -115,6 +117,11 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
     }
 
     @Override
+    public PageResult<ErpProductionReturnDO> getProductionReturnPage(ErpProductionReturnPageReqVO pageReqVO) {
+        return erpProductionReturnMapper.selectPage(pageReqVO);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createProductionReturn(ErpProductionReturnCreateReqVO reqVO) {
         ErpProductionOrderDO order = productionOrderService.getProductionOrder(reqVO.getProductionOrderId());
@@ -127,16 +134,14 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                 ErpProductionMaterialDO::getId);
         List<Long> issueBatchIds = reqVO.getItems().stream().flatMap(item -> item.getBatches().stream())
                 .map(ErpProductionReturnCreateReqVO.Batch::getIssueBatchId).distinct().toList();
-        Map<Long, ErpProductionIssueBatchDO> issueBatchMap = convertMap(
-                erpProductionIssueBatchMapper.selectListByIssueItemIds(
-                        erpProductionIssueItemMapper.selectListByProductionMaterialIds(materialMap.keySet()).stream()
-                                .map(ErpProductionIssueItemDO::getId).toList()),
-                ErpProductionIssueBatchDO::getId);
         Map<Long, ErpProductionIssueItemDO> issueItemMap = convertMap(
                 erpProductionIssueItemMapper.selectListByProductionMaterialIds(materialMap.keySet()),
                 ErpProductionIssueItemDO::getId);
+        Map<Long, ErpProductionIssueBatchDO> issueBatchMap = convertMap(
+                erpProductionIssueBatchMapper.selectListForUpdateByIds(issueBatchIds),
+                ErpProductionIssueBatchDO::getId);
         Map<Long, BigDecimal> existingReturnedQtyMap = CollectionUtils.convertMap(
-                erpProductionReturnBatchMapper.selectListByIssueBatchIds(issueBatchIds),
+                erpProductionReturnBatchMapper.selectListByIssueBatchIdsForUpdate(issueBatchIds),
                 ErpProductionReturnBatchDO::getIssueBatchId,
                 item -> ObjectUtil.defaultIfNull(item.getReturnQty(), BigDecimal.ZERO),
                 BigDecimal::add);
@@ -202,7 +207,9 @@ public class ErpProductionReturnServiceImpl implements ErpProductionReturnServic
                         .setBatchNo(batch.getBatchNo())
                         .setReturnQty(batch.getReturnQty()));
             }
-            erpProductionMaterialMapper.updateReturnedQtyIncrement(material.getId(), item.getReturnQty());
+            if (erpProductionMaterialMapper.updateReturnedQtyIncrement(material.getId(), item.getReturnQty()) == 0) {
+                throw exception(PRODUCTION_MATERIAL_QTY_INVALID);
+            }
         }
         return productionReturn.getId();
     }

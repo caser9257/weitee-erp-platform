@@ -11,12 +11,12 @@ import lombok.EqualsAndHashCode;
 import java.time.LocalDateTime;
 
 /**
- * 用户和岗位关联
+ * 用户和岗位关鑱?
  *
- * @author ruoyi
+ * @author weitee
  */
 @TableName("system_user_post")
-@KeySequence("system_user_post_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写。
+@KeySequence("system_user_post_seq") // 用于 Oracle、PostgreSQL、Kingbase、DB2、H2 数据库的主键自增。如果是 MySQL 等数据库，可不写銆?
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class UserPostDO extends BaseDO {
@@ -43,7 +43,7 @@ public class UserPostDO extends BaseDO {
      */
     private Boolean isPrimary;
     /**
-     * 任职开始时间
+     * 任职开始时闂?
      */
     private LocalDateTime startDate;
     /**

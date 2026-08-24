@@ -841,7 +841,13 @@ public class BpmProcessInstanceServiceImpl implements BpmProcessInstanceService 
         // 3.2 流程名称
         processInstanceBuilder.name(generateProcessInstanceName(userId, definition, processDefinitionInfo, variables));
         // 3.3 发起流程实例
-        ProcessInstance instance = processInstanceBuilder.start();
+        ProcessInstance instance;
+        try {
+            FlowableUtils.setAuthenticatedUserId(userId);
+            instance = processInstanceBuilder.start();
+        } finally {
+            FlowableUtils.clearAuthenticatedUserId();
+        }
         return instance.getId();
     }
 
