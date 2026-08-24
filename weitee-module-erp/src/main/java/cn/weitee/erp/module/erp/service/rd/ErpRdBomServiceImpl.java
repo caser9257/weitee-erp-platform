@@ -29,6 +29,7 @@ import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.util.BomDesignatorUtils;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
@@ -214,6 +215,14 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     }
 
     @Override
+    public List<ErpRdBomItemDO> getRdBomItemListByBomIds(Collection<Long> bomIds) {
+        if (CollUtil.isEmpty(bomIds)) {
+            return List.of();
+        }
+        return erpRdBomItemMapper.selectListByBomIds(bomIds);
+    }
+
+    @Override
     public List<ErpRdBomItemSubstituteDO> getRdBomItemSubstituteList(java.util.Collection<Long> bomItemIds) {
         return erpRdBomItemSubstituteMapper.selectListByBomItemIds(bomItemIds);
     }
@@ -298,23 +307,39 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         if (CollUtil.isEmpty(sourceItems)) {
             throw exception(BOM_ITEM_EMPTY);
         }
-        String nextVersion = generateNextVersion(source.getProductId());
-        ErpRdBomDO changeBom = new ErpRdBomDO()
-                .setBomCode(source.getBomCode())
-                .setProductId(source.getProductId())
-                .setVersion(nextVersion)
-                .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus())
-                .setRemark("发起变更，源版本=" + source.getVersion());
-        erpRdBomMapper.insert(changeBom);
+        // 保留源备注，追加变更说明
+        String remarkPrefix = StrUtil.isNotBlank(source.getRemark()) ? source.getRemark() + "；" : "";
+        String changeRemarkSuffix = "发起变更，源版本=" + source.getVersion();
+        // 并发防护：product_id+version 唯一索引兜底，冲突时重新生成版本号重试一次
+        ErpRdBomDO changeBom = null;
+        for (int attempt = 0; attempt < 2 && changeBom == null; attempt++) {
+            String nextVersion = generateNextVersion(source.getProductId());
+            try {
+                changeBom = new ErpRdBomDO()
+                        .setBomCode(source.getBomCode())
+                        .setProductId(source.getProductId())
+                        .setVersion(nextVersion)
+                        .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus())
+                        .setRemark(remarkPrefix + changeRemarkSuffix);
+                erpRdBomMapper.insert(changeBom);
+            } catch (DuplicateKeyException e) {
+                changeBom = null;
+                if (attempt == 1) {
+                    throw e;
+                }
+                log.warn("[startChangeRdBom] 版本号并发冲突，将重新生成版本号，productId={}", source.getProductId());
+            }
+        }
+        ErpRdBomDO createdBom = changeBom;
         List<ErpRdBomItemDO> changeItems = BeanUtils.toBean(sourceItems, ErpRdBomItemDO.class,
-                item -> item.setId(null).setBomId(changeBom.getId()));
+                item -> item.setId(null).setBomId(createdBom.getId()));
         erpRdBomItemMapper.insertBatch(changeItems);
         copyRdBomItemSubstitutesForChange(sourceItems, changeItems);
-        changeLogService.logChange(changeBom.getId(), ErpRdBomChangeType.CHANGE_CREATE.getType(),
-                "发起变更，源 BOM id=" + id + " 源版本=" + source.getVersion() + " 新版本=" + nextVersion);
+        changeLogService.logChange(createdBom.getId(), ErpRdBomChangeType.CHANGE_CREATE.getType(),
+                "发起变更，源 BOM id=" + id + " 源版本=" + source.getVersion() + " 新版本=" + createdBom.getVersion());
         changeLogService.logChange(id, ErpRdBomChangeType.CHANGE_CREATE.getType(),
-                "派生变更版本，新 BOM id=" + changeBom.getId() + " 版本=" + nextVersion);
-        return changeBom.getId();
+                "派生变更版本，新 BOM id=" + createdBom.getId() + " 版本=" + createdBom.getVersion());
+        return createdBom.getId();
     }
 
     @Override

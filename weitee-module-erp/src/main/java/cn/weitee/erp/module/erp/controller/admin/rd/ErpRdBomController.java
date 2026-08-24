@@ -16,7 +16,6 @@ import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
 import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
-import cn.weitee.erp.module.erp.dal.mysql.rd.ErpRdBomItemMapper;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.rd.ErpRdBomBpmService;
 import cn.weitee.erp.module.erp.service.rd.ErpRdBomChangeLogService;
@@ -69,8 +68,6 @@ public class ErpRdBomController {
     private ErpRdBomBpmService rdBomBpmService;
     @Resource
     private ErpRdBomChangeLogService changeLogService;
-    @Resource
-    private ErpRdBomItemMapper rdBomItemMapper;
 
     @PostMapping("/create")
     @Operation(summary = "创建研发 BOM")
@@ -113,7 +110,7 @@ public class ErpRdBomController {
         }
         // 批量查询子件与替代料，避免 N+1
         Set<Long> bomIds = convertSet(list, ErpRdBomDO::getId);
-        List<ErpRdBomItemDO> allItems = rdBomItemMapper.selectListByBomIds(bomIds);
+        List<ErpRdBomItemDO> allItems = rdBomService.getRdBomItemListByBomIds(bomIds);
         Map<Long, List<ErpRdBomItemDO>> itemsByBomId = allItems.stream().collect(Collectors.groupingBy(ErpRdBomItemDO::getBomId));
         Set<Long> materialIds = convertSet(allItems, ErpRdBomItemDO::getMaterialId);
         Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(materialIds);

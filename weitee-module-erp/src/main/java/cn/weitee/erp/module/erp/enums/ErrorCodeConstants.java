@@ -227,6 +227,8 @@ public interface ErrorCodeConstants {
     // ========== ERP 产品库存 1-030-404-000 ==========
     ErrorCode STOCK_COUNT_NEGATIVE = new ErrorCode(1_030_404_000, "操作失败，产品({})所在仓库({})的库存：{}，小于变更数量：{}");
     ErrorCode STOCK_COUNT_NEGATIVE2 = new ErrorCode(1_030_404_001, "操作失败，产品({})所在仓库({})的库存不足");
+    ErrorCode STOCK_TASK_FAILURE_NOT_EXISTS = new ErrorCode(1_030_404_002, "库存任务失败记录不存在");
+    ErrorCode STOCK_TASK_FAILURE_ALREADY_RESOLVED = new ErrorCode(1_030_404_003, "该失败记录已恢复，无需重试");
     ErrorCode STOCK_BATCH_NOT_EXISTS = new ErrorCode(1_030_404_002, "批次库存不存在");
     ErrorCode STOCK_BATCH_INSUFFICIENT = new ErrorCode(1_030_404_003, "批次({})库存不足，当前可用量：{}");
     ErrorCode STOCK_BATCH_ALLOCATION_INSUFFICIENT = new ErrorCode(1_030_404_004, "业务单据({})批次库存不足，需出库：{}，当前可用：{}");

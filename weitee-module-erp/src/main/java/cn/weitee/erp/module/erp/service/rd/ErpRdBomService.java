@@ -27,6 +27,14 @@ public interface ErpRdBomService {
 
     List<ErpRdBomItemDO> getRdBomItemList(Long bomId);
 
+    /**
+     * 批量查询多张 BOM 的明细（分页列表装配用，消除 N+1）
+     *
+     * @param bomIds 研发 BOM 编号集合
+     * @return 明细列表
+     */
+    List<ErpRdBomItemDO> getRdBomItemListByBomIds(Collection<Long> bomIds);
+
     List<ErpRdBomItemSubstituteDO> getRdBomItemSubstituteList(Collection<Long> bomItemIds);
 
     void publishRdBom(Long id);

@@ -500,10 +500,7 @@ const handleStartChange = async (id?: number) => {
     const newId = await RdBomApi.startChangeRdBom(id)
     message.success('已生成变更版本（草稿），请在新版本上编辑并重新提交审批')
     await getList()
-    const created = list.value.find((r) => r.id === newId)
-    if (created) {
-      openDetail(newId)
-    }
+    openDetail(newId)
   } catch {
   } finally {
     startChangeLoadingId.value = undefined
