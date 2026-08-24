@@ -21,6 +21,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_APPROVE_F
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_CANCEL_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_SUBMIT_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_VOID_LOCKED;
 
 @Service
 @Validated
@@ -40,6 +41,9 @@ public class ErpRdBomBpmServiceImpl implements ErpRdBomBpmService {
         ErpRdBomDO bom = getRequiredBom(bomId);
         if (ObjectUtil.equal(bom.getStatus(), ErpRdBomStatusEnum.APPROVE.getStatus())) {
             throw exception(RD_BOM_APPROVE_FAIL);
+        }
+        if (ObjectUtil.equal(bom.getStatus(), ErpRdBomStatusEnum.VOID.getStatus())) {
+            throw exception(RD_BOM_VOID_LOCKED);
         }
         if (ObjectUtil.equal(bom.getStatus(), ErpRdBomStatusEnum.PROCESS.getStatus())
                 && StrUtil.isNotBlank(bom.getProcessInstanceId())) {

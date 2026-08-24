@@ -42,6 +42,9 @@ public class ErpRdBomImportResultVO implements Serializable {
         @Schema(description = "失败原因")
         private String reason;
 
+        @Schema(description = "失败分类：MISSING_MATERIAL=物料未建档 / MATERIAL_NOT_APPROVED=未审核通过 / MATERIAL_DISABLED=已停用 / FORMAT_ERROR=格式错误", example = "FORMAT_ERROR")
+        private String issueType;
+
     }
 
 }

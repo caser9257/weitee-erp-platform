@@ -1,9 +1,11 @@
 package cn.weitee.erp.module.erp.service.rd;
 
 import cn.weitee.erp.framework.common.pojo.PageResult;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomApprovalViewRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomVersionDiffRespVO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
@@ -90,5 +92,46 @@ public interface ErpRdBomService {
      * @return 问题清单；空列表代表校验通过
      */
     List<ErpRdBomIntegrityIssueRespVO> validateRdBomIntegrity(Long id);
+
+    /**
+     * 版本明细对比：按物料对齐两版明细，输出新增/删除/修改（字段级）/未变四类条目
+     *
+     * @param sourceId 旧版本 BOM 编号
+     * @param targetId 新版本 BOM 编号
+     * @return 对比结果
+     */
+    ErpRdBomVersionDiffRespVO getRdBomVersionDiff(Long sourceId, Long targetId);
+
+    /**
+     * 作废研发 BOM：仅限已审批通过的 BOM。作废为终态，版本保留但退出"最新版"选择。
+     *
+     * @param id     研发 BOM 编号（须为 APPROVE 状态）
+     * @param reason 作废原因（可空）
+     */
+    void voidRdBom(Long id, String reason);
+
+    /**
+     * 取消作废：与作废对称的逆向流转（VOID → APPROVE），版本重新参与"最新版"选择
+     *
+     * @param id 研发 BOM 编号（须为 VOID 状态）
+     */
+    void unvoidRdBom(Long id);
+
+    /**
+     * 版本沿革链：沿 sourceBomId 双向遍历，返回同一成品下与本 BOM 关联的全部版本（按主版本升序）
+     *
+     * @param id 任一版本的 BOM 编号
+     * @return 版本链列表（含自身）
+     */
+    List<ErpRdBomDO> getRdBomVersionChain(Long id);
+
+    /**
+     * 审批视图聚合：BOM 详细内容 + 与基准版本的明细差异 + 变更记录。
+     * 对比基准解析规则：sourceBomId 优先；为空时回退同成品最近一个 APPROVE 版本；均无则视为首次提交。
+     *
+     * @param id 研发 BOM 编号
+     * @return 审批视图数据
+     */
+    ErpRdBomApprovalViewRespVO getRdBomApprovalView(Long id);
 
 }

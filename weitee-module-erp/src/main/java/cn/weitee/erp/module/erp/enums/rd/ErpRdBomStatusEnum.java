@@ -11,6 +11,7 @@ public enum ErpRdBomStatusEnum {
     PROCESS(10),
     APPROVE(20),
     REJECT(30),
+    VOID(50),
     FAILED(60);
 
     private final Integer status;

@@ -16,7 +16,9 @@ public enum ErpRdBomChangeType {
     APPROVE("APPROVE", "审批通过"),
     REJECT("REJECT", "审批驳回"),
     CANCEL("CANCEL", "撤回审批"),
-    CHANGE_CREATE("CHANGE_CREATE", "发起变更");
+    CHANGE_CREATE("CHANGE_CREATE", "发起变更"),
+    VOID("VOID", "作废"),
+    UNVOID("UNVOID", "取消作废");
 
     /**
      * 变更类型编码

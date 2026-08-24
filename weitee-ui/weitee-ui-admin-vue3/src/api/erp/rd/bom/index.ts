@@ -65,6 +65,8 @@ export interface RdBomVO {
   processInstanceId?: string
   publishedBomId?: number
   lastPublishedTime?: string
+  /** 源版本 BOM 编号（升版变更来源，首建为空） */
+  sourceBomId?: number
   remark?: string
   createTime?: string
   items: RdBomItemVO[]
@@ -100,6 +102,51 @@ export interface RdBomImportFailDetailVO {
   rowNumber?: number
   materialCode?: string
   reason?: string
+  /** MISSING_MATERIAL / MATERIAL_NOT_APPROVED / MATERIAL_DISABLED / FORMAT_ERROR */
+  issueType?: string
+}
+
+export interface RdBomPrecheckDetectedHeaderVO {
+  bomCode?: string
+  version?: string
+  productName?: string
+  productId?: number
+  topLevelMissing?: boolean
+}
+
+export interface RdBomPrecheckMissingMaterialVO {
+  materialCode?: string
+  materialName?: string
+  rowNumbers?: number[]
+  topLevel?: boolean
+}
+
+export interface RdBomPrecheckUnapprovedMaterialVO {
+  materialCode?: string
+  materialId?: number
+  productName?: string
+  auditStatus?: number
+  status?: number
+  disabled?: boolean
+  rowNumbers?: number[]
+}
+
+export interface RdBomPrecheckRowIssueVO {
+  rowNumber?: number
+  materialCode?: string
+  reason?: string
+}
+
+export interface RdBomPrecheckResultVO {
+  totalCount?: number
+  readyCount?: number
+  blockedCount?: number
+  issueCount?: number
+  readyToImport?: boolean
+  detectedHeader?: RdBomPrecheckDetectedHeaderVO
+  missingMaterials?: RdBomPrecheckMissingMaterialVO[]
+  unapprovedMaterials?: RdBomPrecheckUnapprovedMaterialVO[]
+  rowIssues?: RdBomPrecheckRowIssueVO[]
 }
 
 export interface RdBomImportResultVO {
@@ -180,6 +227,54 @@ export interface RdBomChangeLogVO {
   createTime?: string
 }
 
+export interface RdBomVersionDiffFieldChangeVO {
+  field?: string
+  label?: string
+  oldValue?: string
+  newValue?: string
+}
+
+export interface RdBomVersionDiffItemSnapshotVO {
+  usageQty?: number
+  referenceDesignator?: string
+  position?: string
+  lossRate?: number
+  leadTimeDay?: number
+  remark?: string
+}
+
+export interface RdBomVersionDiffEntryVO {
+  changeType?: 'ADDED' | 'REMOVED' | 'CHANGED' | 'UNCHANGED'
+  materialId?: number
+  materialName?: string
+  materialType?: number
+  oldItem?: RdBomVersionDiffItemSnapshotVO
+  newItem?: RdBomVersionDiffItemSnapshotVO
+  changes?: RdBomVersionDiffFieldChangeVO[]
+}
+
+export interface RdBomVersionDiffVO {
+  sourceBomId?: number
+  sourceVersion?: string
+  targetBomId?: number
+  targetVersion?: string
+  addedCount?: number
+  removedCount?: number
+  changedCount?: number
+  unchangedCount?: number
+  entries?: RdBomVersionDiffEntryVO[]
+}
+
+export interface RdBomApprovalViewVO {
+  bom?: RdBomVO
+  /** 是否首次提交（无对比基准版本） */
+  firstSubmit?: boolean
+  baselineBomId?: number
+  baselineVersion?: string
+  diff?: RdBomVersionDiffVO
+  changeLogs?: RdBomChangeLogVO[]
+}
+
 export const RdBomApi = {
   getRdBomPage: async (params: RdBomPageReqVO) => {
     return await request.get({ url: '/erp/rd-bom/page', params })
@@ -213,6 +308,19 @@ export const RdBomApi = {
     return await request.download({ url: '/erp/rd-bom/get-import-template' })
   },
 
+  precheckRdBomImport: async (
+    params: { productId?: number; bomCode?: string; version?: string; remark?: string },
+    file: File
+  ) => {
+    const data = new FormData()
+    data.append('file', file)
+    if (params.productId != null) data.append('productId', String(params.productId))
+    if (params.bomCode) data.append('bomCode', params.bomCode)
+    if (params.version) data.append('version', params.version)
+    if (params.remark) data.append('remark', params.remark)
+    return await request.upload<RdBomPrecheckResultVO>({ url: '/erp/rd-bom/import/precheck', data })
+  },
+
   getRdBomTree: async (params: { bomId?: number; productId?: number }) => {
     return await request.get<RdBomTreeRespVO>({ url: '/erp/rd-bom/tree', params })
   },
@@ -225,8 +333,29 @@ export const RdBomApi = {
     return await request.get<RdBomChangeLogVO[]>({ url: '/erp/rd-bom/change-log', params: { bomId } })
   },
 
+  getVersionChain: async (id: number) => {
+    return await request.get<RdBomVO[]>({ url: '/erp/rd-bom/version-chain', params: { id } })
+  },
+
+  getVersionDiff: async (sourceId: number, targetId: number) => {
+    return await request.get<RdBomVersionDiffVO>({
+      url: '/erp/rd-bom/version-diff',
+      params: { sourceId, targetId }
+    })
+  },
+
   startChangeRdBom: async (id: number) => {
     return await request.post<number>({ url: `/erp/rd-bom/start-change?id=${id}` })
+  },
+
+  voidRdBom: async (id: number, reason?: string) => {
+    const params: any = { id }
+    if (reason) params.reason = reason
+    return await request.put<boolean>({ url: '/erp/rd-bom/void', params })
+  },
+
+  unvoidRdBom: async (id: number) => {
+    return await request.put<boolean>({ url: `/erp/rd-bom/unvoid?id=${id}` })
   },
 
   submitRdBom: async (id: number) => {
@@ -237,5 +366,9 @@ export const RdBomApi = {
     const params: any = { id }
     if (reason) params.reason = reason
     return await request.post<boolean>({ url: '/erp/rd-bom/cancel', params })
+  },
+
+  getApprovalView: async (id: number | string) => {
+    return await request.get<RdBomApprovalViewVO>({ url: '/erp/rd-bom/approval-view', params: { id } })
   }
 }

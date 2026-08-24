@@ -17,9 +17,9 @@
               flowable:assignee="${#task.getAssignee()}"
               flowable:skipExpression="${startUserId == '0'}">
       <extensionElements>
-        <!-- 候选策略 22=岗位：器件工程师（system_post.id=53） -->
-        <flowable:candidateStrategy>22</flowable:candidateStrategy>
-        <flowable:candidateParam>53</flowable:candidateParam>
+        <!-- 候选策略 10=角色：器件工程师（system_role.id=910005 hardware_component_engineer，与同名岗位解耦） -->
+        <flowable:candidateStrategy>10</flowable:candidateStrategy>
+        <flowable:candidateParam>910005</flowable:candidateParam>
         <flowable:assignStartUserHandlerType>3</flowable:assignStartUserHandlerType>
         <flowable:assignEmptyHandlerType>4</flowable:assignEmptyHandlerType>
       </extensionElements>

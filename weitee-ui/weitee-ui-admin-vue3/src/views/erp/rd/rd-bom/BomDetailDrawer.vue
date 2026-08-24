@@ -76,6 +76,46 @@
           <el-table-column label="备注" prop="remark" min-width="160" />
         </el-table>
 
+        <el-divider content-position="left">版本沿革</el-divider>
+
+        <div v-loading="chainLoading" class="min-h-80px">
+          <el-timeline v-if="versionChain.length">
+            <el-timeline-item
+              v-for="(bom, index) in versionChain"
+              :key="bom.id"
+              :type="bom.id === detailData?.id ? 'primary' : 'info'"
+              :hollow="bom.id !== detailData?.id"
+            >
+              <div
+                class="flex flex-wrap items-center gap-8px rounded border px-12px py-8px"
+                :class="
+                  bom.id === detailData?.id
+                    ? 'border-[var(--erp-primary-200,var(--el-color-primary-light-7))] bg-[var(--erp-primary-50,var(--el-color-primary-light-9))]'
+                    : 'border-slate-100 bg-slate-50'
+                "
+              >
+                <span class="font-mono text-13px font-medium">{{ bom.version || '-' }}</span>
+                <el-tag size="small" effect="light" :type="STATUS_META[bom.status]?.type || 'info'">
+                  {{ STATUS_META[bom.status]?.label || `状态${bom.status}` }}
+                </el-tag>
+                <el-tag v-if="bom.publishedBomId" size="small" effect="plain">已发布</el-tag>
+                <span class="text-12px text-slate-400">{{ bom.createTime || '' }}</span>
+                <el-button
+                  v-if="index < versionChain.length - 1"
+                  link
+                  type="primary"
+                  size="small"
+                  class="ml-auto"
+                  @click="openVersionDiff(versionChain[index + 1], bom)"
+                >
+                  与上一版对比
+                </el-button>
+              </div>
+            </el-timeline-item>
+          </el-timeline>
+          <div v-else-if="!chainLoading" class="py-20px text-center text-13px text-slate-400">暂无其他版本</div>
+        </div>
+
         <el-divider content-position="left">变更记录（申请 / 修改）</el-divider>
 
         <div v-loading="changeLogLoading" class="min-h-120px">
@@ -103,22 +143,45 @@
       </template>
       <el-empty v-else description="暂无研发 BOM 数据" />
     </div>
-    <template #footer>
-      <div class="flex items-center justify-end gap-12px">
-        <el-button
-          v-if="canChange"
-          type="warning"
-          :loading="startChangeLoading"
-          :disabled="startChangeLoading"
-          @click="handleStartChange"
-          v-hasPermi="['erp:rd-bom:change']"
-        >
-          发起变更
-        </el-button>
-        <el-button @click="drawerVisible = false">关闭</el-button>
-      </div>
-    </template>
-  </el-drawer>
+      <template #footer>
+        <div class="flex items-center justify-end gap-12px">
+          <el-button
+            v-if="canChange"
+            type="warning"
+            :loading="startChangeLoading"
+            :disabled="startChangeLoading"
+            @click="handleStartChange"
+            v-hasPermi="['erp:rd-bom:change']"
+          >
+            发起变更
+          </el-button>
+          <el-button
+            v-if="canVoid"
+            type="danger"
+            plain
+            :loading="voidLoading"
+            :disabled="voidLoading"
+            @click="handleVoid"
+            v-hasPermi="['erp:rd-bom:void']"
+          >
+            作废
+          </el-button>
+          <el-button
+            v-if="canUnvoid"
+            type="primary"
+            plain
+            :loading="unvoidLoading"
+            :disabled="unvoidLoading"
+            @click="handleUnvoid"
+            v-hasPermi="['erp:rd-bom:void']"
+          >
+            取消作废
+          </el-button>
+          <el-button @click="drawerVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-drawer>
+    <RdBomVersionDiffDialog ref="versionDiffDialogRef" />
 </template>
 
 <script setup lang="ts">
@@ -126,6 +189,7 @@ import { ref, watch, computed } from 'vue'
 import { useMessage } from '@/hooks/web/useMessage'
 import { RdBomApi, type RdBomVO, type RdBomChangeLogVO } from '@/api/erp/rd/bom'
 import { DICT_TYPE } from '@/utils/dict'
+import RdBomVersionDiffDialog from './RdBomVersionDiffDialog.vue'
 
 defineOptions({ name: 'RdBomDetailDrawer' })
 const emit = defineEmits(['success'])
@@ -136,6 +200,7 @@ const STATUS_META: Record<number, { label: string; type: 'info' | 'success' | 'w
   10: { label: '审批中', type: 'warning' },
   20: { label: '已审批', type: 'success' },
   30: { label: '已驳回', type: 'danger' },
+  50: { label: '已作废', type: 'info' },
   60: { label: '处理失败', type: 'danger' }
 }
 
@@ -146,15 +211,22 @@ const CHANGE_TYPE_META: Record<string, { label: string; type: 'info' | 'success'
   APPROVE: { label: '审批通过', type: 'success' },
   REJECT: { label: '审批驳回', type: 'danger' },
   CANCEL: { label: '撤回审批', type: 'warning' },
-  CHANGE_CREATE: { label: '发起变更', type: 'primary' }
+  CHANGE_CREATE: { label: '发起变更', type: 'primary' },
+  VOID: { label: '作废', type: 'danger' },
+  UNVOID: { label: '取消作废', type: 'primary' }
 }
 
 const drawerVisible = ref(false)
 const detailLoading = ref(false)
 const changeLogLoading = ref(false)
+const chainLoading = ref(false)
 const startChangeLoading = ref(false)
+const voidLoading = ref(false)
+const unvoidLoading = ref(false)
 const detailData = ref<RdBomVO | null>(null)
 const changeLogs = ref<RdBomChangeLogVO[]>([])
+const versionChain = ref<RdBomVO[]>([])
+const versionDiffDialogRef = ref()
 
 const canChange = computed(() => {
   const d = detailData.value
@@ -165,15 +237,20 @@ const canChange = computed(() => {
   return d.status === 20 && !running
 })
 
+const canVoid = computed(() => canChange.value)
+const canUnvoid = computed(() => detailData.value?.status === 50)
+
 const resetDetail = () => {
   detailData.value = null
   changeLogs.value = []
+  versionChain.value = []
 }
 
 const open = async (id: number) => {
   drawerVisible.value = true
   detailLoading.value = true
   changeLogLoading.value = true
+  chainLoading.value = true
   try {
     detailData.value = await RdBomApi.getRdBom(id)
     changeLogs.value = await RdBomApi.getChangeLog(id)
@@ -181,6 +258,24 @@ const open = async (id: number) => {
     detailLoading.value = false
     changeLogLoading.value = false
   }
+  // 版本沿革独立加载，失败不阻塞详情主流程
+  try {
+    versionChain.value = await RdBomApi.getVersionChain(id)
+  } catch {
+    versionChain.value = []
+  } finally {
+    chainLoading.value = false
+  }
+}
+
+const openVersionDiff = (source: RdBomVO, target: RdBomVO) => {
+  if (!source?.id || !target?.id) {
+    return
+  }
+  versionDiffDialogRef.value?.open(source.id, target.id, {
+    sourceVersion: source.version,
+    targetVersion: target.version
+  })
 }
 
 const handleStartChange = async () => {
@@ -201,11 +296,50 @@ const handleStartChange = async () => {
   }
 }
 
+const handleVoid = async () => {
+  const id = detailData.value?.id
+  if (!id || voidLoading.value) {
+    return
+  }
+  voidLoading.value = true
+  try {
+    await message.confirm('确认作废该研发 BOM 吗？版本将保留但退出最新版选择。')
+    await RdBomApi.voidRdBom(id)
+    message.success('已作废')
+    emit('success')
+    await open(id)
+  } catch {
+  } finally {
+    voidLoading.value = false
+  }
+}
+
+const handleUnvoid = async () => {
+  const id = detailData.value?.id
+  if (!id || unvoidLoading.value) {
+    return
+  }
+  unvoidLoading.value = true
+  try {
+    await message.confirm('确认取消作废吗？该版本将恢复为已审批并重新参与最新版选择。')
+    await RdBomApi.unvoidRdBom(id)
+    message.success('已取消作废')
+    emit('success')
+    await open(id)
+  } catch {
+  } finally {
+    unvoidLoading.value = false
+  }
+}
+
 watch(drawerVisible, (visible) => {
   if (!visible) {
     detailLoading.value = false
     changeLogLoading.value = false
+    chainLoading.value = false
     startChangeLoading.value = false
+    voidLoading.value = false
+    unvoidLoading.value = false
     resetDetail()
   }
 })

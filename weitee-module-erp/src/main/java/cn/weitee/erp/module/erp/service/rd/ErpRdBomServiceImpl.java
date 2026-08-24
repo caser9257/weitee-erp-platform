@@ -4,7 +4,9 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomApprovalViewRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPageReqVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomItemDO;
@@ -12,7 +14,9 @@ import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomItemSubstituteDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomChangeLogRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomVersionDiffRespVO;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpBomMapper;
@@ -41,8 +45,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,7 +62,15 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.BOM_ITEM_EMPTY;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_APPROVE_LOCKED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_SUBMIT_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_CHANGE_NOT_APPROVED;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DELETE_APPROVED_FORBIDDEN;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DELETE_PUBLISHED_FORBIDDEN;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DELETE_REFERENCED_FORBIDDEN;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DELETE_VOID_FORBIDDEN;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DIFF_PRODUCT_MISMATCH;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_UNVOID_NOT_VOID;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_VOID_LOCKED;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_VOID_NOT_APPROVED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_PUBLISH_NOT_APPROVED;
 
 @Service
@@ -65,6 +79,9 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_PUBLISH_N
 public class ErpRdBomServiceImpl implements ErpRdBomService {
 
     private static final Pattern RD_BOM_VERSION_PATTERN = Pattern.compile("^[Vv](\\d+)(?:\\.\\d+)?$");
+
+    /** 审批视图携带的最大变更记录条数 */
+    private static final int APPROVAL_VIEW_CHANGE_LOG_LIMIT = 10;
 
     @Resource
     private ErpRdBomMapper erpRdBomMapper;
@@ -109,6 +126,9 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         if (ErpRdBomStatusEnum.APPROVE.getStatus().equals(existed.getStatus())) {
             throw exception(RD_BOM_APPROVE_LOCKED);
         }
+        if (ErpRdBomStatusEnum.VOID.getStatus().equals(existed.getStatus())) {
+            throw exception(RD_BOM_VOID_LOCKED);
+        }
         validateBomItems(updateReqVO.getItems());
         productService.validProductList(List.of(updateReqVO.getProductId()));
         List<ErpRdBomItemDO> newItemDOs = BeanUtils.toBean(updateReqVO.getItems(), ErpRdBomItemDO.class,
@@ -152,11 +172,55 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteRdBom(Long id) {
-        validateRdBomExists(id);
+        ErpRdBomDO rdBom = validateRdBomExists(id);
+        // 版本历史保护：已审批 / 已发布 / 已作废 / 已派生其他版本的记录不可删除，防止版本链断链
+        if (ErpRdBomStatusEnum.APPROVE.getStatus().equals(rdBom.getStatus())) {
+            throw exception(RD_BOM_DELETE_APPROVED_FORBIDDEN);
+        }
+        if (ErpRdBomStatusEnum.VOID.getStatus().equals(rdBom.getStatus())) {
+            throw exception(RD_BOM_DELETE_VOID_FORBIDDEN);
+        }
+        if (rdBom.getPublishedBomId() != null) {
+            throw exception(RD_BOM_DELETE_PUBLISHED_FORBIDDEN);
+        }
+        if (erpRdBomMapper.selectCount(ErpRdBomDO::getSourceBomId, id) > 0) {
+            throw exception(RD_BOM_DELETE_REFERENCED_FORBIDDEN);
+        }
         List<ErpRdBomItemDO> itemList = erpRdBomItemMapper.selectListByBomId(id);
         erpRdBomItemSubstituteMapper.deleteByBomItemIds(convertSet(itemList, ErpRdBomItemDO::getId));
         erpRdBomMapper.deleteById(id);
         erpRdBomItemMapper.deleteByBomId(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void voidRdBom(Long id, String reason) {
+        validateRdBomExists(id);
+        // CAS 条件更新：仅当仍处于已审批态时生效，防并发（如同时发起变更/发布）导致误作废
+        int updated = erpRdBomMapper.update(new ErpRdBomDO().setStatus(ErpRdBomStatusEnum.VOID.getStatus()),
+                new LambdaUpdateWrapper<ErpRdBomDO>()
+                        .eq(ErpRdBomDO::getId, id)
+                        .eq(ErpRdBomDO::getStatus, ErpRdBomStatusEnum.APPROVE.getStatus()));
+        if (updated == 0) {
+            throw exception(RD_BOM_VOID_NOT_APPROVED);
+        }
+        changeLogService.logChange(id, ErpRdBomChangeType.VOID.getType(),
+                StrUtil.isBlank(reason) ? "作废研发 BOM" : "作废研发 BOM：" + reason.trim());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void unvoidRdBom(Long id) {
+        validateRdBomExists(id);
+        // 与作废对称的逆向流转：CAS 条件更新，仅当仍处于已作废态时生效
+        int updated = erpRdBomMapper.update(new ErpRdBomDO().setStatus(ErpRdBomStatusEnum.APPROVE.getStatus()),
+                new LambdaUpdateWrapper<ErpRdBomDO>()
+                        .eq(ErpRdBomDO::getId, id)
+                        .eq(ErpRdBomDO::getStatus, ErpRdBomStatusEnum.VOID.getStatus()));
+        if (updated == 0) {
+            throw exception(RD_BOM_UNVOID_NOT_VOID);
+        }
+        changeLogService.logChange(id, ErpRdBomChangeType.UNVOID.getType(), "取消作废，恢复为已审批");
     }
 
     @Override
@@ -173,8 +237,9 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         if (CollUtil.isEmpty(bomList)) {
             return null;
         }
-        // 取版本号主版本最大者；并列时取 id 最大（最近创建）
+        // 取版本号主版本最大者；并列时取 id 最大（最近创建）；作废版本退出"最新版"选择
         return bomList.stream()
+                .filter(bom -> !ErpRdBomStatusEnum.VOID.getStatus().equals(bom.getStatus()))
                 .max((a, b) -> {
                     int majorCompare = Integer.compare(extractMajorVersion(a.getVersion()), extractMajorVersion(b.getVersion()));
                     if (majorCompare != 0) {
@@ -191,6 +256,10 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
             return Map.of();
         }
         List<ErpRdBomDO> bomList = erpRdBomMapper.selectList(ErpRdBomDO::getProductId, productIds);
+        // 作废版本退出"最新版"选择
+        bomList = bomList.stream()
+                .filter(bom -> !ErpRdBomStatusEnum.VOID.getStatus().equals(bom.getStatus()))
+                .collect(Collectors.toList());
         Map<Long, ErpRdBomDO> result = new HashMap<>();
         for (ErpRdBomDO bom : bomList) {
             result.merge(bom.getProductId(), bom, (existing, candidate) -> {
@@ -320,6 +389,7 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                         .setProductId(source.getProductId())
                         .setVersion(nextVersion)
                         .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus())
+                        .setSourceBomId(source.getId())
                         .setRemark(remarkPrefix + changeRemarkSuffix);
                 erpRdBomMapper.insert(changeBom);
             } catch (DuplicateKeyException e) {
@@ -347,6 +417,284 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         validateRdBomExists(id);
         List<ErpRdBomItemDO> items = erpRdBomItemMapper.selectListByBomId(id);
         return validateItemsIntegrity(items);
+    }
+
+    @Override
+    public ErpRdBomVersionDiffRespVO getRdBomVersionDiff(Long sourceId, Long targetId) {
+        ErpRdBomDO source = validateRdBomExists(sourceId);
+        ErpRdBomDO target = validateRdBomExists(targetId);
+        if (!Objects.equals(source.getProductId(), target.getProductId())) {
+            throw exception(RD_BOM_DIFF_PRODUCT_MISMATCH);
+        }
+        List<ErpRdBomItemDO> sourceItems = erpRdBomItemMapper.selectListByBomId(sourceId);
+        List<ErpRdBomItemDO> targetItems = erpRdBomItemMapper.selectListByBomId(targetId);
+
+        Set<Long> materialIds = convertSet(sourceItems, ErpRdBomItemDO::getMaterialId);
+        materialIds.addAll(convertSet(targetItems, ErpRdBomItemDO::getMaterialId));
+        Map<Long, String> materialNameMap = new HashMap<>();
+        if (CollUtil.isNotEmpty(materialIds)) {
+            Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(materialIds);
+            productMap.forEach((id, vo) -> materialNameMap.put(id, vo != null ? vo.getName() : null));
+        }
+
+        List<ErpRdBomVersionDiffRespVO.Entry> entries = buildVersionDiffEntries(sourceItems, targetItems, materialNameMap);
+
+        ErpRdBomVersionDiffRespVO result = new ErpRdBomVersionDiffRespVO();
+        result.setSourceBomId(sourceId);
+        result.setSourceVersion(source.getVersion());
+        result.setTargetBomId(targetId);
+        result.setTargetVersion(target.getVersion());
+        int added = 0, removed = 0, changed = 0, unchanged = 0;
+        for (ErpRdBomVersionDiffRespVO.Entry entry : entries) {
+            switch (entry.getChangeType()) {
+                case "ADDED" -> added++;
+                case "REMOVED" -> removed++;
+                case "CHANGED" -> changed++;
+                default -> unchanged++;
+            }
+        }
+        result.setAddedCount(added);
+        result.setRemovedCount(removed);
+        result.setChangedCount(changed);
+        result.setUnchangedCount(unchanged);
+        result.setEntries(entries);
+        return result;
+    }
+
+    @Override
+    public List<ErpRdBomDO> getRdBomVersionChain(Long id) {
+        ErpRdBomDO current = validateRdBomExists(id);
+        List<ErpRdBomDO> all = erpRdBomMapper.selectList(ErpRdBomDO::getProductId, current.getProductId());
+        Map<Long, ErpRdBomDO> byId = new HashMap<>();
+        all.forEach(bom -> byId.put(bom.getId(), bom));
+
+        // 沿 sourceBomId 双向收集：向上直溯，向下逐轮扩展直到无新增
+        Set<Long> chainIds = new java.util.HashSet<>();
+        Long cursor = current.getId();
+        while (cursor != null && byId.containsKey(cursor) && chainIds.add(cursor)) {
+            cursor = byId.get(cursor).getSourceBomId();
+        }
+        boolean expanded = true;
+        while (expanded) {
+            expanded = false;
+            for (ErpRdBomDO bom : all) {
+                if (bom.getSourceBomId() != null && chainIds.contains(bom.getSourceBomId())
+                        && chainIds.add(bom.getId())) {
+                    expanded = true;
+                }
+            }
+        }
+        return all.stream()
+                .filter(bom -> chainIds.contains(bom.getId()))
+                .sorted((a, b) -> Integer.compare(
+                        extractMajorVersion(b.getVersion()), extractMajorVersion(a.getVersion())))
+                .toList();
+    }
+
+    @Override
+    public ErpRdBomApprovalViewRespVO getRdBomApprovalView(Long id) {
+        ErpRdBomDO bom = validateRdBomExists(id);
+        ErpRdBomApprovalViewRespVO view = new ErpRdBomApprovalViewRespVO();
+        view.setBom(buildApprovalBomVO(bom));
+        // 1. 对比基准：sourceBomId 优先，为空时回退同成品最近一个 APPROVE 版本，均无则视为首次提交
+        ErpRdBomDO baseline = resolveDiffBaseline(bom);
+        if (baseline != null) {
+            view.setFirstSubmit(false);
+            view.setBaselineBomId(baseline.getId());
+            view.setBaselineVersion(baseline.getVersion());
+            view.setDiff(getRdBomVersionDiff(baseline.getId(), bom.getId()));
+        } else {
+            view.setFirstSubmit(true);
+        }
+        // 2. 变更记录：最近在前，仅保留最近 N 条
+        List<ErpRdBomChangeLogRespVO> logs = changeLogService.getChangeLogList(id);
+        if (CollUtil.isEmpty(logs)) {
+            logs = List.of();
+        } else {
+            logs = logs.stream()
+                    .sorted((a, b) -> Long.compare(b.getId() != null ? b.getId() : 0L,
+                            a.getId() != null ? a.getId() : 0L))
+                    .limit(APPROVAL_VIEW_CHANGE_LOG_LIMIT)
+                    .toList();
+        }
+        view.setChangeLogs(logs);
+        return view;
+    }
+
+    /**
+     * 解析审批视图的 diff 基准版本：
+     * 1. sourceBomId 非空且记录存在 → 直接返回（升版变更精确锚点）
+     * 2. 回退同成品下最近一个 APPROVE 版本（导入等无锚点场景），主版本号大者优先、编号大者兜底
+     * 3. 均未命中 → 返回 null（首次提交）
+     */
+    private ErpRdBomDO resolveDiffBaseline(ErpRdBomDO bom) {
+        if (bom.getSourceBomId() != null) {
+            ErpRdBomDO source = erpRdBomMapper.selectById(bom.getSourceBomId());
+            if (source != null && Objects.equals(source.getProductId(), bom.getProductId())) {
+                return source;
+            }
+        }
+        return erpRdBomMapper.selectList(ErpRdBomDO::getProductId, bom.getProductId()).stream()
+                .filter(item -> !Objects.equals(item.getId(), bom.getId()))
+                .filter(item -> ErpRdBomStatusEnum.APPROVE.getStatus().equals(item.getStatus()))
+                .filter(item -> StrUtil.isNotBlank(item.getVersion()))
+                .max((a, b) -> {
+                    int byVersion = Integer.compare(
+                            extractMajorVersion(a.getVersion()), extractMajorVersion(b.getVersion()));
+                    return byVersion != 0 ? byVersion
+                            : Long.compare(a.getId() != null ? a.getId() : 0L, b.getId() != null ? b.getId() : 0L);
+                })
+                .orElse(null);
+    }
+
+    private ErpRdBomRespVO buildApprovalBomVO(ErpRdBomDO bom) {
+        ErpRdBomRespVO respVO = BeanUtils.toBean(bom, ErpRdBomRespVO.class);
+        List<ErpRdBomItemDO> itemList = getRdBomItemList(bom.getId());
+        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(convertSet(itemList, ErpRdBomItemDO::getMaterialId));
+        Set<Long> itemIds = convertSet(itemList, ErpRdBomItemDO::getId);
+        List<ErpRdBomItemSubstituteDO> substituteList = itemIds.isEmpty()
+                ? List.of() : getRdBomItemSubstituteList(itemIds);
+        Map<Long, List<ErpRdBomItemSubstituteDO>> substituteMap = new HashMap<>();
+        for (ErpRdBomItemSubstituteDO substitute : substituteList) {
+            substituteMap.computeIfAbsent(substitute.getBomItemId(), key -> new ArrayList<>()).add(substitute);
+        }
+        ErpProductRespVO headerProduct = productService.getProductVOMap(List.of(bom.getProductId())).get(bom.getProductId());
+        if (headerProduct != null) {
+            respVO.setProductName(headerProduct.getName());
+        }
+        respVO.setItems(BeanUtils.toBean(itemList, ErpRdBomRespVO.Item.class, item -> {
+            ErpProductRespVO material = productMap.get(item.getMaterialId());
+            if (material != null) {
+                item.setMaterialName(material.getName());
+                item.setUnitName(material.getUnitName());
+            }
+            List<ErpRdBomItemSubstituteDO> subs = substituteMap.get(item.getId());
+            if (subs == null || subs.isEmpty()) {
+                item.setSubstitutes(List.of());
+                return;
+            }
+            Map<Long, ErpProductRespVO> subProductMap = productService.getProductVOMap(
+                    convertSet(subs, ErpRdBomItemSubstituteDO::getSubstituteMaterialId));
+            item.setSubstitutes(BeanUtils.toBean(subs, ErpRdBomRespVO.Item.Substitute.class, sub -> {
+                ErpProductRespVO subProduct = subProductMap.get(sub.getSubstituteMaterialId());
+                if (subProduct != null) {
+                    sub.setSubstituteMaterialName(subProduct.getName());
+                }
+            }));
+        }));
+        return respVO;
+    }
+
+    /**
+     * 版本明细对比（纯内存计算，静态方法便于单测）。
+     * 排序规则：新增/修改/未变按新版本明细行序在前，被删除的旧版条目按旧行序附后。
+     * 同一物料在单版内出现多行时取 id 较大者（正常数据唯一，防御性处理）。
+     */
+    static List<ErpRdBomVersionDiffRespVO.Entry> buildVersionDiffEntries(List<ErpRdBomItemDO> sourceItems,
+                                                                         List<ErpRdBomItemDO> targetItems,
+                                                                         Map<Long, String> materialNameMap) {
+        Map<Long, ErpRdBomItemDO> sourceMap = toLatestItemMap(sourceItems);
+        Map<Long, ErpRdBomItemDO> targetMap = toLatestItemMap(targetItems);
+        List<ErpRdBomVersionDiffRespVO.Entry> entries = new ArrayList<>();
+        Set<Long> consumedSourceMaterialIds = new java.util.HashSet<>();
+        // 先遍历新版行序：ADDED / CHANGED / UNCHANGED
+        for (ErpRdBomItemDO targetItem : targetItems) {
+            Long materialId = targetItem.getMaterialId();
+            if (targetMap.get(materialId) != targetItem) {
+                continue;
+            }
+            ErpRdBomItemDO sourceItem = sourceMap.get(materialId);
+            if (sourceItem == null) {
+                entries.add(buildEntry("ADDED", materialId, materialNameMap, null, targetItem, null));
+            } else {
+                consumedSourceMaterialIds.add(materialId);
+                List<ErpRdBomVersionDiffRespVO.FieldChange> changes = new ArrayList<>();
+                compareItemFields(sourceItem, targetItem, changes);
+                String changeType = changes.isEmpty() ? "UNCHANGED" : "CHANGED";
+                entries.add(buildEntry(changeType, materialId, materialNameMap, sourceItem, targetItem, changes));
+            }
+        }
+        // 再补旧版独有：REMOVED
+        for (ErpRdBomItemDO sourceItem : sourceItems) {
+            Long materialId = sourceItem.getMaterialId();
+            if (sourceMap.get(materialId) != sourceItem || consumedSourceMaterialIds.contains(materialId)) {
+                continue;
+            }
+            consumedSourceMaterialIds.add(materialId);
+            entries.add(buildEntry("REMOVED", materialId, materialNameMap, sourceItem, null, null));
+        }
+        return entries;
+    }
+
+    private static Map<Long, ErpRdBomItemDO> toLatestItemMap(List<ErpRdBomItemDO> items) {
+        Map<Long, ErpRdBomItemDO> map = new LinkedHashMap<>();
+        for (ErpRdBomItemDO item : items) {
+            map.merge(item.getMaterialId(), item,
+                    (a, b) -> a.getId() != null && b.getId() != null && a.getId() > b.getId() ? a : b);
+        }
+        return map;
+    }
+
+    private static ErpRdBomVersionDiffRespVO.Entry buildEntry(String changeType, Long materialId,
+                                                              Map<Long, String> materialNameMap,
+                                                              ErpRdBomItemDO sourceItem, ErpRdBomItemDO targetItem,
+                                                              List<ErpRdBomVersionDiffRespVO.FieldChange> changes) {
+        ErpRdBomVersionDiffRespVO.Entry entry = new ErpRdBomVersionDiffRespVO.Entry();
+        entry.setChangeType(changeType);
+        entry.setMaterialId(materialId);
+        entry.setMaterialName(materialNameMap.get(materialId));
+        entry.setMaterialType(targetItem != null ? targetItem.getMaterialType() : sourceItem.getMaterialType());
+        entry.setOldItem(sourceItem != null ? toSnapshot(sourceItem) : null);
+        entry.setNewItem(targetItem != null ? toSnapshot(targetItem) : null);
+        entry.setChanges(changes == null || changes.isEmpty() ? null : changes);
+        return entry;
+    }
+
+    private static ErpRdBomVersionDiffRespVO.ItemSnapshot toSnapshot(ErpRdBomItemDO item) {
+        ErpRdBomVersionDiffRespVO.ItemSnapshot snapshot = new ErpRdBomVersionDiffRespVO.ItemSnapshot();
+        snapshot.setUsageQty(item.getUsageQty());
+        snapshot.setReferenceDesignator(item.getReferenceDesignator());
+        snapshot.setPosition(item.getPosition());
+        snapshot.setLossRate(item.getLossRate());
+        snapshot.setLeadTimeDay(item.getLeadTimeDay());
+        snapshot.setRemark(item.getRemark());
+        return snapshot;
+    }
+
+    private static void compareItemFields(ErpRdBomItemDO oldItem, ErpRdBomItemDO newItem,
+                                          List<ErpRdBomVersionDiffRespVO.FieldChange> changes) {
+        if (!numEquals(oldItem.getUsageQty(), newItem.getUsageQty())) {
+            addFieldChange(changes, "usageQty", "用量", oldItem.getUsageQty(), newItem.getUsageQty());
+        }
+        if (!Objects.equals(oldItem.getReferenceDesignator(), newItem.getReferenceDesignator())) {
+            addFieldChange(changes, "referenceDesignator", "位号", oldItem.getReferenceDesignator(), newItem.getReferenceDesignator());
+        }
+        if (!Objects.equals(oldItem.getPosition(), newItem.getPosition())) {
+            addFieldChange(changes, "position", "位置", oldItem.getPosition(), newItem.getPosition());
+        }
+        if (!numEquals(oldItem.getLossRate(), newItem.getLossRate())) {
+            addFieldChange(changes, "lossRate", "损耗率", oldItem.getLossRate(), newItem.getLossRate());
+        }
+        if (!Objects.equals(oldItem.getLeadTimeDay(), newItem.getLeadTimeDay())) {
+            addFieldChange(changes, "leadTimeDay", "提前期(天)", oldItem.getLeadTimeDay(), newItem.getLeadTimeDay());
+        }
+        if (!Objects.equals(oldItem.getRemark(), newItem.getRemark())) {
+            addFieldChange(changes, "remark", "备注", oldItem.getRemark(), newItem.getRemark());
+        }
+    }
+
+    private static void addFieldChange(List<ErpRdBomVersionDiffRespVO.FieldChange> changes,
+                                       String field, String label, Object oldValue, Object newValue) {
+        ErpRdBomVersionDiffRespVO.FieldChange change = new ErpRdBomVersionDiffRespVO.FieldChange();
+        change.setField(field);
+        change.setLabel(label);
+        change.setOldValue(oldValue != null ? String.valueOf(oldValue) : "");
+        change.setNewValue(newValue != null ? String.valueOf(newValue) : "");
+        changes.add(change);
+    }
+
+    private static boolean numEquals(BigDecimal a, BigDecimal b) {
+        return a == null ? b == null : b != null && a.compareTo(b) == 0;
     }
 
     /**

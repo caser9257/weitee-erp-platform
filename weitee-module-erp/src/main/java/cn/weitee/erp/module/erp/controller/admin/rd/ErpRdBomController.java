@@ -4,13 +4,16 @@ import cn.weitee.erp.framework.common.pojo.CommonResult;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomApprovalViewRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomChangeLogRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomImportResultVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPageReqVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPrecheckResultVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomTreeRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomVersionDiffRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomWhereUsedRespVO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
@@ -162,11 +165,45 @@ public class ErpRdBomController {
         return success(rdBomService.startChangeRdBom(id));
     }
 
+    @PutMapping("/void")
+    @Operation(summary = "作废研发 BOM（仅限已审批通过 BOM；作废为终态，版本保留但退出最新版选择）")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:void')")
+    public CommonResult<Boolean> voidRdBom(@RequestParam("id") Long id,
+                                           @RequestParam(value = "reason", required = false) String reason) {
+        rdBomService.voidRdBom(id, reason);
+        return success(true);
+    }
+
+    @PutMapping("/unvoid")
+    @Operation(summary = "取消作废研发 BOM（仅限已作废 BOM，恢复为已审批并重新参与最新版选择）")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:void')")
+    public CommonResult<Boolean> unvoidRdBom(@RequestParam("id") Long id) {
+        rdBomService.unvoidRdBom(id);
+        return success(true);
+    }
+
     @PostMapping("/validate")
     @Operation(summary = "校验研发 BOM 完整性（漏件/悬浮件/用量）")
     @PreAuthorize("@ss.hasPermission('erp:rd-bom:query')")
     public CommonResult<List<ErpRdBomIntegrityIssueRespVO>> validateRdBom(@RequestParam("id") Long id) {
         return success(rdBomService.validateRdBomIntegrity(id));
+    }
+
+    @GetMapping("/version-diff")
+    @Operation(summary = "研发 BOM 版本明细对比（新增/删除/字段级修改）")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:query')")
+    public CommonResult<ErpRdBomVersionDiffRespVO> getVersionDiff(
+            @RequestParam("sourceId") Long sourceId,
+            @RequestParam("targetId") Long targetId) {
+        return success(rdBomService.getRdBomVersionDiff(sourceId, targetId));
+    }
+
+    @GetMapping("/version-chain")
+    @Operation(summary = "研发 BOM 版本沿革链（同成品关联版本，按版本倒序）")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:query')")
+    public CommonResult<List<ErpRdBomRespVO>> getVersionChain(@RequestParam("id") Long id) {
+        List<ErpRdBomDO> chain = rdBomService.getRdBomVersionChain(id);
+        return success(BeanUtils.toBean(chain, ErpRdBomRespVO.class));
     }
 
     @GetMapping("/get-import-template")
@@ -178,6 +215,19 @@ public class ErpRdBomController {
         response.setHeader("Content-Disposition", "attachment; filename=rd-bom-import-template.xlsx");
         response.getOutputStream().write(template);
         response.getOutputStream().flush();
+    }
+
+    @PostMapping("/import/precheck")
+    @Operation(summary = "研发 BOM 导入预检查（dry-run：返回待建档清单/待催审清单/格式问题，不落库）")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:create')")
+    public CommonResult<ErpRdBomPrecheckResultVO> precheckRdBomImport(
+            @RequestParam(value = "productId", required = false) Long productId,
+            @RequestParam(value = "bomCode", required = false) String bomCode,
+            @RequestParam(value = "version", required = false) String version,
+            @RequestParam(value = "remark", required = false) String remark,
+            @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport,
+            @RequestParam("file") MultipartFile file) {
+        return success(rdBomImportService.precheckRdBom(productId, bomCode, version, remark, updateSupport, file));
     }
 
     @PostMapping("/import")
@@ -234,6 +284,13 @@ public class ErpRdBomController {
     @PreAuthorize("@ss.hasPermission('erp:rd-bom:query')")
     public CommonResult<List<ErpRdBomChangeLogRespVO>> getChangeLog(@RequestParam("bomId") Long bomId) {
         return success(changeLogService.getChangeLogList(bomId));
+    }
+
+    @GetMapping("/approval-view")
+    @Operation(summary = "审批视图：BOM 详细内容 + 版本差异 + 变更记录")
+    @PreAuthorize("@ss.hasPermission('erp:rd-bom:approval-view')")
+    public CommonResult<ErpRdBomApprovalViewRespVO> getApprovalView(@RequestParam("id") Long id) {
+        return success(rdBomService.getRdBomApprovalView(id));
     }
 
     private List<ErpRdBomRespVO> buildRespVOList(List<ErpRdBomDO> list) {

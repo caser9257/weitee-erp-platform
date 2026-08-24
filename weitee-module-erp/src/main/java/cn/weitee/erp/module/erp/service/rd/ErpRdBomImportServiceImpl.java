@@ -5,16 +5,13 @@ import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.enums.CommonStatusEnum;
 import cn.weitee.erp.framework.excel.core.util.FileImportProtector;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
+import cn.weitee.erp.module.erp.enums.RdBomRowIssueType;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomImportResultVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPrecheckResultVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
-import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ProductSaveReqVO;
-import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductCategoryDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
-import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductUnitDO;
-import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductCategoryMapper;
 import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductMapper;
-import cn.weitee.erp.module.erp.dal.mysql.product.ErpProductUnitMapper;
 import cn.weitee.erp.module.erp.enums.ErrorCodeConstants;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import lombok.extern.slf4j.Slf4j;
@@ -37,13 +34,19 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 
 /**
  * 研发 BOM Excel 导入 Service 实现（复用产品导入模式，导入即跑 P0 位号/用量/悬浮件校验）
+ *
+ * 解析链路统一收敛到 {@link #parseWorkbook(MultipartFile)}：
+ * import = parseWorkbook + 建草稿 + 完整性校验；
+ * precheck = parseWorkbook + 失败归堆（待建档/待催审/格式问题），纯读不落库。
  */
 @Service
 @Validated
@@ -56,10 +59,6 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
     private ErpProductService productService;
     @Resource
     private ErpProductMapper productMapper;
-    @Resource
-    private ErpProductCategoryMapper productCategoryMapper;
-    @Resource
-    private ErpProductUnitMapper productUnitMapper;
     @Resource
     private ErpRdBomService rdBomService;
 
@@ -132,173 +131,26 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         result.setFailDetails(new ArrayList<>());
         result.setValidationIssues(new ArrayList<>());
 
-        // 先收集所有物料编码，按需批量查询（避免全表扫描）
-        java.util.Set<String> allCodes = new java.util.HashSet<>();
-        try {
-            byte[] plainForCodes = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
-            try (Workbook wbForCodes = WorkbookFactory.create(new ByteArrayInputStream(plainForCodes))) {
-                Sheet sForCodes = wbForCodes.getSheetAt(0);
-                int headerRowForCodes = findSmartDetailHeaderRow(sForCodes);
-                if (headerRowForCodes >= 0) {
-                    Map<String, Integer> colIdxForCodes = buildSmartColumnIndex(sForCodes.getRow(headerRowForCodes));
-                    Integer codeColForCodes = colIdxForCodes.getOrDefault("物料编码", COL_MATERIAL_CODE);
-                    for (int r = headerRowForCodes + 1; r <= sForCodes.getLastRowNum(); r++) {
-                        Row rowForCodes = sForCodes.getRow(r);
-                        if (rowForCodes == null || isRowEmpty(rowForCodes)) continue;
-                        String codeForCodes = getCellString(rowForCodes, codeColForCodes);
-                        if (StrUtil.isNotBlank(codeForCodes)) allCodes.add(codeForCodes.trim());
-                    }
-                } else {
-                    for (int r = 1; r <= sForCodes.getLastRowNum(); r++) {
-                        Row rowForCodes = sForCodes.getRow(r);
-                        if (rowForCodes == null || isRowEmpty(rowForCodes)) continue;
-                        String codeForCodes = getCellString(rowForCodes, COL_MATERIAL_CODE);
-                        if (StrUtil.isNotBlank(codeForCodes)) allCodes.add(codeForCodes.trim());
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.warn("[importRdBom] 预收集物料编码失败，将回退为按需查询", e);
-        }
-        Map<String, ErpProductDO> materialCodeMap = buildMaterialCodeMap(allCodes);
-        Map<String, ErpProductDO> normalizedCodeMap = new HashMap<>();
-        for (Map.Entry<String, ErpProductDO> e : materialCodeMap.entrySet()) {
-            String norm = e.getKey().replaceAll("\\s+", "");
-            normalizedCodeMap.putIfAbsent(norm, e.getValue());
-            normalizedCodeMap.putIfAbsent(e.getKey().trim(), e.getValue());
-        }
+        ParsedWorkbook parsed = parseWorkbook(file);
+        result.setTotalCount(parsed.getTotalCount());
+        result.setSuccessCount(parsed.getSuccessCount());
+        result.setFailCount(parsed.getFailCount());
+        result.setFailDetails(parsed.getFailDetails());
 
-        List<ErpRdBomSaveReqVO.Item> validItems = new ArrayList<>();
-        String detectedBomCode = bomCode;
-        Long detectedProductId = productId;
-        String detectedVersion = version;
-        String detectedRemark = remark;
-        SmartHeader header = null;
-        try {
-            byte[] plainContent = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
-            try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(plainContent))) {
-                Sheet sheet = workbook.getSheetAt(0);
-                header = tryParseSmartHeader(sheet, materialCodeMap, normalizedCodeMap);
-                if (header != null) {
-                    if (detectedProductId == null && header.productId != null) {
-                        detectedProductId = header.productId;
-                    }
-                    if (StrUtil.isBlank(detectedBomCode) && StrUtil.isNotBlank(header.bomCode)) {
-                        detectedBomCode = header.bomCode.trim();
-                    }
-                    if (StrUtil.isBlank(detectedVersion) && StrUtil.isNotBlank(header.version)) {
-                        detectedVersion = header.version.trim();
-                    }
-                }
-                int detailHeaderRow = findSmartDetailHeaderRow(sheet);
-                if (detailHeaderRow >= 0) {
-                    Map<String, Integer> colIndex = buildSmartColumnIndex(sheet.getRow(detailHeaderRow));
-                    Integer levelStart = colIndex.get("层级");
-                    if (levelStart == null) {
-                        Integer seqCol = colIndex.get("序号");
-                        if (seqCol != null) {
-                            levelStart = seqCol + 1;
-                        }
-                    }
-                    String topMaterialCodeNorm = header != null && header.bomCode != null ? header.bomCode.replaceAll("\\s+", "") : null;
-                    int dataStart = detailHeaderRow + 1;
-                    if (dataStart <= sheet.getLastRowNum()) {
-                        Row maybeSub = sheet.getRow(dataStart);
-                        if (maybeSub != null && isNumericRow(maybeSub, levelStart)) {
-                            dataStart++;
-                        }
-                    }
-                    int totalRows = 0;
-                    for (int i = dataStart; i <= sheet.getLastRowNum(); i++) {
-                        Row row = sheet.getRow(i);
-                        if (row == null || isRowEmpty(row)) {
-                            continue;
-                        }
-                        totalRows++;
-                        try {
-                            ErpRdBomSaveReqVO.Item item = parseSmartRow(row, colIndex, levelStart, materialCodeMap, normalizedCodeMap, topMaterialCodeNorm);
-                            if (item == null) {
-                                continue;
-                            }
-                            validItems.add(item);
-                            result.setSuccessCount(result.getSuccessCount() + 1);
-                        } catch (Exception e) {
-                            result.setFailCount(result.getFailCount() + 1);
-                            ErpRdBomImportResultVO.FailDetail failDetail = new ErpRdBomImportResultVO.FailDetail();
-                            failDetail.setRowNumber(i + 1);
-                            failDetail.setMaterialCode(getCellString(row, colIndex.getOrDefault("物料编码", COL_MATERIAL_CODE)));
-                            failDetail.setReason(e.getMessage());
-                            result.getFailDetails().add(failDetail);
-                        }
-                    }
-                    result.setTotalCount(totalRows);
-                } else {
-                    int lastRow = sheet.getLastRowNum();
-                    result.setTotalCount(lastRow);
-                    for (int i = 1; i <= lastRow; i++) {
-                        Row row = sheet.getRow(i);
-                        if (row == null || isRowEmpty(row)) {
-                            continue;
-                        }
-                        try {
-                            validItems.add(parseItemRow(row, materialCodeMap));
-                            result.setSuccessCount(result.getSuccessCount() + 1);
-                        } catch (Exception e) {
-                            result.setFailCount(result.getFailCount() + 1);
-                            ErpRdBomImportResultVO.FailDetail failDetail = new ErpRdBomImportResultVO.FailDetail();
-                            failDetail.setRowNumber(i + 1);
-                            failDetail.setMaterialCode(getCellString(row, COL_MATERIAL_CODE));
-                            failDetail.setReason(e.getMessage());
-                            result.getFailDetails().add(failDetail);
-                        }
-                    }
-                }
-            }
-        } catch (IOException e) {
-            log.error("[importRdBom] 读取导入文件失败", e);
-            throw new RuntimeException("读取导入文件失败：" + e.getMessage());
-        }
-
-        if (validItems.isEmpty()) {
+        if (parsed.getItems().isEmpty()) {
             return result;
         }
 
-        Long finalProductId = detectedProductId;
-        ErpProductDO topProduct = null;
-        if (finalProductId != null) {
-            topProduct = productService.getProduct(finalProductId);
-        }
-        if (topProduct == null && header != null && StrUtil.isNotBlank(header.bomCode)) {
-            String topCode = header.bomCode.trim();
-            String topNorm = topCode.replaceAll("\\s+", "");
-            topProduct = normalizedCodeMap.get(topNorm);
-            if (topProduct == null) topProduct = materialCodeMap.get(topCode);
-            if (topProduct == null) {
-                String topName = StrUtil.isNotBlank(header.productName) ? header.productName : topCode;
-                topProduct = autoCreateTopProduct(topCode, topName);
-                materialCodeMap.put(topCode, topProduct);
-                normalizedCodeMap.put(topNorm, topProduct);
-                finalProductId = topProduct.getId();
-            } else {
-                finalProductId = topProduct.getId();
-            }
-        }
-        if (finalProductId == null) {
-            throw exception(ErrorCodeConstants.PRODUCT_NOT_EXISTS);
-        }
-        if (topProduct == null) {
-            topProduct = productService.getProduct(finalProductId);
-        }
+        Long detectedProductId = detectProductId(productId, parsed.getHeader());
+        String detectedBomCode = detectBomCode(bomCode, parsed.getHeader());
+        String detectedVersion = detectVersion(version, parsed.getHeader());
+
+        ErpProductDO topProduct = resolveTopProduct(detectedProductId, parsed.getHeader(), parsed);
         if (topProduct == null) {
             throw exception(ErrorCodeConstants.PRODUCT_NOT_EXISTS);
         }
         topProduct = ensureProductUsable(topProduct);
-        if (topProduct.getMaterialCode() != null) {
-            materialCodeMap.put(topProduct.getMaterialCode(), topProduct);
-            String tNorm = topProduct.getMaterialCode().replaceAll("\\s+", "");
-            normalizedCodeMap.put(tNorm, topProduct);
-        }
-        finalProductId = topProduct.getId();
+        Long finalProductId = topProduct.getId();
         String finalBomCode = StrUtil.isBlank(detectedBomCode) ? topProduct.getMaterialCode() : detectedBomCode.trim();
         if (StrUtil.isBlank(finalBomCode)) {
             finalBomCode = "RD-BOM-" + System.currentTimeMillis();
@@ -308,8 +160,8 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         saveReq.setProductId(finalProductId);
         saveReq.setBomCode(finalBomCode);
         saveReq.setVersion(StrUtil.isBlank(detectedVersion) ? null : detectedVersion.trim());
-        saveReq.setRemark(StrUtil.isBlank(detectedRemark) ? null : detectedRemark.trim());
-        saveReq.setItems(validItems);
+        saveReq.setRemark(StrUtil.isBlank(remark) ? null : remark.trim());
+        saveReq.setItems(parsed.getItems());
         Long bomId = rdBomService.createRdBom(saveReq);
         result.setBomId(bomId);
 
@@ -317,6 +169,305 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         result.setValidationIssues(issues);
         return result;
     }
+
+    @Override
+    public ErpRdBomPrecheckResultVO precheckRdBom(Long productId, String bomCode, String version, String remark,
+                                                   Boolean updateSupport, MultipartFile file) {
+        ParsedWorkbook parsed = parseWorkbook(file);
+        ErpRdBomPrecheckResultVO result = new ErpRdBomPrecheckResultVO();
+        result.setTotalCount(parsed.getTotalCount());
+        result.setReadyCount(parsed.getSuccessCount());
+        result.setMissingMaterials(new ArrayList<>());
+        result.setUnapprovedMaterials(new ArrayList<>());
+        result.setRowIssues(new ArrayList<>());
+
+        // 表头识别结果回显
+        ErpRdBomPrecheckResultVO.DetectedHeader detectedHeader = new ErpRdBomPrecheckResultVO.DetectedHeader();
+        if (parsed.getHeader() != null) {
+            detectedHeader.setBomCode(parsed.getHeader().bomCode);
+            detectedHeader.setVersion(parsed.getHeader().version);
+            detectedHeader.setProductName(parsed.getHeader().productName);
+            detectedHeader.setProductId(parsed.getHeader().productId);
+        }
+
+        // 顶层物料模拟判定：与 importRdBom 的 resolveTopProduct 同一匹配顺序
+        Long detectedProductId = detectProductId(productId, parsed.getHeader());
+        ErpProductDO topProduct = null;
+        if (detectedProductId != null) {
+            topProduct = productService.getProduct(detectedProductId);
+        }
+        boolean topLevelMatchedByCode = false;
+        if (topProduct == null && parsed.getHeader() != null && StrUtil.isNotBlank(parsed.getHeader().bomCode)) {
+            String topCode = parsed.getHeader().bomCode.trim();
+            String topNorm = topCode.replaceAll("\\s+", "");
+            topProduct = parsed.getNormalizedCodeMap().get(topNorm);
+            if (topProduct == null) {
+                topProduct = parsed.getMaterialCodeMap().get(topCode);
+            }
+            topLevelMatchedByCode = topProduct != null;
+        }
+        if (topProduct == null) {
+            if (StrUtil.isNotBlank(detectedHeader.getBomCode())) {
+                // 可识别顶层编码但系统缺档 → 进待建档清单
+                detectedHeader.setTopLevelMissing(true);
+                addMissingMaterial(result.getMissingMaterials(), parsed.getHeader().bomCode.trim(),
+                        parsed.getHeader().productName, null, true);
+            } else {
+                // 无法确定顶层归属，与导入行为保持一致直接报错
+                throw exception(ErrorCodeConstants.PRODUCT_NOT_EXISTS);
+            }
+        } else {
+            if (detectedHeader.getProductId() == null) {
+                detectedHeader.setProductId(topProduct.getId());
+            }
+            // 顶层存在但状态不可用：导入必然失败，提前进待催审清单
+            if (CommonStatusEnum.isDisable(topProduct.getStatus())) {
+                addUnapprovedMaterial(result.getUnapprovedMaterials(),
+                        buildUnapproved(topProduct, true), null);
+            } else if (!ErpAuditStatus.APPROVE.getStatus().equals(topProduct.getAuditStatus())) {
+                addUnapprovedMaterial(result.getUnapprovedMaterials(),
+                        buildUnapproved(topProduct, false), null);
+            }
+        }
+        result.setDetectedHeader(detectedHeader);
+
+        // 行级异常归堆
+        int blockedRows = 0;
+        for (RdBomRowParseException rowException : parsed.getRowExceptions()) {
+            RdBomRowIssueType issueType = rowException.getIssueType();
+            Integer rowNumber = rowException.getRowNumber();
+            switch (issueType) {
+                case MISSING_MATERIAL:
+                    addMissingMaterial(result.getMissingMaterials(), rowException.getMaterialCode(),
+                            rowException.getMaterialName(), rowNumber, false);
+                    blockedRows++;
+                    break;
+                case MATERIAL_NOT_APPROVED:
+                case MATERIAL_DISABLED:
+                    addUnapprovedMaterial(result.getUnapprovedMaterials(),
+                            buildUnapproved(rowException.getProduct(),
+                                    issueType == RdBomRowIssueType.MATERIAL_DISABLED),
+                            rowNumber);
+                    blockedRows++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        result.setBlockedCount(blockedRows);
+        result.setIssueCount(parsed.getFormatErrorCount());
+        // 格式类问题单独归入 rowIssues（不阻断导入，与导入的部分成功语义一致）
+        for (ErpRdBomImportResultVO.FailDetail failDetail : parsed.getFailDetails()) {
+            if (!RdBomRowIssueType.FORMAT_ERROR.getCode().equals(failDetail.getIssueType())) {
+                continue;
+            }
+            ErpRdBomPrecheckResultVO.RowIssue issue = new ErpRdBomPrecheckResultVO.RowIssue();
+            issue.setRowNumber(failDetail.getRowNumber());
+            issue.setMaterialCode(failDetail.getMaterialCode());
+            issue.setReason(failDetail.getReason());
+            result.getRowIssues().add(issue);
+        }
+        result.setReadyToImport(result.getMissingMaterials().isEmpty()
+                && result.getUnapprovedMaterials().isEmpty());
+        return result;
+    }
+
+    // ========== 解析主链路（import 与 precheck 共用） ==========
+
+    /**
+     * 解析结果载体：有效明细行、行级失败明细与分类异常、表头识别结果
+     */
+    private static class ParsedWorkbook {
+
+        private final List<ErpRdBomSaveReqVO.Item> items = new ArrayList<>();
+        private final List<ErpRdBomImportResultVO.FailDetail> failDetails = new ArrayList<>();
+        /** 携带分类的行级异常（不含格式错误；与 failDetails 无顺序对应关系） */
+        private final List<RdBomRowParseException> rowExceptions = new ArrayList<>();
+        private int totalCount;
+        private int successCount;
+        private int failCount;
+        private int formatErrorCount;
+        private SmartHeader header;
+        private Map<String, ErpProductDO> materialCodeMap = new HashMap<>();
+        private Map<String, ErpProductDO> normalizedCodeMap = new HashMap<>();
+
+        List<ErpRdBomSaveReqVO.Item> getItems() {
+            return items;
+        }
+
+        List<ErpRdBomImportResultVO.FailDetail> getFailDetails() {
+            return failDetails;
+        }
+
+        List<RdBomRowParseException> getRowExceptions() {
+            return rowExceptions;
+        }
+
+        int getTotalCount() {
+            return totalCount;
+        }
+
+        int getSuccessCount() {
+            return successCount;
+        }
+
+        int getFailCount() {
+            return failCount;
+        }
+
+        int getFormatErrorCount() {
+            return formatErrorCount;
+        }
+
+        SmartHeader getHeader() {
+            return header;
+        }
+
+        Map<String, ErpProductDO> getMaterialCodeMap() {
+            return materialCodeMap;
+        }
+
+        Map<String, ErpProductDO> getNormalizedCodeMap() {
+            return normalizedCodeMap;
+        }
+    }
+
+    /**
+     * 单次解密 + 单次解析完成编码收集与明细解析。
+     * 文件读取失败直接抛出（原"预收集降级"分支在单次读取下无存在意义，已移除）。
+     */
+    private ParsedWorkbook parseWorkbook(MultipartFile file) {
+        ParsedWorkbook parsed = new ParsedWorkbook();
+        try {
+            byte[] plainContent = fileImportProtector.preparePlainContent(file.getBytes(), file.getOriginalFilename());
+            try (Workbook workbook = WorkbookFactory.create(new ByteArrayInputStream(plainContent))) {
+                Sheet sheet = workbook.getSheetAt(0);
+
+                int detailHeaderRow = findSmartDetailHeaderRow(sheet);
+                Map<String, Integer> colIndex = detailHeaderRow >= 0
+                        ? buildSmartColumnIndex(sheet.getRow(detailHeaderRow))
+                        : null;
+
+                // 先收集全部物料编码，批量查询（避免逐行查库）
+                Set<String> allCodes = collectMaterialCodes(sheet, detailHeaderRow, colIndex);
+                parsed.materialCodeMap = buildMaterialCodeMap(allCodes);
+                parsed.normalizedCodeMap = buildNormalizedCodeMap(parsed.materialCodeMap);
+
+                parsed.header = tryParseSmartHeader(sheet, parsed.materialCodeMap, parsed.normalizedCodeMap);
+
+                if (detailHeaderRow >= 0) {
+                    parseSmartSheet(sheet, detailHeaderRow, colIndex, parsed);
+                } else {
+                    parseStandardSheet(sheet, parsed);
+                }
+            }
+        } catch (IOException e) {
+            log.error("[parseWorkbook] 读取导入文件失败", e);
+            throw new RuntimeException("读取导入文件失败：" + e.getMessage());
+        }
+        return parsed;
+    }
+
+    private Set<String> collectMaterialCodes(Sheet sheet, int detailHeaderRow, Map<String, Integer> colIndex) {
+        Set<String> allCodes = new HashSet<>();
+        int startRow = detailHeaderRow >= 0 ? detailHeaderRow + 1 : 1;
+        int codeCol = colIndex != null ? colIndex.getOrDefault("物料编码", COL_MATERIAL_CODE) : COL_MATERIAL_CODE;
+        for (int r = startRow; r <= sheet.getLastRowNum(); r++) {
+            Row row = sheet.getRow(r);
+            if (row == null || isRowEmpty(row)) {
+                continue;
+            }
+            String code = getCellString(row, codeCol);
+            if (StrUtil.isNotBlank(code)) {
+                allCodes.add(code.trim());
+            }
+        }
+        return allCodes;
+    }
+
+    private void parseSmartSheet(Sheet sheet, int detailHeaderRow, Map<String, Integer> colIndex, ParsedWorkbook parsed) {
+        Integer levelStart = colIndex.get("层级");
+        if (levelStart == null) {
+            Integer seqCol = colIndex.get("序号");
+            if (seqCol != null) {
+                levelStart = seqCol + 1;
+            }
+        }
+        String topMaterialCodeNorm = parsed.header != null && parsed.header.bomCode != null
+                ? parsed.header.bomCode.replaceAll("\\s+", "") : null;
+        int dataStart = detailHeaderRow + 1;
+        if (dataStart <= sheet.getLastRowNum()) {
+            Row maybeSub = sheet.getRow(dataStart);
+            if (maybeSub != null && isNumericRow(maybeSub, levelStart)) {
+                dataStart++;
+            }
+        }
+        int codeCol = colIndex.getOrDefault("物料编码", COL_MATERIAL_CODE);
+        for (int i = dataStart; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null || isRowEmpty(row)) {
+                continue;
+            }
+            parsed.totalCount++;
+            try {
+                ErpRdBomSaveReqVO.Item item = parseSmartRow(row, colIndex, levelStart,
+                        parsed.materialCodeMap, parsed.normalizedCodeMap, topMaterialCodeNorm);
+                if (item == null) {
+                    continue;
+                }
+                parsed.items.add(item);
+                parsed.successCount++;
+            } catch (RdBomRowParseException e) {
+                recordRowFailure(parsed, i, row, codeCol, e);
+            } catch (Exception e) {
+                recordFormatFailure(parsed, i, row, codeCol, e.getMessage());
+            }
+        }
+    }
+
+    private void parseStandardSheet(Sheet sheet, ParsedWorkbook parsed) {
+        int lastRow = sheet.getLastRowNum();
+        parsed.totalCount = lastRow;
+        for (int i = 1; i <= lastRow; i++) {
+            Row row = sheet.getRow(i);
+            if (row == null || isRowEmpty(row)) {
+                continue;
+            }
+            try {
+                parsed.items.add(parseItemRow(row, parsed.materialCodeMap));
+                parsed.successCount++;
+            } catch (RdBomRowParseException e) {
+                recordRowFailure(parsed, i, row, COL_MATERIAL_CODE, e);
+            } catch (Exception e) {
+                recordFormatFailure(parsed, i, row, COL_MATERIAL_CODE, e.getMessage());
+            }
+        }
+    }
+
+    private void recordRowFailure(ParsedWorkbook parsed, int rowIndex, Row row, int codeCol, RdBomRowParseException e) {
+        parsed.failCount++;
+        e.setRowNumber(rowIndex + 1);
+        parsed.rowExceptions.add(e);
+        ErpRdBomImportResultVO.FailDetail failDetail = new ErpRdBomImportResultVO.FailDetail();
+        failDetail.setRowNumber(rowIndex + 1);
+        failDetail.setMaterialCode(StrUtil.isNotBlank(e.getMaterialCode()) ? e.getMaterialCode() : getCellString(row, codeCol));
+        failDetail.setReason(e.getMessage());
+        failDetail.setIssueType(e.getIssueType().getCode());
+        parsed.failDetails.add(failDetail);
+    }
+
+    private void recordFormatFailure(ParsedWorkbook parsed, int rowIndex, Row row, int codeCol, String reason) {
+        parsed.failCount++;
+        parsed.formatErrorCount++;
+        ErpRdBomImportResultVO.FailDetail failDetail = new ErpRdBomImportResultVO.FailDetail();
+        failDetail.setRowNumber(rowIndex + 1);
+        failDetail.setMaterialCode(getCellString(row, codeCol));
+        failDetail.setReason(reason);
+        failDetail.setIssueType(RdBomRowIssueType.FORMAT_ERROR.getCode());
+        parsed.failDetails.add(failDetail);
+    }
+
+    // ========== 表头与单元格工具（原有逻辑） ==========
 
     private static class SmartHeader {
         Long productId;
@@ -435,6 +586,8 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         return true;
     }
 
+    // ========== 行解析（原有逻辑，异常改为携带分类） ==========
+
     private ErpRdBomSaveReqVO.Item parseSmartRow(Row row, Map<String, Integer> colIndex, Integer levelStart,
                                                 Map<String, ErpProductDO> codeMap, Map<String, ErpProductDO> normMap,
                                                 String topCodeNorm) {
@@ -477,7 +630,7 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
             material = normMap.get(normCode);
         }
         if (material == null) {
-            material = autoCreateProduct(rawCode, row, colIndex);
+            material = autoCreateProduct(rawCode, extractProductName(row, colIndex));
             codeMap.put(rawCode.trim(), material);
             normMap.put(normCode, material);
             String norm2 = rawCode.trim().replaceAll("\\s+", "");
@@ -560,8 +713,10 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         }
         ErpProductDO material = materialCodeMap.get(materialCode.trim());
         if (material == null) {
-            throw new IllegalArgumentException("物料编号不存在：" + materialCode);
+            material = autoCreateProduct(materialCode.trim(), getCellString(row, COL_MATERIAL_NAME));
         }
+        // 与智能表头路径对齐：标准模板同样强制校验物料启用与审核状态
+        material = ensureProductUsable(material);
 
         String usageStr = getCellString(row, COL_USAGE_QTY);
         if (StrUtil.isBlank(usageStr)) {
@@ -617,6 +772,13 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         return item;
     }
 
+    private String extractProductName(Row row, Map<String, Integer> colIndex) {
+        Integer nameCol = colIndex != null ? colIndex.get("产品名称") : null;
+        return nameCol != null ? getCellString(row, nameCol) : "";
+    }
+
+    // ========== 物料档案查询与校验 ==========
+
     private Map<String, ErpProductDO> buildMaterialCodeMap(Collection<String> codes) {
         if (CollUtil.isEmpty(codes)) {
             return new HashMap<>();
@@ -632,55 +794,140 @@ public class ErpRdBomImportServiceImpl implements ErpRdBomImportService {
         return map;
     }
 
-    private ErpProductDO autoCreateProduct(String rawCode, Row row, Map<String, Integer> colIndex) {
-        throw new IllegalArgumentException("物料编号不存在，需先创建并审核通过：" + rawCode);
+    private Map<String, ErpProductDO> buildNormalizedCodeMap(Map<String, ErpProductDO> materialCodeMap) {
+        Map<String, ErpProductDO> normalizedCodeMap = new HashMap<>();
+        for (Map.Entry<String, ErpProductDO> e : materialCodeMap.entrySet()) {
+            String norm = e.getKey().replaceAll("\\s+", "");
+            normalizedCodeMap.putIfAbsent(norm, e.getValue());
+            normalizedCodeMap.putIfAbsent(e.getKey().trim(), e.getValue());
+        }
+        return normalizedCodeMap;
+    }
+
+    /**
+     * 自动建档已被禁用：物料必须预先建档并通过审核。此处抛出带分类的行级异常，
+     * 由预检查归入待建档清单、由导入记入失败明细。
+     */
+    private ErpProductDO autoCreateProduct(String rawCode, String materialNameHint) {
+        throw new RdBomRowParseException(RdBomRowIssueType.MISSING_MATERIAL,
+                "物料编号不存在，需先创建并审核通过：" + rawCode, rawCode, materialNameHint);
     }
 
     private ErpProductDO autoCreateTopProduct(String rawCode, String productName) {
-        throw new IllegalArgumentException("顶层物料编号不存在，需先创建并审核通过：" + rawCode);
-    }
-
-    private Long findUnitIdByName(String unitName) {
-        if (StrUtil.isNotBlank(unitName)) {
-            List<ErpProductUnitDO> units = productUnitMapper.selectList(ErpProductUnitDO::getName, unitName.trim());
-            if (CollUtil.isNotEmpty(units)) {
-                return units.get(0).getId();
-            }
-            List<ErpProductUnitDO> allUnits = productUnitMapper.selectList();
-            for (ErpProductUnitDO u : allUnits) {
-                if (unitName.trim().equalsIgnoreCase(u.getName())) {
-                    return u.getId();
-                }
-            }
-        }
-        List<ErpProductUnitDO> all = productUnitMapper.selectList();
-        if (CollUtil.isNotEmpty(all)) {
-            return all.get(0).getId();
-        }
-        throw new IllegalArgumentException("系统未配置产品单位，无法自动创建物料");
-    }
-
-    private Long findDefaultCategoryId() {
-        List<ErpProductCategoryDO> list = productCategoryMapper.selectList();
-        if (CollUtil.isNotEmpty(list)) {
-            for (ErpProductCategoryDO c : list) {
-                if (!ErpProductCategoryDO.PARENT_ID_ROOT.equals(c.getParentId())) {
-                    return c.getId();
-                }
-            }
-            return list.get(0).getId();
-        }
-        throw new IllegalArgumentException("系统未配置产品分类，无法自动创建物料");
+        throw new RdBomRowParseException(RdBomRowIssueType.MISSING_MATERIAL,
+                "顶层物料编号不存在，需先创建并审核通过：" + rawCode, rawCode, productName);
     }
 
     private ErpProductDO ensureProductUsable(ErpProductDO product) {
         if (CommonStatusEnum.isDisable(product.getStatus())) {
-            throw new IllegalArgumentException("物料未启用：" + product.getName());
+            throw new RdBomRowParseException(RdBomRowIssueType.MATERIAL_DISABLED,
+                    "物料未启用：" + product.getName(), product.getMaterialCode(), product.getName(), product);
         }
         if (!ErpAuditStatus.APPROVE.getStatus().equals(product.getAuditStatus())) {
-            throw new IllegalArgumentException("物料未审核通过（需先走物料审核），物料：" + product.getName() + "，当前审核状态=" + product.getAuditStatus());
+            throw new RdBomRowParseException(RdBomRowIssueType.MATERIAL_NOT_APPROVED,
+                    "物料未审核通过（需先走物料审核），物料：" + product.getName() + "，当前审核状态=" + product.getAuditStatus(),
+                    product.getMaterialCode(), product.getName(), product);
         }
         return product;
+    }
+
+    // ========== 预检查归堆辅助 ==========
+
+    private void addMissingMaterial(List<ErpRdBomPrecheckResultVO.MissingMaterial> list, String materialCode,
+                                    String materialName, Integer rowNumber, boolean topLevel) {
+        String normKey = materialCode != null ? materialCode.replaceAll("\\s+", "") : "";
+        ErpRdBomPrecheckResultVO.MissingMaterial target = list.stream()
+                .filter(m -> normKey.equals(m.getMaterialCode() != null ? m.getMaterialCode().replaceAll("\\s+", "") : ""))
+                .findFirst().orElse(null);
+        if (target == null) {
+            target = new ErpRdBomPrecheckResultVO.MissingMaterial();
+            target.setMaterialCode(materialCode);
+            target.setMaterialName(StrUtil.blankToDefault(materialName, null));
+            target.setRowNumbers(new ArrayList<>());
+            target.setTopLevel(topLevel);
+            list.add(target);
+        }
+        if (StrUtil.isBlank(target.getMaterialName()) && StrUtil.isNotBlank(materialName)) {
+            target.setMaterialName(materialName);
+        }
+        if (rowNumber != null && !target.getRowNumbers().contains(rowNumber)) {
+            target.getRowNumbers().add(rowNumber);
+        }
+    }
+
+    private ErpRdBomPrecheckResultVO.UnapprovedMaterial buildUnapproved(ErpProductDO product, boolean disabled) {
+        ErpRdBomPrecheckResultVO.UnapprovedMaterial item = new ErpRdBomPrecheckResultVO.UnapprovedMaterial();
+        item.setMaterialCode(product.getMaterialCode());
+        item.setMaterialId(product.getId());
+        item.setProductName(product.getName());
+        item.setAuditStatus(product.getAuditStatus());
+        item.setStatus(product.getStatus());
+        item.setDisabled(disabled);
+        item.setRowNumbers(new ArrayList<>());
+        return item;
+    }
+
+    private void addUnapprovedMaterial(List<ErpRdBomPrecheckResultVO.UnapprovedMaterial> list,
+                                       ErpRdBomPrecheckResultVO.UnapprovedMaterial item, Integer rowNumber) {
+        ErpRdBomPrecheckResultVO.UnapprovedMaterial target = list.stream()
+                .filter(m -> java.util.Objects.equals(m.getMaterialId(), item.getMaterialId()))
+                .findFirst().orElse(null);
+        if (target == null) {
+            list.add(item);
+            target = item;
+        } else if (Boolean.TRUE.equals(item.getDisabled())) {
+            target.setDisabled(true);
+        }
+        if (rowNumber != null && !target.getRowNumbers().contains(rowNumber)) {
+            target.getRowNumbers().add(rowNumber);
+        }
+    }
+
+    // ========== 表头检测辅助（import 与 precheck 共用） ==========
+
+    private Long detectProductId(Long explicit, SmartHeader header) {
+        if (explicit != null) {
+            return explicit;
+        }
+        return header != null ? header.productId : null;
+    }
+
+    private String detectBomCode(String explicit, SmartHeader header) {
+        if (StrUtil.isNotBlank(explicit)) {
+            return explicit.trim();
+        }
+        return header != null && StrUtil.isNotBlank(header.bomCode) ? header.bomCode.trim() : null;
+    }
+
+    private String detectVersion(String explicit, SmartHeader header) {
+        if (StrUtil.isNotBlank(explicit)) {
+            return explicit.trim();
+        }
+        return header != null && StrUtil.isNotBlank(header.version) ? header.version.trim() : null;
+    }
+
+    /**
+     * 顶层物料判定，与 precheck 的模拟判定共用同一匹配顺序：
+     * 显式 productId → header.productId → header.bomCode 编码匹配 → 缺档抛 MISSING_MATERIAL
+     */
+    private ErpProductDO resolveTopProduct(Long productId, SmartHeader header, ParsedWorkbook parsed) {
+        ErpProductDO topProduct = null;
+        if (productId != null) {
+            topProduct = productService.getProduct(productId);
+        }
+        if (topProduct == null && header != null && StrUtil.isNotBlank(header.bomCode)) {
+            String topCode = header.bomCode.trim();
+            String topNorm = topCode.replaceAll("\\s+", "");
+            topProduct = parsed.getNormalizedCodeMap().get(topNorm);
+            if (topProduct == null) {
+                topProduct = parsed.getMaterialCodeMap().get(topCode);
+            }
+            if (topProduct == null) {
+                String topName = StrUtil.isNotBlank(header.productName) ? header.productName : topCode;
+                autoCreateTopProduct(topCode, topName);
+            }
+        }
+        return topProduct;
     }
 
     private String getCellString(Row row, int cellIndex) {

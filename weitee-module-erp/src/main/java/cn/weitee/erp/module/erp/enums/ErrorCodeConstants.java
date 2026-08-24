@@ -351,6 +351,14 @@ public interface ErrorCodeConstants {
     ErrorCode RD_BOM_PUBLISH_NOT_APPROVED = new ErrorCode(1_030_700_069, "仅审批通过的研发 BOM 可以发布到制造 BOM");
     ErrorCode RD_BOM_CHANGE_NOT_APPROVED = new ErrorCode(1_030_700_070, "仅审批通过的研发 BOM 可以发起变更");
     ErrorCode BOM_INTEGRITY_INVALID = new ErrorCode(1_030_700_071, "研发 BOM 完整性校验未通过，存在错误项，禁止保存");
+    ErrorCode RD_BOM_DELETE_APPROVED_FORBIDDEN = new ErrorCode(1_030_700_080, "研发 BOM 已审批通过，属于版本历史，禁止删除");
+    ErrorCode RD_BOM_DELETE_PUBLISHED_FORBIDDEN = new ErrorCode(1_030_700_081, "研发 BOM 已发布制造 BOM，禁止删除");
+    ErrorCode RD_BOM_DELETE_REFERENCED_FORBIDDEN = new ErrorCode(1_030_700_082, "研发 BOM 已派生其他版本，删除将破坏版本链，请先删除派生版本");
+    ErrorCode RD_BOM_DIFF_PRODUCT_MISMATCH = new ErrorCode(1_030_700_083, "两个研发 BOM 不属于同一成品，无法对比");
+    ErrorCode RD_BOM_VOID_NOT_APPROVED = new ErrorCode(1_030_700_084, "仅已审批的研发 BOM 可以作废");
+    ErrorCode RD_BOM_DELETE_VOID_FORBIDDEN = new ErrorCode(1_030_700_085, "研发 BOM 已作废，属于版本历史，禁止删除");
+    ErrorCode RD_BOM_VOID_LOCKED = new ErrorCode(1_030_700_086, "研发 BOM 已作废，禁止修改");
+    ErrorCode RD_BOM_UNVOID_NOT_VOID = new ErrorCode(1_030_700_087, "仅已作废的研发 BOM 可以取消作废");
     ErrorCode PRODUCT_AUDIT_STATUS_ILLEGAL = new ErrorCode(1_030_700_064, "物料审核状态不合法，无法执行该操作");
     ErrorCode PRODUCT_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_065, "物料已在审批中，无法重复提交");
     ErrorCode PRODUCT_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_066, "物料不在审批中，无法撤回");
