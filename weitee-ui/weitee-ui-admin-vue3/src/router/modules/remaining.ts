@@ -507,6 +507,64 @@ const remainingRouter: AppRouteRecordRaw[] = [
     }
   },
   {
+    path: '/approval',
+    component: Layout,
+    name: 'ApprovalCenterRemaining',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'todo',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'ApprovalPortalTodoRemaining',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '待我审批',
+          activeMenu: '/approval/todo'
+        }
+      },
+      {
+        path: 'submitted',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'ApprovalPortalSubmittedRemaining',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '我发起的',
+          activeMenu: '/approval/submitted'
+        }
+      },
+      {
+        path: 'done',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'ApprovalPortalDoneRemaining',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '已审批',
+          activeMenu: '/approval/done'
+        }
+      },
+      {
+        path: 'cc',
+        component: () => import('@/views/bpm/approval/portal/index.vue'),
+        name: 'ApprovalPortalCcRemaining',
+        meta: {
+          noCache: true,
+          hidden: true,
+          canTo: true,
+          title: '抄送我',
+          activeMenu: '/approval/cc'
+        }
+      }
+    ]
+  },
+  {
     path: '/bpm',
     component: Layout,
     name: 'bpm',
