@@ -17,7 +17,8 @@
         {{ formatDate(detailData.readTime) }}
       </el-descriptions-item>
       <el-descriptions-item label="内容">
-        {{ detailData.templateContent }}
+        <!-- 站内信内容含换行符（如导入失败明细逐行展示），须保留换行渲染 -->
+        <span class="whitespace-pre-line break-all">{{ detailData.templateContent }}</span>
       </el-descriptions-item>
     </el-descriptions>
   </Dialog>

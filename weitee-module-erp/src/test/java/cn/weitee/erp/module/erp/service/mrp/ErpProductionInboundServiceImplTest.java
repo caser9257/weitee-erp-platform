@@ -81,6 +81,10 @@ class ErpProductionInboundServiceImplTest {
                 updatedInboundRef.set((ErpProductionInboundDO) args[0]);
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedInboundRef.set((ErpProductionInboundDO) args[2]);
+                return 1;
+            }
             if ("resetExecutionInfoById".equals(methodName)) {
                 resetExecutionInfoInboundIdRef.set((Long) args[0]);
                 return 1;

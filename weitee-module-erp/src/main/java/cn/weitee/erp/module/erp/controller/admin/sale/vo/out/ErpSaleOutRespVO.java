@@ -115,6 +115,12 @@ public class ErpSaleOutRespVO {
         @Schema(description = "产品单位单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         private Long productUnitId;
 
+        @Schema(description = "录入数量（录入单位口径）；null 表示与 count 相同", example = "10.00")
+        private BigDecimal inputCount;
+
+        @Schema(description = "换算率快照：1 录入单位 = conversionRate 基本单位；基本单位为 null", example = "12")
+        private BigDecimal conversionRate;
+
         @Schema(description = "产品单价", example = "100.00")
         private BigDecimal productPrice;
 

@@ -235,8 +235,13 @@ public class BpmApprovalRuntimeServiceImpl implements BpmApprovalRuntimeService 
             throw exception(APPROVAL_INSTANCE_SNAPSHOT_NOT_EXISTS);
         }
         boolean recoverCanceledProcess = isRecoverableCanceledProcess(snapshot);
+        // 撤回失败（FAILED）允许重试：与提交路径的 FAILED 重试口径对齐，
+        // 否则撤回一旦失败快照即死锁，业务单据将永久卡在审批中状态
+        boolean retryableFailedCancel = ObjectUtil.equal(snapshot.getStatus(),
+                BpmApprovalInstanceSnapshotStatusEnum.FAILED.getStatus())
+                && StrUtil.isNotBlank(snapshot.getProcessInstanceId());
         if (!ObjectUtil.equal(snapshot.getStatus(), BpmApprovalInstanceSnapshotStatusEnum.PROCESSING.getStatus())
-                && !recoverCanceledProcess) {
+                && !recoverCanceledProcess && !retryableFailedCancel) {
             throw exception(APPROVAL_INSTANCE_NOT_PROCESSING);
         }
 

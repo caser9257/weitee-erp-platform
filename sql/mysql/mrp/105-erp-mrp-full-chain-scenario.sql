@@ -9,11 +9,10 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 START TRANSACTION;
 
-SET @creator := 'tester';
+SET @creator := 'codex';
 
 SET @project_id := 993701;
 SET @sale_order_id := 993901;

@@ -53,8 +53,8 @@ class ErpProductionIqcStockServiceImplTest {
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (m, a) -> 1));
         setField(service, "purchaseInQualityService", createProxy(ErpPurchaseInQualityService.class, (m, a) -> null));
 
-        Method method = service.getClass().getMethod("deductStockForProduction", Long.class, Long.class, BigDecimal.class);
-        method.invoke(service, 100L, 200L, new BigDecimal("10"));
+        Method method = service.getClass().getMethod("deductStockForProduction", Long.class, Long.class, Long.class, BigDecimal.class);
+        method.invoke(service, 100L, 200L, 10L, new BigDecimal("10"));
 
         assertNotNull(capturedAvailable.get());
         assertEquals(0, new BigDecimal("-10").compareTo(capturedAvailable.get()));
@@ -63,27 +63,13 @@ class ErpProductionIqcStockServiceImplTest {
     }
 
     @Test
-    void handleIqcPassed_shouldMoveHoldToAvailableUnderRowLock() throws Exception {
+    void handleIqcPassed_shouldNotWriteStockSinceConfirmIsTheSingleWriter() throws Exception {
         Object service = new ErpProductionIqcStockServiceImpl();
-        ErpPurchaseInQualityDO quality = new ErpPurchaseInQualityDO()
-                .setId(1L).setPurchaseInId(10L).setStatus(ErpPurchaseInQualityStatusEnum.DONE.getStatus())
-                .setResult(ErpPurchaseInQualityResultEnum.PASSED.getStatus())
-                .setNo("QC-001").setPurchaseInNo("PI-001");
-        ErpPurchaseInQualityItemDO item = new ErpPurchaseInQualityItemDO()
-                .setId(11L).setProductId(200L).setWarehouseId(10L).setQaPassCount(new BigDecimal("5"))
-                .setPurchaseInItemId(100L);
         AtomicReference<BigDecimal> capturedHold = new AtomicReference<>();
         AtomicReference<BigDecimal> capturedAvailable = new AtomicReference<>();
         AtomicReference<BigDecimal> capturedCount = new AtomicReference<>();
-        cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO stock = new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO()
-                .setId(1L).setProductId(200L).setWarehouseId(10L).setCount(new BigDecimal("100")).setAvailableCount(new BigDecimal("90")).setQualityHoldCount(new BigDecimal("10"));
-        setField(service, "purchaseInQualityService", createProxy(ErpPurchaseInQualityService.class, (m, a) -> {
-            if ("getPurchaseInQualityByPurchaseInId".equals(m)) return quality;
-            if ("getPurchaseInQualityItemListByQualityId".equals(m)) return List.of(item);
-            return null;
-        }));
+        setField(service, "purchaseInQualityService", createProxy(ErpPurchaseInQualityService.class, (m, a) -> null));
         setField(service, "stockMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper.class, (m, a) -> {
-            if ("selectByProductIdAndWarehouseIdForUpdate".equals(m)) return stock;
             if ("updateQualityHoldCountIncrement".equals(m)) {
                 capturedHold.set((BigDecimal) a[1]);
                 return 1;
@@ -105,10 +91,46 @@ class ErpProductionIqcStockServiceImplTest {
         Method method = service.getClass().getMethod("handleIqcPassed", Long.class);
         method.invoke(service, 10L);
 
-        // 暂存足额扣减（-5），可用全额增加（+5），总量不变
-        assertEquals(0, new BigDecimal("-5").compareTo(capturedHold.get()));
-        assertEquals(0, new BigDecimal("5").compareTo(capturedAvailable.get()));
+        // 单写者契约：可用库存由确认入库统一入账，IQC 完成事件不得再写库存
+        assertNull(capturedHold.get());
+        assertNull(capturedAvailable.get());
         assertNull(capturedCount.get());
+    }
+
+    @Test
+    void deductStockForProduction_shouldSaveFailureLogWhenWarehouseMissing() throws Exception {
+        Object service = new ErpProductionIqcStockServiceImpl();
+        ErpProductionOrderDO order = new ErpProductionOrderDO()
+                .setId(100L).setOrderNo("PO-001").setWarehouseId(null).setStatus(20);
+        AtomicReference<BigDecimal> capturedAvailable = new AtomicReference<>();
+        AtomicReference<Object> capturedFailure = new AtomicReference<>();
+        setField(service, "productionOrderMapper", createProxy(ErpProductionOrderMapper.class, (m, a) -> {
+            if ("selectById".equals(m)) return order;
+            return null;
+        }));
+        setField(service, "stockMapper", createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper.class, (m, a) -> {
+            if ("updateAvailableCountIncrement".equals(m)) {
+                capturedAvailable.set((BigDecimal) a[1]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "transactionManager", createProxy(org.springframework.transaction.PlatformTransactionManager.class,
+                (m, a) -> null));
+        setField(service, "stockTaskFailureLogMapper", createProxy(
+                cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockTaskFailureLogMapper.class, (m, a) -> {
+                    if ("insert".equals(m)) {
+                        capturedFailure.set(a[0]);
+                        return 1;
+                    }
+                    return null;
+                }));
+
+        Method method = service.getClass().getMethod("deductStockForProduction", Long.class, Long.class, Long.class, BigDecimal.class);
+        // 校验型失败不得抛出穿透 afterCommit 调用链，必须落失败记录待重试
+        assertDoesNotThrow(() -> method.invoke(service, 100L, 200L, null, new BigDecimal("10")));
+        assertNull(capturedAvailable.get());
+        assertNotNull(capturedFailure.get());
     }
 
     @SuppressWarnings("unchecked")

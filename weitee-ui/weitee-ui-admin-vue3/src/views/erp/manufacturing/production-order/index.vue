@@ -51,14 +51,7 @@
           />
         </el-form-item>
         <el-form-item label="产品" prop="productId">
-          <el-select v-model="queryParams.productId" clearable filterable placeholder="请选择产品">
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
@@ -232,21 +225,13 @@
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-width="110px">
       <el-form-item label="产品" prop="productId">
-        <el-select
+        <ProductRemoteSelect
           v-model="form.productId"
-          filterable
-          clearable
-          placeholder="请选择产品"
           class="!w-100%"
+          placeholder="请选择产品"
           @change="handleProductChange"
-        >
-          <el-option
-            v-for="item in productList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
+          @select="cacheSelectedProduct"
+        />
       </el-form-item>
       <el-form-item label="工艺路线" prop="routeId">
         <el-select
@@ -589,6 +574,10 @@ const handleProductChange = (productId: number) => {
   loadRoutes(productId)
 }
 
+const cacheSelectedProduct = (product: ProductVO | null) => {
+  productList.value = product ? [product] : []
+}
+
 const openForm = async (mode: 'create' | 'edit', row?: ProductionOrderVO) => {
   formMode.value = mode
   Object.assign(form, emptyForm())
@@ -675,11 +664,6 @@ const handleFinishSubmit = async () => {
 onMounted(async () => {
   getList()
   getSummary()
-  try {
-    productList.value = await ProductApi.getProductSimpleList()
-  } catch {
-    productList.value = []
-  }
   try {
     workCenterList.value = await WorkCenterApi.getWorkCenterSimpleList()
   } catch {

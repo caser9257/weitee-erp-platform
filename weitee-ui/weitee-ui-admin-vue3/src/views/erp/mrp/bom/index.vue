@@ -6,16 +6,7 @@
         <div class="bom-page__title">制造BOM</div>
         <div class="bom-page__count">共 {{ total }} 条记录</div>
       </div>
-      <div class="bom-page__actions">
-        <el-button
-          type="primary"
-          @click="openForm('create')"
-          v-hasPermi="['erp:bom:create']"
-        >
-          <Icon icon="ep:plus" class="mr-5px" />
-          新增制造BOM
-        </el-button>
-      </div>
+
     </div>
   </ContentWrap>
 
@@ -37,20 +28,7 @@
           />
         </el-form-item>
         <el-form-item label="成品" prop="productId">
-          <el-select
-            v-model="queryParams.productId"
-            clearable
-            filterable
-            :loading="productLoading"
-            placeholder="请选择成品"
-          >
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择成品" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select
@@ -109,7 +87,8 @@
       <el-table-column label="来源研发BOM" prop="sourceRdBomId" width="140" align="center" />
       <el-table-column label="状态" width="120" align="center">
         <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'info'">
+          <el-tag v-if="row.processInstanceId" type="warning">停用审批中</el-tag>
+          <el-tag v-else :type="row.status === 1 ? 'success' : 'info'">
             {{ row.status === 1 ? '已生效' : '草稿/停用' }}
           </el-tag>
         </template>
@@ -127,33 +106,30 @@
         align="center"
         :formatter="dateTimeFormatter"
       />
-      <el-table-column label="操作" width="320" align="center" fixed="right">
+      <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" @click="openDetail(row)" v-hasPermi="['erp:bom:query']">
             详情
           </el-button>
-          <el-button link type="primary" @click="openForm('update', row.id)" v-hasPermi="['erp:bom:update']">
-            编辑
-          </el-button>
           <el-button
+            v-if="row.status === 1 && !row.processInstanceId"
             link
-            type="primary"
+            type="warning"
             :loading="statusLoadingId === row.id"
-            :disabled="statusLoadingId === row.id"
-            @click="handleUpdateStatus(row.id, row.status === 1 ? 0 : 1)"
+            @click="handleSubmitDisable(row)"
             v-hasPermi="['erp:bom:update-status']"
           >
-            {{ row.status === 1 ? '停用' : '生效' }}
+            停用申请
           </el-button>
           <el-button
+            v-if="row.processInstanceId"
             link
             type="danger"
-            :loading="deleteLoadingId === row.id"
-            :disabled="deleteLoadingId === row.id"
-            @click="handleDelete(row.id)"
-            v-hasPermi="['erp:bom:delete']"
+            :loading="statusLoadingId === row.id"
+            @click="handleCancelDisable(row)"
+            v-hasPermi="['erp:bom:update-status']"
           >
-            删除
+            撤回
           </el-button>
         </template>
       </el-table-column>
@@ -168,7 +144,6 @@
     />
   </ContentWrap>
 
-  <BomForm ref="formRef" :product-options="productList" @success="getList" />
   <BomDetailDrawer ref="detailDrawerRef" />
 </template>
 
@@ -180,7 +155,6 @@ import { formatDate } from '@/utils/formatTime'
 import { BomApi, type BomPageReqVO, type BomVO } from '@/api/erp/mrp/bom'
 import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import BomDetailDrawer from './BomDetailDrawer.vue'
-import BomForm from './BomFormInteractive.vue'
 import { getToneCardClass, resolveSummaryCardClass } from '../../stock/shared/stockTone'
 
 defineOptions({ name: 'ErpManufactureBom' })
@@ -195,13 +169,11 @@ const BOM_STATUS_OPTIONS = [
 
 const listLoading = ref(false)
 const productLoading = ref(false)
-const deleteLoadingId = ref<number | undefined>()
 const statusLoadingId = ref<number | undefined>()
 const list = ref<BomVO[]>([])
 const total = ref(0)
 const productList = ref<ProductVO[]>([])
 const queryFormRef = ref()
-const formRef = ref()
 const detailDrawerRef = ref()
 
 const queryParams = reactive<BomPageReqVO>({
@@ -270,10 +242,6 @@ const resetQuery = () => {
   handleQuery()
 }
 
-const openForm = (type: 'create' | 'update', id?: number) => {
-  formRef.value?.open(type, id)
-}
-
 const openDetail = (row?: BomVO) => {
   if (!row?.id && !row?.productId) {
     return
@@ -281,15 +249,16 @@ const openDetail = (row?: BomVO) => {
   detailDrawerRef.value?.open({ bomId: row.id, productId: row.productId })
 }
 
-const handleUpdateStatus = async (id?: number, status?: number) => {
-  if (!id || status === undefined || statusLoadingId.value) {
+// 制造 BOM 为研发 BOM 发布快照：停用/废止走 BPM 申请流，通过后由系统落 DISABLE
+const handleSubmitDisable = async (row: BomVO) => {
+  if (!row?.id || statusLoadingId.value) {
     return
   }
-  statusLoadingId.value = id
+  statusLoadingId.value = row.id
   try {
-    await message.confirm(status === 1 ? '确认将该制造 BOM 生效吗？' : '确认将该制造 BOM 停用吗？')
-    await BomApi.updateBomStatus(id, status)
-    message.success(t('common.updateSuccess'))
+    await message.confirm(`确认发起制造 BOM“${row.bomCode}”的停用申请吗？`)
+    await BomApi.submitDisableApproval(row.id)
+    message.success('停用申请已提交，审批通过前 BOM 保持生效')
     await getList()
   } catch {
   } finally {
@@ -297,19 +266,24 @@ const handleUpdateStatus = async (id?: number, status?: number) => {
   }
 }
 
-const handleDelete = async (id?: number) => {
-  if (!id || deleteLoadingId.value) {
+// 撤回制造 BOM 停用申请：原因必填（后端兜底默认值）
+const handleCancelDisable = async (row: BomVO) => {
+  if (!row?.id || statusLoadingId.value) {
     return
   }
-  deleteLoadingId.value = id
+  statusLoadingId.value = row.id
   try {
-    await message.delConfirm()
-    await BomApi.deleteBom(id)
-    message.success(t('common.delSuccess'))
+    const { value } = await message.prompt(`确认撤回制造 BOM“${row.bomCode}”的停用申请吗？`, '填写撤回原因')
+    if (!value || !value.trim()) {
+      message.warning('请填写撤回原因')
+      return
+    }
+    await BomApi.cancelDisableApproval(row.id, String(value).trim())
+    message.success('撤回成功，BOM 保持生效')
     await getList()
   } catch {
   } finally {
-    deleteLoadingId.value = undefined
+    statusLoadingId.value = undefined
   }
 }
 

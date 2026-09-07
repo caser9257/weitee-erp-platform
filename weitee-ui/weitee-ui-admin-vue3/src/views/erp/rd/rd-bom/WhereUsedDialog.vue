@@ -3,15 +3,7 @@
     <div class="mb-12px flex items-end gap-12px">
       <div class="flex-1">
         <div class="mb-6px text-12px font-medium text-slate-600">选择物料</div>
-        <el-select
-          v-model="materialId"
-          filterable
-          :loading="productLoading"
-          placeholder="输入物料名称/编号搜索"
-          class="w-full"
-        >
-          <el-option v-for="item in productList" :key="item.id" :label="`${item.name}（${item.materialCode || item.barCode || item.id}）`" :value="item.id" />
-        </el-select>
+        <ProductRemoteSelect v-model="materialId" scope="approved" placeholder="输入物料名称/编号搜索" />
       </div>
       <el-button type="primary" :loading="loading" :disabled="!materialId || loading" @click="handleQuery">
         查询
@@ -55,15 +47,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import { RdBomApi, type RdBomWhereUsedVO } from '@/api/erp/rd/bom'
+import ProductRemoteSelect from '@/components/ProductRemoteSelect.vue'
 
 defineOptions({ name: 'WhereUsedDialog' })
 
 const dialogVisible = ref(false)
 const loading = ref(false)
-const productLoading = ref(false)
-const productList = ref<ProductVO[]>([])
 const materialId = ref<number | undefined>()
 const whereUsedList = ref<RdBomWhereUsedVO[]>([])
 const queried = ref(false)
@@ -77,23 +67,13 @@ const STATUS_META: Record<number, { label: string; type: any }> = {
   60: { label: '处理失败', type: 'danger' }
 }
 
-const open = async () => {
+const open = () => {
   dialogVisible.value = true
   queried.value = false
   whereUsedList.value = []
   materialId.value = undefined
-  await loadProductList()
 }
 defineExpose({ open })
-
-const loadProductList = async () => {
-  productLoading.value = true
-  try {
-    productList.value = await ProductApi.getProductSimpleList()
-  } finally {
-    productLoading.value = false
-  }
-}
 
 const handleQuery = async () => {
   if (!materialId.value) return

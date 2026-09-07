@@ -51,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 
@@ -211,8 +212,14 @@ public class ErpFinanceVoucherServiceImpl implements ErpFinanceVoucherService {
         return voucher.getId();
     }
 
+    /**
+     * NESTED（savepoint）传播是凭证失败不阻断业务审核的前提：
+     * REQUIRED 时本方法抛异常会把外层业务事务标记 rollback-only，调用方 catch 后主事务提交仍抛
+     * UnexpectedRollbackException（审核失败且失败信息丢失）；NESTED 只回滚 savepoint 内的凭证写入，
+     * 业务事务存活，调用方可落失败记录走重试闭环。无外层事务时行为等同 REQUIRED。
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(propagation = Propagation.NESTED, rollbackFor = Exception.class)
     public Long autoGenerateVoucher(Integer bizType, Long bizId) {
         List<Long> ledgerIds = resolveAutoGenerateLedgerIds(bizType);
         if (CollUtil.isEmpty(ledgerIds)) {

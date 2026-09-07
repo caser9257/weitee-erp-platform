@@ -209,20 +209,7 @@
     >
       <div class="filter-form__grid">
         <el-form-item label="物料" prop="materialId">
-          <el-select
-            v-model="purchaseQueryParams.materialId"
-            clearable
-            filterable
-            placeholder="请选择物料"
-            :loading="optionsLoading"
-          >
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="purchaseQueryParams.materialId" placeholder="请选择物料" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="purchaseQueryParams.status" clearable placeholder="请选择状态">
@@ -328,20 +315,7 @@
     >
       <div class="filter-form__grid">
         <el-form-item label="产品" prop="productId">
-          <el-select
-            v-model="productionQueryParams.productId"
-            clearable
-            filterable
-            placeholder="请选择产品"
-            :loading="optionsLoading"
-          >
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="productionQueryParams.productId" placeholder="请选择产品" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-select v-model="productionQueryParams.status" clearable placeholder="请选择状态">
@@ -443,7 +417,6 @@ import {
   type PurchaseSuggestPageReqVO,
   type PurchaseSuggestVO
 } from '@/api/erp/mrp/suggest'
-import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import {
   SaleOrderApi,
   type SaleOrderClosurePageVO,
@@ -523,10 +496,8 @@ const canQueryPurchaseOrder = checkPermi(['erp:purchase-order:query'])
 
 const saleOrderDetail = ref<SaleOrderVO>()
 const closureSnapshot = ref<SaleOrderClosurePageVO>()
-const productList = ref<ProductVO[]>([])
 
 const contextLoading = ref(false)
-const optionsLoading = ref(false)
 const pageRefreshing = ref(false)
 const purchaseLoading = ref(false)
 const productionLoading = ref(false)
@@ -666,18 +637,6 @@ const navigateWithLock = async (action: string, handler: () => Promise<void>) =>
   }
 }
 
-const ensureProductOptions = async () => {
-  if (productList.value.length > 0) {
-    return
-  }
-  optionsLoading.value = true
-  try {
-    productList.value = await ProductApi.getProductSimpleList()
-  } finally {
-    optionsLoading.value = false
-  }
-}
-
 const loadContext = async () => {
   if (!sourceOrderId.value) {
     saleOrderDetail.value = undefined
@@ -790,7 +749,6 @@ const refreshAll = async () => {
   }
   pageRefreshing.value = true
   try {
-    await ensureProductOptions()
     await Promise.allSettled([loadContext(), getPurchaseList(), getProductionList()])
   } finally {
     pageRefreshing.value = false

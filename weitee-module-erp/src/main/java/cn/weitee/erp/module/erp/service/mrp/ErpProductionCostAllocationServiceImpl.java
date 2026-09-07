@@ -154,6 +154,15 @@ public class ErpProductionCostAllocationServiceImpl implements ErpProductionCost
         if (totalBasis.compareTo(BigDecimal.ZERO) <= 0) {
             throw exception(PRODUCTION_COST_ALLOCATION_BASIS_EMPTY);
         }
+        // CAS 先行：仅当状态仍为 DRAFT 才允许进入执行，并发重复执行在写成本条目前即被拒绝，
+        // 避免同一分摊单重复生成成本条目导致成本重复累计（分摊结果表无唯一键兜底）
+        if (erpProductionCostAllocationMapper.updateByIdAndStatus(id,
+                ErpProductionCostAllocationStatusEnum.DRAFT.getStatus(),
+                new ErpProductionCostAllocationDO()
+                        .setStatus(ErpProductionCostAllocationStatusEnum.EXECUTED.getStatus())
+                        .setExecutedTime(LocalDateTime.now())) == 0) {
+            throw exception(PRODUCTION_COST_ALLOCATION_ALREADY_EXECUTED);
+        }
 
         List<Map.Entry<Long, BigDecimal>> basisEntries = new ArrayList<>(basisMap.entrySet());
         basisEntries.sort(Map.Entry.comparingByKey());
@@ -189,10 +198,6 @@ public class ErpProductionCostAllocationServiceImpl implements ErpProductionCost
                     .setRemark(generatedRemark));
         }
         erpProductionCostAllocationResultMapper.insertBatch(resultList);
-        erpProductionCostAllocationMapper.updateById(new ErpProductionCostAllocationDO()
-                .setId(allocation.getId())
-                .setStatus(ErpProductionCostAllocationStatusEnum.EXECUTED.getStatus())
-                .setExecutedTime(LocalDateTime.now()));
     }
 
     @Override

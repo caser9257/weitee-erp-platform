@@ -55,10 +55,17 @@
           </el-form-item>
         </template>
       </el-table-column>
-      <el-table-column label="单位" min-width="80">
+      <el-table-column label="单位" min-width="96">
         <template #default="{ row }">
           <el-form-item class="mb-0px!">
-            <el-input disabled v-model="row.productUnitName" />
+            <el-select v-model="row.productUnitId" placeholder="单位" class="!w-100%">
+              <el-option
+                v-for="unit in getUnitFamilyOptions(row)"
+                :key="unit.id"
+                :label="unit.name"
+                :value="unit.id"
+              />
+            </el-select>
           </el-form-item>
         </template>
       </el-table-column>
@@ -92,12 +99,15 @@
             <el-input-number
               v-model="row.count"
               controls-position="right"
-              :min="getQuantityStep(row.productId)"
-              :step="getQuantityStep(row.productId)"
-              :precision="getQuantityPrecision(row.productId)"
+              :min="getQuantityStep(row)"
+              :step="getQuantityStep(row)"
+              :precision="getQuantityPrecision(row)"
               class="!w-100%"
             />
           </el-form-item>
+          <div v-if="isRowAuxiliaryUnit(row)" class="unit-convert-tip">
+            ≈ {{ rowBaseCountText(row) }} {{ rowBaseUnitName(row) }}
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="产品单价" fixed="right" min-width="120">
@@ -183,8 +193,18 @@ import {
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import {
   getProductQuantityPrecision,
-  getProductQuantityStep
+  normalizeQuantityPrecision
 } from '@/utils/erpQuantityPrecision'
+import {
+  loadProductUnits,
+  getUnitFamily,
+  getUnitQuantityPrecision,
+  getUnitName,
+  resolveBaseUnitId,
+  toBaseCount,
+  isAuxiliaryUnit
+} from '@/utils/erpUnitConversion'
+import type { ProductUnitVO } from '@/api/erp/product/unit'
 
 const props = defineProps<{
   items: any[]
@@ -201,6 +221,7 @@ const formRef = ref<any>() // 表单 Ref
 const warehouseList = ref<WarehouseVO[]>([]) // 仓库列表
 const defaultWarehouse = ref<WarehouseVO>(undefined) // 默认仓库
 const productList = ref<ProductVO[]>([]) // 产品列表
+const unitList = ref<ProductUnitVO[]>([]) // 单位列表（含换算率）
 
 /** 初始化设置出库项 */
 watch(
@@ -301,12 +322,33 @@ const setStockCount = async (row: any) => {
   row.stockCount = count || 0
 }
 
-const getQuantityPrecision = (productId?: number) => {
-  return getProductQuantityPrecision(productList.value, productId)
+const getQuantityPrecision = (row: any) => {
+  const unitPrecision = getUnitQuantityPrecision(unitList.value, row.productUnitId)
+  if (unitPrecision != null) {
+    return normalizeQuantityPrecision(unitPrecision)
+  }
+  return getProductQuantityPrecision(productList.value, row.productId)
 }
 
-const getQuantityStep = (productId?: number) => {
-  return getProductQuantityStep(productList.value, productId)
+const getQuantityStep = (row: any) => {
+  const precision = getQuantityPrecision(row)
+  return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+}
+
+/** 当前行可选单位族（产品基本单位 + 辅助单位） */
+const getUnitFamilyOptions = (row: any) =>
+  getUnitFamily(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const isRowAuxiliaryUnit = (row: any) => isAuxiliaryUnit(unitList.value, row.productUnitId)
+
+const rowBaseUnitName = (row: any) =>
+  getUnitName(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const rowBaseCountText = (row: any) => {
+  const baseCount = toBaseCount(unitList.value, row.productUnitId, row.count)
+  return baseCount == null
+    ? '-'
+    : Number(baseCount).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
 }
 
 /** 表单校验 */
@@ -317,12 +359,24 @@ defineExpose({ validate })
 
 /** 初始化 */
 onMounted(async () => {
-  const [warehouses, products] = await Promise.all([
+  const [warehouses, products, units] = await Promise.all([
     WarehouseApi.getWarehouseSimpleList(),
-    ProductApi.getProductSimpleList()
+    ProductApi.getProductSimpleList(),
+    loadProductUnits()
   ])
   warehouseList.value = warehouses
   productList.value = products
+  unitList.value = units
   defaultWarehouse.value = warehouseList.value.find((item) => item.defaultStatus)
 })
 </script>
+
+<style scoped>
+.unit-convert-tip {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: right;
+  color: var(--erp-slate-400);
+}
+</style>

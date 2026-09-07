@@ -123,4 +123,12 @@ public class ErpPurchaseReturnDO extends BaseDO {
      */
     private String remark;
 
+    /**
+     * 来源质检单编号
+     *
+     * 关联 {@link cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityDO#getId()}
+     * 从 IQC 质检单创建退货单时记录，手工退货单为 null
+     */
+    private Long qualityId;
+
 }

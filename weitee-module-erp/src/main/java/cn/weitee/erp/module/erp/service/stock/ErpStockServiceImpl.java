@@ -126,8 +126,9 @@ public class ErpStockServiceImpl implements ErpStockService {
     @Transactional(rollbackFor = Exception.class)
     public BigDecimal updateStockCountIncrement(Long productId, Long warehouseId, BigDecimal count, BigDecimal price) {
         productQuantityPrecisionService.validateProductQuantity(productId, count);
-        // 1.1 查询当前库存
-        ErpStockDO stock = erpStockMapper.selectByProductIdAndWarehouseId(productId, warehouseId);
+        // 1.1 行锁查询当前库存：同一产品+仓库的并发出入库在此串行化（走 uk_stock_product_warehouse），
+        //     后续数量校验、成本计算必须基于这份锁定读取的变更前快照，避免 stale 读
+        ErpStockDO stock = erpStockMapper.selectByProductIdAndWarehouseIdForUpdate(productId, warehouseId);
         if (stock == null) {
             stock = new ErpStockDO().setProductId(productId).setWarehouseId(warehouseId)
                     .setCount(BigDecimal.ZERO).setAverageCost(BigDecimal.ZERO).setTotalCost(BigDecimal.ZERO);
@@ -139,32 +140,38 @@ public class ErpStockServiceImpl implements ErpStockService {
                     warehouseService.getWarehouse(warehouseId).getName(), stock.getCount(), count);
         }
 
-        // 2. 库存变更
+        // 2. 入库成本预计算：必须在数量变更之前执行。
+        //    calculateWeightedAverageCost 读取的是当前行数量，若先加数量再算成本，
+        //    本次入库量会被重复计入分子和分母（历史缺陷）
+        BigDecimal newAverageCost = null;
+        if (count.compareTo(BigDecimal.ZERO) > 0 && price != null && price.compareTo(BigDecimal.ZERO) > 0) {
+            newAverageCost = calculateWeightedAverageCost(productId, warehouseId, count, price);
+        }
+
+        // 3. 库存变更（CAS 兜底，防负库存）
         int updateCount = erpStockMapper.updateCountIncrement(stock.getId(), count, NEGATIVE_STOCK_COUNT_ENABLE);
         if (updateCount == 0) {
             throw exception(STOCK_COUNT_NEGATIVE2, productService.getProduct(productId).getName(),
                     warehouseService.getWarehouse(warehouseId).getName());
         }
 
-        // 3. 成本计算
-        if (count.compareTo(BigDecimal.ZERO) > 0 && price != null && price.compareTo(BigDecimal.ZERO) > 0) {
-            // 入库：重算加权平均成本
-            BigDecimal newAverageCost = calculateWeightedAverageCost(productId, warehouseId, count, price);
-            BigDecimal newTotalCount = stock.getCount().add(count);
+        // 4. 成本落账（基于步骤 1 锁定读取的变更前数量推算变更后总量，维持 totalCost = averageCost * count 守恒）
+        BigDecimal newTotalCount = stock.getCount().add(count);
+        if (newAverageCost != null) {
+            // 入库带单价：重算加权平均成本
             BigDecimal newTotalCost = newAverageCost.multiply(newTotalCount).setScale(2, java.math.RoundingMode.HALF_UP);
             erpStockMapper.updateById(new ErpStockDO().setId(stock.getId())
                     .setAverageCost(newAverageCost).setTotalCost(newTotalCost));
-        } else if (count.compareTo(BigDecimal.ZERO) < 0 && stock.getAverageCost() != null) {
-            // 出库：更新总金额
-            BigDecimal newTotalCount = stock.getCount().add(count);
+        } else if (stock.getAverageCost() != null && newTotalCount.compareTo(stock.getCount()) != 0) {
+            // 出库，或无单价的入库（如退货按均价回补）：均价不变，总金额按锁定快照的均价同步
             BigDecimal newTotalCost = stock.getAverageCost().multiply(newTotalCount).setScale(2, java.math.RoundingMode.HALF_UP);
             erpStockMapper.updateById(new ErpStockDO().setId(stock.getId()).setTotalCost(newTotalCost));
         }
 
-        // 4. 返回最新库存
-        BigDecimal newCount = stock.getCount().add(count);
+        // 5. 返回最新库存
+        BigDecimal newCount = newTotalCount;
 
-        // 5. 检查是否低于安全库存（仅在库存减少时检查）
+        // 6. 检查是否低于安全库存（仅在库存减少时检查）
         if (count.compareTo(BigDecimal.ZERO) < 0) {
             checkAndPublishStockAlert(productId, warehouseId, newCount);
         }

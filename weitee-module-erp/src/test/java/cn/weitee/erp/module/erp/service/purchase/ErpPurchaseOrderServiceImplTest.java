@@ -106,6 +106,7 @@ class ErpPurchaseOrderServiceImplTest {
                 return generatedNoRef.get();
             }
         });
+        setField(purchaseOrderService, "unitConversionService", cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionTestSupport.passthrough());
         setField(purchaseOrderService, "productService", createProxy(ErpProductService.class, (methodName, args) -> {
             if ("validProductList".equals(methodName)) {
                 @SuppressWarnings("unchecked")

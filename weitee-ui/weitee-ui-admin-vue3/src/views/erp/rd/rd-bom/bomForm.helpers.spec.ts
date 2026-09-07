@@ -39,6 +39,7 @@ const payload = buildBomPayload(
     remark: '',
     items: [
       {
+        ...createEmptyBomItem(),
         id: undefined,
         materialId: 1002,
         materialType: undefined,

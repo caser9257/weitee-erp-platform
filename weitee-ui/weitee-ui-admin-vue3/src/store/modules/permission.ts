@@ -6,7 +6,6 @@ import remainingRouter from '@/router/modules/remaining'
 import { flatMultiLevelRoutes, generateRoute } from '@/utils/routerHelper'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import { buildPermissionRoutes } from '@/utils/permissionRouteBuilder'
-import { CRITICAL_ROUTES, collectRoutePaths } from '@/router/criticalRoutes'
 
 const { wsCache } = useCache()
 
@@ -67,16 +66,8 @@ export const usePermissionStore = defineStore('permission', {
         cloneRoutes: (routes) => cloneDeep(routes)
       })
 
-      // dev 环境关键路由断言：缺失立即暴露，避免运行时点菜单才发现 404
-      if (import.meta.env.DEV) {
-        const registered = collectRoutePaths(addRouters as any[])
-        const missing = CRITICAL_ROUTES.filter((p) => !registered.has(p))
-        if (missing.length) {
-          console.error(
-            `[route-guard] 关键路由缺失: ${missing.join(', ')} — 请检查动态菜单合并/权限过滤/菜单种子`
-          )
-        }
-      }
+      // 关键路由断言已迁移至 permission.ts 守卫：动态路由 addRoute 挂载完成后
+      // 以 router.getRoutes() 权威注册表比对（此处时机过早且查的是本地树，曾长期误报）
 
       this.addRouters = addRouters
       this.routers = routers

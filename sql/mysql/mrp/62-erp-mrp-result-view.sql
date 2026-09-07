@@ -10,7 +10,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @add_mrp_result_reserved_stock_qty = (
   SELECT IF(

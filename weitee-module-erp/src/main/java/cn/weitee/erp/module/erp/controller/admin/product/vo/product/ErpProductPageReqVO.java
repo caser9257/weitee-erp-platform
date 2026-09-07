@@ -17,6 +17,21 @@ public class ErpProductPageReqVO extends PageParam {
     @Schema(description = "产品名称", example = "李四")
     private String name;
 
+    @Schema(description = "物料编号", example = "MAT-001")
+    private String materialCode;
+
+    @Schema(description = "产品型号", example = "0603 10K 1%")
+    private String standard;
+
+    @Schema(description = "品牌/制造商", example = "风华高科")
+    private String brandManufacturer;
+
+    @Schema(description = "审批状态：0草稿 10审批中 20已审批 30已驳回 60处理失败", example = "20")
+    private Integer auditStatus;
+
+    @Schema(description = "是否 PCB 元器件", example = "true")
+    private Boolean pcbComponent;
+
     @Schema(description = "产品分类编号", example = "11161")
     private Long categoryId;
 

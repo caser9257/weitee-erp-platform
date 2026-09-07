@@ -11,12 +11,15 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityDefectDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityRoundDO;
+import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInQualityDefectMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInQualityItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInQualityMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInQualityRoundMapper;
+import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
+import cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInQualityResultEnum;
@@ -31,6 +34,9 @@ import cn.weitee.erp.module.system.service.permission.MenuService;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -66,6 +72,11 @@ class ErpPurchaseInQualityServiceImplTest {
     private final AtomicReference<List<Long>> stockInMenuIdsRef = new AtomicReference<>(List.of(2679L));
     private final AtomicReference<Set<Long>> stockInRoleIdsRef = new AtomicReference<>(Set.of(901L));
     private final AtomicReference<Set<Long>> stockInUserIdsRef = new AtomicReference<>(Set.of(188L, 199L));
+    private final AtomicReference<ErpPurchaseReturnDO> existingReturnByQualityRef = new AtomicReference<>(null);
+    private final AtomicReference<List<ErpPurchaseReturnDO>> existingReturnsByOrderRef = new AtomicReference<>(List.of());
+    private final AtomicReference<ErpPurchaseReturnSaveReqVO> createdReturnReqRef = new AtomicReference<>(null);
+    private final AtomicReference<Long> createdReturnIdRef = new AtomicReference<>(null);
+    private final AtomicReference<Boolean> lockTrySuccessRef = new AtomicReference<>(true);
 
     private ErpPurchaseInQualityServiceImpl service;
 
@@ -92,6 +103,11 @@ class ErpPurchaseInQualityServiceImplTest {
         stockInMenuIdsRef.set(List.of(2679L));
         stockInRoleIdsRef.set(Set.of(901L));
         stockInUserIdsRef.set(Set.of(188L, 199L));
+        existingReturnByQualityRef.set(null);
+        existingReturnsByOrderRef.set(List.of());
+        createdReturnReqRef.set(null);
+        createdReturnIdRef.set(null);
+        lockTrySuccessRef.set(true);
 
         ErpPurchaseInMapper purchaseInMapper = createPurchaseInMapperProxy();
         ErpPurchaseInItemMapper purchaseInItemMapper = createPurchaseInItemMapperProxy();
@@ -105,6 +121,7 @@ class ErpPurchaseInQualityServiceImplTest {
         PermissionService permissionService = createPermissionServiceProxy();
         NotifyMessageSendApi notifyMessageSendApi = createNotifyMessageSendApiProxy();
 
+        setField(service, "productUnitService", createProxy(cn.weitee.erp.module.erp.service.product.ErpProductUnitService.class, (m, a) -> null));
         setField(service, "erpPurchaseInMapper", purchaseInMapper);
         setField(service, "erpPurchaseInItemMapper", purchaseInItemMapper);
         setField(service, "erpPurchaseInQualityMapper", purchaseInQualityMapper);
@@ -140,6 +157,57 @@ class ErpPurchaseInQualityServiceImplTest {
         setField(service, "defectHelper", defectHelper);
         setField(service, "queryHelper", queryHelper);
         setField(service, "notificationHelper", notificationHelper);
+        setField(service, "eventPublisher", createEventPublisherProxy());
+        setField(service, "erpPurchaseReturnMapper", createPurchaseReturnMapperProxy());
+        setField(service, "erpPurchaseReturnService", createPurchaseReturnServiceProxy());
+        setField(service, "redissonClient", createRedissonClientProxy());
+    }
+
+    private ApplicationEventPublisher createEventPublisherProxy() {
+        return createProxy(ApplicationEventPublisher.class, (methodName, args) -> null);
+    }
+
+    private ErpPurchaseReturnMapper createPurchaseReturnMapperProxy() {
+        return createProxy(ErpPurchaseReturnMapper.class, (methodName, args) -> {
+            if ("selectByQualityId".equals(methodName)) {
+                return existingReturnByQualityRef.get();
+            }
+            if ("selectListByOrderId".equals(methodName)) {
+                return existingReturnsByOrderRef.get();
+            }
+            if ("insert".equals(methodName)) {
+                return 1;
+            }
+            return null;
+        });
+    }
+
+    private ErpPurchaseReturnService createPurchaseReturnServiceProxy() {
+        return createProxy(ErpPurchaseReturnService.class, (methodName, args) -> {
+            if ("createPurchaseReturn".equals(methodName)) {
+                createdReturnReqRef.set((ErpPurchaseReturnSaveReqVO) args[0]);
+                return createdReturnIdRef.get();
+            }
+            return null;
+        });
+    }
+
+    private RedissonClient createRedissonClientProxy() {
+        RLock lock = createProxy(RLock.class, (methodName, args) -> {
+            if ("tryLock".equals(methodName)) {
+                return lockTrySuccessRef.get();
+            }
+            if ("isHeldByCurrentThread".equals(methodName)) {
+                return true;
+            }
+            return null;
+        });
+        return createProxy(RedissonClient.class, (methodName, args) -> {
+            if ("getLock".equals(methodName)) {
+                return lock;
+            }
+            return null;
+        });
     }
 
     @Test
@@ -313,6 +381,68 @@ class ErpPurchaseInQualityServiceImplTest {
 
         assertThat(insertedRoundsRef.get()).hasSize(1);
         assertThat(updatedQualityRef.get().getStatus()).isEqualTo(ErpPurchaseInQualityStatusEnum.DONE.getStatus());
+    }
+
+    @Test
+    void createReturnFromQuality_shouldCreateReturnWithQualityId() {
+        qualityRef.set(quality(66L, 1L, ErpPurchaseInQualityStatusEnum.DONE.getStatus())
+                .setRejectCount(new BigDecimal("4")));
+        purchaseInRef.set(purchaseIn(1L, ErpAuditStatus.APPROVE.getStatus(), ErpQaStatusEnum.PARTIAL.getStatus())
+                .setOrderId(9L).setAccountId(301L));
+        qualityItemsRef.set(List.of(
+                new ErpPurchaseInQualityItemDO().setId(101L).setQualityId(66L).setPurchaseInItemId(11L)
+                        .setProductId(1001L).setWarehouseId(2001L)
+                        .setCount(new BigDecimal("6")).setSampleCount(new BigDecimal("6"))
+                        .setQaPassCount(new BigDecimal("2")).setQaRejectCount(new BigDecimal("4"))
+                        .setQaResult(ErpPurchaseInQualityResultEnum.PARTIAL.getStatus())));
+        purchaseInItemsRef.set(List.of(
+                new ErpPurchaseInItemDO().setId(11L).setInId(1L).setOrderItemId(101L)
+                        .setProductId(1001L).setWarehouseId(2001L).setProductUnitId(3001L)
+                        .setProductPrice(new BigDecimal("10")).setTaxPercent(new BigDecimal("0"))
+                        .setCount(new BigDecimal("6"))));
+        existingReturnByQualityRef.set(null);
+        createdReturnIdRef.set(888L);
+
+        Long returnId = service.createReturnFromQuality(66L, 99L);
+
+        assertThat(returnId).isEqualTo(888L);
+        assertThat(createdReturnReqRef.get()).isNotNull();
+        assertThat(createdReturnReqRef.get().getQualityId()).isEqualTo(66L);
+        assertThat(createdReturnReqRef.get().getOrderId()).isEqualTo(9L);
+        assertThat(createdReturnReqRef.get().getItems()).hasSize(1);
+        assertThat(createdReturnReqRef.get().getItems().get(0).getCount()).isEqualByComparingTo("4");
+    }
+
+    @Test
+    void createReturnFromQuality_shouldReturnExistingReturnOnDuplicate() {
+        qualityRef.set(quality(66L, 1L, ErpPurchaseInQualityStatusEnum.DONE.getStatus())
+                .setRejectCount(new BigDecimal("4")));
+        purchaseInRef.set(purchaseIn(1L, ErpAuditStatus.APPROVE.getStatus(), ErpQaStatusEnum.PARTIAL.getStatus())
+                .setOrderId(9L).setAccountId(301L));
+        existingReturnByQualityRef.set(new ErpPurchaseReturnDO().setId(555L));
+        createdReturnReqRef.set(null);
+
+        Long returnId = service.createReturnFromQuality(66L, 99L);
+
+        assertThat(returnId).isEqualTo(555L);
+        assertThat(createdReturnReqRef.get()).isNull();
+    }
+
+    @Test
+    void createReturnFromQuality_shouldFallbackToOldReturnByRemark() {
+        qualityRef.set(quality(66L, 1L, ErpPurchaseInQualityStatusEnum.DONE.getStatus())
+                .setRejectCount(new BigDecimal("4")));
+        purchaseInRef.set(purchaseIn(1L, ErpAuditStatus.APPROVE.getStatus(), ErpQaStatusEnum.PARTIAL.getStatus())
+                .setOrderId(9L).setAccountId(301L));
+        existingReturnByQualityRef.set(null);
+        existingReturnsByOrderRef.set(List.of(new ErpPurchaseReturnDO().setId(777L)
+                .setRemark("质检不合格退货，质检单号：CGZJ-001")));
+        createdReturnReqRef.set(null);
+
+        Long returnId = service.createReturnFromQuality(66L, 99L);
+
+        assertThat(returnId).isEqualTo(777L);
+        assertThat(createdReturnReqRef.get()).isNull();
     }
 
     @SuppressWarnings("unchecked")

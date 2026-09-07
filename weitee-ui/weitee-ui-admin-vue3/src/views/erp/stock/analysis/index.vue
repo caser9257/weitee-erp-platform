@@ -80,20 +80,7 @@
       <el-form :model="queryParams" label-position="top" class="stock-analysis-query">
         <div class="stock-analysis-query__grid">
           <el-form-item label="产品" prop="productId">
-            <el-select
-              v-model="queryParams.productId"
-              clearable
-              filterable
-              placeholder="请选择产品"
-              :loading="supportLoading"
-            >
-              <el-option
-                v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
           </el-form-item>
 
           <el-form-item label="仓库" prop="warehouseId">
@@ -815,7 +802,7 @@ const loadSupportOptions = async () => {
   supportErrorMessage.value = '筛选条件加载失败，请重试'
   try {
     const [productsResult, warehousesResult] = await Promise.allSettled([
-      ProductApi.getProductSimpleList(),
+      Promise.resolve([]),
       WarehouseApi.getWarehouseSimpleList()
     ])
 

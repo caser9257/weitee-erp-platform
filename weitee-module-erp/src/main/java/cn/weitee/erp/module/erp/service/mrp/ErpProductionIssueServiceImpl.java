@@ -66,6 +66,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_ISSUE
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_MATERIAL_ORDER_MISMATCH;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_MATERIAL_QTY_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_ORDER_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCTION_ORDER_STATUS_INVALID;
 
 @Service
 @Validated
@@ -222,7 +223,11 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
                         .setProduceDate(stockBatch.getProduceDate())
                         .setExpireDate(stockBatch.getExpireDate()));
             }
-            erpProductionMaterialMapper.updateIssuedQtyIncrement(material.getId(), item.getIssueQty());
+            // CAS 守卫（issued_qty + qty <= required_qty）失败必须抛错回滚，
+            // 禁止静默忽略：否则并发超领会出现"批次和库存已扣、用料快照未更新"的账实不符
+            if (erpProductionMaterialMapper.updateIssuedQtyIncrement(material.getId(), item.getIssueQty()) == 0) {
+                throw exception(PRODUCTION_MATERIAL_QTY_INVALID);
+            }
             totalIssueAmount = totalIssueAmount.add(itemIssueAmount);
         }
         issue.setIssueAmount(totalIssueAmount);
@@ -232,10 +237,15 @@ public class ErpProductionIssueServiceImpl implements ErpProductionIssueService 
         productionIssueVoucherService.createVoucher(issue, createdIssueItems);
         // 可用库存扣减（关联生产任务单）：事务提交后行锁 CAS 扣 available_count，失败落库可重试；
         // count 由上方 createStockRecord 流水机制维护，此处只管 available，避免双重计账
+        // 事务内前置校验：扣减前置条件不满足时整体回滚领料单，
+        // 避免"领料单+批次扣减已提交、库存扣减静默失败"的账实不符（历史缺陷）
+        if (order.getStatus() == null || order.getStatus() < 10) {
+            throw exception(PRODUCTION_ORDER_STATUS_INVALID);
+        }
         Long finalOrderId = order.getId();
         ErpTransactionUtils.afterCommit(() -> createdIssueItems.forEach(issueItem ->
                 iqcStockService.deductStockForProduction(finalOrderId,
-                        issueItem.getMaterialId(), issueItem.getIssueQty())));
+                        issueItem.getMaterialId(), issueItem.getWarehouseId(), issueItem.getIssueQty())));
         return issue.getId();
     }
 

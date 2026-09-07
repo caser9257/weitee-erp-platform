@@ -78,19 +78,7 @@
           class="purchase-in-query__grid purchase-in-query__grid--advanced"
         >
           <el-form-item label="产品" prop="productId">
-            <el-select
-              v-model="queryParams.productId"
-              clearable
-              filterable
-              placeholder="请选择产品"
-            >
-              <el-option
-                v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
           </el-form-item>
           <el-form-item label="仓库" prop="warehouseId">
             <el-select
@@ -1136,7 +1124,7 @@ const getList = async () => {
 
 const loadFilterOptions = async () => {
   const results = await Promise.allSettled([
-    ProductApi.getProductSimpleList(),
+    Promise.resolve([]),
     SupplierApi.getSupplierSimpleList(),
     UserApi.getSimpleUserList(),
     WarehouseApi.getWarehouseSimpleList(),
@@ -1218,7 +1206,7 @@ const openQualityCheckDialog = (row: PurchaseInVO) => {
 
 const openPurchaseInTodoTask = () => {
   push({
-    path: '/bpm/task/todo',
+    path: '/approval/todo',
     query: {
       processDefinitionKey: PURCHASE_IN_BPM_PROCESS_KEY
     }

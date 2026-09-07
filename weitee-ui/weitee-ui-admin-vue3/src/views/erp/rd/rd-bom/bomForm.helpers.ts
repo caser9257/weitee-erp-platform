@@ -12,7 +12,10 @@ export type BomItemSubstituteFormData = {
 
 export type BomItemFormData = {
   id?: number
+  /** 前端本地唯一键，仅用于 el-table row-key 稳定展开状态，不参与提交 payload */
+  uid: string
   materialId?: number
+  materialStandard?: string
   materialType?: number
   unitId?: number
   usageQty?: number
@@ -37,8 +40,16 @@ export type BomFormData = {
 
 export type BomPayload = RdBomSaveReqVO
 
+let bomItemUidSeq = 0
+
+export function createBomItemUid(): string {
+  bomItemUidSeq += 1
+  return `bom-item-${bomItemUidSeq}`
+}
+
 export function createEmptyBomItem(): BomItemFormData {
   return {
+    uid: createBomItemUid(),
     referenceDesignator: '',
     position: '',
     remark: '',
@@ -75,6 +86,7 @@ export function normalizeBomFormData(formData: BomFormData): BomFormData {
     remark: formData.remark?.trim() || undefined,
     items: formData.items.map((item) => ({
       ...item,
+      materialStandard: item.materialStandard?.trim() || undefined,
       remark: item.remark?.trim() || undefined,
       lossRate: item.lossRate === undefined || item.lossRate === null ? undefined : item.lossRate,
       referenceDesignator:
@@ -149,6 +161,7 @@ export function buildBomPayload(formData: BomFormData): BomPayload {
     items: normalizedFormData.items.map((item) => ({
       id: item.id,
       materialId: item.materialId!,
+      materialStandard: item.materialStandard,
       materialType: item.materialType,
       unitId: item.unitId,
       usageQty: item.usageQty,

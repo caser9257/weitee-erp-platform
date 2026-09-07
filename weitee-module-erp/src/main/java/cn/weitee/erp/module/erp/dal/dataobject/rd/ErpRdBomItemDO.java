@@ -30,6 +30,9 @@ public class ErpRdBomItemDO extends BaseDO {
 
     private Long materialId;
 
+    /** 导入时的产品型号快照，避免产品档案变化或缺失导致 BOM 历史信息丢失 */
+    private String materialStandard;
+
     private Integer materialType;
 
     private Long unitId;

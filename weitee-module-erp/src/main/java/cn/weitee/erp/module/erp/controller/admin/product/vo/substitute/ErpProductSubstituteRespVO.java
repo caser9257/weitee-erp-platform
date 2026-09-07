@@ -19,9 +19,15 @@ public class ErpProductSubstituteRespVO {
 
     private String substituteMaterialCode;
 
+    private String substituteProductStandard;
+
     private Integer priority;
 
     private BigDecimal replaceRatio;
+
+    private Integer substituteType;
+
+    private Integer status;
 
     private String remark;
 

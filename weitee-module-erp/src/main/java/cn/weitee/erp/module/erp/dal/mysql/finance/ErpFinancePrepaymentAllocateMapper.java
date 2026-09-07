@@ -48,4 +48,11 @@ public interface ErpFinancePrepaymentAllocateMapper extends BaseMapperX<ErpFinan
                 .eq(ErpFinancePrepaymentAllocateDO::getStatus, ErpFinancePrepaymentAllocateStatusEnum.APPROVED.getStatus()));
     }
 
+    default Long selectCountByBizTypeAndBizIdAndStatus(Integer bizType, Long bizId, Integer status) {
+        return selectCount(new LambdaQueryWrapperX<ErpFinancePrepaymentAllocateDO>()
+                .eqIfPresent(ErpFinancePrepaymentAllocateDO::getBizType, bizType)
+                .eqIfPresent(ErpFinancePrepaymentAllocateDO::getBizId, bizId)
+                .eqIfPresent(ErpFinancePrepaymentAllocateDO::getStatus, status));
+    }
+
 }

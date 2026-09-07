@@ -334,6 +334,79 @@ class ErpApEstimateServiceImplTest {
         assertEquals(ErpApEstimateStatusEnum.CONFIRMED.getStatus(), restoreArgsRef.get()[1]);
     }
 
+    @Test
+    void restoreByStatementReopen_shouldRestoreWhenReversedByStatementClosed() throws Exception {
+        ErpApEstimateServiceImpl service = new ErpApEstimateServiceImpl();
+        ErpApEstimateDO estimate = new ErpApEstimateDO()
+                .setId(20L)
+                .setStatus(ErpApEstimateStatusEnum.REVERSED.getStatus())
+                .setReverseType(ErpApEstimateReverseTypeEnum.STATEMENT_CLOSED.getStatus())
+                .setConfirmTime(LocalDateTime.of(2026, 4, 28, 10, 0));
+        AtomicReference<Object[]> restoreArgsRef = new AtomicReference<>();
+
+        setField(service, "apEstimateMapper", createProxy(ErpApEstimateMapper.class, (methodName, args) -> {
+            if ("selectBySourceBizTypeAndSourceBizId".equals(methodName)) {
+                return estimate;
+            }
+            if ("restoreOpenStatusById".equals(methodName)) {
+                restoreArgsRef.set(args);
+                return 1;
+            }
+            return null;
+        }));
+
+        service.restoreByStatementReopen(ErpBizTypeEnum.PURCHASE_IN.getType(), 11L);
+
+        assertEquals(20L, restoreArgsRef.get()[0]);
+        assertEquals(ErpApEstimateStatusEnum.CONFIRMED.getStatus(), restoreArgsRef.get()[1]);
+    }
+
+    @Test
+    void restoreByStatementReopen_shouldSkipWhenReversedByInvoice() throws Exception {
+        ErpApEstimateServiceImpl service = new ErpApEstimateServiceImpl();
+        ErpApEstimateDO estimate = new ErpApEstimateDO()
+                .setId(21L)
+                .setStatus(ErpApEstimateStatusEnum.REVERSED.getStatus())
+                .setReverseType(ErpApEstimateReverseTypeEnum.INVOICE.getStatus());
+        AtomicInteger restoreCallCount = new AtomicInteger();
+
+        setField(service, "apEstimateMapper", createProxy(ErpApEstimateMapper.class, (methodName, args) -> {
+            if ("selectBySourceBizTypeAndSourceBizId".equals(methodName)) {
+                return estimate;
+            }
+            if ("restoreOpenStatusById".equals(methodName)) {
+                restoreCallCount.incrementAndGet();
+                return 1;
+            }
+            return null;
+        }));
+
+        service.restoreByStatementReopen(ErpBizTypeEnum.PURCHASE_IN.getType(), 12L);
+
+        assertEquals(0, restoreCallCount.get());
+    }
+
+    @Test
+    void restoreByStatementReopen_shouldSkipWhenEstimateMissing() throws Exception {
+        ErpApEstimateServiceImpl service = new ErpApEstimateServiceImpl();
+        AtomicInteger restoreCallCount = new AtomicInteger();
+
+        setField(service, "apEstimateMapper", createProxy(ErpApEstimateMapper.class, (methodName, args) -> {
+            if ("selectBySourceBizTypeAndSourceBizId".equals(methodName)) {
+                return null;
+            }
+            if ("restoreOpenStatusById".equals(methodName)) {
+                restoreCallCount.incrementAndGet();
+                return 1;
+            }
+            return null;
+        }));
+
+        service.restoreByStatementReopen(ErpBizTypeEnum.PURCHASE_IN.getType(), 13L);
+
+        assertEquals(0, restoreCallCount.get());
+    }
+
     @SuppressWarnings("unchecked")
     private <T> T createProxy(Class<T> type, MethodHandler handler) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},

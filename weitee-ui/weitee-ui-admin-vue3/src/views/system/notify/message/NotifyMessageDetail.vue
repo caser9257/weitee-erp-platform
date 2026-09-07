@@ -20,7 +20,7 @@
         {{ detailData.templateNickname }}
       </el-descriptions-item>
       <el-descriptions-item label="模版内容">
-        {{ detailData.templateContent }}
+        <span class="whitespace-pre-line break-all">{{ detailData.templateContent }}</span>
       </el-descriptions-item>
       <el-descriptions-item label="模版参数">
         {{ detailData.templateParams }}

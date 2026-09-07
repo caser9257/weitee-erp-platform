@@ -328,6 +328,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import {
   PurchaseOrderApi,
   PurchaseOrderAuditLogVO,
@@ -644,6 +645,7 @@ const open = async (type: string, id?: number) => {
   try {
     if (id) {
       formData.value = await PurchaseOrderApi.getPurchaseOrder(id)
+      await normalizeItemsForUnitInput(formData.value.items)
     }
 
     const [suppliers, users, accounts] = await Promise.all([

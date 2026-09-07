@@ -24,7 +24,7 @@ public interface ErpProductionIqcStockService {
      * @param productId         物料编号
      * @param qty               扣减数量
      */
-    void deductStockForProduction(Long productionOrderId, Long productId, BigDecimal qty);
+    void deductStockForProduction(Long productionOrderId, Long productId, Long warehouseId, BigDecimal qty);
 
     /**
      * IQC 合格后将采购入库数量计入可用库存

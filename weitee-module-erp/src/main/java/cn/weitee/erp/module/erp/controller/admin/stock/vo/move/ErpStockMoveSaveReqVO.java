@@ -56,6 +56,9 @@ public class ErpStockMoveSaveReqVO {
         @NotNull(message = "产品编号不能为空")
         private Long productId;
 
+        @Schema(description = "产品单位编号（录入单位，空则按产品基本单位录入）", example = "3113")
+        private Long productUnitId;
+
         @Schema(description = "产品单价", example = "100.00")
         private BigDecimal productPrice;
 

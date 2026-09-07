@@ -21,9 +21,11 @@ public interface ErpProductionMaterialMapper extends BaseMapperX<ErpProductionMa
     }
 
     default int updateIssuedQtyIncrement(Long id, BigDecimal qty) {
+        // 净额口径守卫：与 calculateRemainingIssueQty（required - (issued - returned)）一致，
+        // 允许退料后重新领料，同时拒绝真实超量并发
         return update(null, new LambdaUpdateWrapper<ErpProductionMaterialDO>()
                 .eq(ErpProductionMaterialDO::getId, id)
-                .apply("issued_qty + {0} <= required_qty", qty)
+                .apply("issued_qty - returned_qty + {0} <= required_qty", qty)
                 .setSql("issued_qty = issued_qty + " + qty.toPlainString()));
     }
 

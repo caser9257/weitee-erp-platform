@@ -72,12 +72,12 @@
           <dict-tag :type="DICT_TYPE.SYSTEM_NOTIFY_TEMPLATE_TYPE" :value="scope.row.templateType" />
         </template>
       </el-table-column>
-      <el-table-column
-        label="消息内容"
-        align="center"
-        prop="templateContent"
-        show-overflow-tooltip
-      />
+      <el-table-column label="消息内容" align="center" prop="templateContent" min-width="280">
+        <!-- 摘要展示：全文悬浮 tooltip 会糊满整屏，完整内容走「详情」弹窗 -->
+        <template #default="scope">
+          <span class="inline-block max-w-full truncate align-middle">{{ scope.row.templateContent }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="是否已读" align="center" prop="readStatus" width="160">
         <template #default="scope">
           <dict-tag :type="DICT_TYPE.INFRA_BOOLEAN_STRING" :value="scope.row.readStatus" />

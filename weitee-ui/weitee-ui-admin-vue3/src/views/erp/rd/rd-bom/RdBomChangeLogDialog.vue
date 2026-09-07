@@ -5,7 +5,7 @@
         <el-timeline-item
           v-for="log in logs"
           :key="log.id"
-          :timestamp="log.createTime || ''"
+          :timestamp="log.createTime ? formatDate(log.createTime) : ''"
           placement="top"
           :type="log.changeType === 'UPDATE' ? 'primary' : 'info'"
         >
@@ -30,6 +30,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { formatDate } from '@/utils/formatTime'
 import { RdBomApi, type RdBomChangeLogVO } from '@/api/erp/rd/bom'
 
 defineOptions({ name: 'RdBomChangeLogDialog' })

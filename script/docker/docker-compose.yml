@@ -6,6 +6,9 @@ services:
     image: mysql:8
     restart: unless-stopped
     tty: true
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
     ports:
       - "3306:3306"
     environment:
@@ -35,6 +38,8 @@ services:
       - ../../sql/mysql/finance/160-erp-ar-statement-schema.sql:/docker-entrypoint-initdb.d/16-erp-ar-statement-schema.sql:ro
       - ../../sql/mysql/sale/155-erp-sale-return-customer-menu.sql:/docker-entrypoint-initdb.d/17-erp-sale-return-customer-menu.sql:ro
       - ../../sql/mysql/sale/156-erp-sale-experience-account.sql:/docker-entrypoint-initdb.d/18-erp-sale-experience-account.sql:ro
+      - ./initdb/90-apply-migrations.sh:/docker-entrypoint-initdb.d/90-apply-migrations.sh:ro
+      - ../../sql/mysql:/migrations:ro
     healthcheck:
       test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent" ]
       interval: 10s
@@ -65,6 +70,9 @@ services:
         ALL_PROXY: ${ALL_PROXY:-}
         NO_PROXY: ${NO_PROXY:-}
         MAVEN_MIRROR: ${MAVEN_MIRROR:-https://maven.aliyun.com/repository/public}
+        DOCKER_REGISTRY_MIRROR: ${DOCKER_REGISTRY_MIRROR:-docker.io}
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-library/maven:3.9.9-eclipse-temurin-21}
+        JRE_IMAGE: ${JRE_IMAGE:-library/eclipse-temurin:21-jre}
     image: weitee-server
     restart: unless-stopped
     ports:
@@ -102,6 +110,9 @@ services:
         NO_PROXY: ${NO_PROXY:-}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
         PNPM_REGISTRY: ${PNPM_REGISTRY:-https://registry.npmmirror.com}
+        DOCKER_REGISTRY_MIRROR: ${DOCKER_REGISTRY_MIRROR:-docker.io}
+        NODE_IMAGE: ${NODE_IMAGE:-library/node:20-alpine}
+        NGINX_IMAGE: ${NGINX_IMAGE:-library/nginx:1.24-alpine}
     image: weitee-admin
     restart: unless-stopped
     ports:

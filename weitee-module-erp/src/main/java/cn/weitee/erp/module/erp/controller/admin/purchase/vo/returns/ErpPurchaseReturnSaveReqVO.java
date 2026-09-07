@@ -40,6 +40,9 @@ public class ErpPurchaseReturnSaveReqVO {
     @Schema(description = "备注", example = "你猜")
     private String remark;
 
+    @Schema(description = "来源质检单编号，从 IQC 质检单创建退货单时记录", example = "11756")
+    private Long qualityId;
+
     @Schema(description = "退货清单列表")
     @NotEmpty(message = "退货清单不能为空")
     @Valid

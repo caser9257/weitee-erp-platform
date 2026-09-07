@@ -5,7 +5,17 @@ export interface ProductUnitVO {
   id: number // 单位编号
   name: string // 单位名字
   status: number // 单位状态
+  unitType: number // 单位类型：0 基本单位，1 辅助单位
+  baseUnitId?: number // 基本单位编号，辅助单位归属
+  baseUnitName?: string // 基本单位名称
+  conversionRate?: number // 换算率：1 辅助单位 = conversionRate 基本单位
   quantityPrecision: number // 数量精度，0 表示只允许整数
+}
+
+// 单位类型常量
+export const ProductUnitTypeEnum = {
+  BASE: 0,
+  AUXILIARY: 1
 }
 
 // ERP 产品单位 API

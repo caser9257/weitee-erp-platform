@@ -24,6 +24,7 @@ import cn.weitee.erp.module.system.dal.mysql.user.AdminUserMapper;
 import cn.weitee.erp.module.system.enums.common.SexEnum;
 import cn.weitee.erp.module.system.mq.producer.user.AdminUserProducer;
 import cn.weitee.erp.module.system.service.dept.DeptService;
+import cn.weitee.erp.module.system.service.notify.ImportNotifyHelper;
 import cn.weitee.erp.module.system.service.dept.PostService;
 import cn.weitee.erp.module.system.service.oauth2.OAuth2TokenService;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
@@ -84,6 +85,8 @@ public class AdminUserServiceImplTest extends BaseDbUnitTest {
     private OAuth2TokenService oauth2TokenService;
     @MockitoBean
     private AdminUserProducer adminUserProducer;
+    @MockitoBean
+    private ImportNotifyHelper importNotifyHelper;
 
     @BeforeEach
     public void before() {

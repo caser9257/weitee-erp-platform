@@ -40,27 +40,11 @@
         </el-form-item>
 
         <el-form-item label="BOM物料" prop="materialId">
-          <el-select
-            v-model="queryParams.materialId"
-            clearable
-            filterable
-            placeholder="请选择BOM物料"
-            :loading="optionLoading"
-          >
-            <el-option v-for="item in productOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
+          <ProductRemoteSelect v-model="queryParams.materialId" placeholder="请选择BOM物料" />
         </el-form-item>
 
         <el-form-item label="替代料" prop="substituteMaterialId">
-          <el-select
-            v-model="queryParams.substituteMaterialId"
-            clearable
-            filterable
-            placeholder="请选择替代料"
-            :loading="optionLoading"
-          >
-            <el-option v-for="item in productOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
+          <ProductRemoteSelect v-model="queryParams.substituteMaterialId" placeholder="请选择替代料" />
         </el-form-item>
 
         <el-form-item label="自动推荐" prop="enableAutoRecommend">
@@ -284,8 +268,7 @@ const loadSupportOptions = async () => {
   optionLoadFailed.value = false
   optionErrorMessage.value = '筛选项加载失败，请重试'
   try {
-    const products = await ProductApi.getProductSimpleList()
-    productOptions.value = products || []
+    productOptions.value = []
   } catch (error: any) {
     productOptions.value = []
     optionLoadFailed.value = true

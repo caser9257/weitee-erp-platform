@@ -53,6 +53,10 @@ class ErpRdBomServiceImplTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        // occupyNextVersion 使用 LambdaUpdateWrapper，纯单测无 MyBatis 启动流程，需手动注册实体列缓存（幂等）
+        com.baomidou.mybatisplus.core.metadata.TableInfoHelper.initTableInfo(
+                new org.apache.ibatis.builder.MapperBuilderAssistant(
+                        new com.baomidou.mybatisplus.core.MybatisConfiguration(), ""), ErpRdBomDO.class);
         rdBomService = new ErpRdBomServiceImpl();
         selectRdBomResult.set(null);
         selectRdBomListResult.set(List.of());
@@ -336,6 +340,10 @@ class ErpRdBomServiceImplTest {
                     }
                     if ("updateById".equals(method.getName())) {
                         updatedRdBomRef.set((ErpRdBomDO) args[0]);
+                        return 1;
+                    }
+                    if ("update".equals(method.getName())) {
+                        // CAS 占版本号（occupyNextVersion）：默认返回 1 表示占号成功
                         return 1;
                     }
                     return null;

@@ -6,6 +6,7 @@ const BPM_PROCESS_INSTANCE_APPROVE_CODE = 'bpm_process_instance_approve'
 const BPM_PROCESS_INSTANCE_REJECT_CODE = 'bpm_process_instance_reject'
 const BPM_TASK_ASSIGNED_CODE = 'bpm_task_assigned'
 const BPM_TASK_TIMEOUT_CODE = 'bpm_task_timeout'
+const IMPORT_RESULT_RD_BOM_CODE = 'erp_import_result_rd_bom'
 
 // 项目管理通知模板编码
 const PROJECT_COMMENT_MENTION_CODE = 'project_comment_mention'
@@ -72,6 +73,17 @@ const pushSummaryItem = (
     return
   }
   summaryItems.push({ label, value })
+}
+
+const getImportCount = (message: NotifyMessageVO, key: string) => {
+  const value = getNotifyMessageParam(message, key)
+  return value && /^\d+$/.test(value) ? value : undefined
+}
+
+const isDuplicateMaterialWarning = (message: NotifyMessageVO) => {
+  const failSample = getNotifyMessageParam(message, 'failSample') || ''
+  const contentText = stripNotifyMessageLinks(message.templateContent)
+  return failSample.includes('产品编码重复') || contentText.includes('产品编码重复')
 }
 
 /*
@@ -251,6 +263,25 @@ export const getNotifyMessagePreview = (message: NotifyMessageVO): NotifyMessage
   const summaryItems: NotifyMessageSummaryItem[] = []
 
   switch (message.templateCode) {
+    case IMPORT_RESULT_RD_BOM_CODE: {
+      const totalCount = getImportCount(message, 'totalCount')
+      const successCount = getImportCount(message, 'successCount')
+      const failCount = getImportCount(message, 'failCount')
+      pushSummaryItem(summaryItems, '总行数', totalCount)
+      pushSummaryItem(summaryItems, '成功', successCount)
+      pushSummaryItem(summaryItems, '失败', failCount)
+      return {
+        categoryLabel: '导入结果',
+        categoryType: failCount && failCount !== '0' ? 'warning' : 'success',
+        icon: 'ep:document-checked',
+        title: '研发 BOM 导入完成',
+        body: isDuplicateMaterialWarning(message)
+          ? '存在重复产品编码，请核对清单后再提交。'
+          : '详细校验信息请点击“立即查看”查看。',
+        summaryItems,
+        action
+      }
+    }
     case BPM_TASK_ASSIGNED_CODE:
       pushSummaryItem(summaryItems, '\u6d41\u7a0b', processInstanceName)
       pushSummaryItem(summaryItems, '\u5f53\u524d\u8282\u70b9', taskName)

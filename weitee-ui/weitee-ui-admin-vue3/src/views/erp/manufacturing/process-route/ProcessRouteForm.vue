@@ -19,16 +19,7 @@
           <el-input v-model="form.routeName" clearable placeholder="请输入工艺名称" maxlength="128" />
         </el-form-item>
         <el-form-item label="产品" prop="productId">
-          <el-select
-            v-model="form.productId"
-            filterable
-            clearable
-            :loading="productLoading"
-            placeholder="请选择产品"
-            style="width: 100%"
-          >
-            <el-option v-for="item in productOptions" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
+          <ProductRemoteSelect v-model="form.productId" placeholder="请选择产品" style="width: 100%" />
         </el-form-item>
         <el-form-item label="版本" prop="version">
           <el-input v-model="form.version" clearable placeholder="请输入版本" maxlength="32" />
@@ -319,7 +310,7 @@ const handleMoveStep = (index: number, offset: number) => {
 const loadProducts = async () => {
   productLoading.value = true
   try {
-    productOptions.value = (await ProductApi.getProductSimpleList()) || []
+    productOptions.value = []
   } catch {
     productOptions.value = []
   } finally {

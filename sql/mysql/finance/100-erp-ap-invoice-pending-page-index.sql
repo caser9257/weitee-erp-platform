@@ -1,6 +1,5 @@
    SET NAMES utf8mb4;
 
-USE `ruoyi-vue-pro`;
 
 SET @stmt_index_exists := (
     SELECT COUNT(1)

@@ -1,10 +1,16 @@
 <template>
-  <div class="min-h-full bg-slate-50">
+  <div class="min-h-full bg-[var(--erp-slate-50)]">
     <div class="flex w-full flex-col gap-4 px-3 py-3 sm:px-4 lg:px-5 xl:px-6">
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-col gap-4 bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 p-5 text-white lg:flex-row lg:items-center lg:justify-between">
+      <section
+        class="overflow-hidden rounded-2xl border border-[var(--erp-slate-200)] bg-white shadow-sm"
+      >
+        <div
+          class="flex flex-col gap-4 bg-[var(--erp-slate-800)] p-5 text-white lg:flex-row lg:items-center lg:justify-between"
+        >
           <div class="flex items-center gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white">
+            <div
+              class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white"
+            >
               <Icon icon="ep:box" class="text-lg" />
             </div>
             <div class="space-y-1">
@@ -13,32 +19,45 @@
           </div>
 
           <div class="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:max-w-4xl">
-            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm">
-              <div class="text-xs text-slate-200">总记录</div>
+            <div
+              class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm"
+            >
+              <div class="text-xs text-[var(--erp-slate-200)]">总记录</div>
               <div class="mt-2 text-2xl font-semibold text-white">{{ total }}</div>
             </div>
-            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm">
-              <div class="text-xs text-slate-200">当前页</div>
+            <div
+              class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm"
+            >
+              <div class="text-xs text-[var(--erp-slate-200)]">当前页</div>
               <div class="mt-2 text-2xl font-semibold text-white">{{ queryParams.pageNo }}</div>
             </div>
-            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm">
-              <div class="text-xs text-slate-200">已完成</div>
+            <div
+              class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm"
+            >
+              <div class="text-xs text-[var(--erp-slate-200)]">已完成</div>
               <div class="mt-2 text-2xl font-semibold text-white">{{ statusCounts.completed }}</div>
             </div>
-            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm">
-              <div class="text-xs text-slate-200">已关闭</div>
+            <div
+              class="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-sm backdrop-blur-sm"
+            >
+              <div class="text-xs text-[var(--erp-slate-200)]">已关闭</div>
               <div class="mt-2 text-2xl font-semibold text-white">{{ statusCounts.closed }}</div>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 px-5 py-4">
-          <div class="text-base font-semibold text-slate-800">查询条件</div>
+      <section class="rounded-2xl border border-[var(--erp-slate-200)] bg-white shadow-sm">
+        <div class="border-b border-[var(--erp-slate-100)] px-5 py-4">
+          <div class="text-base font-semibold text-[var(--erp-slate-800)]">查询条件</div>
         </div>
         <div class="px-4 py-4 sm:px-5">
-          <el-form ref="queryFormRef" :model="queryParams" label-width="88px" class="erp-toolbar-form">
+          <el-form
+            ref="queryFormRef"
+            :model="queryParams"
+            label-width="88px"
+            class="erp-toolbar-form"
+          >
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <el-form-item label="发料单号" prop="issueNo">
                 <el-input
@@ -60,19 +79,34 @@
               </el-form-item>
               <el-form-item label="发料类型" prop="issueType">
                 <el-select v-model="queryParams.issueType" clearable placeholder="请选择发料类型">
-                  <el-option v-for="item in issueTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                  <el-option
+                    v-for="item in issueTypeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
                 </el-select>
               </el-form-item>
               <el-form-item label="状态" prop="status">
                 <el-select v-model="queryParams.status" clearable placeholder="请选择状态">
-                  <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
+                  <el-option
+                    v-for="item in statusOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
                 </el-select>
               </el-form-item>
               <div class="flex items-end justify-end gap-2 md:col-span-2 xl:col-span-4">
-                <el-button type="primary" :loading="loadingList" @click="handleQuery" v-hasPermi="['erp:outsource-issue:query']">
+                <el-button
+                  type="primary"
+                  :loading="loadingList"
+                  @click="handleQuery"
+                  v-hasPermi="['erp:outsource-issue:query']"
+                >
                   <Icon icon="ep:search" class="mr-5px" /> 搜索
                 </el-button>
-                <el-button :disabled="loadingList" @click="resetQuery">
+                <el-button :disabled="isQueryResetDisabled" @click="resetQuery">
                   <Icon icon="ep:refresh" class="mr-5px" /> 重置
                 </el-button>
               </div>
@@ -81,10 +115,12 @@
         </div>
       </section>
 
-      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <section class="rounded-2xl border border-[var(--erp-slate-200)] bg-white shadow-sm">
+        <div
+          class="flex flex-col gap-3 border-b border-[var(--erp-slate-100)] px-5 py-4 lg:flex-row lg:items-center lg:justify-between"
+        >
           <div>
-            <div class="text-base font-semibold text-slate-800">委外发料列表</div>
+            <div class="text-base font-semibold text-[var(--erp-slate-800)]">委外发料列表</div>
           </div>
           <div class="flex flex-wrap gap-2">
             <el-tag v-if="queryParams.issueType !== undefined" effect="light" type="warning">
@@ -93,11 +129,20 @@
             <el-tag v-if="queryParams.status !== undefined" effect="light" type="info">
               当前筛选：{{ resolveStatusLabel(queryParams.status) }}
             </el-tag>
-            <el-tag v-if="queryParams.issueNo" effect="light" type="primary">单号：{{ queryParams.issueNo }}</el-tag>
+            <el-tag v-if="queryParams.issueNo" effect="light" type="primary"
+              >单号：{{ queryParams.issueNo }}</el-tag
+            >
           </div>
         </div>
 
         <div class="px-4 py-4 sm:px-5">
+          <el-alert
+            v-if="listErrorMessage"
+            :title="listErrorMessage"
+            type="error"
+            show-icon
+            class="mb-4"
+          />
           <el-table
             v-loading="loadingList"
             :data="list"
@@ -111,26 +156,41 @@
               <template #default="{ row }">
                 <div class="space-y-1">
                   <div class="flex items-center gap-1.5">
-                    <span class="shrink-0 rounded-full bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-600 whitespace-nowrap">
+                    <span
+                      class="shrink-0 rounded-full bg-[var(--erp-primary-50)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--erp-primary-600)] whitespace-nowrap"
+                    >
                       发料单号
                     </span>
-                    <span class="min-w-0 flex-1 truncate font-mono text-slate-800" :title="row.issueNo || '-'">
+                    <span
+                      class="min-w-0 flex-1 truncate font-mono text-[var(--erp-slate-800)]"
+                      :title="row.issueNo || '-'"
+                    >
                       {{ row.issueNo || '-' }}
                     </span>
                   </div>
                   <div class="flex items-center gap-1.5">
-                    <span class="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-600 whitespace-nowrap">
+                    <span
+                      class="shrink-0 rounded-full bg-[var(--erp-success-50)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--erp-success-600)] whitespace-nowrap"
+                    >
                       委外订单号
                     </span>
-                    <span class="min-w-0 flex-1 truncate font-mono text-slate-600" :title="row.orderNo || '-'">
+                    <span
+                      class="min-w-0 flex-1 truncate font-mono text-[var(--erp-slate-600)]"
+                      :title="row.orderNo || '-'"
+                    >
                       {{ row.orderNo || '-' }}
                     </span>
                   </div>
                   <div class="flex items-center gap-1.5">
-                    <span class="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 whitespace-nowrap">
+                    <span
+                      class="shrink-0 rounded-full bg-[var(--erp-slate-100)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--erp-slate-600)] whitespace-nowrap"
+                    >
                       创建人
                     </span>
-                    <span class="min-w-0 flex-1 truncate text-slate-500" :title="row.creatorName || '-'">
+                    <span
+                      class="min-w-0 flex-1 truncate text-[var(--erp-slate-500)]"
+                      :title="row.creatorName || '-'"
+                    >
                       {{ row.creatorName || '-' }}
                     </span>
                   </div>
@@ -140,38 +200,64 @@
             <el-table-column label="类型 / 状态" min-width="180">
               <template #default="{ row }">
                 <div class="flex flex-wrap gap-2">
-                  <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600">
+                  <span
+                    class="rounded-full bg-[var(--erp-primary-50)] px-2.5 py-1 text-xs font-medium text-[var(--erp-primary-600)]"
+                  >
                     {{ resolveIssueTypeLabel(row.issueType) }}
                   </span>
-                  <el-tag :type="resolveStatusTagType(row.status)" effect="light">{{ resolveStatusLabel(row.status) }}</el-tag>
+                  <el-tag :type="resolveStatusTagType(row.status)" effect="light">{{
+                    resolveStatusLabel(row.status)
+                  }}</el-tag>
                 </div>
               </template>
             </el-table-column>
             <el-table-column label="数量 / 金额" min-width="180" align="right">
               <template #default="{ row }">
                 <div class="space-y-1 text-right">
-                  <div class="font-mono text-slate-800">{{ formatCount(row.issueQty) }}</div>
-                  <div class="text-xs text-slate-500">金额 {{ formatMoney(row.issueAmount) }}</div>
+                  <div class="font-mono text-[var(--erp-slate-800)]">{{
+                    formatCount(row.issueQty)
+                  }}</div>
+                  <div class="text-xs text-[var(--erp-slate-500)]"
+                    >金额 {{ formatMoney(row.issueAmount) }}</div
+                  >
                 </div>
               </template>
             </el-table-column>
             <el-table-column label="发料时间" min-width="170">
-              <template #default="{ row }">{{ row.issueTime ? formatDate(row.issueTime, 'YYYY-MM-DD HH:mm:ss') : '-' }}</template>
+              <template #default="{ row }">{{
+                row.issueTime ? formatDate(row.issueTime, 'YYYY-MM-DD HH:mm:ss') : '-'
+              }}</template>
             </el-table-column>
             <el-table-column label="备注" min-width="180">
               <template #default="{ row }">
-                <span class="line-clamp-2 text-slate-600">{{ row.remark || '-' }}</span>
+                <span class="line-clamp-2 text-[var(--erp-slate-600)]">{{
+                  row.remark || '-'
+                }}</span>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="120" fixed="right" align="center">
               <template #default="{ row }">
-                <el-button link type="primary" :disabled="!row.id" @click="openPrint(row.id!)">打印</el-button>
+                <el-button link type="primary" :disabled="!row.id" @click="openPrint(row.id!)"
+                  >打印</el-button
+                >
               </template>
             </el-table-column>
+            <template #empty>
+              <el-empty :description="listErrorMessage || '暂无委外发料单'" :image-size="72">
+                <el-button
+                  v-if="listErrorMessage"
+                  type="primary"
+                  plain
+                  :disabled="loadingList"
+                  @click="getList"
+                  >重试</el-button
+                >
+              </el-empty>
+            </template>
           </el-table>
         </div>
 
-        <div class="flex justify-end border-t border-slate-100 px-4 py-4 sm:px-5">
+        <div class="flex justify-end border-t border-[var(--erp-slate-100)] px-4 py-4 sm:px-5">
           <Pagination
             :total="total"
             v-model:page="queryParams.pageNo"
@@ -190,7 +276,12 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { formatDate } from '@/utils/formatTime'
 import { erpPriceInputFormatter } from '@/utils'
-import { OutsourceIssueApi, type OutsourceIssuePageReqVO, type OutsourceIssueVO } from '@/api/erp/mrp/outsource-issue'
+import { checkPermi } from '@/utils/permission'
+import {
+  OutsourceIssueApi,
+  type OutsourceIssuePageReqVO,
+  type OutsourceIssueVO
+} from '@/api/erp/mrp/outsource-issue'
 import OutsourceIssuePrintDialog from './OutsourceIssuePrintDialog.vue'
 import '../outsource-inbound/style.css'
 
@@ -205,8 +296,10 @@ const queryFormRef = ref()
 const printDialogRef = ref<InstanceType<typeof OutsourceIssuePrintDialog>>()
 
 const loadingList = ref(false)
+const listErrorMessage = ref('')
 const list = ref<OutsourceIssueVO[]>([])
 const total = ref(0)
+const canQuery = checkPermi(['erp:outsource-issue:query'])
 
 const queryParams = reactive<OutsourceIssuePageReqVO>({
   pageNo: 1,
@@ -241,6 +334,7 @@ const statusCounts = computed(() =>
     { completed: 0, closed: 0 }
   )
 )
+const isQueryResetDisabled = computed(() => loadingList.value)
 
 const resolveIssueTypeLabel = (issueType?: number) => {
   if (issueType === OUTSOURCE_ISSUE_TYPE.SUPPLEMENT) return '补发料'
@@ -286,11 +380,15 @@ const formatMoney = (value?: number | string | null) => {
 }
 
 const getList = async () => {
+  if (!canQuery || loadingList.value) return
   loadingList.value = true
+  listErrorMessage.value = ''
   try {
     const data = await OutsourceIssueApi.getOutsourceIssuePage(queryParams)
     list.value = data.list || []
     total.value = data.total || 0
+  } catch (error: any) {
+    listErrorMessage.value = error?.message || '加载失败，请重试'
   } finally {
     loadingList.value = false
   }

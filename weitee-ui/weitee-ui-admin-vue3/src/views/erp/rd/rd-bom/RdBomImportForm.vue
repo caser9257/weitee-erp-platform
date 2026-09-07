@@ -3,21 +3,17 @@
     <div v-if="!importResult">
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="成品" prop="productId">
-          <el-select
+          <el-select-v2
             v-model="formData.productId"
             filterable
             :loading="productLoading"
+            :options="productSelectOptions"
             placeholder="自动识别（可手动选择覆盖）"
             class="w-full"
-          >
-            <el-option v-for="item in productList" :key="item.id" :label="item.name" :value="item.id" />
-          </el-select>
+          />
         </el-form-item>
         <el-form-item label="BOM 编码" prop="bomCode">
           <el-input v-model="formData.bomCode" placeholder="自动识别（可手动输入覆盖）" />
-        </el-form-item>
-        <el-form-item label="版本">
-          <el-input v-model="formData.version" placeholder="自动识别（可手动输入，如 V1.0）" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input v-model="formData.remark" type="textarea" :rows="2" placeholder="可选" />
@@ -68,12 +64,68 @@
             <span>格式问题 {{ precheckResult.issueCount || 0 }}</span>
           </div>
           <span
-            :class="precheckReady ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'"
+            :class="precheckStatusClass"
             class="rounded-full px-10px py-2px text-12px"
           >
-            {{ precheckReady ? '预检通过，可直接导入' : '存在待建档或待审核物料，导入已阻止' }}
+            {{ precheckConclusionText }}
           </span>
         </div>
+
+        <template v-if="precheckBaselineMissing.length">
+          <div class="mb-5px mt-8px flex items-center justify-between">
+            <span class="text-13px font-medium text-amber-600">
+              较上一版{{ precheckBaselineLabel }}减少 {{ precheckBaselineMissing.length }} 个物料，默认阻止导入
+            </span>
+            <el-button link type="primary" size="small" @click="copyBaselineCodes(precheckBaselineMissing)">
+              <Icon class="mr-3px" icon="ep:copy-document" />
+              复制编号
+            </el-button>
+          </div>
+          <el-table :data="precheckBaselineMissing" :stripe="true" size="small" max-height="200" class="mb-8px">
+            <el-table-column label="物料编号" min-width="150">
+              <template #default="{ row }">
+                <span class="font-mono">{{ row.materialCode }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="名称" min-width="140">
+              <template #default="{ row }">{{ row.productName || '—' }}</template>
+            </el-table-column>
+          </el-table>
+          <div
+v-if="!missingMaterials.length && !unapprovedMaterials.length && !rowIssues.length"
+               class="mb-10px flex items-center gap-8px">
+            <el-checkbox v-model="acknowledgeBaselineMissing">
+              已确认减少的物料属正常改版，放行导入
+            </el-checkbox>
+          </div>
+        </template>
+
+        <template v-if="duplicateMaterialCodes.length">
+          <div class="mb-5px mt-8px text-13px font-medium text-amber-600">
+            产品编码重复，请再次核对清单后进行提交
+          </div>
+          <el-table :data="duplicateMaterialCodes" :stripe="true" size="small" max-height="200" class="mb-10px">
+            <el-table-column label="物料编号" min-width="150">
+              <template #default="{ row }">
+                <span class="font-mono">{{ row.materialCode }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="行号" min-width="110">
+              <template #default="{ row }">
+                <span class="font-mono text-12px text-slate-500">{{ (row.rowNumbers || []).join('、') }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </template>
+
+        <template v-if="duplicateBom">
+          <div class="mb-5px mt-8px text-13px font-medium text-rose-600">
+            BOM 编码和版本已存在，请修改版本或检查已有草稿
+          </div>
+          <div class="mb-10px rounded border border-rose-100 bg-rose-50 px-10px py-8px text-13px text-rose-700">
+            编码 {{ duplicateBom.bomCode || '—' }}，版本 {{ duplicateBom.version || '草稿' }}，已有 BOM {{ duplicateBom.id || '—' }}
+          </div>
+        </template>
 
         <template v-if="missingMaterials.length">
           <div class="mb-5px mt-8px flex items-center justify-between">
@@ -133,7 +185,7 @@
 
         <template v-if="rowIssues.length">
           <div class="mb-5px mt-8px text-13px font-medium text-slate-600">
-            格式问题（{{ rowIssues.length }}）
+            行问题（{{ rowIssues.length }}）
           </div>
           <el-table :data="rowIssues" :stripe="true" size="small" max-height="200">
             <el-table-column label="行号" prop="rowNumber" width="70" align="center" />
@@ -142,12 +194,19 @@
                 <span class="font-mono">{{ row.materialCode || '—' }}</span>
               </template>
             </el-table-column>
+            <el-table-column label="分类" width="140" align="center">
+              <template #default="{ row }">
+                <el-tag :type="issueTagType(row.issueType)" effect="light" size="small">
+                  {{ issueTypeLabel(row.issueType) }}
+                </el-tag>
+              </template>
+            </el-table-column>
             <el-table-column label="原因" prop="reason" min-width="220" show-overflow-tooltip />
           </el-table>
         </template>
 
         <div
-          v-if="!missingMaterials.length && !unapprovedMaterials.length && !rowIssues.length"
+          v-if="precheckReady && !duplicateMaterialCodes.length"
           class="mt-5px text-13px text-emerald-600"
         >
           预检通过，未发现问题
@@ -167,6 +226,29 @@
         <span class="text-emerald-600">成功：{{ importResult.successCount || 0 }}</span>
         <span class="text-rose-600">失败：{{ importResult.failCount || 0 }}</span>
       </div>
+
+      <template v-if="importBaselineMissing.length">
+        <div class="mb-5px flex items-center justify-between">
+          <span class="text-13px font-medium text-amber-600">
+            较上一版{{ importResult.baselineDiff?.baselineVersion ? `（${importResult.baselineDiff.baselineVersion}）` : '' }}减少
+            {{ importBaselineMissing.length }} 个物料，请确认是否漏行
+          </span>
+          <el-button link type="primary" size="small" @click="copyBaselineCodes(importBaselineMissing)">
+            <Icon class="mr-3px" icon="ep:copy-document" />
+            复制编号
+          </el-button>
+        </div>
+        <el-table :data="importBaselineMissing" :stripe="true" size="small" max-height="200" class="mb-15px">
+          <el-table-column label="物料编号" min-width="150">
+            <template #default="{ row }">
+              <span class="font-mono">{{ row.materialCode }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="名称" min-width="140">
+            <template #default="{ row }">{{ row.productName || '—' }}</template>
+          </el-table-column>
+        </el-table>
+      </template>
 
       <template v-if="importResult.failDetails && importResult.failDetails.length">
         <div class="mb-8px text-13px font-medium text-rose-600">解析失败明细</div>
@@ -245,7 +327,7 @@
 <script lang="ts" setup>
 import { getAccessToken, getTenantId } from '@/utils/auth'
 import download from '@/utils/download'
-import { ProductApi, type ProductVO } from '@/api/erp/product/product'
+import { ProductApi, type ProductSimpleVO } from '@/api/erp/product/product'
 import {
   RdBomApi,
   type RdBomImportResultVO,
@@ -269,14 +351,17 @@ const uploadHeaders = ref<Record<string, string>>({})
 const uploadRef = ref<UploadInstance>()
 
 const productLoading = ref(false)
-const productList = ref<ProductVO[]>([])
+const productList = ref<ProductSimpleVO[]>([])
+/** 万级物料必须走虚拟滚动（el-select-v2），全量 el-option 会把主线程卡死 */
+const productSelectOptions = computed(() =>
+  productList.value.map((product) => ({ label: product.name, value: product.id }))
+)
 const importResult = ref<RdBomImportResultVO | null>(null)
 const precheckResult = ref<RdBomPrecheckResultVO | null>(null)
 
 const formData = reactive({
   productId: undefined as number | undefined,
   bomCode: '',
-  version: '',
   remark: ''
 })
 
@@ -290,11 +375,21 @@ const ISSUE_TYPE_LABELS: Record<string, string> = {
   MISSING_MATERIAL: '未建档',
   MATERIAL_NOT_APPROVED: '未审核',
   MATERIAL_DISABLED: '已停用',
-  FORMAT_ERROR: '格式错误'
+  SPEC_MISMATCH: '规格不符',
+  CADENCE_DATA_INCOMPLETE: 'Cadence 数据不完整',
+  FORMAT_ERROR: '格式错误',
+  FILE_EMPTY: '无明细行'
 }
 const issueTypeLabel = (type?: string) => (type && ISSUE_TYPE_LABELS[type]) || `类型${type}`
 const issueTagType = (type?: string) => {
-  if (type === 'MISSING_MATERIAL' || type === 'MATERIAL_DISABLED') return 'danger'
+  if (
+    type === 'MISSING_MATERIAL' ||
+    type === 'MATERIAL_DISABLED' ||
+    type === 'SPEC_MISMATCH' ||
+    type === 'CADENCE_DATA_INCOMPLETE' ||
+    type === 'FILE_EMPTY'
+  )
+    return 'danger'
   if (type === 'MATERIAL_NOT_APPROVED') return 'warning'
   return 'info'
 }
@@ -321,8 +416,8 @@ const importUrl = computed(() => {
   const params = new URLSearchParams()
   if (formData.productId != null) params.set('productId', String(formData.productId))
   if (formData.bomCode) params.set('bomCode', formData.bomCode)
-  if (formData.version) params.set('version', formData.version)
   if (formData.remark) params.set('remark', formData.remark)
+  if (acknowledgeBaselineMissing.value) params.set('allowBaselineMissing', 'true')
   return (
     import.meta.env.VITE_BASE_URL +
     import.meta.env.VITE_API_URL +
@@ -337,17 +432,52 @@ const canSubmit = computed(() => hasSelectedFile.value && !uploadLoading.value &
 const missingMaterials = computed(() => precheckResult.value?.missingMaterials ?? [])
 const unapprovedMaterials = computed(() => precheckResult.value?.unapprovedMaterials ?? [])
 const rowIssues = computed(() => precheckResult.value?.rowIssues ?? [])
+const duplicateMaterialCodes = computed(() => precheckResult.value?.duplicateMaterialCodes ?? [])
+const duplicateBom = computed(() => precheckResult.value?.duplicateBom)
 const precheckReady = computed(() => precheckResult.value?.readyToImport === true)
+const duplicateNoticeKey = ref('')
+
+/** 预检结论唯一来源：绿/红胶囊与结论文案同源，杜绝互相矛盾的提示同屏 */
+const precheckConclusionText = computed(() => {
+  if (duplicateBom.value) return 'BOM 编码和版本已存在，导入已阻止'
+  if (precheckReady.value && duplicateMaterialCodes.value.length) return '存在重复产品编码，请核对后提交'
+  if (precheckReady.value) return '预检通过，可直接导入'
+  if (precheckBaselineMissing.value.length) return '较上一版减少物料，需确认后放行'
+  if (missingMaterials.value.length) return '存在待建档物料，导入已阻止'
+  if (unapprovedMaterials.value.length) return '存在待审核或停用物料，导入已阻止'
+  if (rowIssues.value.length) return '存在行问题，请查看下方明细'
+  return '预检未通过，请查看下方明细'
+})
+const precheckStatusClass = computed(() => {
+  if (precheckReady.value && duplicateMaterialCodes.value.length) return 'bg-amber-50 text-amber-600'
+  return precheckReady.value ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+})
+
+const precheckBaselineMissing = computed(() => precheckResult.value?.baselineDiff?.missingItems ?? [])
+const precheckBaselineLabel = computed(() =>
+  precheckResult.value?.baselineDiff?.baselineVersion
+    ? `（${precheckResult.value.baselineDiff.baselineVersion}）`
+    : ''
+)
+const importBaselineMissing = computed(() => importResult.value?.baselineDiff?.missingItems ?? [])
+/** 缺料差异需人工确认放行；勾选后导入请求携带 allowBaselineMissing=true */
+const acknowledgeBaselineMissing = ref(false)
 /** 未跑预检查时保持原有可直接导入行为；跑过且存在阻断项时禁止导入 */
 const importBlocked = computed(() => precheckResult.value !== null && !precheckReady.value)
 
 const invalidatePrecheck = () => {
   precheckResult.value = null
+  acknowledgeBaselineMissing.value = false
+  duplicateNoticeKey.value = ''
 }
 
 watch(
-  () => [formData.productId, formData.bomCode, formData.version, formData.remark],
-  invalidatePrecheck
+  () => [formData.productId, formData.bomCode, formData.remark],
+  () => {
+    invalidatePrecheck()
+    // 参数变化后已有文件则自动重跑，保证结论与当前参数一致
+    scheduleAutoPrecheck()
+  }
 )
 
 const open = async () => {
@@ -374,15 +504,23 @@ const runPrecheck = async () => {
   }
   checking.value = true
   try {
-    precheckResult.value = await RdBomApi.precheckRdBomImport(
+    const result = await RdBomApi.precheckRdBomImport(
       {
         productId: formData.productId,
         bomCode: formData.bomCode || undefined,
-        version: formData.version || undefined,
         remark: formData.remark || undefined
       },
       rawFile
     )
+    precheckResult.value = result
+    const duplicates = result?.duplicateMaterialCodes ?? []
+    const noticeKey = duplicates
+      .map((item) => `${item.materialCode ?? ''}:${(item.rowNumbers ?? []).join(',')}`)
+      .join('|')
+    if (noticeKey && noticeKey !== duplicateNoticeKey.value) {
+      duplicateNoticeKey.value = noticeKey
+      message.warning('产品编码重复，请再次核对清单后进行提交')
+    }
   } catch (e: any) {
     invalidatePrecheck()
     message.error(e?.msg || '预检查失败，请稍后重试')
@@ -399,6 +537,17 @@ const copyMissingCodes = async () => {
   try {
     await navigator.clipboard.writeText(codes.join(','))
     message.success('已复制待建档物料编号')
+  } catch {
+    message.error('复制失败，请手动复制')
+  }
+}
+
+const copyBaselineCodes = async (items: { materialCode?: string }[]) => {
+  const codes = items.map((item) => item.materialCode).filter((code): code is string => !!code)
+  if (!codes.length) return
+  try {
+    await navigator.clipboard.writeText(codes.join(','))
+    message.success('已复制缺失物料编号')
   } catch {
     message.error('复制失败，请手动复制')
   }
@@ -441,8 +590,23 @@ const handleExceed: UploadProps['onExceed'] = (files) => {
   uploadRef.value?.handleStart(file as any)
 }
 
-const onFileChange: UploadProps['onChange'] = () => {
+const onFileChange: UploadProps['onChange'] = (file) => {
   invalidatePrecheck()
+  // 上传即自动预检：选择/更换文件后无需手动点按钮，绿灯亮起才放行导入
+  if (file?.raw) {
+    scheduleAutoPrecheck()
+  }
+}
+
+/** 防抖自动预检：连续换文件只跑最后一次，避免无谓的全量解析 */
+let autoPrecheckTimer: ReturnType<typeof setTimeout> | undefined
+const scheduleAutoPrecheck = () => {
+  if (autoPrecheckTimer) clearTimeout(autoPrecheckTimer)
+  autoPrecheckTimer = setTimeout(() => {
+    if (!importResult.value && fileList.value.length) {
+      runPrecheck()
+    }
+  }, 500)
 }
 
 const downloadTemplate = async () => {
@@ -450,13 +614,21 @@ const downloadTemplate = async () => {
   download.excel(res, '研发BOM明细导入模板.xlsx')
 }
 
+const successEmitted = ref(false)
+
 const finish = () => {
   dialogVisible.value = false
   emit('success')
+  successEmitted.value = true
 }
 
 const closeDialog = () => {
   dialogVisible.value = false
+  // 导入已产生 BOM 但用户直接点"关闭"时，补发 success 让父列表刷新，避免新建 BOM"消失"
+  if (importResult.value?.bomId && !successEmitted.value) {
+    emit('success')
+    successEmitted.value = true
+  }
 }
 
 const resetForm = async () => {
@@ -467,7 +639,6 @@ const resetForm = async () => {
   fileList.value = []
   formData.productId = undefined
   formData.bomCode = ''
-  formData.version = ''
   formData.remark = ''
   uploadHeaders.value = buildUploadHeaders()
   await nextTick()

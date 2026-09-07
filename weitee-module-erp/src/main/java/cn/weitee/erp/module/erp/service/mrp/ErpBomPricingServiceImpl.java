@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
+
+import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PRODUCT_NOT_EXISTS;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
@@ -239,7 +242,15 @@ public class ErpBomPricingServiceImpl implements ErpBomPricingService {
     }
 
     private ErpProductDO loadProduct(Long productId, PricingContext context) {
-        return context.productMap.computeIfAbsent(productId, key -> productService.validProductList(List.of(key)).getFirst());
+        return context.productMap.computeIfAbsent(productId, key -> {
+            // 计价取数语义：仅校验存在性，不做启停校验（停用/废除物料照常参与历史计价）。
+            // 根因：原实现复用 validProductList 会抛 PRODUCT_NOT_ENABLE，导致一张 BOM 因单行停用料整单算不了价。
+            ErpProductDO product = productService.getProduct(key);
+            if (product == null) {
+                throw exception(PRODUCT_NOT_EXISTS);
+            }
+            return product;
+        });
     }
 
     private String resolveProductName(Long productId, PricingContext context) {

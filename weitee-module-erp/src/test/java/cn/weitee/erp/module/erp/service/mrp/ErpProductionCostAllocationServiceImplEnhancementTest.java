@@ -42,7 +42,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -102,9 +105,10 @@ class ErpProductionCostAllocationServiceImplEnhancementTest {
             return true;
         }).when(erpProductionCostAllocationResultMapper).insertBatch(anyList());
         doAnswer(invocation -> {
-            capturedAllocationUpdate.set(invocation.getArgument(0));
+            capturedAllocationUpdate.set(invocation.getArgument(2));
             return 1;
-        }).when(erpProductionCostAllocationMapper).updateById(any(ErpProductionCostAllocationDO.class));
+        }).when(erpProductionCostAllocationMapper)
+                .updateByIdAndStatus(eq(1L), eq(DRAFT.getStatus()), any(ErpProductionCostAllocationDO.class));
 
         service.executeProductionCostAllocation(1L);
 
@@ -156,7 +160,8 @@ class ErpProductionCostAllocationServiceImplEnhancementTest {
             capturedResults.set(new ArrayList<>(invocation.getArgument(0)));
             return true;
         }).when(erpProductionCostAllocationResultMapper).insertBatch(anyList());
-        doAnswer(invocation -> 1).when(erpProductionCostAllocationMapper).updateById(any(ErpProductionCostAllocationDO.class));
+        doAnswer(invocation -> 1).when(erpProductionCostAllocationMapper)
+                .updateByIdAndStatus(eq(2L), eq(DRAFT.getStatus()), any(ErpProductionCostAllocationDO.class));
 
         service.executeProductionCostAllocation(2L);
 

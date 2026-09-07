@@ -21,7 +21,7 @@ INSERT INTO system_menu (
     status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
 )
 SELECT @erp_finance_permission_next_id, 'Voucher create', 'erp:finance-voucher:create', 3, 2,
-       @erp_finance_voucher_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'tester', NOW(), 'tester', NOW(), b'0'
+       @erp_finance_voucher_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @erp_finance_voucher_page_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM system_menu WHERE deleted = b'0' AND permission = 'erp:finance-voucher:create'
@@ -33,14 +33,14 @@ INSERT INTO system_menu (
     status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
 )
 SELECT @erp_finance_permission_next_id, 'Voucher update', 'erp:finance-voucher:update', 3, 3,
-       @erp_finance_voucher_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'tester', NOW(), 'tester', NOW(), b'0'
+       @erp_finance_voucher_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @erp_finance_voucher_page_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM system_menu WHERE deleted = b'0' AND permission = 'erp:finance-voucher:update'
   );
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT role.id, menu.id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT role.id, menu.id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_role role
 JOIN system_menu menu
   ON menu.deleted = b'0'

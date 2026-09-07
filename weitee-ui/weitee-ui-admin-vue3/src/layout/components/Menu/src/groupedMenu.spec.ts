@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 
-import { buildGroupedMenuEntries, hasGroupedMenuEntries, resolveGroupedMenuActiveKey } from './groupedMenu.ts'
+import {
+  buildGroupedMenuEntries,
+  hasGroupedMenuEntries,
+  resolveGroupedMenuActiveKey
+} from './groupedMenu.ts'
 
 const routes = [
   {
@@ -85,10 +89,15 @@ assert.deepEqual(
   ]
 )
 assert.deepEqual(
-  groups.find((group) => group.key === '/scm/__group__/demand-plan')?.routes.map((route) => route.path),
+  groups
+    .find((group) => group.key === '/scm/__group__/demand-plan')
+    ?.routes.map((route) => route.path),
   ['/scm/suggest', '/scm/plan-rule']
 )
-assert.deepEqual(directRoutes.map((route) => route.path), [])
+assert.deepEqual(
+  directRoutes.map((route) => route.path),
+  []
+)
 
 assert.equal(
   resolveGroupedMenuActiveKey({
@@ -136,6 +145,16 @@ const databaseGroupedRoutes = [
           { path: 'outsource-inbound', name: '委外入库', meta: { title: '委外入库' } },
           { path: 'return', name: '采购退货', meta: { title: '采购退货' } }
         ]
+      },
+      {
+        path: '',
+        name: '租赁管理',
+        meta: { title: '租赁管理', icon: 'ep:document', order: 50 },
+        children: [
+          { path: 'lease-contract', name: '租赁合同', meta: { title: '租赁合同' } },
+          { path: 'service-receipt', name: '服务接收单', meta: { title: '服务接收单' } },
+          { path: 'three-way-match', name: '三单匹配', meta: { title: '三单匹配' } }
+        ]
       }
     ]
   }
@@ -146,13 +165,29 @@ const databaseGroupedModel = buildGroupedMenuEntries(databaseGroupedRoutes)
 assert.equal(hasGroupedMenuEntries(databaseGroupedRoutes), true)
 assert.deepEqual(
   databaseGroupedModel.groups.map((group) => group.key),
-  ['/scm/demand-plan', '/scm/procurement']
+  ['/scm/demand-plan', '/scm/procurement', '/scm']
 )
 assert.deepEqual(
-  databaseGroupedModel.groups.find((group) => group.key === '/scm/procurement')?.routes.map((route) => route.path),
+  databaseGroupedModel.groups
+    .find((group) => group.key === '/scm/procurement')
+    ?.routes.map((route) => route.path),
   ['purchase-order', 'inbound', 'outsource-inbound', 'return']
+)
+assert.deepEqual(
+  databaseGroupedModel.groups
+    .find((group) => group.key === '/scm')
+    ?.routes.map((route) => route.path),
+  ['lease-contract', 'service-receipt', 'three-way-match']
 )
 assert.deepEqual(
   databaseGroupedModel.directRoutes.map((route) => route.path),
   []
+)
+assert.equal(
+  resolveGroupedMenuActiveKey({
+    groups: databaseGroupedModel.groups,
+    activeMenu: '/scm/lease-contract',
+    currentPath: '/scm/lease-contract'
+  }),
+  '/scm'
 )

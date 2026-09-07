@@ -13,21 +13,7 @@
         <el-row :gutter="16">
           <el-col :xs="24" :sm="12">
             <el-form-item label="产品" prop="productId">
-              <el-select
-                v-model="formData.productId"
-                clearable
-                filterable
-                placeholder="请选择产品"
-                class="!w-full"
-                :loading="optionLoading"
-              >
-                <el-option
-                  v-for="item in productList"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id"
-                />
-              </el-select>
+              <ProductRemoteSelect v-model="formData.productId" placeholder="请选择产品" class="!w-full" />
             </el-form-item>
           </el-col>
           <el-col :xs="24" :sm="12">
@@ -317,7 +303,7 @@ const loadOptions = async (token: number) => {
   optionLoading.value = true
   try {
     const [products, suppliers] = await Promise.all([
-      ProductApi.getProductSimpleList(),
+      Promise.resolve([]),
       SupplierApi.getSupplierSimpleList()
     ])
     if (!isActiveRequest(token)) {

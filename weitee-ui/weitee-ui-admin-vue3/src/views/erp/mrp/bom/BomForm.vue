@@ -61,9 +61,19 @@
             <div class="pl-32px pr-12px pb-12px">
               <div class="mb-8px flex items-center justify-between">
                 <span class="text-12px text-[var(--el-text-color-secondary)]">替代料列表</span>
-                <el-button type="primary" link @click="handleAddSubstitute(row)">
-                  新增替代料
-                </el-button>
+                <div class="flex gap-8px">
+                  <el-button
+                    type="primary"
+                    link
+                    :disabled="!row.materialId || loadingGlobal"
+                    @click="importGlobalSubstitutes(row)"
+                  >
+                    <Icon icon="ep:download" class="mr-4px" />从全局替代料导入
+                  </el-button>
+                  <el-button type="primary" link @click="handleAddSubstitute(row)">
+                    <Icon icon="ep:plus" class="mr-4px" />新增替代料
+                  </el-button>
+                </div>
               </div>
               <el-table :data="row.substitutes" border size="small">
                 <el-table-column type="index" label="#" width="56" align="center" />
@@ -253,6 +263,7 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from '@/hooks/web/useMessage'
+import { useGlobalSubstituteImport } from '@/hooks/web/useGlobalSubstituteImport'
 import { BomApi, type BomVO } from '@/api/erp/mrp/bom'
 import { type ProductVO } from '@/api/erp/product/product'
 import { DICT_TYPE } from '@/utils/dict'
@@ -291,6 +302,8 @@ const saveSubmitting = ref(false)
 const formType = ref<'create' | 'update'>('create')
 const formRef = ref()
 const formData = ref<BomFormData>(createDefaultBomFormData())
+
+const { loadingGlobal, importGlobalSubstitutes } = useGlobalSubstituteImport()
 
 const formRules = reactive({
   bomCode: [{ required: true, message: '请输入制造 BOM 编码', trigger: 'blur' }],

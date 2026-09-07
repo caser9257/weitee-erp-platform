@@ -18,4 +18,10 @@ public class ErpProductUnitPageReqVO extends PageParam {
     @Schema(description = "单位状态", example = "1")
     private Integer status;
 
+    @Schema(description = "单位类型，0 基本单位 1 辅助单位", example = "0")
+    private Integer unitType;
+
+    @Schema(description = "基本单位编号", example = "1")
+    private Long baseUnitId;
+
 }

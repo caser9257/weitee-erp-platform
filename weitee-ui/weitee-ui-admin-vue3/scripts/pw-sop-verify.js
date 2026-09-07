@@ -28,14 +28,14 @@ const report = (name, ok, extra = '') => {
   report('OCR 导入按钮', /OCR 导入/.test(text))
   report('SOP 数据渲染', /SOP-E2E-001/.test(text) && /已发布/.test(text))
   report('状态徽章', /SOP-OCR-RV/.test(text) && /草稿/.test(text))
-  await page.screenshot({ path: 'C:/Users/Administrator/AppData/Local/Temp/tester/pw-shots/50-sop.png' })
+  await page.screenshot({ path: 'C:/Users/Administrator/AppData/Local/Temp/opencode/pw-shots/50-sop.png' })
 
   // OCR 弹窗
   await page.locator('button:has-text("OCR 导入")').first().click()
   await page.waitForTimeout(2000)
   const dialogText = await page.locator('.el-dialog').first().innerText().catch(() => '')
   report('OCR 弹窗打开', /OCR 导入 SOP/.test(dialogText))
-  await page.screenshot({ path: 'C:/Users/Administrator/AppData/Local/Temp/tester/pw-shots/51-sop-ocr.png' })
+  await page.screenshot({ path: 'C:/Users/Administrator/AppData/Local/Temp/opencode/pw-shots/51-sop-ocr.png' })
 
   await browser.close()
   const fails = results.filter((r) => !r.ok)

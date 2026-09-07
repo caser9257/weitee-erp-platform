@@ -8,7 +8,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 INSERT INTO `system_menu`
 (`id`, `name`, `permission`, `type`, `sort`, `parent_id`, `path`, `icon`, `component`,

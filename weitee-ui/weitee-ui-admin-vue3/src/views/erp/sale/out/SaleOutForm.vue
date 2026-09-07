@@ -177,6 +177,7 @@
   <SaleOrderOutEnableList ref="saleOrderOutEnableListRef" @success="handleSaleOrderChange" />
 </template>
 <script setup lang="ts">
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import { SaleOutApi, SaleOutVO } from '@/api/erp/sale/out'
 import SaleOutItemForm from './components/SaleOutItemForm.vue'
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
@@ -254,6 +255,7 @@ const open = async (type: string, id?: number) => {
     formLoading.value = true
     try {
       formData.value = await SaleOutApi.getSaleOut(id)
+      await normalizeItemsForUnitInput(formData.value.items)
     } finally {
       formLoading.value = false
     }

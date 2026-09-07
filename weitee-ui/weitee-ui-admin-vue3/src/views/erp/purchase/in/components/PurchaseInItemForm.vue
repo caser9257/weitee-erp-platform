@@ -45,10 +45,17 @@
           </el-form-item>
         </template>
       </el-table-column>
-      <el-table-column label="&#21333;&#20301;" min-width="80">
+      <el-table-column label="&#21333;&#20301;" min-width="96">
         <template #default="{ row }">
           <el-form-item class="mb-0px!">
-            <el-input disabled v-model="row.productUnitName" />
+            <el-select v-model="row.productUnitId" placeholder="&#21333;&#20301;" class="!w-100%">
+              <el-option
+                v-for="unit in getUnitFamilyOptions(row)"
+                :key="unit.id"
+                :label="unit.name"
+                :value="unit.id"
+              />
+            </el-select>
           </el-form-item>
         </template>
       </el-table-column>
@@ -82,12 +89,15 @@
             <el-input-number
               v-model="row.count"
               controls-position="right"
-              :min="getQuantityStep(row.productId)"
-              :step="getQuantityStep(row.productId)"
-              :precision="getQuantityPrecision(row.productId)"
+              :min="getQuantityStep(row)"
+              :step="getQuantityStep(row)"
+              :precision="getQuantityPrecision(row)"
               class="!w-100%"
             />
           </el-form-item>
+          <div v-if="isRowAuxiliaryUnit(row)" class="unit-convert-tip">
+            &#8776; {{ rowBaseCountText(row) }} {{ rowBaseUnitName(row) }}
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="&#20135;&#21697;&#21333;&#20215;" fixed="right" min-width="120">
@@ -172,8 +182,18 @@ import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import {
   getProductQuantityPrecision,
-  getProductQuantityStep
+  normalizeQuantityPrecision
 } from '@/utils/erpQuantityPrecision'
+import {
+  loadProductUnits,
+  getUnitFamily,
+  getUnitQuantityPrecision,
+  getUnitName,
+  resolveBaseUnitId,
+  toBaseCount,
+  isAuxiliaryUnit
+} from '@/utils/erpUnitConversion'
+import type { ProductUnitVO } from '@/api/erp/product/unit'
 import {
   erpCountInputFormatter,
   erpPriceInputFormatter,
@@ -197,6 +217,7 @@ const formRef = ref()
 const warehouseList = ref<WarehouseVO[]>([])
 const defaultWarehouse = ref<WarehouseVO>(undefined)
 const productList = ref<ProductVO[]>([])
+const unitList = ref<ProductUnitVO[]>([])
 
 const calculateRowPrice = (item: any) => {
   const materialTotalPrice = erpPriceMultiply(item.productPrice, item.count)
@@ -278,12 +299,33 @@ const setStockCount = async (row: any) => {
   row.stockCount = count || 0
 }
 
-const getQuantityPrecision = (productId?: number) => {
-  return getProductQuantityPrecision(productList.value, productId)
+const getQuantityPrecision = (row: any) => {
+  const unitPrecision = getUnitQuantityPrecision(unitList.value, row.productUnitId)
+  if (unitPrecision != null) {
+    return normalizeQuantityPrecision(unitPrecision)
+  }
+  return getProductQuantityPrecision(productList.value, row.productId)
 }
 
-const getQuantityStep = (productId?: number) => {
-  return getProductQuantityStep(productList.value, productId)
+const getQuantityStep = (row: any) => {
+  const precision = getQuantityPrecision(row)
+  return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+}
+
+/** &#24403;&#21069;&#34892;&#21487;&#36873;&#21333;&#20301;&#26063;&#65288;&#20135;&#21697;&#22522;&#26412;&#21333;&#20301; + &#36741;&#21161;&#21333;&#20301;&#65289; */
+const getUnitFamilyOptions = (row: any) =>
+  getUnitFamily(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const isRowAuxiliaryUnit = (row: any) => isAuxiliaryUnit(unitList.value, row.productUnitId)
+
+const rowBaseUnitName = (row: any) =>
+  getUnitName(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const rowBaseCountText = (row: any) => {
+  const baseCount = toBaseCount(unitList.value, row.productUnitId, row.count)
+  return baseCount == null
+    ? '-'
+    : Number(baseCount).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
 }
 
 const validate = () => {
@@ -293,12 +335,24 @@ const validate = () => {
 defineExpose({ validate })
 
 onMounted(async () => {
-  const [warehouses, products] = await Promise.all([
+  const [warehouses, products, units] = await Promise.all([
     WarehouseApi.getWarehouseSimpleList(),
-    ProductApi.getProductSimpleList()
+    ProductApi.getProductSimpleList(),
+    loadProductUnits()
   ])
   warehouseList.value = warehouses
   productList.value = products
+  unitList.value = units
   defaultWarehouse.value = warehouseList.value.find((item) => item.defaultStatus)
 })
 </script>
+
+<style scoped>
+.unit-convert-tip {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: right;
+  color: var(--erp-slate-400);
+}
+</style>

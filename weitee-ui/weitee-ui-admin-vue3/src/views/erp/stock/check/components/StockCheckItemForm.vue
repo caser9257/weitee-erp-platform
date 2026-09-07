@@ -47,20 +47,7 @@
                 :rules="formRules.productId"
                 class="stock-check-item__form-item"
               >
-                <el-select
-                  v-model="row.productId"
-                  clearable
-                  filterable
-                  placeholder="请选择产品"
-                  @change="onChangeProduct($event, row)"
-                >
-                  <el-option
-                    v-for="item in productList"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.id"
-                  />
-                </el-select>
+                <ProductRemoteSelect v-model="row.productId" placeholder="请选择产品" @select="onChangeProduct($event, row)" />
               </el-form-item>
               <div class="stock-check-item__meta">
                 <span class="stock-check-item__meta-item">账面 {{ formatCount(row.stockCount) }}</span>
@@ -156,7 +143,7 @@
 
 <script setup lang="ts">
 import type { SummaryMethod } from 'element-plus'
-import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import type { ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { StockApi } from '@/api/erp/stock/stock'
 import { erpPriceMultiply, getSumValue } from '@/utils'
@@ -294,8 +281,10 @@ const onChangeWarehouse = async (_warehouseId: number | undefined, row: StockChe
   await setStockCount(row)
 }
 
-const onChangeProduct = async (productId: number | undefined, row: StockCheckItemRow) => {
-  const product = productList.value.find((item) => item.id === productId)
+const onChangeProduct = async (product: ProductVO | null, row: StockCheckItemRow) => {
+  if (product) {
+    productList.value = [...productList.value.filter((item) => item.id !== product.id), product]
+  }
   if (product) {
     row.productName = product.name
     row.productUnitName = product.unitName
@@ -326,12 +315,7 @@ const clearValidate = () => {
 defineExpose({ validate, clearValidate })
 
 onMounted(async () => {
-  const [products, warehouses] = await Promise.all([
-    ProductApi.getProductSimpleList(),
-    WarehouseApi.getWarehouseSimpleList()
-  ])
-  productList.value = products
-  warehouseList.value = warehouses
+  warehouseList.value = await WarehouseApi.getWarehouseSimpleList()
   defaultWarehouse.value = warehouseList.value.find((item) => item.defaultStatus)
   if (formData.value.length === 0) {
     handleAdd()

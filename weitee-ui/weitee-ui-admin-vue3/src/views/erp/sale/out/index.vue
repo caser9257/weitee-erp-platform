@@ -51,19 +51,7 @@
       <transition name="sale-out-query-collapse">
         <div v-if="advancedSearchVisible" class="sale-out-query__grid sale-out-query__grid--advanced">
           <el-form-item label="产品" prop="productId">
-            <el-select
-              v-model="queryParams.productId"
-              clearable
-              filterable
-              placeholder="请选择产品"
-            >
-              <el-option
-                v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
           </el-form-item>
           <el-form-item label="仓库" prop="warehouseId">
             <el-select
@@ -714,7 +702,7 @@ const getList = async () => {
 
 const loadFilterOptions = async () => {
   const results = await Promise.allSettled([
-    ProductApi.getProductSimpleList(),
+    Promise.resolve([]),
     CustomerApi.getCustomerSimpleList(),
     UserApi.getSimpleUserList(),
     WarehouseApi.getWarehouseSimpleList(),

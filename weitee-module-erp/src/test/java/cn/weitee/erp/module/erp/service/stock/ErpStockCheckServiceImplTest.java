@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_CHECK_STATUS_TRANSITION_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_CHECK_VOUCHER_GENERATE_FAIL;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,6 +93,14 @@ class ErpStockCheckServiceImplTest {
                         .setNo("PD20260707001")
                         .setStatus(ErpStockCheckStatusEnum.REVIEWING.getStatus());
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                assertEquals(checkId, args[0]);
+                assertEquals(ErpStockCheckStatusEnum.REVIEWING.getStatus(), args[1],
+                        "PROCESSING 中间态必须以 REVIEWING 为 CAS 前置状态");
+                ErpStockCheckDO updateObj = (ErpStockCheckDO) args[2];
+                lastWrittenStatus.set(updateObj.getStatus());
+                return 1;
+            }
             if ("updateById".equals(methodName)) {
                 ErpStockCheckDO updateObj = (ErpStockCheckDO) args[0];
                 lastWrittenStatus.set(updateObj.getStatus());
@@ -133,6 +142,38 @@ class ErpStockCheckServiceImplTest {
 
         assertEquals(STOCK_CHECK_VOUCHER_GENERATE_FAIL.getCode(), ex.getCode());
         assertEquals(ErpStockCheckStatusEnum.PROCESSING.getStatus(), lastWrittenStatus.get());
+    }
+
+    @Test
+    void approveAndClose_shouldRejectWhenCasFailsAndNotTouchStock() throws Exception {
+        ErpStockCheckServiceImpl service = new ErpStockCheckServiceImpl();
+        Long checkId = 1003L;
+        AtomicReference<Integer> recordCallCount = new AtomicReference<>(0);
+
+        setField(service, "erpStockCheckMapper", createProxy(ErpStockCheckMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                return new ErpStockCheckDO()
+                        .setId(checkId)
+                        .setNo("PD20260707003")
+                        .setStatus(ErpStockCheckStatusEnum.REVIEWING.getStatus());
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                // 模拟并发场景：另一请求已将状态推进，CAS 更新 0 行
+                return 0;
+            }
+            return null;
+        }));
+        setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> {
+            if ("createStockRecord".equals(methodName)) {
+                recordCallCount.updateAndGet(v -> v + 1);
+            }
+            return null;
+        }));
+
+        ServiceException ex = assertThrows(ServiceException.class, () -> service.approveAndClose(checkId));
+
+        assertEquals(STOCK_CHECK_STATUS_TRANSITION_FAIL.getCode(), ex.getCode());
+        assertEquals(0, recordCallCount.get(), "CAS 失败后不得执行任何盘盈亏出入库");
     }
 
     @Test

@@ -59,6 +59,10 @@ class ErpProductionOrderStepServiceImplTest {
                             }
                             return null;
                         }));
+        // 工序完工会发布 ErpProductionOrderStepFinishedEvent，夹具注入 no-op 事件发布器
+        setField(stepService, "eventPublisher",
+                createProxy(org.springframework.context.ApplicationEventPublisher.class,
+                        (methodName, args) -> null));
     }
 
     @Test

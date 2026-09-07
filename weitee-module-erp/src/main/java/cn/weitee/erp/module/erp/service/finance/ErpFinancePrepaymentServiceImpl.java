@@ -23,8 +23,14 @@ import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinancePrepaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
@@ -32,6 +38,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +54,10 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.*;
 
 @Service
 @Validated
+@Slf4j
 public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentService {
+
+    private static final String PREPAYMENT_LOCK_KEY_PREFIX = "erp:finance-prepayment:allocate:";
 
     @Resource
     private ErpFinancePrepaymentMapper erpFinancePrepaymentMapper;
@@ -65,6 +75,10 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
     private AdminUserApi adminUserApi;
     @Resource
     private ErpNoRedisDAO noRedisDAO;
+    @Resource
+    private RedissonClient redissonClient;
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -145,8 +159,26 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void allocateFinancePrepayment(ErpFinancePrepaymentAllocateReqVO reqVO) {
+        // 核销是"读余额-校验-写核销事实"，必须与付款审批/作废共用台账锁，并对同一预付款单互斥，
+        // 否则并发下会突破台账 remainAmount 或预付款 remainPrice。锁在事务外获取，事务提交前不得释放。
+        List<Long> statementIds = reqVO.getItems() == null ? Collections.emptyList() : reqVO.getItems().stream()
+                .map(ErpFinancePrepaymentAllocateReqVO.Item::getApStatementId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
+        List<RLock> locks = lockAllocateTargets(List.of(reqVO.getPrepaymentId()), statementIds);
+        try {
+            executeInRequiredTransaction(() -> {
+                doAllocateFinancePrepayment(reqVO);
+            });
+        } finally {
+            unlockNow(locks);
+        }
+    }
+
+    void doAllocateFinancePrepayment(ErpFinancePrepaymentAllocateReqVO reqVO) {
         ErpFinancePrepaymentDO prepayment = validatePrepaymentExists(reqVO.getPrepaymentId());
         if (!ErpAuditStatus.APPROVE.getStatus().equals(prepayment.getStatus())) {
             throw exception(PREPAYMENT_ALLOCATE_FAIL_APPROVE, prepayment.getNo());
@@ -166,8 +198,36 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void rollbackFinancePrepaymentAllocate(ErpFinancePrepaymentRollbackReqVO reqVO) {
+        List<ErpFinancePrepaymentAllocateDO> allocates = erpFinancePrepaymentAllocateMapper.selectByIds(reqVO.getIds());
+        if (CollUtil.isEmpty(allocates)) {
+            return;
+        }
+        List<Long> prepaymentIds = allocates.stream()
+                .map(ErpFinancePrepaymentAllocateDO::getPrepaymentId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
+        List<Long> statementIds = allocates.stream()
+                .filter(item -> ErpFinancePrepaymentAllocateStatusEnum.APPROVED.getStatus().equals(item.getStatus()))
+                .map(ErpFinancePrepaymentAllocateDO::getApStatementId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted(Comparator.naturalOrder())
+                .toList();
+        List<RLock> locks = lockAllocateTargets(prepaymentIds, statementIds);
+        try {
+            executeInRequiredTransaction(() -> {
+                doRollbackFinancePrepaymentAllocate(reqVO);
+            });
+        } finally {
+            unlockNow(locks);
+        }
+    }
+
+    void doRollbackFinancePrepaymentAllocate(ErpFinancePrepaymentRollbackReqVO reqVO) {
+        // 锁内重读，只处理仍为 APPROVED 的核销事实；重复回滚天然幂等
         List<ErpFinancePrepaymentAllocateDO> allocates = erpFinancePrepaymentAllocateMapper.selectByIds(reqVO.getIds());
         if (CollUtil.isEmpty(allocates)) {
             return;
@@ -180,6 +240,8 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
                     .filter(item -> ErpFinancePrepaymentAllocateStatusEnum.APPROVED.getStatus().equals(item.getStatus()))
                     .toList();
             if (CollUtil.isEmpty(approvedAllocates)) {
+                log.warn("[rollbackFinancePrepaymentAllocate] 预付款单({})无已生效核销可回滚，跳过重复执行，ids={}",
+                        prepayment.getNo(), allocateList.stream().map(ErpFinancePrepaymentAllocateDO::getId).toList());
                 return;
             }
             approvedAllocates.forEach(item -> erpFinancePrepaymentAllocateMapper.updateById(
@@ -191,6 +253,62 @@ public class ErpFinancePrepaymentServiceImpl implements ErpFinancePrepaymentServ
             createApStatementItemLogs(prepaymentId, prepayment.getNo(),
                     buildRollbackAmountMap(approvedAllocates),
                     ErpApStatementItemTypeEnum.PREPAYMENT_ALLOCATE_ROLLBACK.getStatus());
+        });
+    }
+
+    /**
+     * 按固定顺序（预付款单在前、台账按 id 升序）获取核销互斥锁，避免与并发核销形成锁序死锁。
+     */
+    private List<RLock> lockAllocateTargets(Collection<Long> prepaymentIds, Collection<Long> statementIds) {
+        List<String> lockKeys = new ArrayList<>();
+        prepaymentIds.stream().filter(Objects::nonNull).distinct().sorted(Comparator.naturalOrder())
+                .forEach(prepaymentId -> lockKeys.add(prepaymentLockKey(prepaymentId)));
+        statementIds.stream().filter(Objects::nonNull).distinct().sorted(Comparator.naturalOrder())
+                .forEach(statementId -> lockKeys.add(ErpApStatementService.allocateLockKey(statementId)));
+        List<RLock> locks = new ArrayList<>(lockKeys.size());
+        try {
+            for (String lockKey : lockKeys) {
+                RLock lock = redissonClient.getLock(lockKey);
+                if (!ErpAllocateLocks.acquire(lock)) {
+                    throw buildLockConflictException(lockKey);
+                }
+                locks.add(lock);
+            }
+            return locks;
+        } catch (Exception ex) {
+            unlockNow(locks);
+            if (ex instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new IllegalArgumentException("核销互斥锁获取失败", ex);
+        }
+    }
+
+    private RuntimeException buildLockConflictException(String lockKey) {
+        if (lockKey.startsWith(PREPAYMENT_LOCK_KEY_PREFIX)) {
+            return exception(PREPAYMENT_ALLOCATE_LOCKED, lockKey.substring(PREPAYMENT_LOCK_KEY_PREFIX.length()));
+        }
+        return exception(AP_STATEMENT_ALLOCATE_LOCKED, lockKey.substring(ErpApStatementService.ALLOCATE_LOCK_KEY_PREFIX.length()));
+    }
+
+    private String prepaymentLockKey(Long prepaymentId) {
+        return PREPAYMENT_LOCK_KEY_PREFIX + prepaymentId;
+    }
+
+    private void unlockNow(List<RLock> locks) {
+        ErpAllocateLocks.unlockAll(locks);
+    }
+
+    private <T> T executeInRequiredTransaction(java.util.function.Supplier<T> supplier) {
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        return transactionTemplate.execute(status -> supplier.get());
+    }
+
+    private void executeInRequiredTransaction(Runnable runnable) {
+        executeInRequiredTransaction(() -> {
+            runnable.run();
+            return null;
         });
     }
 

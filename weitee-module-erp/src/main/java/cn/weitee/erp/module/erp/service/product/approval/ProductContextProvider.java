@@ -33,6 +33,7 @@ public class ProductContextProvider implements ApprovalContextProvider {
             throw exception(PRODUCT_NOT_EXISTS);
         }
         Map<String, Object> variables = new HashMap<>();
+        variables.put("sceneName", "物料新建审批");
         variables.put(ErpProductBpmConstants.VARIABLE_PRODUCT_ID, product.getId());
         variables.put(ErpProductBpmConstants.VARIABLE_PRODUCT_NAME, product.getName());
         variables.put(ErpProductBpmConstants.VARIABLE_MATERIAL_CODE, product.getMaterialCode());

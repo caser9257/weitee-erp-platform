@@ -32,9 +32,9 @@ SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t),
        b'1',
        b'1',
        b'1',
-       'tester',
+       'codex',
        NOW(),
-       'tester',
+       'codex',
        NOW(),
        b'0'
 WHERE @stock_batch_menu_id IS NOT NULL
@@ -66,9 +66,9 @@ INSERT INTO system_role_menu (
 )
 SELECT role.id,
        @stock_batch_query_menu_id,
-       'tester',
+       'codex',
        NOW(),
-       'tester',
+       'codex',
        NOW(),
        b'0',
        role.tenant_id

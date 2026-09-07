@@ -15,7 +15,9 @@ import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpArStatementItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpArStatementMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceDualLedgerConfigMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceReceiptItemMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
+import cn.weitee.erp.module.erp.enums.ErpArStatementItemTypeEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.interceptor.FinanceDataPermissionContext;
 import cn.weitee.erp.module.erp.service.sale.ErpCustomerService;
@@ -63,10 +65,11 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
     private static final int STATUS_CLOSED = 3;           // 已关闭
 
     // ========== 应收台账明细类型 ==========
-    private static final int ITEM_TYPE_CREATED = 1;            // 应收（生成应收）
-    private static final int ITEM_TYPE_RECEIPT_ALLOCATED = 2;  // 收款分配
-    private static final int ITEM_TYPE_RECEIPT_RETURNED = 3;   // 收款退回
-    private static final int ITEM_TYPE_CLOSED = 4;             // 台账关闭
+    // 明细类型取值与 erp_ar_statement_item.item_type 历史数据一致，统一收敛到 ErpArStatementItemTypeEnum
+    private static final int ITEM_TYPE_CREATED = ErpArStatementItemTypeEnum.CREATED.getStatus();            // 应收（生成应收）
+    private static final int ITEM_TYPE_RECEIPT_ALLOCATED = ErpArStatementItemTypeEnum.RECEIPT_ALLOCATED.getStatus();  // 收款分配
+    private static final int ITEM_TYPE_RECEIPT_RETURNED = ErpArStatementItemTypeEnum.RECEIPT_RETURNED.getStatus();   // 收款退回
+    private static final int ITEM_TYPE_CLOSED = ErpArStatementItemTypeEnum.CLOSED.getStatus();             // 台账关闭
 
     @Resource
     private ErpArStatementMapper erpArStatementMapper;
@@ -78,6 +81,8 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
     private ErpCustomerService erpCustomerService;
     @Resource
     private ErpFinanceDualLedgerConfigMapper dualLedgerConfigMapper;
+    @Resource
+    private ErpFinanceReceiptItemMapper erpFinanceReceiptItemMapper;
 
     // ==================== 创建台账 ====================
 
@@ -234,6 +239,84 @@ public class ErpArStatementServiceImpl implements ErpArStatementService {
                     .setRemainAmount(remainAmount)
                     .setStatus(calculateStatus(receivedAmount, remainAmount, statement.getStatus())));
         }
+    }
+
+    // ==================== 按业务单据刷新收款事实 ====================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void refreshStatementAmountByBizIds(Integer bizType, Collection<Long> bizIds) {
+        if (bizType == null || CollUtil.isEmpty(bizIds)) {
+            return;
+        }
+        List<ErpArStatementDO> statements = erpArStatementMapper.selectListByBizTypeAndBizIds(bizType, bizIds);
+        if (CollUtil.isEmpty(statements)) {
+            return;
+        }
+        for (ErpArStatementDO statement : statements) {
+            if (STATUS_CLOSED == statement.getStatus()) {
+                continue;
+            }
+            // 已收金额以已审核收款单项汇总为唯一事实源，幂等推导，不累加旧值
+            BigDecimal receivedAmount = defaultAmount(erpFinanceReceiptItemMapper.selectReceiptPriceSumByBizIdAndBizType(
+                    statement.getBizId(), statement.getBizType()));
+            // 退货台账金额为负向，已收事实按台账方向取号
+            BigDecimal directedReceived = defaultAmount(statement.getAmount()).compareTo(BigDecimal.ZERO) < 0
+                    ? receivedAmount.negate() : receivedAmount;
+            BigDecimal remainAmount = defaultAmount(statement.getAmount()).subtract(directedReceived);
+            erpArStatementMapper.updateReceivedAmountById(statement.getId(), directedReceived, remainAmount,
+                    calculateStatus(directedReceived, remainAmount, statement.getStatus()));
+        }
+    }
+
+    // ==================== 收款事实明细 ====================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void createReceiptAllocatedItem(Integer bizType, Long bizId, Long refId,
+                                           String refNo, BigDecimal amount, String remark) {
+        insertReceiptFactItem(bizType, bizId, refId, refNo,
+                ITEM_TYPE_RECEIPT_ALLOCATED, defaultAmount(amount), remark, false);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void createReceiptReturnedItem(Integer bizType, Long bizId, Long refId,
+                                          String refNo, BigDecimal amount, String remark) {
+        insertReceiptFactItem(bizType, bizId, refId, refNo,
+                ITEM_TYPE_RECEIPT_RETURNED, defaultAmount(amount), remark, true);
+    }
+
+    private void insertReceiptFactItem(Integer bizType, Long bizId, Long refId,
+                                       String refNo, Integer itemType, BigDecimal amount, String remark,
+                                       boolean negate) {
+        ErpArStatementDO statement = erpArStatementMapper.selectByBizTypeAndBizId(bizType, bizId);
+        if (statement == null) {
+            // 收款单可先于台账存在（历史数据/时序差异），无台账时只保留业务回写，不产生孤儿明细
+            log.warn("[insertReceiptFactItem] 未找到应收台账，跳过明细写入，bizType={}, bizId={}, receiptId={}",
+                    bizType, bizId, refId);
+            return;
+        }
+        // 分配金额取收款单项金额的绝对值；台账金额为负向（销售退货）时跟随台账方向取号，回滚明细取反
+        BigDecimal directedAmount = defaultAmount(statement.getAmount()).compareTo(BigDecimal.ZERO) < 0
+                ? amount.abs().negate() : amount.abs();
+        if (negate) {
+            directedAmount = directedAmount.negate();
+        }
+        // “操作后”快照按本次事实投影：主表仍由 refreshStatementAmountByBizIds 按事实源幂等推导
+        BigDecimal afterReceived = defaultAmount(statement.getReceivedAmount()).add(directedAmount);
+        BigDecimal afterRemain = defaultAmount(statement.getAmount()).subtract(afterReceived);
+        erpArStatementItemMapper.insert(new ErpArStatementItemDO()
+                .setStatementId(statement.getId())
+                .setItemType(itemType)
+                // refType 不落库：ErpBizTypeEnum 无收款单类型（31 已被委外入库占用），与 AP 台账明细日志口径一致，
+                // 事实单据通过 refId/refNo 指向收款单
+                .setRefId(refId)
+                .setRefNo(refNo)
+                .setAmount(directedAmount)
+                .setAfterReceivedAmount(afterReceived)
+                .setAfterRemainAmount(afterRemain)
+                .setRemark(remark));
     }
 
     // ==================== 分页查询 ====================

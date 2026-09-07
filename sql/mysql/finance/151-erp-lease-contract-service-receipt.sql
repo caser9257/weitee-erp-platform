@@ -108,6 +108,19 @@ INSERT INTO system_menu (id, parent_id, name, permission, path, component, compo
 VALUES (160001, 160000, '租赁合同', 'erp:lease-contract:query', 'lease-contract', 'erp/finance/lease-contract/index', 'ErpLeaseContract', 'ep:document', 10, 0, 1, '1', NOW(), '1', NOW(), b'0')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
+-- 租赁合同操作权限
+INSERT INTO system_menu (id, parent_id, name, permission, path, component, component_name, icon, sort, status, type, creator, create_time, updater, update_time, deleted)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t), 160001, '租赁合同新增', 'erp:lease-contract:create', '', '', '', '', 1, 0, 3, '1', NOW(), '1', NOW(), b'0'
+WHERE NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:lease-contract:create' AND deleted = b'0');
+
+INSERT INTO system_menu (id, parent_id, name, permission, path, component, component_name, icon, sort, status, type, creator, create_time, updater, update_time, deleted)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t), 160001, '租赁合同修改', 'erp:lease-contract:update', '', '', '', '', 2, 0, 3, '1', NOW(), '1', NOW(), b'0'
+WHERE NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:lease-contract:update' AND deleted = b'0');
+
+INSERT INTO system_menu (id, parent_id, name, permission, path, component, component_name, icon, sort, status, type, creator, create_time, updater, update_time, deleted)
+SELECT (SELECT IFNULL(MAX(t.id), 0) + 1 FROM system_menu t), 160001, '租赁合同删除', 'erp:lease-contract:delete', '', '', '', '', 3, 0, 3, '1', NOW(), '1', NOW(), b'0'
+WHERE NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:lease-contract:delete' AND deleted = b'0');
+
 -- 服务接收单菜单
 INSERT INTO system_menu (id, parent_id, name, permission, path, component, component_name, icon, sort, status, type, creator, create_time, updater, update_time, deleted)
 VALUES (160002, 160000, '服务接收单', 'erp:service-receipt:query', 'service-receipt', 'erp/finance/service-receipt/index', 'ErpServiceReceipt', 'ep:check', 20, 0, 1, '1', NOW(), '1', NOW(), b'0')
@@ -121,4 +134,10 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 -- 授权给超级管理员
 INSERT INTO system_role_menu (role_id, menu_id)
 SELECT 1, id FROM system_menu WHERE id IN (160000, 160001, 160002, 160003)
+AND NOT EXISTS (SELECT 1 FROM system_role_menu WHERE role_id = 1 AND menu_id = system_menu.id);
+
+INSERT INTO system_role_menu (role_id, menu_id)
+SELECT 1, id FROM system_menu
+WHERE permission IN ('erp:lease-contract:create', 'erp:lease-contract:update', 'erp:lease-contract:delete')
+AND deleted = b'0'
 AND NOT EXISTS (SELECT 1 FROM system_role_menu WHERE role_id = 1 AND menu_id = system_menu.id);

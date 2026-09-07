@@ -6,6 +6,7 @@ import cn.weitee.erp.framework.excel.core.util.FileImportProtector;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.ContractImportResultVO;
 import cn.weitee.erp.module.crm.dal.dataobject.contract.CrmContractDO;
 import cn.weitee.erp.module.crm.service.contract.CrmContractService;
+import cn.weitee.erp.module.system.service.notify.ImportNotifyHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -19,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 合同导入服务实现
@@ -35,6 +37,9 @@ public class ErpContractImportServiceImpl implements ErpContractImportService {
 
     @Resource
     private CrmContractService crmContractService;
+
+    @Resource
+    private ImportNotifyHelper importNotifyHelper;
 
     @Override
     public byte[] downloadTemplate() {
@@ -155,6 +160,11 @@ public class ErpContractImportServiceImpl implements ErpContractImportService {
             throw new RuntimeException("导入合同失败：" + e.getMessage());
         }
 
+        importNotifyHelper.sendImportResult("erp_import_result_contract", "合同导入",
+                result.getTotalCount(), result.getSuccessCount(), result.getFailCount(),
+                result.getFailDetails().stream()
+                        .map(d -> "第" + d.getRowNumber() + "行 " + d.getContractNo() + "：" + d.getReason())
+                        .collect(Collectors.toList()));
         return result;
     }
 

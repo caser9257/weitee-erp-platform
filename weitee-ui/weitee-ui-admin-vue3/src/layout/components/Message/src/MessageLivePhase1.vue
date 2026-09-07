@@ -3,7 +3,7 @@ import { useWebSocket } from '@vueuse/core'
 import * as NotifyMessageApi from '@/api/system/notify/message'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { formatDate } from '@/utils/formatTime'
-import { getRefreshToken } from '@/utils/auth'
+import { getAccessToken } from '@/utils/auth'
 import { propTypes } from '@/utils/propTypes'
 import { getNotifyMessagePreview, stripNotifyMessageLinks } from './notifyMessage'
 
@@ -14,6 +14,7 @@ defineProps({
 })
 
 const NOTIFY_MESSAGE_CREATE_TYPE = 'notify-message-create'
+const IMPORT_RESULT_TEMPLATE_CODE = 'erp_import_result_rd_bom'
 const TEXT = {
   fetchError: '\u83b7\u53d6\u7ad9\u5185\u4fe1\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u91cd\u8bd5',
   newMessage: '\u60a8\u6536\u5230\u4e86 1 \u6761\u65b0\u7684\u7ad9\u5185\u4fe1',
@@ -88,7 +89,7 @@ const websocketUrl = computed(() => {
   return (
     (import.meta.env.VITE_BASE_URL + '/infra/ws').replace('http', 'ws') +
     '?token=' +
-    getRefreshToken()
+    getAccessToken()
   )
 })
 
@@ -231,6 +232,9 @@ const handleNotifyMessageCreated = async (
   await getUnreadCount()
   if (popoverVisible.value) {
     await getList()
+  }
+  if (payload.templateCode === IMPORT_RESULT_TEMPLATE_CODE) {
+    return
   }
   message.notify(stripNotifyMessageLinks(payload.templateContent) || TEXT.newMessage)
 }

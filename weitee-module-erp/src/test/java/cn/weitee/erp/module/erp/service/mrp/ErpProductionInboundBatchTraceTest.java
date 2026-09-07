@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -53,6 +54,7 @@ class ErpProductionInboundBatchTraceTest {
                 .setTotalCost(new BigDecimal("75.000000"))
                 .setStatus(10);
         when(inboundMapper.selectById(61L)).thenReturn(inbound);
+        when(inboundMapper.updateByIdAndStatus(eq(61L), eq(10), any(ErpProductionInboundDO.class))).thenReturn(1);
 
         service.executeProductionInbound(99L, 61L);
 
@@ -69,7 +71,7 @@ class ErpProductionInboundBatchTraceTest {
                 .containsExactly(31L, 41L, "ZZRK20260818000001", new BigDecimal("6"),
                         ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(), 61L, "PRODUCTION_INBOUND");
         verify(stockRecordService).createStockRecord(any(ErpStockRecordCreateReqBO.class));
-        verify(inboundMapper).updateById(any(ErpProductionInboundDO.class));
+        verify(inboundMapper).updateByIdAndStatus(eq(61L), eq(10), any(ErpProductionInboundDO.class));
     }
 
     @Test
@@ -82,6 +84,7 @@ class ErpProductionInboundBatchTraceTest {
                 .setInboundQty(new BigDecimal("7"))
                 .setStatus(20);
         when(inboundMapper.selectById(63L)).thenReturn(inbound);
+        when(inboundMapper.updateByIdAndStatus(eq(63L), eq(20), any(ErpProductionInboundDO.class))).thenReturn(1);
         when(stockBatchService.getStockBatchByProductWarehouseAndBatchNo(31L, 41L, "ZZRK20260818000002"))
                 .thenReturn(new ErpStockBatchDO().setId(701L));
 

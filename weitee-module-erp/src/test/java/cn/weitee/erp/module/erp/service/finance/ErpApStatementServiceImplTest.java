@@ -11,6 +11,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpFinancePrepaymentAlloc
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceFeeDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpOutsourceOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInDO;
+import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpApStatementItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpApStatementMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinanceExpenseMapper;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ErpApStatementServiceImplTest {
 
@@ -52,8 +54,7 @@ class ErpApStatementServiceImplTest {
     }
 
     @Test
-    void createStatementForPurchaseIn_shouldCreatePositiveRemainAmount() throws Exception {
-        ErpApStatementServiceImpl service = new ErpApStatementServiceImpl();
+    void createStatementForPurchaseIn_shouldCreatePositiveRemainAmount() throws Exception {        ErpApStatementServiceImpl service = new ErpApStatementServiceImpl();
         ErpPurchaseInDO purchaseIn = new ErpPurchaseInDO()
                 .setId(11L)
                 .setNo("PI-001")
@@ -96,6 +97,184 @@ class ErpApStatementServiceImplTest {
         assertEquals(ErpApStatementStatusEnum.UNPAID.getStatus(), insertedStatementRef.get().getStatus());
         assertEquals(ErpApStatementItemTypeEnum.CREATED.getStatus(), insertedItemRef.get().getItemType());
         assertEquals(new BigDecimal("120.00"), insertedItemRef.get().getAmount());
+    }
+
+    @Test
+    void createStatementForPurchaseIn_shouldReopenClosedStatementOnReapprove() throws Exception {
+        ErpApStatementServiceImpl service = new ErpApStatementServiceImpl();
+        ErpPurchaseInDO purchaseIn = new ErpPurchaseInDO()
+                .setId(11L)
+                .setNo("PI-001")
+                .setOrderId(21L)
+                .setOrderNo("PO-001")
+                .setSupplierId(31L)
+                .setAccountId(41L)
+                .setInTime(LocalDateTime.of(2026, 4, 23, 10, 0))
+                .setTotalPrice(new BigDecimal("130.00"))
+                .setRemark("purchase in reopened");
+        ErpApStatementDO existed = new ErpApStatementDO()
+                .setId(1001L)
+                .setBizType(ErpBizTypeEnum.PURCHASE_IN.getType())
+                .setBizId(11L)
+                .setBizNo("PI-001")
+                .setAmount(new BigDecimal("120.00"))
+                .setPaidAmount(BigDecimal.ZERO)
+                .setRemainAmount(new BigDecimal("120.00"))
+                .setInvoiceStatus(ErpApInvoiceStatusEnum.RECEIVED.getStatus())
+                .setInvoiceNo("INV-OLD")
+                .setStatus(ErpApStatementStatusEnum.CLOSED.getStatus());
+        AtomicReference<ErpApStatementDO> updatedStatementRef = new AtomicReference<>();
+        AtomicReference<Object[]> updateInvoiceRef = new AtomicReference<>();
+        AtomicReference<ErpApStatementItemDO> insertedItemRef = new AtomicReference<>();
+
+        setField(service, "erpApStatementMapper", createProxy(ErpApStatementMapper.class, (methodName, args) -> {
+            if ("selectByBizTypeAndBizId".equals(methodName)) {
+                return existed;
+            }
+            if ("updateById".equals(methodName)) {
+                ErpApStatementDO updateObj = (ErpApStatementDO) args[0];
+                updatedStatementRef.set(updateObj);
+                existed.setAmount(updateObj.getAmount());
+                existed.setPaidAmount(updateObj.getPaidAmount());
+                existed.setRemainAmount(updateObj.getRemainAmount());
+                existed.setStatus(updateObj.getStatus());
+                return 1;
+            }
+            if ("updateInvoiceById".equals(methodName)) {
+                updateInvoiceRef.set(args);
+                existed.setInvoiceStatus((Integer) args[1]);
+                existed.setInvoiceNo((String) args[2]);
+                existed.setInvoiceAmount((BigDecimal) args[3]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpApStatementItemMapper", createProxy(ErpApStatementItemMapper.class, (methodName, args) -> {
+            if ("insert".equals(methodName)) {
+                insertedItemRef.set((ErpApStatementItemDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "apEstimateService", createProxy(ErpApEstimateService.class, (methodName, args) -> null));
+
+        service.createStatementForPurchaseIn(purchaseIn);
+
+        assertNotNull(updatedStatementRef.get());
+        assertEquals(new BigDecimal("130.00"), updatedStatementRef.get().getAmount());
+        assertEquals(BigDecimal.ZERO, updatedStatementRef.get().getPaidAmount());
+        assertEquals(new BigDecimal("130.00"), updatedStatementRef.get().getRemainAmount());
+        assertEquals(ErpApStatementStatusEnum.UNPAID.getStatus(), updatedStatementRef.get().getStatus());
+        assertNotNull(updateInvoiceRef.get());
+        assertEquals(ErpApInvoiceStatusEnum.NONE.getStatus(), updateInvoiceRef.get()[1]);
+        assertNull(updateInvoiceRef.get()[2]);
+        assertEquals(ErpApStatementStatusEnum.UNPAID.getStatus(), existed.getStatus());
+        assertEquals(ErpApInvoiceStatusEnum.NONE.getStatus(), existed.getInvoiceStatus());
+        assertNull(existed.getInvoiceNo());
+        assertNotNull(insertedItemRef.get());
+        assertEquals(ErpApStatementItemTypeEnum.CREATED.getStatus(), insertedItemRef.get().getItemType());
+    }
+
+    @Test
+    void createStatementForPurchaseReturn_shouldReopenClosedStatementOnReapprove() throws Exception {
+        ErpApStatementServiceImpl service = new ErpApStatementServiceImpl();
+        ErpPurchaseReturnDO purchaseReturn = new ErpPurchaseReturnDO()
+                .setId(12L)
+                .setNo("PR-001")
+                .setOrderId(21L)
+                .setOrderNo("PO-001")
+                .setSupplierId(31L)
+                .setAccountId(41L)
+                .setReturnTime(LocalDateTime.of(2026, 4, 24, 9, 0))
+                .setTotalPrice(new BigDecimal("40.00"))
+                .setRemark("purchase return reopened");
+        ErpApStatementDO existed = new ErpApStatementDO()
+                .setId(1004L)
+                .setBizType(ErpBizTypeEnum.PURCHASE_RETURN.getType())
+                .setBizId(12L)
+                .setBizNo("PR-001")
+                .setAmount(new BigDecimal("-30.00"))
+                .setPaidAmount(BigDecimal.ZERO)
+                .setRemainAmount(new BigDecimal("-30.00"))
+                .setInvoiceStatus(ErpApInvoiceStatusEnum.NONE.getStatus())
+                .setStatus(ErpApStatementStatusEnum.CLOSED.getStatus());
+        AtomicReference<ErpApStatementDO> updatedStatementRef = new AtomicReference<>();
+        AtomicReference<ErpApStatementItemDO> insertedItemRef = new AtomicReference<>();
+
+        setField(service, "erpApStatementMapper", createProxy(ErpApStatementMapper.class, (methodName, args) -> {
+            if ("selectByBizTypeAndBizId".equals(methodName)) {
+                return existed;
+            }
+            if ("updateById".equals(methodName)) {
+                ErpApStatementDO updateObj = (ErpApStatementDO) args[0];
+                updatedStatementRef.set(updateObj);
+                existed.setAmount(updateObj.getAmount());
+                existed.setPaidAmount(updateObj.getPaidAmount());
+                existed.setRemainAmount(updateObj.getRemainAmount());
+                existed.setStatus(updateObj.getStatus());
+                return 1;
+            }
+            if ("updateInvoiceById".equals(methodName)) {
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpApStatementItemMapper", createProxy(ErpApStatementItemMapper.class, (methodName, args) -> {
+            if ("insert".equals(methodName)) {
+                insertedItemRef.set((ErpApStatementItemDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "apEstimateService", createProxy(ErpApEstimateService.class, (methodName, args) -> null));
+
+        service.createStatementForPurchaseReturn(purchaseReturn);
+
+        assertNotNull(updatedStatementRef.get());
+        assertEquals(new BigDecimal("-40.00"), updatedStatementRef.get().getAmount());
+        assertEquals(BigDecimal.ZERO, updatedStatementRef.get().getPaidAmount());
+        assertEquals(new BigDecimal("-40.00"), updatedStatementRef.get().getRemainAmount());
+        assertEquals(ErpApStatementStatusEnum.UNPAID.getStatus(), updatedStatementRef.get().getStatus());
+        assertTrue(existed.getRemainAmount().compareTo(BigDecimal.ZERO) < 0);
+        assertNotNull(insertedItemRef.get());
+        assertEquals(ErpApStatementItemTypeEnum.CREATED.getStatus(), insertedItemRef.get().getItemType());
+    }
+
+    @Test
+    void createStatementForPurchaseIn_shouldSkipWhenStatementStillOpen() throws Exception {
+        ErpApStatementServiceImpl service = new ErpApStatementServiceImpl();
+        ErpPurchaseInDO purchaseIn = new ErpPurchaseInDO()
+                .setId(11L)
+                .setNo("PI-001")
+                .setOrderId(21L)
+                .setOrderNo("PO-001")
+                .setSupplierId(31L)
+                .setAccountId(41L)
+                .setTotalPrice(new BigDecimal("120.00"));
+        ErpApStatementDO existed = new ErpApStatementDO()
+                .setId(1001L)
+                .setBizType(ErpBizTypeEnum.PURCHASE_IN.getType())
+                .setBizId(11L)
+                .setBizNo("PI-001")
+                .setAmount(new BigDecimal("120.00"))
+                .setStatus(ErpApStatementStatusEnum.UNPAID.getStatus());
+        AtomicReference<ErpApStatementDO> updatedStatementRef = new AtomicReference<>();
+
+        setField(service, "erpApStatementMapper", createProxy(ErpApStatementMapper.class, (methodName, args) -> {
+            if ("selectByBizTypeAndBizId".equals(methodName)) {
+                return existed;
+            }
+            if ("updateById".equals(methodName)) {
+                updatedStatementRef.set((ErpApStatementDO) args[0]);
+                return 1;
+            }
+            return null;
+        }));
+        setField(service, "erpApStatementItemMapper", createProxy(ErpApStatementItemMapper.class, (methodName, args) -> null));
+
+        service.createStatementForPurchaseIn(purchaseIn);
+
+        assertNull(updatedStatementRef.get());
     }
 
     @Test
@@ -503,6 +682,10 @@ class ErpApStatementServiceImplTest {
             }
             return null;
         }));
+        setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class,
+                (methodName, args) -> "selectApprovedListByStatementIds".equals(methodName) ? List.of() : null));
+        setField(service, "erpFinancePrepaymentAllocateMapper", createProxy(ErpFinancePrepaymentAllocateMapper.class,
+                (methodName, args) -> "selectApprovedListByStatementIds".equals(methodName) ? List.of() : null));
         setField(service, "apEstimateService", createProxy(ErpApEstimateService.class, (methodName, args) -> {
             if ("reverseBySourceBiz".equals(methodName)) {
                 reverseArgsRef.set(args);

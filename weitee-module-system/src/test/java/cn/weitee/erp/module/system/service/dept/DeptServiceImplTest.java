@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 
 import jakarta.annotation.Resource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import cn.weitee.erp.module.system.service.notify.ImportNotifyHelper;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +45,8 @@ public class DeptServiceImplTest extends BaseDbUnitTest {
     private DeptMapper deptMapper;
     @Resource
     private AdminUserMapper adminUserMapper;
+    @MockitoBean
+    private ImportNotifyHelper importNotifyHelper;
 
     @Test
     public void testCreateDept() {

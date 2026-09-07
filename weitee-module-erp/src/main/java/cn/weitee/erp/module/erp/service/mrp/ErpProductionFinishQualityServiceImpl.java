@@ -78,14 +78,18 @@ public class ErpProductionFinishQualityServiceImpl implements ErpProductionFinis
             throw exception(PRODUCTION_FINISH_QUALITY_COUNT_INVALID);
         }
         Integer qaStatus = resolveQaStatus(quality.getReportQty(), safeQualifiedQty);
-        erpProductionFinishQualityMapper.updateById(new ErpProductionFinishQualityDO()
-                .setId(qualityId)
-                .setQualifiedQty(safeQualifiedQty)
-                .setUnqualifiedQty(safeUnqualifiedQty)
-                .setStatus(qaStatus)
-                .setRemark(remark)
-                .setCheckerUserId(checkerUserId)
-                .setCheckTime(LocalDateTime.now()));
+        // CAS 先行：仅当状态仍为 TO_INSPECT 才允许写入质检结论，并发重复提交在生成入库单和
+        // 发布事件前即被拒绝，避免重复建单与重复触发发货就绪重算
+        if (erpProductionFinishQualityMapper.updateByIdAndStatus(qualityId, ErpQaStatusEnum.TO_INSPECT.getStatus(),
+                new ErpProductionFinishQualityDO()
+                        .setQualifiedQty(safeQualifiedQty)
+                        .setUnqualifiedQty(safeUnqualifiedQty)
+                        .setStatus(qaStatus)
+                        .setRemark(remark)
+                        .setCheckerUserId(checkerUserId)
+                        .setCheckTime(LocalDateTime.now())) == 0) {
+            throw exception(PRODUCTION_FINISH_QUALITY_STATUS_INVALID);
+        }
         boolean passedOrPartial = ObjectUtil.equal(qaStatus, ErpQaStatusEnum.PASSED.getStatus())
                 || ObjectUtil.equal(qaStatus, ErpQaStatusEnum.PARTIAL.getStatus());
         if (passedOrPartial) {

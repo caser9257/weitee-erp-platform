@@ -47,6 +47,8 @@ public class ErpRdBomRespVO {
 
         private String materialName;
 
+        private String materialStandard;
+
         private Integer materialType;
 
         private Long unitId;

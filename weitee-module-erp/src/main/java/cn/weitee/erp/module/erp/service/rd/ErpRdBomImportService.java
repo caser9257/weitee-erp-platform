@@ -15,18 +15,27 @@ public interface ErpRdBomImportService {
     byte[] downloadTemplate();
 
     /**
+     * 按单导入研发 BOM 明细（较最新版缺料默认硬拦）
+     */
+    default ErpRdBomImportResultVO importRdBom(Long productId, String bomCode, String version, String remark,
+                                               Boolean updateSupport, MultipartFile file) {
+        return importRdBom(productId, bomCode, version, remark, updateSupport, false, file);
+    }
+
+    /**
      * 按单导入研发 BOM 明细
      *
-     * @param productId     成品编号
-     * @param bomCode       研发 BOM 编码
-     * @param version       版本（可空）
-     * @param remark        备注（可空）
-     * @param updateSupport 保留参数（当前每次均新建草稿，预留覆盖能力）
-     * @param file          明细 Excel
+     * @param productId             成品编号
+     * @param bomCode               研发 BOM 编码
+     * @param version               版本（可空）
+     * @param remark                备注（可空）
+     * @param updateSupport         保留参数（当前每次均新建草稿，预留覆盖能力）
+     * @param allowBaselineMissing  是否放行"较该成品最新版 BOM 缺少物料"的差异；false 时存在缺失即整单拒绝
+     * @param file                  明细 Excel
      * @return 导入结果与自动完整性校验问题清单
      */
     ErpRdBomImportResultVO importRdBom(Long productId, String bomCode, String version, String remark,
-                                       Boolean updateSupport, MultipartFile file);
+                                       Boolean updateSupport, boolean allowBaselineMissing, MultipartFile file);
 
     /**
      * 导入预检查（dry-run，纯读不落库）

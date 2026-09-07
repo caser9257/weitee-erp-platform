@@ -275,7 +275,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           title: '销售订单重新审批',
-          activeMenu: '/bpm/task/my'
+          activeMenu: '/approval/submitted'
         },
         props: (route) => ({
           id: route.query.id,
@@ -605,7 +605,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           title: '发起流程',
-          activeMenu: '/bpm/task/my'
+          activeMenu: '/approval/submitted'
         }
       },
       {
@@ -617,7 +617,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: true,
           canTo: true,
           title: '流程详情',
-          activeMenu: '/bpm/task/my'
+          activeMenu: '/approval/submitted'
         },
         props: (route) => ({
           id: route.query.id,
@@ -954,6 +954,25 @@ const remainingRouter: AppRouteRecordRaw[] = [
           activeMenu: '/iot/operation/ota/firmware'
         },
         component: () => import('@/views/iot/ota/firmware/detail/index.vue')
+      }
+    ]
+  },
+  {
+    path: '/rd/rd-bom',
+    component: Layout,
+    name: 'RdBomCompatPage',
+    meta: {
+      title: '研发 BOM',
+      hidden: true,
+      noTagsView: true,
+      activeMenu: '/plm/standard-bom'
+    },
+    children: [
+      {
+        path: '',
+        name: 'RdBomCompatIndex',
+        component: () => import('@/views/erp/rd/rd-bom/index.vue'),
+        meta: {}
       }
     ]
   }

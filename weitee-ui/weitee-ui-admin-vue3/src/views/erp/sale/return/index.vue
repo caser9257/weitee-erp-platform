@@ -77,19 +77,7 @@
             </el-select>
           </el-form-item>
           <el-form-item label="产品" prop="productId">
-            <el-select
-              v-model="queryParams.productId"
-              clearable
-              filterable
-              placeholder="请选择产品"
-            >
-              <el-option
-                v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
           </el-form-item>
           <el-form-item label="退货时间" prop="returnTime">
             <el-date-picker
@@ -585,7 +573,7 @@ const handleSelectionChange = (rows: SaleReturnVO[]) => {
 
 onMounted(async () => {
   await getList()
-  productList.value = await ProductApi.getProductSimpleList()
+  productList.value = []
   customerList.value = await CustomerApi.getCustomerSimpleList()
   userList.value = await UserApi.getSimpleUserList()
   warehouseList.value = await WarehouseApi.getWarehouseSimpleList()

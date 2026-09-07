@@ -36,6 +36,7 @@ import cn.weitee.erp.module.erp.framework.event.ErpSaleOrderApprovedEvent;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.mrp.ErpMrpStockReservationSummaryService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionService;
 import cn.weitee.erp.module.erp.service.project.ErpProjectService;
 import cn.weitee.erp.module.erp.service.project.ErpProjectLifecycleService;
 import cn.weitee.erp.module.erp.service.project.event.ProjectLifecycleRefreshEvent;
@@ -102,6 +103,8 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
 
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductUnitConversionService unitConversionService;
     @Resource
     private ErpCustomerService customerService;
     @Resource
@@ -546,20 +549,40 @@ public class ErpSaleOrderServiceImpl implements ErpSaleOrderService {
 
     private List<ErpSaleOrderItemDO> validateSaleOrderItems(List<ErpSaleOrderSaveReqVO.Item> list) {
         // 1. 校验产品存在
-        List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpSaleOrderSaveReqVO.Item::getProductId));
-        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
+        productService.validProductList(convertSet(list, ErpSaleOrderSaveReqVO.Item::getProductId));
         // 2. 转化为 ErpSaleOrderItemDO 列表
-        return convertList(list, o -> BeanUtils.toBean(o, ErpSaleOrderItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
-            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
+        List<ErpSaleOrderItemDO> items = convertList(list, o -> BeanUtils.toBean(o, ErpSaleOrderItemDO.class));
+        // 3. 批量换算录入单位：count 换算为基本单位记账数量，inputCount/conversionRate 保留录入口径
+        applyUnitConversion(items);
+        // 4. 金额计算：单价为录入单位口径，金额 = 单价 × 录入数量
+        items.forEach(item -> {
+            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getInputCount()));
             if (item.getTotalPrice() == null) {
                 return;
             }
             if (item.getTaxPercent() != null) {
                 item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
             }
-        }));
+        });
+        return items;
+    }
+
+    /**
+     * 批量应用录入单位换算：校验单位族与精度，回填 productUnitId/inputCount/conversionRate，
+     * 并将 count 换算为产品基本单位数量
+     */
+    private void applyUnitConversion(List<ErpSaleOrderItemDO> items) {
+        List<ErpProductUnitConversionService.ConversionResult> results = unitConversionService.convertBatch(
+                convertList(items, item -> new ErpProductUnitConversionService.ConversionRequest(
+                        item.getProductId(), item.getProductUnitId(), item.getCount())));
+        for (int i = 0; i < items.size(); i++) {
+            ErpSaleOrderItemDO item = items.get(i);
+            ErpProductUnitConversionService.ConversionResult result = results.get(i);
+            item.setProductUnitId(result.getInputUnitId());
+            item.setInputCount(result.getInputCount());
+            item.setConversionRate(result.getConversionRate());
+            item.setCount(result.getBaseCount());
+        }
     }
 
     private void updateSaleOrderItemList(Long id, List<ErpSaleOrderItemDO> newList) {

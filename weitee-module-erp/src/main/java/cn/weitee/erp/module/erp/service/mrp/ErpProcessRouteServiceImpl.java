@@ -74,6 +74,7 @@ public class ErpProcessRouteServiceImpl implements ErpProcessRouteService {
     @Override public ErpProcessRouteDO get(Long id) { return validateExists(id); }
     @Override public PageResult<ErpProcessRouteDO> getPage(ErpProcessRoutePageReqVO reqVO) { return routeMapper.selectPage(reqVO); }
     @Override public List<ErpProcessRouteStepDO> getStepList(Long routeId) { return stepMapper.selectListByRouteId(routeId); }
+    @Override public List<ErpProcessRouteDO> getSimpleList() { return routeMapper.selectList(); }
 
     private void validateSave(ErpProcessRouteSaveReqVO reqVO, Long id) {
         productService.validProductList(List.of(reqVO.getProductId()));

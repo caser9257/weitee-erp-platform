@@ -86,6 +86,10 @@ class ErpProductionReportServiceImplTest {
         });
         setField(reportService, "productionStepQualityService",
                 createProxy(ErpProductionStepQualityService.class, (methodName, args) -> null));
+        // 报工创建会发布 ErpProductionReportCreatedEvent，夹具注入 no-op 事件发布器
+        setField(reportService, "eventPublisher",
+                createProxy(org.springframework.context.ApplicationEventPublisher.class,
+                        (methodName, args) -> null));
     }
 
     private ErpProductionReportCreateReqVO buildReqVO() {

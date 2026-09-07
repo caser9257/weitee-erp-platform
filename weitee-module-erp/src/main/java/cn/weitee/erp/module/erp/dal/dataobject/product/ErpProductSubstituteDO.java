@@ -34,6 +34,16 @@ public class ErpProductSubstituteDO extends BaseDO {
 
     private BigDecimal replaceRatio;
 
+    /**
+     * 替代类型：见 {@link cn.weitee.erp.module.erp.enums.product.ErpProductSubstituteTypeEnum}
+     */
+    private Integer substituteType;
+
+    /**
+     * 启用状态：见 {@link cn.weitee.erp.framework.common.enums.CommonStatusEnum}
+     */
+    private Integer status;
+
     private String remark;
 
 }

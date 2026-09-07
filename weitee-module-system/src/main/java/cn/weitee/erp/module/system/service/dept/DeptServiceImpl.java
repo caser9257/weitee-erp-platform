@@ -17,6 +17,7 @@ import cn.weitee.erp.module.system.dal.dataobject.user.AdminUserDO;
 import cn.weitee.erp.module.system.dal.mysql.dept.DeptMapper;
 import cn.weitee.erp.module.system.dal.mysql.user.AdminUserMapper;
 import cn.weitee.erp.module.system.dal.redis.RedisKeyConstants;
+import cn.weitee.erp.module.system.service.notify.ImportNotifyHelper;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -28,6 +29,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.ConstraintViolationException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil.exception;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
@@ -47,6 +49,8 @@ public class DeptServiceImpl implements DeptService {
     private DeptMapper deptMapper;
     @Resource
     private AdminUserMapper adminUserMapper;
+    @Resource
+    private ImportNotifyHelper importNotifyHelper;
 
     @Override
     @CacheEvict(cacheNames = RedisKeyConstants.DEPT_CHILDREN_ID_LIST,
@@ -233,6 +237,13 @@ public class DeptServiceImpl implements DeptService {
                 respVO.getFailureDeptNames().put(key, ex.getMessage());
             }
         });
+        int successCount = respVO.getCreateDeptNames().size() + respVO.getUpdateDeptNames().size();
+        int failCount = respVO.getFailureDeptNames().size();
+        importNotifyHelper.sendImportResult("system_import_result_dept", "部门导入",
+                successCount + failCount, successCount, failCount,
+                respVO.getFailureDeptNames().entrySet().stream()
+                        .map(e -> e.getKey() + "：" + e.getValue())
+                        .collect(Collectors.toList()));
         return respVO;
     }
 

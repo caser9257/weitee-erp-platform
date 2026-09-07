@@ -85,19 +85,7 @@
           class="purchase-order-query__grid purchase-order-query__grid--advanced"
         >
           <el-form-item label="产品" prop="productId">
-            <el-select
-              v-model="queryParams.productId"
-              placeholder="请选择产品"
-              clearable
-              filterable
-            >
-              <el-option
-                v-for="item in productList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
           </el-form-item>
           <el-form-item label="创建人" prop="creator">
             <el-select
@@ -1102,7 +1090,7 @@ const getList = async () => {
 
 const loadFilterOptions = async () => {
   const results = await Promise.allSettled([
-    ProductApi.getProductSimpleList(),
+    Promise.resolve([]),
     AccountApi.getAccountSimpleList(),
     SupplierApi.getSupplierSimpleList(),
     UserApi.getSimpleUserList()
@@ -1207,7 +1195,7 @@ const openPurchaseInForm = (row: PurchaseOrderVO) => {
 
 const openPurchaseOrderTodoTask = () => {
   push({
-    path: '/bpm/task/todo',
+    path: '/approval/todo',
     query: {
       processDefinitionKey: PURCHASE_ORDER_BPM_PROCESS_KEY
     }

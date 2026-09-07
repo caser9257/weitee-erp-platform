@@ -12,6 +12,6 @@ export interface RouteVO {
 export const RouteApi = {
   // 获得路线精简列表
   getRouteSimpleList: async () => {
-    return await request.get({ url: `/erp/route/simple-list` })
+    return await request.get({ url: `/erp/process-route/simple-list` })
   }
 }

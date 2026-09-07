@@ -8,6 +8,9 @@ import cn.weitee.erp.module.erp.controller.admin.purchase.vo.in.ErpPurchaseInQua
 import cn.weitee.erp.module.erp.controller.admin.purchase.vo.in.ErpPurchaseInSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.product.vo.product.ErpProductRespVO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpApInvoiceMatchItemMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePrepaymentAllocateMapper;
+import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO;
@@ -27,6 +30,7 @@ import cn.weitee.erp.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockExecuteStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockInStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpQaStatusEnum;
+import cn.weitee.erp.module.erp.enums.ErpFinancePrepaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceAssetCandidateService;
@@ -51,6 +55,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_PROCESS_FAIL_EXISTS_PAYMENT;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_PROCESS_FAIL_EXISTS_INVOICE_MATCH;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_BATCH_UPDATE_FIELD_NOT_SUPPORT;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_BATCH_UPDATE_FIELD_VALUE_INVALID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.PURCHASE_IN_QUALITY_CHECK_FAIL_STATUS;
@@ -99,6 +104,8 @@ class ErpPurchaseInServiceImplTest {
     private final AtomicReference<Integer> closedStatementBizTypeRef = new AtomicReference<>();
     private final AtomicReference<Long> closedStatementBizIdRef = new AtomicReference<>();
     private final AtomicReference<Long> approvedAllocateCountRef = new AtomicReference<>(0L);
+    private final AtomicReference<Long> activeInvoiceMatchCountRef = new AtomicReference<>(0L);
+    private final AtomicReference<Long> approvedPrepaymentAllocateCountRef = new AtomicReference<>(0L);
     private final List<ErpStockRecordCreateReqBO> stockRecords = new ArrayList<>();
 
     private ErpPurchaseInServiceImpl service;
@@ -138,6 +145,8 @@ class ErpPurchaseInServiceImplTest {
         closedStatementBizTypeRef.set(null);
         closedStatementBizIdRef.set(null);
         approvedAllocateCountRef.set(0L);
+        activeInvoiceMatchCountRef.set(0L);
+        approvedPrepaymentAllocateCountRef.set(0L);
         stockRecords.clear();
 
         ErpPurchaseInMapper purchaseInMapper = createPurchaseInMapperProxy();
@@ -146,6 +155,8 @@ class ErpPurchaseInServiceImplTest {
         ErpPurchaseInStockExecuteItemMapper purchaseInStockExecuteItemMapper = createPurchaseInStockExecuteItemMapperProxy();
         ErpPurchaseInStockExecuteItemBatchMapper purchaseInStockExecuteItemBatchMapper = createPurchaseInStockExecuteItemBatchMapperProxy();
         ErpFinancePaymentAllocateMapper paymentAllocateMapper = createPaymentAllocateMapperProxy();
+        ErpApInvoiceMatchItemMapper apInvoiceMatchItemMapper = createApInvoiceMatchItemMapperProxy();
+        ErpFinancePrepaymentAllocateMapper prepaymentAllocateMapper = createPrepaymentAllocateMapperProxy();
         ErpStockRecordService stockRecordService = createStockRecordServiceProxy();
         ErpStockBatchService stockBatchService = createStockBatchServiceProxy();
         ErpPurchaseSourceBatchService purchaseSourceBatchService = createPurchaseSourceBatchServiceProxy();
@@ -157,6 +168,8 @@ class ErpPurchaseInServiceImplTest {
         setField(queryHelper, "erpPurchaseInStockExecuteItemMapper", purchaseInStockExecuteItemMapper);
         setField(queryHelper, "erpPurchaseInStockExecuteItemBatchMapper", purchaseInStockExecuteItemBatchMapper);
         setField(queryHelper, "erpFinancePaymentAllocateMapper", paymentAllocateMapper);
+        setField(queryHelper, "erpApInvoiceMatchItemMapper", apInvoiceMatchItemMapper);
+        setField(queryHelper, "erpFinancePrepaymentAllocateMapper", prepaymentAllocateMapper);
 
         ErpPurchaseInStockExecuteHelper stockExecuteHelper = new ErpPurchaseInStockExecuteHelper();
         setField(stockExecuteHelper, "erpPurchaseInMapper", purchaseInMapper);
@@ -164,6 +177,7 @@ class ErpPurchaseInServiceImplTest {
         setField(stockExecuteHelper, "erpPurchaseInStockExecuteMapper", purchaseInStockExecuteMapper);
         setField(stockExecuteHelper, "erpPurchaseInStockExecuteItemMapper", purchaseInStockExecuteItemMapper);
         setField(stockExecuteHelper, "erpPurchaseInStockExecuteItemBatchMapper", purchaseInStockExecuteItemBatchMapper);
+        setField(stockExecuteHelper, "erpStockMapper", createStockMapperProxy());
         setField(stockExecuteHelper, "stockRecordService", stockRecordService);
         setField(stockExecuteHelper, "stockBatchService", stockBatchService);
         setField(stockExecuteHelper, "purchaseSourceBatchService", purchaseSourceBatchService);
@@ -174,6 +188,7 @@ class ErpPurchaseInServiceImplTest {
         setField(service, "erpPurchaseInStockExecuteItemMapper", purchaseInStockExecuteItemMapper);
         setField(service, "erpPurchaseInStockExecuteItemBatchMapper", purchaseInStockExecuteItemBatchMapper);
         setField(service, "purchaseOrderService", createPurchaseOrderServiceProxy());
+        setField(service, "unitConversionService", cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionTestSupport.passthrough());
         setField(service, "productService", createProductServiceProxy());
         setField(service, "accountService", createAccountServiceProxy());
         setField(service, "noRedisDAO", new ErpNoRedisDAO() {
@@ -472,6 +487,20 @@ class ErpPurchaseInServiceImplTest {
 
         assertEquals(ErpBizTypeEnum.PURCHASE_IN.getType(), closedStatementBizTypeRef.get());
         assertEquals(1L, closedStatementBizIdRef.get());
+    }
+
+    @Test
+    void updatePurchaseInStatus_shouldRejectWhenActiveInvoiceMatchExists() {
+        purchaseInRef.set(purchaseIn(1L, 9L, "PI-001", ErpAuditStatus.APPROVE.getStatus(), null)
+                .setPaymentPrice(BigDecimal.ZERO));
+        activeInvoiceMatchCountRef.set(1L);
+
+        ServiceException ex = assertThrows(ServiceException.class, () ->
+                service.updatePurchaseInStatus(1L, ErpAuditStatus.PROCESS.getStatus()));
+
+        assertEquals(PURCHASE_IN_PROCESS_FAIL_EXISTS_INVOICE_MATCH.getCode(), ex.getCode());
+        assertEquals(null, closedStatementBizTypeRef.get());
+        assertEquals(null, closedStatementBizIdRef.get());
     }
 
     @Test
@@ -777,6 +806,22 @@ class ErpPurchaseInServiceImplTest {
         });
     }
 
+    private cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper createStockMapperProxy() {
+        return createProxy(cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper.class, (methodName, args) -> {
+            if ("selectByProductIdAndWarehouseId".equals(methodName)) {
+                return new cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO()
+                        .setId(1L)
+                        .setProductId((Long) args[0])
+                        .setWarehouseId((Long) args[1])
+                        .setAvailableCount(BigDecimal.ZERO);
+            }
+            if ("updateAvailableCountIncrement".equals(methodName)) {
+                return 1;
+            }
+            return null;
+        });
+    }
+
     private ErpPurchaseInQualityService createPurchaseInQualityServiceProxy() {
         return createProxy(ErpPurchaseInQualityService.class, (methodName, args) -> {
             if ("createQualityOrderIfAbsent".equals(methodName)) {
@@ -834,6 +879,25 @@ class ErpPurchaseInServiceImplTest {
             if ("selectCountByBizTypeAndBizIdAndStatus".equals(methodName)) {
                 assertEquals(ErpFinancePaymentAllocateStatusEnum.APPROVED.getStatus(), args[2]);
                 return approvedAllocateCountRef.get();
+            }
+            return null;
+        });
+    }
+
+    private ErpApInvoiceMatchItemMapper createApInvoiceMatchItemMapperProxy() {
+        return createProxy(ErpApInvoiceMatchItemMapper.class, (methodName, args) -> {
+            if ("selectCount".equals(methodName)) {
+                return activeInvoiceMatchCountRef.get();
+            }
+            return null;
+        });
+    }
+
+    private ErpFinancePrepaymentAllocateMapper createPrepaymentAllocateMapperProxy() {
+        return createProxy(ErpFinancePrepaymentAllocateMapper.class, (methodName, args) -> {
+            if ("selectCountByBizTypeAndBizIdAndStatus".equals(methodName)) {
+                assertEquals(ErpFinancePrepaymentAllocateStatusEnum.APPROVED.getStatus(), args[2]);
+                return approvedPrepaymentAllocateCountRef.get();
             }
             return null;
         });

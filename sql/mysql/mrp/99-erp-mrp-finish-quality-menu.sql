@@ -6,7 +6,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @finish_quality_fixed_id := 932309;
 

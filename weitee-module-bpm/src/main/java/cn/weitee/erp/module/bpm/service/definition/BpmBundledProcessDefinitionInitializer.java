@@ -1,10 +1,13 @@
 package cn.weitee.erp.module.bpm.service.definition;
 
 import cn.weitee.erp.module.bpm.dal.mysql.definition.BpmProcessDefinitionInfoMapper;
+import cn.weitee.erp.module.bpm.controller.admin.definition.vo.model.BpmModelMetaInfoVO;
 import cn.weitee.erp.module.bpm.enums.definition.BpmModelFormTypeEnum;
 import cn.weitee.erp.module.bpm.enums.definition.BpmModelTypeEnum;
 import cn.weitee.erp.module.bpm.framework.flowable.core.enums.BpmnModelConstants;
 import cn.weitee.erp.module.bpm.framework.flowable.core.util.BpmnModelUtils;
+import cn.weitee.erp.framework.common.util.json.JsonUtils;
+import cn.hutool.core.util.StrUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -38,30 +41,51 @@ import java.util.Map;
 public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner {
 
     private static final List<BundledProcessDefinition> DEFINITIONS = List.of(
+            // 实例标题统一携带业务单号/编号 + 发起时间：同名流程实例可按名称模糊检索区分
+            // 占位符与各场景 ContextProvider 注入的流程变量一一对应，新增场景须同步维护
             new BundledProcessDefinition("erp_finance_payment", "付款单审批", "bpmn/erp_finance_payment.bpmn",
-                    "finance", "/finance/payment", "/finance/payment", false),
+                    "finance", "/finance/payment", "/finance/payment", false,
+                    "付款单审批-{paymentNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_finance_expense", "费用报销审批", "bpmn/erp_finance_expense.bpmn",
-                    "finance", "/finance/expense", "/finance/expense", false),
+                    "finance", "/finance/expense", "/finance/expense", false,
+                    "费用报销审批-{expenseNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_sale_order", "销售订单审批", "bpmn/erp_sale_order_approval.bpmn",
-                    "erp_sale", "/erp/sale/order", "/erp/sale/order", true),
+                    "erp_sale", "/erp/sale/order", "/erp/sale/order", true,
+                    "销售订单审批-{saleOrderNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_purchase_return_approval", "采购退货审批",
                     "bpmn/erp_purchase_return_approval.bpmn", "erp_purchase",
-                    "/scm/purchase-return", "/scm/purchase-return", true),
+                    "/scm/purchase-return", "/scm/purchase-return", true,
+                    "采购退货审批-{purchaseReturnNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_purchase_in_approval", "采购入库审批",
                     "bpmn/erp_purchase_in_approval.bpmn", "erp_purchase",
-                    "/scm/purchase-in", "/scm/purchase-in", false),
+                    "/scm/purchase-in", "/scm/purchase-in", false,
+                    "采购入库审批-{purchaseInNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_stock_in_approval", "其它入库审批",
                     "bpmn/erp_stock_in_approval.bpmn", "erp_stock",
-                    "/scm/stock-in", "/scm/stock-in", true),
+                    "/scm/stock-in", "/scm/stock-in", true,
+                    "其它入库审批-{stockInNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_stock_out_approval", "其它出库审批",
                     "bpmn/erp_stock_out_approval.bpmn", "erp_stock",
-                    "/scm/stock-out", "/scm/stock-out", true),
+                    "/scm/stock-out", "/scm/stock-out", true,
+                    "其它出库审批-{stockOutNo}-{PROCESS_START_TIME}"),
             new BundledProcessDefinition("erp_rd_bom_approval", "研发BOM审批",
                     "bpmn/erp_rd_bom_approval.bpmn", "erp_rd",
-                    "/erp/rd/rd-bom", "/erp/rd/rd-bom/RdBomApprovalPanel", true),
+                    "/erp/rd/rd-bom", "/erp/rd/rd-bom/RdBomApprovalPanel", true,
+                    "研发BOM审批-{bomCode}-{PROCESS_START_TIME}"),
+            // erp_product_approval 服务「物料新建/修改/变更/废除/启停」多个场景，
+            // 实例名由各场景 ContextProvider 注入的 {sceneName}（业务动作名）区分
             new BundledProcessDefinition("erp_product_approval", "物料新建审核",
                     "bpmn/erp_product_approval.bpmn", "erp_product",
-                    "/erp/product/product", "/erp/product/product", true)
+                    "/erp/product/product", "/erp/product/product/ProductApprovalPanel", true,
+                    "{sceneName}-{materialCode}-{PROCESS_START_TIME}"),
+            new BundledProcessDefinition("erp_product_batch_approval", "物料批量修改审核",
+                    "bpmn/erp_product_batch_approval.bpmn", "erp_product",
+                    "/erp/product/product", "/erp/product/product/ProductBatchApprovalPanel", true,
+                    "物料批量修改审核-{batchSize}条-{PROCESS_START_TIME}"),
+            new BundledProcessDefinition("erp_bom_disable_approval", "制造BOM停用审核",
+                    "bpmn/erp_bom_disable_approval.bpmn", "erp_bom",
+                    "/erp/mrp/bom", "/erp/mrp/bom/BomDisableApprovalPanel", true,
+                    "制造BOM停用审核-{bomCode}-{PROCESS_START_TIME}")
     );
 
     /**
@@ -69,10 +93,19 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
      * key -> taskId -> [期望 candidateStrategy, 期望 candidateParam]。
      * bpmn 内置内容变更（如审批人从岗位切角色）时，靠此表触发存量环境自动重部署。
      */
+    /**
+     * 需要精确校验候选策略参数的内置流程定义：
+     * key -> taskId -> [期望 candidateStrategy, 期望 candidateParam]。
+     * bpmn 内置内容变更（如审批人从岗位切角色）时，靠此表触发存量环境自动重部署。
+     * 注意：此处登记的 taskId 必须与对应 bpmn 资源中的 userTask id 一致（有单测防护）；
+     * 未登记的流程走 task_approve_level1/level2 兜底检查，仅适用于双任务流程。
+     */
     private static final Map<String, Map<String, String[]>> EXPECTED_CANDIDATE_PARAMS = Map.of(
             "erp_rd_bom_approval", Map.of(
                     "task_approve_level1", new String[]{"10", "910005"},
-                    "task_approve_level2", new String[]{"10", "910004"}));
+                    "task_approve_level2", new String[]{"10", "910004"}),
+            "erp_bom_disable_approval", Map.of(
+                    "task_approve_disable", new String[]{"38", "2"}));
 
     private final RepositoryService repositoryService;
     private final BpmProcessDefinitionInfoMapper processDefinitionInfoMapper;
@@ -112,9 +145,9 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
         BpmnModel deployedModel = repositoryService.getBpmnModel(activeDefinition.getId());
         Map<String, String[]> expected = EXPECTED_CANDIDATE_PARAMS.get(definition.getKey());
         if (expected != null) {
-            // 有精确期望值：策略或参数不一致即重部署（支撑审批人岗位→角色等内置配置迁移）
-            return !matchesCandidate(expected.get("task_approve_level1"), deployedModel, "task_approve_level1")
-                    || !matchesCandidate(expected.get("task_approve_level2"), deployedModel, "task_approve_level2");
+            // 有精确期望值：逐个校验期望表中登记的 taskId，任一不一致即重部署
+            return expected.entrySet().stream()
+                    .anyMatch(entry -> !matchesCandidate(entry.getValue(), deployedModel, entry.getKey()));
         }
         return !hasCandidateStrategy(deployedModel, "task_approve_level1")
                 || !hasCandidateStrategy(deployedModel, "task_approve_level2");
@@ -401,6 +434,14 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
     private void ensureDefinitionInfo(BundledProcessDefinition definition, ProcessDefinition processDefinition) {
         String modelId = "bundled-" + definition.getKey();
         long sort = System.currentTimeMillis();
+        // 实例标题模板：非空时生成 TitleSetting JSON，供 generateProcessInstanceName 用流程变量格式化实例名
+        String titleSettingJson = null;
+        if (StrUtil.isNotBlank(definition.getInstanceTitleTemplate())) {
+            BpmModelMetaInfoVO.TitleSetting titleSetting = new BpmModelMetaInfoVO.TitleSetting();
+            titleSetting.setEnable(true);
+            titleSetting.setTitle(definition.getInstanceTitleTemplate());
+            titleSettingJson = JsonUtils.toJsonString(titleSetting);
+        }
         int updated = jdbcTemplate.update("""
                 UPDATE `bpm_process_definition_info`
                 SET
@@ -411,6 +452,7 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                     `form_type` = ?,
                     `form_custom_create_path` = ?,
                     `form_custom_view_path` = ?,
+                    `title_setting` = ?,
                     `visible` = b'1',
                     `allow_cancel_running_process` = b'1',
                     `allow_withdraw_task` = b'1',
@@ -426,15 +468,16 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                 BpmModelFormTypeEnum.CUSTOM.getType(),
                 definition.getFormCustomCreatePath(),
                 definition.getFormCustomViewPath(),
+                titleSettingJson,
                 processDefinition.getId());
         if (updated == 0) {
             jdbcTemplate.update("""
                     INSERT INTO `bpm_process_definition_info`
                         (`process_definition_id`, `model_id`, `model_type`, `category`, `description`, `form_type`,
-                         `form_custom_create_path`, `form_custom_view_path`, `visible`, `sort`,
+                         `form_custom_create_path`, `form_custom_view_path`, `title_setting`, `visible`, `sort`,
                          `allow_cancel_running_process`, `allow_withdraw_task`,
                          `creator`, `create_time`, `updater`, `update_time`, `deleted`)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, b'1', ?, b'1', b'1', '1', NOW(), '1', NOW(), b'0')
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, b'1', ?, b'1', b'1', '1', NOW(), '1', NOW(), b'0')
                     """,
                     processDefinition.getId(),
                     modelId,
@@ -444,6 +487,7 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
                     BpmModelFormTypeEnum.CUSTOM.getType(),
                     definition.getFormCustomCreatePath(),
                     definition.getFormCustomViewPath(),
+                    titleSettingJson,
                     sort);
         }
         log.info("[ensureDefinitionInfo][内置 BPMN 扩展信息已补齐，key={}, definitionId={}]",
@@ -454,6 +498,13 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
     @AllArgsConstructor
     private static class BundledProcessDefinition {
 
+        private BundledProcessDefinition(String key, String name, String classpath, String category,
+                                         String formCustomCreatePath, String formCustomViewPath,
+                                         boolean requiresCandidateStrategyCheck) {
+            this(key, name, classpath, category, formCustomCreatePath, formCustomViewPath,
+                    requiresCandidateStrategyCheck, null);
+        }
+
         private final String key;
         private final String name;
         private final String classpath;
@@ -461,5 +512,10 @@ public class BpmBundledProcessDefinitionInitializer implements ApplicationRunner
         private final String formCustomCreatePath;
         private final String formCustomViewPath;
         private final boolean requiresCandidateStrategyCheck;
+        /**
+         * 流程实例标题模板（可空）：支持 {batchSize}、{startTime} 等流程变量占位；
+         * 非空时写入 bpm_process_definition_info.title_setting，使同类流程实例可区分、可检索
+         */
+        private final String instanceTitleTemplate;
     }
 }

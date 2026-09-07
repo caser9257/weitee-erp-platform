@@ -36,7 +36,7 @@
         </el-form-item>
       </div>
       <div class="stock-assemble-query__footer">
-        <div />
+        <div></div>
         <div class="stock-assemble-query__actions">
           <el-button :disabled="listLoading" @click="resetQuery">
             <Icon icon="ep:refresh" class="mr-5px" /> 重置
@@ -188,14 +188,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="产品" prop="productId">
-          <el-select v-model="formData.productId" filterable placeholder="请选择产品" class="stock-assemble-form__field">
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect
+            v-model="formData.productId"
+            class="stock-assemble-form__field"
+            placeholder="请选择产品"
+            @select="cacheSelectedProduct"
+          />
         </el-form-item>
         <el-form-item label="数量" prop="count">
           <el-input-number
@@ -277,7 +275,7 @@
 <script setup lang="ts">
 import { checkPermi } from '@/utils/permission'
 import { formatDate } from '@/utils/formatTime'
-import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import type { ProductVO } from '@/api/erp/product/product'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import {
   StockAssembleApi,
@@ -344,15 +342,10 @@ function createDefaultForm(): StockAssembleVO {
 }
 
 const loadOptions = async () => {
-  if (optionsLoading.value || (productList.value.length && warehouseList.value.length)) return
+  if (optionsLoading.value || warehouseList.value.length) return
   optionsLoading.value = true
   try {
-    const [products, warehouses] = await Promise.all([
-      ProductApi.getProductSimpleList(),
-      WarehouseApi.getWarehouseSimpleList()
-    ])
-    productList.value = products || []
-    warehouseList.value = warehouses || []
+    warehouseList.value = (await WarehouseApi.getWarehouseSimpleList()) || []
   } finally {
     optionsLoading.value = false
   }
@@ -512,6 +505,11 @@ const getStatusTagType = (status?: number) => {
   return 'warning'
 }
 const getProductName = (id?: number) => productList.value.find((item) => item.id === id)?.name
+const cacheSelectedProduct = (product: ProductVO | null) => {
+  if (product) {
+    productList.value = [...productList.value.filter((item) => item.id !== product.id), product]
+  }
+}
 const getQuantityPrecision = (productId?: number) => {
   const precision = productList.value.find((item) => item.id === productId)?.quantityPrecision
   return Number.isInteger(precision) && precision! >= 0 && precision! <= 6 ? precision! : 3

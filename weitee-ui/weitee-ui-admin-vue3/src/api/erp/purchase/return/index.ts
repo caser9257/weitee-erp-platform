@@ -26,6 +26,7 @@ export interface PurchaseReturnVO {
   creator?: string // 创建人
   creatorName?: string // 创建人名称
   createTime?: Date | string | number // 创建时间
+  qualityId?: number // 来源质检单编号
   items?: PurchaseReturnItemVO[]
   productNames?: string // 产品信息
 }

@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.erp.controller.admin.rd;
 
+import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.CommonResult;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
@@ -133,6 +134,8 @@ public class ErpRdBomController {
                 ErpProductRespVO mat = productMap.get(item.getMaterialId());
                 if (mat != null) {
                     item.setMaterialName(mat.getName());
+                    item.setMaterialStandard(StrUtil.isNotBlank(item.getMaterialStandard())
+                            ? item.getMaterialStandard() : mat.getStandard());
                     item.setUnitName(mat.getUnitName());
                 }
                 List<ErpRdBomItemSubstituteDO> subs = subByItemId.get(item.getId());
@@ -231,7 +234,7 @@ public class ErpRdBomController {
     }
 
     @PostMapping("/import")
-    @Operation(summary = "按单导入研发 BOM 明细（智能识别表头，导入即跑完整性校验）")
+    @Operation(summary = "按单导入研发 BOM 明细（智能识别表头，导入即跑完整性校验；较最新版缺料默认硬拦）")
     @PreAuthorize("@ss.hasPermission('erp:rd-bom:create')")
     public CommonResult<ErpRdBomImportResultVO> importRdBom(
             @RequestParam(value = "productId", required = false) Long productId,
@@ -239,8 +242,10 @@ public class ErpRdBomController {
             @RequestParam(value = "version", required = false) String version,
             @RequestParam(value = "remark", required = false) String remark,
             @RequestParam(value = "updateSupport", required = false, defaultValue = "false") Boolean updateSupport,
+            @RequestParam(value = "allowBaselineMissing", required = false, defaultValue = "false") Boolean allowBaselineMissing,
             @RequestParam("file") MultipartFile file) {
-        return success(rdBomImportService.importRdBom(productId, bomCode, version, remark, updateSupport, file));
+        return success(rdBomImportService.importRdBom(productId, bomCode, version, remark, updateSupport,
+                Boolean.TRUE.equals(allowBaselineMissing), file));
     }
 
     @PostMapping("/submit")
@@ -325,6 +330,8 @@ public class ErpRdBomController {
             ErpProductRespVO material = productMap.get(item.getMaterialId());
             if (material != null) {
                 item.setMaterialName(material.getName());
+                item.setMaterialStandard(StrUtil.isNotBlank(item.getMaterialStandard())
+                        ? item.getMaterialStandard() : material.getStandard());
                 item.setUnitName(material.getUnitName());
             }
             List<ErpRdBomItemSubstituteDO> itemSubstitutes = substituteMap.get(item.getId());

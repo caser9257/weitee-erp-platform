@@ -87,6 +87,8 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
     @Resource
     private ErpSaleOrderService saleOrderService;
     @Resource
+    private ErpArStatementService arStatementService;
+    @Resource
     private ErpProjectLifecycleService projectLifecycleService;
     @Resource
     private ApplicationEventPublisher eventPublisher;
@@ -230,7 +232,11 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
         // 5. 按审批后口径刷新销售出库、退货的收款金额情况
         updateSalePrice(receiptItems);
 
-        // 6. 审批通过或驳回/作废时，事务提交后更新关联销售订单收款状态
+        // 6. 写入 AR 台账收款事实并刷新主表金额/状态（审批=分配，反审核=退回）
+        //    已收金额以已审核收款单项汇总幂等推导，重复审批/重放不会重复累加
+        updateArStatementFacts(id, receipt, receiptItems, approve);
+
+        // 7. 审批通过或驳回/作废时，事务提交后更新关联销售订单收款状态
         Long finalReceiptId = id;
         ErpTransactionUtils.afterCommit(() -> {
             if (approve) {
@@ -238,6 +244,34 @@ public class ErpFinanceReceiptServiceImpl implements ErpFinanceReceiptService {
             }
             updateRelatedSaleOrderReceipt(finalReceiptId);
         });
+    }
+
+    /**
+     * 写入 AR 台账收款事实（审批=收款分配，反审核=收款退回）并按事实源刷新主表
+     */
+    private void updateArStatementFacts(Long receiptId, ErpFinanceReceiptDO receipt,
+                                        List<ErpFinanceReceiptItemDO> receiptItems, boolean approve) {
+        if (CollUtil.isEmpty(receiptItems)) {
+            return;
+        }
+        String receiptNo = receipt.getNo();
+        String remark = approve ? "收款单审批通过分配 " + receiptNo : "收款单反审核退回 " + receiptNo;
+        receiptItems.forEach(receiptItem -> {
+            if (approve) {
+                arStatementService.createReceiptAllocatedItem(receiptItem.getBizType(), receiptItem.getBizId(),
+                        receiptId, receiptNo, receiptItem.getReceiptPrice(), remark);
+            } else {
+                arStatementService.createReceiptReturnedItem(receiptItem.getBizType(), receiptItem.getBizId(),
+                        receiptId, receiptNo, receiptItem.getReceiptPrice(), remark);
+            }
+        });
+        // 主表 receivedAmount/remainAmount/status 按已审核收款事实重新推导（幂等），不依赖累加；
+        // 同一收款单可能混合销售出库/退货，必须按业务类型分组刷新
+        Map<Integer, List<ErpFinanceReceiptItemDO>> itemsByBizType = receiptItems.stream()
+                .collect(java.util.stream.Collectors.groupingBy(ErpFinanceReceiptItemDO::getBizType));
+        itemsByBizType.forEach((bizType, groupItems) ->
+                arStatementService.refreshStatementAmountByBizIds(bizType,
+                        convertSet(groupItems, ErpFinanceReceiptItemDO::getBizId)));
     }
 
     private void reValidateReceiptAmounts(ErpFinanceReceiptDO receipt, List<ErpFinanceReceiptItemDO> receiptItems) {

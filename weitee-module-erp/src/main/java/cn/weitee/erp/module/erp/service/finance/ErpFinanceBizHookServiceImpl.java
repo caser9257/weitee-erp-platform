@@ -25,6 +25,8 @@ public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
     @Resource
     private ErpFinanceVoucherService financeVoucherService;
     @Resource
+    private ErpFinanceVoucherFailureService voucherFailureService;
+    @Resource
     private ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -38,8 +40,10 @@ public class ErpFinanceBizHookServiceImpl implements ErpFinanceBizHookService {
             Long voucherId = financeVoucherService.autoGenerateVoucher(bizType, bizId);
             return voucherId;
         } catch (Exception e) {
-            // 凭证生成失败，发布告警事件，不阻断业务审核
+            // 凭证生成失败，落失败记录（随业务审核事务同生命周期）并发布告警事件，不阻断业务审核；
+            // 失败记录是重试接口的唯一入口，事件仅用于通知扩展
             log.error("[handleApprovedBiz] 凭证生成失败，bizType={}, bizId={}", bizType, bizId, e);
+            voucherFailureService.recordFailure(bizType, bizId, e.getMessage(), getStackTrace(e));
             eventPublisher.publishEvent(new VoucherGenerateFailedEvent(
                     bizType, bizId,
                     e.getMessage(),

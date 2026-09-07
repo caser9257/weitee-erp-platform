@@ -1,17 +1,27 @@
 package cn.weitee.erp.module.bpm.service.definition;
 
 import org.junit.jupiter.api.Test;
+import cn.weitee.erp.module.bpm.framework.flowable.core.util.BpmnModelUtils;
+import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.bpmn.model.UserTask;
+import org.flowable.engine.RepositoryService;
 import org.flowable.engine.repository.ProcessDefinition;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BpmBundledProcessDefinitionInitializerTest {
@@ -115,6 +125,86 @@ class BpmBundledProcessDefinitionInitializerTest {
 
         assertEquals("bpmn/erp_sale_order_approval.bpmn", invokeGetter(saleOrderDefinition, "getClasspath"));
         assertEquals(Boolean.TRUE, invokeGetter(saleOrderDefinition, "isRequiresCandidateStrategyCheck"));
+    }
+
+    @Test
+    void everyCheckedDefinitionShouldDeclareTaskIdsThatExistInItsBpmnResource() throws Exception {
+        Field definitionsField = BpmBundledProcessDefinitionInitializer.class.getDeclaredField("DEFINITIONS");
+        definitionsField.setAccessible(true);
+        List<?> definitions = (List<?>) definitionsField.get(null);
+        Field expectedField = BpmBundledProcessDefinitionInitializer.class.getDeclaredField("EXPECTED_CANDIDATE_PARAMS");
+        expectedField.setAccessible(true);
+        Map<?, ?> expectedParams = (Map<?, ?>) expectedField.get(null);
+
+        for (Object definition : definitions) {
+            if (!Boolean.TRUE.equals(invokeGetter(definition, "isRequiresCandidateStrategyCheck"))) {
+                continue;
+            }
+            String key = (String) invokeGetter(definition, "getKey");
+            String classpath = (String) invokeGetter(definition, "getClasspath");
+            Set<String> userTaskIds = parseBpmnUserTaskIds(classpath);
+            List<String> checkedTaskIds = expectedParams.containsKey(key)
+                    ? new ArrayList<String>(((Map<?, ?>) expectedParams.get(key)).keySet()
+                            .stream().map(String::valueOf).toList())
+                    : List.of("task_approve_level1", "task_approve_level2");
+            for (String taskId : checkedTaskIds) {
+                assertTrue(userTaskIds.contains(taskId),
+                        key + " 的候选策略校验任务 " + taskId + " 不存在于 " + classpath
+                                + "（实际 userTask: " + userTaskIds + "），将导致每次启动恒重部署");
+            }
+        }
+    }
+
+    @Test
+    void bomDisableDefinitionShouldNotRedeployWhenDeployedModelMatchesExpectation() throws Exception {
+        assertFalse(invokeShouldRedeploy(initializerReturningBpmn("bpmn/erp_bom_disable_approval.bpmn"),
+                findDefinition("erp_bom_disable_approval")));
+        assertFalse(invokeShouldRedeploy(initializerReturningBpmn("bpmn/erp_rd_bom_approval.bpmn"),
+                findDefinition("erp_rd_bom_approval")));
+    }
+
+    private static BpmBundledProcessDefinitionInitializer initializerReturningBpmn(String classpath) throws Exception {
+        BpmnModel deployedModel = BpmnModelUtils.getBpmnModel(readBpmnBytes(classpath));
+        return new BpmBundledProcessDefinitionInitializer(
+                repositoryServiceReturning(deployedModel), null, new CapturingJdbcTemplate());
+    }
+
+    private static byte[] readBpmnBytes(String classpath) throws Exception {
+        return new ClassPathResource(classpath).getInputStream().readAllBytes();
+    }
+
+    private static Set<String> parseBpmnUserTaskIds(String classpath) throws Exception {
+        BpmnModel model = BpmnModelUtils.getBpmnModel(readBpmnBytes(classpath));
+        return model.getMainProcess().getFlowElements().stream()
+                .filter(UserTask.class::isInstance)
+                .map(flowElement -> flowElement.getId())
+                .collect(Collectors.toSet());
+    }
+
+    private static Object findDefinition(String key) throws Exception {
+        Field definitionsField = BpmBundledProcessDefinitionInitializer.class.getDeclaredField("DEFINITIONS");
+        definitionsField.setAccessible(true);
+        List<?> definitions = (List<?>) definitionsField.get(null);
+        return definitions.stream()
+                .filter(definition -> key.equals(invokeGetter(definition, "getKey")))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    private static RepositoryService repositoryServiceReturning(BpmnModel model) {
+        return (RepositoryService) Proxy.newProxyInstance(RepositoryService.class.getClassLoader(),
+                new Class<?>[]{RepositoryService.class},
+                (proxy, method, args) -> "getBpmnModel".equals(method.getName()) ? model : null);
+    }
+
+    private static boolean invokeShouldRedeploy(BpmBundledProcessDefinitionInitializer initializer,
+                                                Object definition) throws Exception {
+        Method method = BpmBundledProcessDefinitionInitializer.class.getDeclaredMethod("shouldRedeploy",
+                Class.forName(
+                        "cn.weitee.erp.module.bpm.service.definition.BpmBundledProcessDefinitionInitializer$BundledProcessDefinition"),
+                ProcessDefinition.class);
+        method.setAccessible(true);
+        return (Boolean) method.invoke(initializer, definition, createProcessDefinition("proxy:1:proxy"));
     }
 
     private static class CapturingJdbcTemplate extends JdbcTemplate {

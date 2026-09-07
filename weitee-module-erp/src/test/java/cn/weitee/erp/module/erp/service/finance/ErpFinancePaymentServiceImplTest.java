@@ -120,13 +120,14 @@ class ErpFinancePaymentServiceImplTest {
             return null;
         }));
         setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(110L);
+            if ("selectByIds".equals(methodName)) {
+                return List.of(new ErpPurchaseInDO().setId(10L).setOrderId(110L));
             }
             return null;
         }));
         setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
         setField(service, "redissonClient", createRedissonClientProxy());
+        setField(service, "transactionManager", createTransactionManagerProxy());
 
         service.updateFinancePaymentStatus(3L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -213,8 +214,8 @@ class ErpFinancePaymentServiceImplTest {
             return null;
         }));
         setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(160L);
+            if ("selectByIds".equals(methodName)) {
+                return List.of(new ErpPurchaseInDO().setId(16L).setOrderId(160L));
             }
             return null;
         }));
@@ -225,6 +226,7 @@ class ErpFinancePaymentServiceImplTest {
             return null;
         }));
         setField(service, "redissonClient", createRedissonClientProxy());
+        setField(service, "transactionManager", createTransactionManagerProxy());
 
         IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
                 service.updateFinancePaymentStatus(6L, ErpAuditStatus.APPROVE.getStatus()));
@@ -302,13 +304,14 @@ class ErpFinancePaymentServiceImplTest {
             return null;
         }));
         setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(120L);
+            if ("selectByIds".equals(methodName)) {
+                return List.of(new ErpPurchaseInDO().setId(12L).setOrderId(120L));
             }
             return null;
         }));
         setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
         setField(service, "redissonClient", createRedissonClientProxy());
+        setField(service, "transactionManager", createTransactionManagerProxy());
 
         service.updateFinancePaymentStatus(4L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -393,12 +396,14 @@ class ErpFinancePaymentServiceImplTest {
             return null;
         }));
         setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(130L);
+            if ("selectByIds".equals(methodName)) {
+                return List.of(new ErpPurchaseInDO().setId(15L).setOrderId(130L));
             }
             return null;
         }));
         setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
+        setField(service, "redissonClient", createRedissonClientProxy());
+        setField(service, "transactionManager", createTransactionManagerProxy());
 
         service.updateFinancePaymentStatus(5L, ErpAuditStatus.PROCESS.getStatus());
 
@@ -657,12 +662,14 @@ class ErpFinancePaymentServiceImplTest {
             return null;
         }));
         setField(service, "purchaseInMapper", createProxy(ErpPurchaseInMapper.class, (methodName, args) -> {
-            if ("selectById".equals(methodName)) {
-                return new ErpPurchaseInDO().setId((Long) args[0]).setOrderId(140L);
+            if ("selectByIds".equals(methodName)) {
+                return List.of(new ErpPurchaseInDO().setId(20L).setOrderId(140L));
             }
             return null;
         }));
         setField(service, "purchaseOrderService", createProxy(ErpPurchaseOrderService.class, (methodName, args) -> null));
+        setField(service, "redissonClient", createRedissonClientProxy());
+        setField(service, "transactionManager", createTransactionManagerProxy());
 
         service.voidFinancePayment(6L, "业务取消，需要作废");
 

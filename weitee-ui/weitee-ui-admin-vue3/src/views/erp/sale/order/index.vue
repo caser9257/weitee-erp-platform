@@ -67,19 +67,7 @@
             class="sale-order-query__grid sale-order-query__grid--advanced"
           >
             <el-form-item label="产品" prop="productId">
-              <el-select
-                v-model="queryParams.productId"
-                clearable
-                filterable
-                placeholder="请选择产品"
-              >
-                <el-option
-                  v-for="item in productList"
-                  :key="item.id"
-                  :label="item.name"
-                  :value="item.id"
-                />
-              </el-select>
+              <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
             </el-form-item>
             <el-form-item label="交期" prop="deliveryDate">
               <el-date-picker
@@ -928,7 +916,7 @@ const getList = async () => {
 const loadFilterOptions = async () => {
   const results = await Promise.allSettled([
     ProjectApi.getProjectSimpleList(),
-    ProductApi.getProductSimpleList(),
+    Promise.resolve([]),
     CustomerApi.getCustomerSimpleList(),
     UserApi.getSimpleUserList(),
     AccountApi.getAccountSimpleList()
@@ -986,7 +974,7 @@ const openSaleOrderTodoTask = () => {
     return
   }
   push({
-    path: '/bpm/task/todo',
+    path: '/approval/todo',
     query: {
       processDefinitionKey: SALE_ORDER_BPM_PROCESS_KEY
     }

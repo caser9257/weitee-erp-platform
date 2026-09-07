@@ -17,7 +17,6 @@ import cn.weitee.erp.module.system.api.user.AdminUserApi;
 import cn.weitee.erp.module.system.api.user.dto.AdminUserRespDTO;
 import com.google.common.annotations.VisibleForTesting;
 import lombok.extern.slf4j.Slf4j;
-import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.*;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.runtime.ProcessInstance;

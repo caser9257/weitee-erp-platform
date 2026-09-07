@@ -18,14 +18,7 @@
           />
         </el-form-item>
         <el-form-item label="产品" prop="productId">
-          <el-select v-model="queryParams.productId" clearable filterable placeholder="请选择产品">
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" />
         </el-form-item>
         <el-form-item label="盘点时间" prop="checkTime">
           <el-date-picker
@@ -536,7 +529,7 @@ const notifyOperationRefreshResult = (
 
 const loadFilterOptions = async () => {
   const [products, warehouses, users] = await Promise.all([
-    ProductApi.getProductSimpleList(),
+    Promise.resolve([]),
     WarehouseApi.getWarehouseSimpleList(),
     UserApi.getSimpleUserList()
   ])

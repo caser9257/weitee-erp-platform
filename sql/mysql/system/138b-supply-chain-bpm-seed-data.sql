@@ -4,7 +4,6 @@
 
 SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 SET FOREIGN_KEY_CHECKS = 0;
-USE `ruoyi-vue-pro`;
 
 -- ========== 1. 审批场景 ==========
 

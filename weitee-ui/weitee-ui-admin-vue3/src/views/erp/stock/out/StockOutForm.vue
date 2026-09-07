@@ -99,6 +99,7 @@
 </template>
 
 <script setup lang="ts">
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import { StockOutApi, StockOutVO } from '@/api/erp/stock/out'
 import StockOutItemForm from './components/StockOutItemForm.vue'
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
@@ -171,6 +172,7 @@ const open = async (type: 'create' | 'update' | 'detail', id?: number) => {
       ...createDefaultFormData(),
       ...(await StockOutApi.getStockOut(id))
     }
+    await normalizeItemsForUnitInput(formData.value.items)
     itemFormRef.value?.clearValidate?.()
   } catch (error: any) {
     detailLoadError.value = error?.message || '详情加载失败，请重试'

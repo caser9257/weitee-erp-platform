@@ -12,6 +12,7 @@ import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,6 +59,18 @@ public interface ErpSaleReturnMapper extends BaseMapperX<ErpSaleReturnDO> {
     default int updateByIdAndStatus(Long id, Integer status, ErpSaleReturnDO updateObj) {
         return update(updateObj, new LambdaUpdateWrapper<ErpSaleReturnDO>()
                 .eq(ErpSaleReturnDO::getId, id).eq(ErpSaleReturnDO::getStatus, status));
+    }
+
+    /**
+     * 反审核专用 CAS：仅当退货单仍处于指定状态且尚未产生任何退款（refund_price = 0）时才更新。
+     * 把「已退款不可反审核」的校验下沉到 WHERE 条件，关闭「读校验→并发退款回写→改状态」的脏状态窗口。
+     * refund_price 用 = 0 判定「未退款」，与正负号口径无关。
+     */
+    default int updateByIdAndStatusAndNoRefund(Long id, Integer status, ErpSaleReturnDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpSaleReturnDO>()
+                .eq(ErpSaleReturnDO::getId, id)
+                .eq(ErpSaleReturnDO::getStatus, status)
+                .eq(ErpSaleReturnDO::getRefundPrice, BigDecimal.ZERO));
     }
 
     default ErpSaleReturnDO selectByNo(String no) {

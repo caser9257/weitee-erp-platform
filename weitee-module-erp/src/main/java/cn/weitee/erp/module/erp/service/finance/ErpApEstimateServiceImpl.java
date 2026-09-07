@@ -197,6 +197,21 @@ public class ErpApEstimateServiceImpl implements ErpApEstimateService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void restoreByStatementReopen(Integer sourceBizType, Long sourceBizId) {
+        ErpApEstimateDO estimate = erpApEstimateMapper.selectBySourceBizTypeAndSourceBizId(sourceBizType, sourceBizId);
+        if (estimate == null
+                || !ErpApEstimateStatusEnum.REVERSED.getStatus().equals(estimate.getStatus())
+                || !ErpApEstimateReverseTypeEnum.STATEMENT_CLOSED.getStatus().equals(estimate.getReverseType())) {
+            return;
+        }
+        Integer restoreStatus = estimate.getConfirmTime() != null
+                ? ErpApEstimateStatusEnum.CONFIRMED.getStatus()
+                : ErpApEstimateStatusEnum.GENERATED.getStatus();
+        erpApEstimateMapper.restoreOpenStatusById(estimate.getId(), restoreStatus);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void syncByStatementInvoiceChange(ErpApStatementDO statement, Integer oldInvoiceStatus, Integer newInvoiceStatus,
                                              Long userId, Long reverseSourceId, String reverseSourceNo) {
         if (statement == null

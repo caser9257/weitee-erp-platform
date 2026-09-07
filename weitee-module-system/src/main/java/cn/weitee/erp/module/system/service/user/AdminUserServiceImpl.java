@@ -27,6 +27,7 @@ import cn.weitee.erp.module.system.dal.mysql.dept.UserPostMapper;
 import cn.weitee.erp.module.system.dal.mysql.user.AdminUserMapper;
 import cn.weitee.erp.module.system.service.dept.DeptService;
 import cn.weitee.erp.module.system.service.dept.PostService;
+import cn.weitee.erp.module.system.service.notify.ImportNotifyHelper;
 import cn.weitee.erp.module.system.service.oauth2.OAuth2TokenService;
 import cn.weitee.erp.module.system.service.permission.PermissionService;
 import com.google.common.annotations.VisibleForTesting;
@@ -108,6 +109,9 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Resource
     private ConfigApi configApi;
+
+    @Resource
+    private ImportNotifyHelper importNotifyHelper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -487,6 +491,13 @@ public class AdminUserServiceImpl implements AdminUserService {
             adminUserMapper.updateById(updateUser);
             respVO.getUpdateUsernames().add(importUser.getUsername());
         });
+        int successCount = respVO.getCreateUsernames().size() + respVO.getUpdateUsernames().size();
+        int failCount = respVO.getFailureUsernames().size();
+        importNotifyHelper.sendImportResult("system_import_result_user", "用户导入",
+                successCount + failCount, successCount, failCount,
+                respVO.getFailureUsernames().entrySet().stream()
+                        .map(e -> e.getKey() + "：" + e.getValue())
+                        .collect(java.util.stream.Collectors.toList()));
         return respVO;
     }
 

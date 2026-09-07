@@ -765,7 +765,7 @@ const handleBack = () => {
     return
   }
   push({
-    path: props.from === 'processInstanceRestart' ? '/bpm/task/my' : '/sales/order'
+    path: props.from === 'processInstanceRestart' ? '/approval/submitted' : '/sales/order'
   })
 }
 </script>

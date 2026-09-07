@@ -16,7 +16,7 @@ SET @return_menu_id := (
 
 UPDATE system_menu
 SET permission = 'erp:production-material-return:query',
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE parent_id = @return_menu_id
   AND permission = 'erp:material-return:query'
@@ -24,7 +24,7 @@ WHERE parent_id = @return_menu_id
 
 UPDATE system_menu
 SET permission = 'erp:production-material-return:create',
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE parent_id = @return_menu_id
   AND permission = 'erp:material-return:create'
@@ -45,7 +45,7 @@ INSERT INTO system_menu
 (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @next_menu_id, '退料查询', 'erp:production-material-return:query', 3, 1, @return_menu_id,
-       '', '', '', '', 0, b'1', b'1', b'1', 'tester', NOW(), 'tester', NOW(), b'0'
+       '', '', '', '', 0, b'1', b'1', b'1', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @return_menu_id IS NOT NULL
   AND @return_query_menu_id IS NULL;
 

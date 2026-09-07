@@ -5,7 +5,6 @@
   幂等：等值更新，重复执行无副作用；仅处理未删除记录
 */
 SET NAMES utf8mb4;
-USE `ruoyi-vue-pro`;
 
 UPDATE `erp_stock`
 SET `available_count` = `count`

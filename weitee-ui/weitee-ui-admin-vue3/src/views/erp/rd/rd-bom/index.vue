@@ -18,21 +18,15 @@
         />
       </el-form-item>
       <el-form-item label="成品" prop="productId">
-        <el-select
+        <el-select-v2
           v-model="queryParams.productId"
           clearable
           filterable
           :loading="productLoading"
+          :options="productSelectOptions"
           placeholder="请选择成品"
           class="!w-240px"
-        >
-          <el-option
-            v-for="item in productList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
+        />
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select
@@ -58,34 +52,44 @@
           <Icon icon="ep:refresh" class="mr-5px" />
           重置
         </el-button>
-          <el-button
-            type="primary"
-            plain
-            @click="openForm('create')"
-            v-hasPermi="['erp:rd-bom:create']"
-          >
-            <Icon icon="ep:plus" class="mr-5px" />
-            新增研发BOM
-          </el-button>
-          <el-button
-            type="success"
-            plain
-            @click="importFormRef?.open()"
-            v-hasPermi="['erp:rd-bom:create']"
-          >
-            <Icon icon="ep:upload" class="mr-5px" />
-            导入
-          </el-button>
-          <el-button plain @click="whereUsedDialogRef?.open()" v-hasPermi="['erp:rd-bom:query']">
-            <Icon icon="ep:share" class="mr-5px" />
-            反向追溯
-          </el-button>
-        </el-form-item>
+      </el-form-item>
     </el-form>
   </ContentWrap>
 
   <ContentWrap>
-    <el-table v-loading="listLoading" :data="list" :stripe="true" :show-overflow-tooltip="true">
+    <div class="mb-12px flex items-center gap-12px">
+      <el-button
+        type="primary"
+        plain
+        @click="openForm('create')"
+        v-hasPermi="['erp:rd-bom:create']"
+      >
+        <Icon icon="ep:plus" class="mr-5px" />
+        新增研发BOM
+      </el-button>
+      <el-button
+        type="success"
+        plain
+        @click="importFormRef?.open()"
+        v-hasPermi="['erp:rd-bom:create']"
+      >
+        <Icon icon="ep:upload" class="mr-5px" />
+        导入
+      </el-button>
+      <el-button plain @click="whereUsedDialogRef?.open()" v-hasPermi="['erp:rd-bom:query']">
+        <Icon icon="ep:share" class="mr-5px" />
+        反向追溯
+      </el-button>
+    </div>
+
+    <el-table
+      v-loading="listLoading"
+      :data="list"
+      :stripe="true"
+      :show-overflow-tooltip="true"
+      :border="true"
+      @header-dragend="handleHeaderDragend"
+    >
       <el-table-column label="研发BOM编码" prop="bomCode" min-width="160" />
       <el-table-column label="成品" prop="productName" min-width="180" />
       <el-table-column label="版本" prop="version" width="120" align="center" />
@@ -97,14 +101,22 @@
         </template>
       </el-table-column>
       <el-table-column label="已发布制造BOM" prop="publishedBomId" width="140" align="center" />
-      <el-table-column label="最近发布时间" prop="lastPublishedTime" width="180" align="center" />
+      <el-table-column label="最近发布时间" width="180" align="center">
+        <template #default="{ row }">
+          {{ row.lastPublishedTime ? formatDate(row.lastPublishedTime) : '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="物料数" width="100" align="center">
         <template #default="{ row }">
           {{ row.items?.length || 0 }}
         </template>
       </el-table-column>
       <el-table-column label="备注" prop="remark" min-width="220" />
-      <el-table-column label="创建时间" prop="createTime" width="180" align="center" />
+      <el-table-column label="创建时间" width="180" align="center">
+        <template #default="{ row }">
+          {{ row.createTime ? formatDate(row.createTime) : '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="600" align="center" fixed="right">
         <template #default="{ row }">
           <el-button
@@ -285,11 +297,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from '@/hooks/web/useMessage'
+import { formatDate } from '@/utils/formatTime'
 import { RdBomApi, type RdBomIntegrityIssueVO, type RdBomPageReqVO, type RdBomTreeRespVO, type RdBomVO } from '@/api/erp/rd/bom'
-import { ProductApi, type ProductVO } from '@/api/erp/product/product'
+import { ProductApi, type ProductSimpleVO } from '@/api/erp/product/product'
 import BomDetailDrawer from './BomDetailDrawer.vue'
 import BomForm from './BomForm.vue'
 import BomTree from './BomTree.vue'
@@ -302,35 +315,20 @@ defineOptions({ name: 'ErpRdBom' })
 const message = useMessage()
 const { t } = useI18n()
 
-const RD_BOM_STATUS_OPTIONS = [
-  { label: '草稿', value: 0 },
-  { label: '审批中', value: 10 },
-  { label: '已审批', value: 20 },
-  { label: '已驳回', value: 30 },
-  { label: '已作废', value: 50 },
-  { label: '处理失败', value: 60 }
-]
-
-const STATUS_META: Record<number, { label: string; type: 'info' | 'success' | 'warning' | 'danger' | '' }> = {
-  0: { label: '草稿', type: 'info' },
-  10: { label: '审批中', type: 'warning' },
-  20: { label: '已审批', type: 'success' },
-  30: { label: '已驳回', type: 'danger' },
-  50: { label: '已作废', type: 'info' },
-  60: { label: '处理失败', type: 'danger' }
-}
-
-const isApprovalRunning = (row: RdBomVO) => row.status === 10 && !!row.processInstanceId
-const isVoid = (row: RdBomVO) => row.status === 50
-const canEdit = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20 && !isVoid(row)
-const canDelete = (row: RdBomVO) => !isApprovalRunning(row) && row.status !== 20 && !isVoid(row)
-const canSubmit = (row: RdBomVO) =>
-  [0, 30, 60].includes(row.status) && !isApprovalRunning(row) && !isVoid(row)
-const canCancel = (row: RdBomVO) => isApprovalRunning(row)
-const canPublish = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
-const canChange = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
-const canVoid = (row: RdBomVO) => row.status === 20 && !isApprovalRunning(row)
-const canUnvoid = (row: RdBomVO) => isVoid(row)
+import {
+  RD_BOM_STATUS_OPTIONS,
+  STATUS_META,
+  isApprovalRunning,
+  isVoid,
+  canEdit,
+  canDelete,
+  canSubmit,
+  canCancel,
+  canPublish,
+  canChange,
+  canVoid,
+  canUnvoid
+} from './rdBomStatus'
 
 const listLoading = ref(false)
 const productLoading = ref(false)
@@ -345,7 +343,10 @@ const submitLoadingId = ref<number | undefined>()
 const cancelLoadingId = ref<number | undefined>()
 const list = ref<RdBomVO[]>([])
 const total = ref(0)
-const productList = ref<ProductVO[]>([])
+const productList = ref<ProductSimpleVO[]>([])
+const productSelectOptions = computed(() =>
+  productList.value.map((product) => ({ label: product.name, value: product.id }))
+)
 const queryFormRef = ref()
 const formRef = ref()
 const detailDrawerRef = ref()
@@ -397,6 +398,10 @@ const loadProductList = async () => {
   } finally {
     productLoading.value = false
   }
+}
+
+const handleHeaderDragend = (_newWidth: number, _oldWidth: number, _column: any) => {
+  // 列宽调整完成后的回调，可用于保存用户偏好
 }
 
 const handleQuery = () => {
@@ -456,7 +461,6 @@ const handleSubmit = async (id?: number) => {
   try {
     await message.confirm('确认提交该研发 BOM 进行审批吗？')
     await RdBomApi.submitRdBom(id)
-    message.success('提交请求已发送，列表将刷新校验状态')
     await getList()
     const updated = list.value.find((r) => r.id === id)
     if (updated?.status === 10 && updated?.processInstanceId) {
@@ -476,8 +480,16 @@ const handleCancel = async (id?: number) => {
   }
   cancelLoadingId.value = id
   try {
-    await message.confirm('确认撤回该研发 BOM 的审批吗？')
-    await RdBomApi.cancelRdBom(id)
+    // 撤回原因后端必填：弹窗强制填写，取消/留空均中止
+    const { value } = await message.prompt(
+      '确认撤回该研发 BOM 的审批吗？撤回后单据回退为草稿，可修改后重新提交。',
+      '填写撤回原因'
+    )
+    if (!value || !String(value).trim()) {
+      message.warning('请填写撤回原因')
+      return
+    }
+    await RdBomApi.cancelRdBom(id, String(value).trim())
     message.success('撤回成功')
     await getList()
   } catch {

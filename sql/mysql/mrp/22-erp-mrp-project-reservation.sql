@@ -7,7 +7,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @add_purchase_item_project_id = (
   SELECT IF(

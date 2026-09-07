@@ -42,7 +42,8 @@ class ErpProductionIssueServiceImplTest {
 
         setField(service, "productionOrderService", createProxy(ErpProductionOrderService.class, (methodName, args) -> {
             if ("getProductionOrder".equals(methodName)) {
-                return new ErpProductionOrderDO().setId(1L).setOrderNo("SCGD202604280001");
+                // 领料主事务要求工单已下达（status >= 10），夹具对齐该前置条件
+                return new ErpProductionOrderDO().setId(1L).setOrderNo("SCGD202604280001").setStatus(10);
             }
             return null;
         }));
@@ -137,6 +138,9 @@ class ErpProductionIssueServiceImplTest {
                     }
                     return null;
                 }));
+        // afterCommit 在无事务环境下立即执行，需注入 no-op 的可用库存扣减服务
+        setField(service, "iqcStockService", createProxyByName(
+                "cn.weitee.erp.module.erp.service.mrp.ErpProductionIqcStockService", (methodName, args) -> null));
 
         Long issueId = service.createProductionIssue(new ErpProductionIssueCreateReqVO()
                 .setProductionOrderId(1L)

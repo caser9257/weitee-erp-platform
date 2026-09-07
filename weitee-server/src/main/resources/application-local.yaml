@@ -2,13 +2,15 @@ server:
   port: 48080
 
 --- #################### DRM 文件保护配置 ####################
+# 本地默认对接 WSL 中的 DRM 适配器（weitee-drm-adapter:mono-local-v9，127.0.0.1:8081），
+# 环境变量可覆盖；适配器启动方式见 tools/drm-adapter-mono/README.md
 drm:
-  enabled: ${DRM_ENABLED:false}
-  service-url: ${DRM_SERVICE_URL:}
+  enabled: ${DRM_ENABLED:true}
+  service-url: ${DRM_SERVICE_URL:http://127.0.0.1:8081}
   detect-path: ${DRM_DETECT_PATH:/detect}
   decrypt-path: ${DRM_DECRYPT_PATH:/decrypt}
   encrypt-path: ${DRM_ENCRYPT_PATH:/encrypt}
-  auth-token: ${DRM_AUTH_TOKEN:}
+  auth-token: ${DRM_AUTH_TOKEN:local-drm-token-2026}
   connect-timeout: ${DRM_CONNECT_TIMEOUT:3000}
   read-timeout: ${DRM_READ_TIMEOUT:60000}
   max-file-size: ${DRM_MAX_FILE_SIZE:524288000}

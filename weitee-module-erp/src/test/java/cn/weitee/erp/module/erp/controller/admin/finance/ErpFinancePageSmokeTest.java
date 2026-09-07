@@ -300,7 +300,7 @@ class ErpFinancePageSmokeTest {
                         ErpApEstimateDO estimate = new ErpApEstimateDO().setId(1L).setEstimateNo("YS202605060001")
                                 .setSupplierId(11L).setAccountId(21L)
                                 .setSourceBizType(100).setSourceBizId(1001L);
-                        estimate.setCreator("tester");
+                        estimate.setCreator("codex");
                         return new PageResult<>(List.of(estimate), 1L);
                     }
                     if ("getApEstimateItemListByEstimateIds".equals(method.getName())) {

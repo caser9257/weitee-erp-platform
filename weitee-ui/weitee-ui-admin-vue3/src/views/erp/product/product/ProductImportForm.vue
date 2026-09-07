@@ -185,20 +185,41 @@ const open = async () => {
 defineExpose({ open })
 
 /** 提交表单 */
-const submitFileForm = () => {
+const submitFileForm = async () => {
   if (!hasSelectedFile.value) {
     message.error('请上传文件')
     return
   }
-  uploadHeaders.value = buildUploadHeaders()
+  const file = fileList.value[0]?.raw
+  if (!file) {
+    message.error('请上传文件')
+    return
+  }
   uploadLoading.value = true
-  uploadRef.value?.submit()
+  try {
+    // 大文件导入（含 DRM 解密 + 万级行解析）耗时可达数分钟：
+    // el-upload 直传经 Vite 代理长响应会被掐断且无法控制超时，改用 axios 上传并显式放宽超时
+    const response = await request.upload({
+      url: importUrl.value,
+      timeout: 300000,
+      data: { file }
+    })
+    submitFormSuccess(response)
+  } catch (e: any) {
+    const msg = e?.msg || e?.message
+    if (msg) {
+      message.error(msg)
+    } else {
+      message.error('上传失败，请您重新上传！')
+    }
+    uploadLoading.value = false
+  }
 }
 
 const emit = defineEmits(['success'])
 
-/** 文件上传成功 */
-const submitFormSuccess: UploadProps['onSuccess'] = (response: any) => {
+/** 文件上传成功（兼容 el-upload onSuccess 与 axios 上传两种入口） */
+const submitFormSuccess = (response: any) => {
   uploadLoading.value = false
   if (response.code !== 0) {
     message.error(response.msg || '导入失败，请稍后重试')

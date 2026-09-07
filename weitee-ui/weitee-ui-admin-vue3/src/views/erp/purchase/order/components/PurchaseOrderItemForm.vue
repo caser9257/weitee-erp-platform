@@ -114,20 +114,11 @@
           <template #default="{ row, $index }">
             <div class="product-cell">
               <el-form-item :prop="`${$index}.productId`" :rules="formRules.productId" class="mb-0px!">
-                <el-select
+                <ProductRemoteSelect
                   v-model="row.productId"
-                  clearable
-                  filterable
                   placeholder="请选择产品"
-                  @change="onChangeProduct($event, row, $index)"
-                >
-                  <el-option
-                    v-for="item in productList"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.id"
-                  />
-                </el-select>
+                  @select="onChangeProduct($event?.id, row, $index, $event)"
+                />
               </el-form-item>
               <div class="product-sub-row">
                 <el-select
@@ -144,7 +135,18 @@
                     :value="item.id"
                   />
                 </el-select>
-                <span class="product-meta">{{ row.productUnitName || '-' }}</span>
+                <el-select
+                  v-model="row.productUnitId"
+                  placeholder="单位"
+                  class="unit-select"
+                >
+                  <el-option
+                    v-for="unit in getUnitFamilyOptions(row)"
+                    :key="unit.id"
+                    :label="unit.name"
+                    :value="unit.id"
+                  />
+                </el-select>
                 <span class="product-meta">库存 {{ formatCountValue(row.stockCount) }}</span>
               </div>
               <div v-if="row.pricingSourceText || row.pricingHint" class="pricing-row">
@@ -175,12 +177,15 @@
               <el-input-number
                 v-model="row.count"
                 controls-position="right"
-                :min="getQuantityStep(row.productId)"
-                :step="getQuantityStep(row.productId)"
-                :precision="getQuantityPrecision(row.productId)"
+                :min="getQuantityStep(row)"
+                :step="getQuantityStep(row)"
+                :precision="getQuantityPrecision(row)"
                 class="!w-100% numeric-input"
               />
             </el-form-item>
+            <div v-if="isRowAuxiliaryUnit(row)" class="unit-convert-tip">
+              ≈ {{ rowBaseCountText(row) }} {{ rowBaseUnitName(row) }}
+            </div>
           </template>
         </el-table-column>
 
@@ -267,7 +272,7 @@
 
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import type { ProductVO } from '@/api/erp/product/product'
 import { BomApi, BomPricingPreviewVO } from '@/api/erp/mrp/bom'
 import { ProjectApi, ProjectSimpleVO } from '@/api/erp/project'
 import { StockApi } from '@/api/erp/stock/stock'
@@ -280,8 +285,18 @@ import {
 } from '@/utils'
 import {
   getProductQuantityPrecision,
-  getProductQuantityStep
+  normalizeQuantityPrecision
 } from '@/utils/erpQuantityPrecision'
+import {
+  loadProductUnits,
+  getUnitFamily,
+  getUnitQuantityPrecision,
+  getUnitName,
+  resolveBaseUnitId,
+  toBaseCount,
+  isAuxiliaryUnit
+} from '@/utils/erpUnitConversion'
+import type { ProductUnitVO } from '@/api/erp/product/unit'
 
 const props = defineProps<{
   items: any[] | undefined
@@ -332,6 +347,7 @@ const formRules = reactive({
 })
 const formRef = ref()
 const productList = ref<ProductVO[]>([])
+const unitList = ref<ProductUnitVO[]>([])
 const projectList = ref<ProjectSimpleVO[]>([])
 const bomPreviewEnabled = ref(true)
 
@@ -343,12 +359,34 @@ const formatPriceValue = (value?: number | string | null) => {
   return erpPriceInputFormatter(Number(value || 0))
 }
 
-const getQuantityPrecision = (productId?: number) => {
-  return getProductQuantityPrecision(productList.value, productId)
+const getQuantityPrecision = (row: PurchaseOrderItemFormRow) => {
+  const unitPrecision = getUnitQuantityPrecision(unitList.value, row.productUnitId)
+  if (unitPrecision != null) {
+    return normalizeQuantityPrecision(unitPrecision)
+  }
+  return getProductQuantityPrecision(productList.value, row.productId)
 }
 
-const getQuantityStep = (productId?: number) => {
-  return getProductQuantityStep(productList.value, productId)
+const getQuantityStep = (row: PurchaseOrderItemFormRow) => {
+  const precision = getQuantityPrecision(row)
+  return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+}
+
+/** 当前行可选单位族（产品基本单位 + 辅助单位） */
+const getUnitFamilyOptions = (row: PurchaseOrderItemFormRow) =>
+  getUnitFamily(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const isRowAuxiliaryUnit = (row: PurchaseOrderItemFormRow) =>
+  isAuxiliaryUnit(unitList.value, row.productUnitId)
+
+const rowBaseUnitName = (row: PurchaseOrderItemFormRow) =>
+  getUnitName(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const rowBaseCountText = (row: PurchaseOrderItemFormRow) => {
+  const baseCount = toBaseCount(unitList.value, row.productUnitId, row.count)
+  return baseCount == null
+    ? '-'
+    : Number(baseCount).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
 }
 
 const formatDateValue = (value?: string | Date | null) => {
@@ -561,9 +599,13 @@ const clearRowValidate = async (rowIndex: number, fields: string[]) => {
 const onChangeProduct = async (
   productId: number | undefined,
   row: PurchaseOrderItemFormRow,
-  rowIndex: number
+  rowIndex: number,
+  selectedProduct?: ProductVO | null
 ) => {
-  const product = productList.value.find((item) => item.id === productId)
+  if (selectedProduct) {
+    productList.value = [...productList.value.filter((item) => item.id !== selectedProduct.id), selectedProduct]
+  }
+  const product = selectedProduct || productList.value.find((item) => item.id === productId)
   if (!product) {
     row.productUnitName = undefined
     row.productUnitId = undefined
@@ -698,8 +740,12 @@ const clearValidate = () => {
 defineExpose({ validate, clearValidate })
 
 onMounted(async () => {
-  productList.value = await ProductApi.getProductSimpleList()
-  projectList.value = await ProjectApi.getProjectSimpleList()
+  const [projects, units] = await Promise.all([
+    ProjectApi.getProjectSimpleList(),
+    loadProductUnits()
+  ])
+  projectList.value = projects
+  unitList.value = units
   if (formData.value.length === 0) {
     handleAdd()
   }
@@ -750,6 +796,18 @@ onMounted(async () => {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 18px;
+}
+
+.unit-select {
+  width: 88px;
+}
+
+.unit-convert-tip {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: right;
+  color: var(--erp-slate-400);
 }
 
 .pricing-row {

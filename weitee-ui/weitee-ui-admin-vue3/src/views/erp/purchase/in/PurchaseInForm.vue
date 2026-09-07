@@ -222,6 +222,7 @@
   />
 </template>
 <script setup lang="ts">
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import { PurchaseInApi, PurchaseInVO } from '@/api/erp/purchase/in'
 import PurchaseInItemForm from './components/PurchaseInItemForm.vue'
 import { AccountApi, AccountVO } from '@/api/erp/finance/account'
@@ -327,6 +328,7 @@ const open = async (type: string, id?: number, purchaseOrderId?: number) => {
     formLoading.value = true
     try {
       formData.value = await PurchaseInApi.getPurchaseIn(id)
+      await normalizeItemsForUnitInput(formData.value.items)
     } finally {
       formLoading.value = false
     }

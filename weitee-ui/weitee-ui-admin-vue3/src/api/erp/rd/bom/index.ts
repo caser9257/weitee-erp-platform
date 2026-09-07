@@ -2,9 +2,9 @@ import request from '@/config/axios'
 
 export interface RdBomItemVO {
   id?: number
-  itemNo?: number
   materialId: number
   materialName?: string
+  materialStandard?: string
   referenceDesignator?: string
   position?: string
   materialType?: number
@@ -31,8 +31,8 @@ export interface RdBomItemSubstituteVO {
 
 export interface RdBomItemSaveReqVO {
   id?: number
-  itemNo?: number
   materialId?: number
+  materialStandard?: string
   referenceDesignator?: string
   position?: string
   materialType?: number
@@ -102,7 +102,7 @@ export interface RdBomImportFailDetailVO {
   rowNumber?: number
   materialCode?: string
   reason?: string
-  /** MISSING_MATERIAL / MATERIAL_NOT_APPROVED / MATERIAL_DISABLED / FORMAT_ERROR */
+  /** MISSING_MATERIAL / MATERIAL_NOT_APPROVED / MATERIAL_DISABLED / CADENCE_DATA_INCOMPLETE / FORMAT_ERROR */
   issueType?: string
 }
 
@@ -135,6 +135,32 @@ export interface RdBomPrecheckRowIssueVO {
   rowNumber?: number
   materialCode?: string
   reason?: string
+  /** FORMAT_ERROR / CADENCE_DATA_INCOMPLETE / SPEC_MISMATCH */
+  issueType?: string
+}
+
+export interface RdBomPrecheckDuplicateMaterialCodeVO {
+  materialCode?: string
+  rowNumbers?: number[]
+}
+
+export interface RdBomDuplicateVO {
+  id?: number
+  bomCode?: string
+  version?: string
+  status?: number
+}
+
+export interface RdBomBaselineDiffMissingItemVO {
+  materialCode?: string
+  productName?: string
+}
+
+/** 较该成品最新版 BOM 缺失的物料对比；接口返回 null 表示未对比（首次导入/无法确定成品） */
+export interface RdBomBaselineDiffVO {
+  baselineBomId?: number
+  baselineVersion?: string
+  missingItems?: RdBomBaselineDiffMissingItemVO[]
 }
 
 export interface RdBomPrecheckResultVO {
@@ -144,9 +170,14 @@ export interface RdBomPrecheckResultVO {
   issueCount?: number
   readyToImport?: boolean
   detectedHeader?: RdBomPrecheckDetectedHeaderVO
+  baselineDiff?: RdBomBaselineDiffVO | null
   missingMaterials?: RdBomPrecheckMissingMaterialVO[]
   unapprovedMaterials?: RdBomPrecheckUnapprovedMaterialVO[]
   rowIssues?: RdBomPrecheckRowIssueVO[]
+  /** 重复产品编码提醒，仅提示核对，不阻断导入 */
+  duplicateMaterialCodes?: RdBomPrecheckDuplicateMaterialCodeVO[]
+  /** 已存在的同身份研发 BOM，存在时阻断导入 */
+  duplicateBom?: RdBomDuplicateVO
 }
 
 export interface RdBomImportResultVO {
@@ -155,7 +186,12 @@ export interface RdBomImportResultVO {
   successCount?: number
   failCount?: number
   failDetails?: RdBomImportFailDetailVO[]
+  /** 重复产品编码提醒，仅提示核对，不阻断导入 */
+  duplicateMaterialCodes?: RdBomPrecheckDuplicateMaterialCodeVO[]
+  /** 已存在的同身份研发 BOM，导入被阻断时返回 */
+  duplicateBom?: RdBomDuplicateVO
   validationIssues?: RdBomIntegrityIssueVO[]
+  baselineDiff?: RdBomBaselineDiffVO | null
 }
 
 export interface RdBomTreeRespVO {
@@ -309,16 +345,20 @@ export const RdBomApi = {
   },
 
   precheckRdBomImport: async (
-    params: { productId?: number; bomCode?: string; version?: string; remark?: string },
+    params: { productId?: number; bomCode?: string; remark?: string },
     file: File
   ) => {
     const data = new FormData()
     data.append('file', file)
     if (params.productId != null) data.append('productId', String(params.productId))
     if (params.bomCode) data.append('bomCode', params.bomCode)
-    if (params.version) data.append('version', params.version)
     if (params.remark) data.append('remark', params.remark)
-    return await request.upload<RdBomPrecheckResultVO>({ url: '/erp/rd-bom/import/precheck', data })
+    // request.upload 返回 CommonResult 整包（与 get/post 不同，未解 .data），此处显式解包取 VO
+    const res = await request.upload<{ data: RdBomPrecheckResultVO }>({
+      url: '/erp/rd-bom/import/precheck',
+      data
+    })
+    return res.data
   },
 
   getRdBomTree: async (params: { bomId?: number; productId?: number }) => {

@@ -26,7 +26,7 @@ INSERT INTO system_menu
 (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT 920580, 'BPM Task Query', 'bpm:task:query', 3, 1, @bpm_menu_parent_id,
-       '', '', '', '', 0, b'1', b'1', b'1', 'tester', NOW(), 'tester', NOW(), b'0'
+       '', '', '', '', 0, b'1', b'1', b'1', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @bpm_menu_parent_id IS NOT NULL
   AND @bpm_task_query_menu_id IS NULL
 ON DUPLICATE KEY UPDATE
@@ -35,7 +35,7 @@ ON DUPLICATE KEY UPDATE
   parent_id = VALUES(parent_id),
   status = VALUES(status),
   deleted = b'0',
-  updater = 'tester',
+  updater = 'codex',
   update_time = NOW();
 
 SET @bpm_task_update_menu_id := (
@@ -51,7 +51,7 @@ INSERT INTO system_menu
 (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
  status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT 920581, 'BPM Task Update', 'bpm:task:update', 3, 2, @bpm_menu_parent_id,
-       '', '', '', '', 0, b'1', b'1', b'1', 'tester', NOW(), 'tester', NOW(), b'0'
+       '', '', '', '', 0, b'1', b'1', b'1', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @bpm_menu_parent_id IS NOT NULL
   AND @bpm_task_update_menu_id IS NULL
 ON DUPLICATE KEY UPDATE
@@ -60,7 +60,7 @@ ON DUPLICATE KEY UPDATE
   parent_id = VALUES(parent_id),
   status = VALUES(status),
   deleted = b'0',
-  updater = 'tester',
+  updater = 'codex',
   update_time = NOW();
 
 SET @bpm_task_query_menu_id := (

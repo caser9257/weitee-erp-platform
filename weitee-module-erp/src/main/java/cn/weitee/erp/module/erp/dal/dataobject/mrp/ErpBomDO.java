@@ -41,5 +41,9 @@ public class ErpBomDO extends BaseDO {
     private Long sourceRdBomId;
 
     private String remark;
+    /**
+     * 停用审批在途流程实例 ID；审批中非空，通过后落 DISABLE 并清空
+     */
+    private String processInstanceId;
 
 }

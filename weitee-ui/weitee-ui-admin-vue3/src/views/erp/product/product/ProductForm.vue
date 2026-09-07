@@ -15,7 +15,7 @@
       :model="formData"
       :rules="formRules"
       label-width="100px"
-      v-loading="formLoading"
+      v-loading="loadingProduct"
       class="product-form"
     >
       <el-divider content-position="left">基础信息</el-divider>
@@ -28,6 +28,10 @@
         <el-col :xs="24" :sm="12" :xl="8">
           <el-form-item label="物料编码" prop="materialCode">
             <el-input v-model="formData.materialCode" placeholder="请输入物料编码" class="w-full" />
+            <span
+              v-if="displayPrevMaterialCode"
+              class="font-mono text-xs text-slate-400"
+            >旧编码：{{ displayPrevMaterialCode }}</span>
           </el-form-item>
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
@@ -52,7 +56,7 @@
           <el-form-item label="单位" prop="unitId">
             <el-select v-model="formData.unitId" clearable placeholder="请选择单位" class="w-full">
               <el-option
-                v-for="unit in unitList"
+                v-for="unit in baseUnitList"
                 :key="unit.id"
                 :label="unit.name"
                 :value="unit.id"
@@ -62,7 +66,12 @@
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
           <el-form-item label="规格" prop="standard">
-            <el-input v-model="formData.standard" placeholder="请输入规格" class="w-full" />
+            <el-input
+              v-model="formData.standard"
+              placeholder="请输入规格"
+              class="w-full"
+              :disabled="frozenFieldsLocked"
+            />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
@@ -139,6 +148,106 @@
         </el-col>
       </el-row>
 
+      <template v-if="canManageCadence">
+        <el-divider content-position="left">PCB设计信息</el-divider>
+        <el-row :gutter="20">
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="PCB 元器件" prop="pcbComponent">
+            <el-switch v-model="formData.pcbComponent" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="原理图库符号" prop="schematicPart">
+            <el-input v-model="formData.schematicPart" placeholder="请输入原理图库符号" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="PCB封装" prop="pcbFootprint">
+            <el-input v-model="formData.pcbFootprint" placeholder="请输入PCB封装" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="厂家型号" prop="manufacturerPartNumber">
+            <el-input v-model="formData.manufacturerPartNumber" placeholder="请输入厂家型号" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="生命周期" prop="lifecycle">
+            <el-input v-model="formData.lifecycle" placeholder="请输入生命周期" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="工作温度" prop="operatingTemperature">
+            <el-input v-model="formData.operatingTemperature" placeholder="请输入工作温度" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="安装类型" prop="mountingType">
+            <el-input v-model="formData.mountingType" placeholder="请输入安装类型" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="三维尺寸" prop="dimension">
+            <el-input v-model="formData.dimension" placeholder="请输入三维尺寸" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="3D模型" prop="threeDLib">
+            <el-input v-model="formData.threeDLib" placeholder="请输入3D模型" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="进口/替代物料" prop="importedOrReplacement">
+            <el-input
+              v-model="formData.importedOrReplacement"
+              placeholder="请输入进口/替代物料"
+              class="w-full"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="是否优选" prop="preferredPart">
+            <el-switch v-model="formData.preferredPart" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="空置标志" prop="dnp">
+            <el-switch v-model="formData.dnp" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="数据手册" prop="datasheet">
+            <el-input v-model="formData.datasheet" placeholder="请输入数据手册地址或编号" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24">
+          <el-form-item label="关键参数描述" prop="cadenceDescription">
+            <el-input
+              v-model="formData.cadenceDescription"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入关键参数描述"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="参数描述2" prop="secondDescription">
+            <el-input v-model="formData.secondDescription" placeholder="请输入参数描述2" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="参数描述3" prop="thirdDescription">
+            <el-input v-model="formData.thirdDescription" placeholder="请输入参数描述3" class="w-full" />
+          </el-form-item>
+        </el-col>
+        <el-col :xs="24" :sm="12" :xl="8">
+          <el-form-item label="参数描述4" prop="fourthDescription">
+            <el-input v-model="formData.fourthDescription" placeholder="请输入参数描述4" class="w-full" />
+          </el-form-item>
+        </el-col>
+        </el-row>
+      </template>
+
       <el-divider content-position="left">财务与供需</el-divider>
       <el-row :gutter="20">
         <el-col :xs="24" :sm="12" :xl="8">
@@ -198,20 +307,7 @@
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
           <el-form-item label="默认供应商" prop="defaultSupplierId">
-            <el-select
-              v-model="formData.defaultSupplierId"
-              placeholder="请选择默认供应商"
-              clearable
-              filterable
-              class="w-full"
-            >
-              <el-option
-                v-for="item in supplierList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            <SupplierRemoteSelect v-model="formData.defaultSupplierId" placeholder="输入至少 1 个字搜索供应商" />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :sm="12" :xl="8">
@@ -232,7 +328,7 @@
       </el-row>
     </el-form>
     <template #footer>
-      <el-button type="primary" :disabled="formLoading" @click="submitForm"> 确定 </el-button>
+      <el-button type="primary" :loading="submitting" :disabled="!canSubmit" @click="submitForm"> 确定 </el-button>
       <el-button @click="dialogVisible = false">取消</el-button>
     </template>
   </Dialog>
@@ -241,9 +337,10 @@
 <script setup lang="ts">
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { ProductCategoryApi, ProductCategoryVO } from '@/api/erp/product/category'
-import { ProductUnitApi, ProductUnitVO } from '@/api/erp/product/unit'
-import { SupplierApi, SupplierVO } from '@/api/erp/purchase/supplier'
+import { ProductUnitApi, ProductUnitTypeEnum, ProductUnitVO } from '@/api/erp/product/unit'
+import SupplierRemoteSelect from '@/components/SupplierRemoteSelect.vue'
 import { CommonStatusEnum } from '@/utils/constants'
+import { useUserStore } from '@/store/modules/user'
 import { defaultProps, handleTree } from '@/utils/tree'
 import { DICT_TYPE, getIntDictOptions, getStrDictOptions } from '@/utils/dict'
 
@@ -251,15 +348,27 @@ defineOptions({ name: 'ProductForm' })
 
 const { t } = useI18n()
 const message = useMessage()
+const userStore = useUserStore()
+const CADENCE_RD_DEPT_ID = 103
+const CADENCE_FIELDS = [
+  'pcbComponent', 'schematicPart', 'pcbFootprint', 'cadenceDescription',
+  'manufacturerPartNumber', 'dimension', 'threeDLib', 'datasheet', 'lifecycle', 'preferredPart',
+  'operatingTemperature', 'mountingType', 'dnp', 'importedOrReplacement',
+  'secondDescription', 'thirdDescription', 'fourthDescription'
+] as const satisfies readonly (keyof ProductVO)[]
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
-const formLoading = ref(false)
+const loadingProduct = ref(false)
+const submitting = ref(false)
 const formType = ref('')
 const formRef = ref()
 const categoryList = ref<ProductCategoryVO[]>([])
 const unitList = ref<ProductUnitVO[]>([])
-const supplierList = ref<SupplierVO[]>([])
+// 产品记账单位只能是基本单位，辅助单位仅用于单据录入换算
+const baseUnitList = computed(() =>
+  unitList.value.filter((unit) => unit.unitType !== ProductUnitTypeEnum.AUXILIARY)
+)
 const statusOptions = computed(() => getIntDictOptions(DICT_TYPE.COMMON_STATUS))
 const supplyTypeOptions = computed(() => getStrDictOptions(DICT_TYPE.ERP_SUPPLY_TYPE))
 
@@ -267,6 +376,7 @@ const createDefaultFormData = () => ({
   id: undefined,
   name: undefined,
   materialCode: undefined,
+  prevMaterialCode: undefined,
   barCode: undefined,
   categoryId: undefined,
   unitId: undefined,
@@ -288,10 +398,43 @@ const createDefaultFormData = () => ({
   supplyType: undefined,
   defaultSupplierId: undefined,
   defaultRouteId: undefined,
-  assetFlag: false
+  assetFlag: false,
+  pcbComponent: false,
+  schematicPart: undefined,
+  pcbFootprint: undefined,
+  cadenceDescription: undefined,
+  manufacturerPartNumber: undefined,
+  dimension: undefined,
+  threeDLib: undefined,
+  datasheet: undefined,
+  lifecycle: undefined,
+  preferredPart: undefined,
+  operatingTemperature: undefined,
+  mountingType: undefined,
+  dnp: undefined,
+  importedOrReplacement: undefined,
+  secondDescription: undefined,
+  thirdDescription: undefined,
+  fourthDescription: undefined
 })
 
 const formData = ref(createDefaultFormData())
+// 被 BOM 引用的物料：规格冻结（后端同步硬校验，此处仅联动禁用）；
+// 物料编码已放开（编码沿革机制：改码写沿革表，历史单据/导入按旧码兜底命中）
+const frozenFieldsLocked = computed(
+  () => formType.value === 'update' && Boolean((formData.value as unknown as ProductVO).referencedByBom)
+)
+// 编辑回显：有改码历史时展示旧编码（业务事实）
+const displayPrevMaterialCode = computed(() => {
+  const prev = (formData.value as unknown as ProductVO).prevMaterialCode
+  return formType.value === 'update' && prev ? prev : ''
+})
+// 编辑已生效物料：提交即进入修改审批（后端 /update 统一入口内部分流）
+const isApprovedEdit = computed(
+  () => formType.value === 'update' && (formData.value as unknown as ProductVO).auditStatus === 20
+)
+const canManageCadence = computed(() => userStore.user.deptId === CADENCE_RD_DEPT_ID)
+const canSubmit = computed(() => !loadingProduct.value && !submitting.value)
 const formRules = reactive({
   name: [{ required: true, message: '产品名称不能为空', trigger: 'blur' }],
   barCode: [{ required: true, message: '产品条码不能为空', trigger: 'blur' }],
@@ -306,46 +449,62 @@ const open = async (type: string, id?: number) => {
   dialogTitle.value = t('action.' + type)
   resetForm()
   if (id) {
-    formLoading.value = true
+    loadingProduct.value = true
     try {
       formData.value = await ProductApi.getProduct(id)
     } finally {
-      formLoading.value = false
+      loadingProduct.value = false
     }
   }
   const categoryData = await ProductCategoryApi.getProductCategorySimpleList()
   categoryList.value = handleTree(categoryData, 'id', 'parentId')
   unitList.value = await ProductUnitApi.getProductUnitSimpleList()
-  supplierList.value = await SupplierApi.getSupplierSimpleList()
 }
 defineExpose({ open })
 
 const emit = defineEmits(['success'])
 const submitForm = async () => {
-  if (formLoading.value) {
+  if (!canSubmit.value) {
     return
   }
   await formRef.value.validate()
-  formLoading.value = true
+  submitting.value = true
   try {
-    const data = formData.value as unknown as ProductVO
+    const data = buildSubmitData()
     if (formType.value === 'create') {
       await ProductApi.createProduct(data)
       message.success(t('common.createSuccess'))
     } else {
       await ProductApi.updateProduct(data)
-      message.success(t('common.updateSuccess'))
+      if ((formData.value as unknown as ProductVO).auditStatus === 22) {
+        // 两段式编辑中：保存写暂存，主表保持基线；提交审批由「提交审批」按钮触发
+        message.success('修改已保存，提交审批后由负责人确认生效')
+      } else if (isApprovedEdit.value) {
+        message.success('修改申请已提交，审批通过前物料保持现值')
+      } else {
+        message.success(t('common.updateSuccess'))
+      }
     }
     dialogVisible.value = false
     emit('success')
   } finally {
-    formLoading.value = false
+    submitting.value = false
   }
 }
 
 const resetForm = () => {
   formData.value = createDefaultFormData()
   formRef.value?.resetFields()
+}
+
+const buildSubmitData = () => {
+  const data = { ...formData.value } as ProductVO
+  if (!canManageCadence.value) {
+    CADENCE_FIELDS.forEach((field) => {
+      ;(data as Record<string, unknown>)[field] = undefined
+    })
+  }
+  return data
 }
 </script>
 

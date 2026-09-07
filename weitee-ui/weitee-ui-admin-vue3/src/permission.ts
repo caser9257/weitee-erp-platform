@@ -8,6 +8,7 @@ import { usePageLoading } from '@/hooks/web/usePageLoading'
 import { useDictStoreWithOut } from '@/store/modules/dict'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
+import { assertCriticalRoutesMounted } from '@/router/criticalRoutes'
 import { ElMessage } from 'element-plus'
 
 const { start, done } = useNProgress()
@@ -72,6 +73,10 @@ router.beforeEach(async (to, from, next) => {
           permissionStore.getAddRouters.forEach((route) => {
             router.addRoute(route as unknown as RouteRecordRaw)
           })
+          // 动态路由挂载完成后断言关键路由（dev）：以 router.getRoutes() 权威注册表为准
+          if (import.meta.env.DEV) {
+            assertCriticalRoutesMounted(router)
+          }
           const redirectPath = from.query.redirect || to.path
           const redirect = decodeURIComponent(redirectPath as string)
           const { paramsObject: query } = parseURL(redirect)

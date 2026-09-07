@@ -1,4 +1,10 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+# 基础镜像可参数化：内网/CI 环境经 docker.env 或 CI 变量指向可达的镜像源
+# （例：DOCKER_REGISTRY_MIRROR=dockerproxy.net 时取 dockerproxy.net/library/maven:...）
+ARG DOCKER_REGISTRY_MIRROR=docker.io
+ARG MAVEN_IMAGE=library/maven:3.9.9-eclipse-temurin-21
+ARG JRE_IMAGE=library/eclipse-temurin:21-jre
+
+FROM ${DOCKER_REGISTRY_MIRROR}/${MAVEN_IMAGE} AS builder
 
 WORKDIR /workspace
 
@@ -27,12 +33,13 @@ RUN mkdir -p /root/.m2 \
     '      <name>custom-mirror</name>' \
     "      <url>${MAVEN_MIRROR}</url>" \
     '      <mirrorOf>*</mirrorOf>' \
+    '      <blocked>false</blocked>' \
     '    </mirror>' \
     '  </mirrors>' \
     '</settings>' > /root/.m2/settings.xml \
     && mvn -s /root/.m2/settings.xml -pl weitee-server -am -Dmaven.test.skip=true package
 
-FROM eclipse-temurin:21-jre
+FROM ${DOCKER_REGISTRY_MIRROR}/${JRE_IMAGE}
 
 WORKDIR /app
 

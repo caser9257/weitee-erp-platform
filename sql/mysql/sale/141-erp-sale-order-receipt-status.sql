@@ -7,7 +7,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 -- receipt_status: 收款状态（0=未收款 1=部分收款 2=全额收款）
 SET @col_exists := (

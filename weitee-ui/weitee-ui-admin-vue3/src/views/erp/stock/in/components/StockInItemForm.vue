@@ -47,25 +47,23 @@
                 :rules="formRules.productId"
                 class="stock-in-item__form-item"
               >
-                <el-select
-                  v-model="row.productId"
-                  clearable
-                  filterable
-                  placeholder="请选择产品"
-                  @change="onChangeProduct($event, row)"
-                >
-                  <el-option
-                    v-for="item in productList"
-                    :key="item.id"
-                    :label="item.name"
-                    :value="item.id"
-                  />
-                </el-select>
+                <ProductRemoteSelect v-model="row.productId" placeholder="请选择产品" @select="onChangeProduct($event, row)" />
               </el-form-item>
               <div class="stock-in-item__meta">
                 <span class="stock-in-item__meta-item">库存 {{ formatCount(row.stockCount) }}</span>
                 <span class="stock-in-item__meta-item">条码 {{ row.productBarCode || '-' }}</span>
-                <span class="stock-in-item__meta-item">单位 {{ row.productUnitName || '-' }}</span>
+                <el-select
+                  v-model="row.productUnitId"
+                  placeholder="单位"
+                  class="stock-in-item__unit-select"
+                >
+                  <el-option
+                    v-for="unit in getUnitFamilyOptions(row)"
+                    :key="unit.id"
+                    :label="unit.name"
+                    :value="unit.id"
+                  />
+                </el-select>
               </div>
             </template>
           </el-table-column>
@@ -79,12 +77,15 @@
                 <el-input-number
                   v-model="row.count"
                   controls-position="right"
-                  :min="getQuantityStep(row.productId)"
-                  :step="getQuantityStep(row.productId)"
-                  :precision="getQuantityPrecision(row.productId)"
+                  :min="getQuantityStep(row)"
+                  :step="getQuantityStep(row)"
+                  :precision="getQuantityPrecision(row)"
                   class="stock-in-item__number-input"
                 />
               </el-form-item>
+              <div v-if="isRowAuxiliaryUnit(row)" class="unit-convert-tip">
+                ≈ {{ rowBaseCountText(row) }} {{ rowBaseUnitName(row) }}
+              </div>
             </template>
           </el-table-column>
           <el-table-column label="产品单价" min-width="140" align="right">
@@ -142,7 +143,20 @@
 
 <script setup lang="ts">
 import type { SummaryMethod } from 'element-plus'
-import { ProductApi, ProductVO } from '@/api/erp/product/product'
+import type { ProductVO } from '@/api/erp/product/product'
+import type { ProductUnitVO } from '@/api/erp/product/unit'
+import {
+  normalizeQuantityPrecision
+} from '@/utils/erpQuantityPrecision'
+import {
+  loadProductUnits,
+  getUnitFamily,
+  getUnitQuantityPrecision,
+  getUnitName,
+  resolveBaseUnitId,
+  toBaseCount,
+  isAuxiliaryUnit
+} from '@/utils/erpUnitConversion'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { StockApi } from '@/api/erp/stock/stock'
 import { erpPriceMultiply, getSumValue } from '@/utils'
@@ -152,6 +166,7 @@ type StockInItemRow = {
   warehouseId?: number
   productId?: number
   productUnitName?: string
+  productUnitId?: number
   productBarCode?: string
   productPrice?: number
   stockCount?: number
@@ -168,6 +183,7 @@ const props = defineProps<{
 const formData = ref<StockInItemRow[]>([])
 const formRef = ref()
 const productList = ref<ProductVO[]>([])
+const unitList = ref<ProductUnitVO[]>([])
 const warehouseList = ref<WarehouseVO[]>([])
 const defaultWarehouse = ref<WarehouseVO>()
 
@@ -237,6 +253,7 @@ const handleAdd = () => {
     warehouseId: defaultWarehouse.value?.id,
     productId: undefined,
     productUnitName: undefined,
+    productUnitId: undefined,
     productBarCode: undefined,
     productPrice: undefined,
     stockCount: undefined,
@@ -263,26 +280,53 @@ const onChangeWarehouse = async (_warehouseId: number | undefined, row: StockInI
   await setStockCount(row)
 }
 
-const onChangeProduct = async (productId: number | undefined, row: StockInItemRow) => {
-  const product = productList.value.find((item) => item.id === productId)
+const onChangeProduct = async (product: ProductVO | null, row: StockInItemRow) => {
+  if (product) {
+    productList.value = [...productList.value.filter((item) => item.id !== product.id), product]
+  }
   if (product) {
     row.productUnitName = product.unitName
+    row.productUnitId = product.unitId
     row.productBarCode = product.barCode
     row.productPrice = product.minPrice
   } else {
     row.productUnitName = undefined
+    row.productUnitId = undefined
     row.productBarCode = undefined
     row.productPrice = undefined
   }
   await setStockCount(row)
 }
 
-const getQuantityPrecision = (productId?: number) => {
-  const precision = productList.value.find((item) => item.id === productId)?.quantityPrecision
+const getQuantityPrecision = (row: any) => {
+  const unitPrecision = getUnitQuantityPrecision(unitList.value, row.productUnitId)
+  if (unitPrecision != null) {
+    return normalizeQuantityPrecision(unitPrecision)
+  }
+  const precision = productList.value.find((item) => item.id === row.productId)?.quantityPrecision
   return Number.isInteger(precision) && precision! >= 0 && precision! <= 6 ? precision! : 3
 }
 
-const getQuantityStep = (productId?: number) => 10 ** -getQuantityPrecision(productId)
+const getQuantityStep = (row: any) => {
+  const precision = getQuantityPrecision(row)
+  return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+}
+
+/** 当前行可选单位族（产品基本单位 + 辅助单位） */
+const getUnitFamilyOptions = (row: any) =>
+  getUnitFamily(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const isRowAuxiliaryUnit = (row: any) => isAuxiliaryUnit(unitList.value, row.productUnitId)
+
+const rowBaseUnitName = (row: any) =>
+  getUnitName(unitList.value, resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const rowBaseCountText = (row: any) => {
+  const baseCount = toBaseCount(unitList.value, row.productUnitId, row.count)
+  return baseCount == null
+    ? '-'
+    : Number(baseCount).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
+}
 
 const validate = () => formRef.value?.validate()
 
@@ -293,12 +337,12 @@ const clearValidate = () => {
 defineExpose({ validate, clearValidate })
 
 onMounted(async () => {
-  const [products, warehouses] = await Promise.all([
-    ProductApi.getProductSimpleList(),
-    WarehouseApi.getWarehouseSimpleList()
+  const [warehouses, units] = await Promise.all([
+    WarehouseApi.getWarehouseSimpleList(),
+    loadProductUnits()
   ])
-  productList.value = products
   warehouseList.value = warehouses
+  unitList.value = units
   defaultWarehouse.value = warehouseList.value.find((item) => item.defaultStatus)
   if (formData.value.length === 0) {
     handleAdd()
@@ -334,6 +378,12 @@ onMounted(async () => {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+
+
+.stock-in-item__unit-select {
+  width: 88px;
+  vertical-align: middle;
 }
 
 .stock-in-item__meta-item {
@@ -376,5 +426,15 @@ onMounted(async () => {
 .stock-in-item__actions {
   display: flex;
   justify-content: center;
+}
+</style>
+
+<style scoped>
+.unit-convert-tip {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: right;
+  color: var(--erp-slate-400);
 }
 </style>

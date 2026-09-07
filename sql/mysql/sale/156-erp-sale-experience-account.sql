@@ -18,7 +18,7 @@ INSERT INTO system_users (username, password, nickname, remark, dept_id, post_id
 SELECT 'sale01', @demo_password,
        _utf8mb4 0xE99480E594AEE6A8A1E59D97E4BD93E9AA8CE8B4A6E58FB7,
        _utf8mb4 0xE794A8E4BA8EE99480E594AEE6A8A1E59D97E4B8BBE6B581E7A88BE5928CE5BC82E5B8B8E6B581E7A88BE4BD93E9AA8C,
-       910100, '[]', '', '', 0, '', 0, 'tester', NOW(), 'tester', NOW(), b'0'
+       910100, '[]', '', '', 0, '', 0, 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE NOT EXISTS (SELECT 1 FROM system_users WHERE username = 'sale01' AND deleted = b'0');
 
 UPDATE system_users
@@ -28,7 +28,7 @@ SET password = @demo_password,
     dept_id = 910100,
     post_ids = '[]',
     status = 0,
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE username = 'sale01' AND deleted = b'0';
 
@@ -122,7 +122,7 @@ INSERT INTO system_role (name, code, sort, data_scope, data_scope_dept_ids, stat
 SELECT _utf8mb4 0xE99480E594AEE6A8A1E59D97E4BD93E9AA8CE8A792E889B2,
        'erp_sale_experience', 120, 1, '', 0, 2,
        _utf8mb4 0xE794A8E4BA8EE99480E594AEE6A8A1E59D97E4BD93E9AA8C,
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE NOT EXISTS (SELECT 1 FROM system_role WHERE code = 'erp_sale_experience' AND deleted = b'0');
 
 SET @experience_sale_role_id := (
@@ -142,7 +142,7 @@ WHERE role_menu.role_id = @experience_sale_role_id
   AND allowed.menu_id IS NULL;
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT @experience_sale_role_id, allowed.menu_id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT @experience_sale_role_id, allowed.menu_id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM tmp_sale_experience_menu_ids allowed
 WHERE NOT EXISTS (
     SELECT 1 FROM system_role_menu role_menu
@@ -155,7 +155,7 @@ DROP TEMPORARY TABLE IF EXISTS tmp_sale_experience_menu_ids;
 
 -- ========== 7. 绑定 sale01 -> 销售体验角色 ==========
 INSERT INTO system_user_role (user_id, role_id, creator, create_time, updater, update_time, deleted)
-SELECT u.id, @experience_sale_role_id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT u.id, @experience_sale_role_id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_users u
 WHERE u.username = 'sale01'
   AND u.deleted = b'0'

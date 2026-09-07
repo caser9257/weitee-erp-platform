@@ -21,6 +21,8 @@ public interface ErpProductUnitMapper extends BaseMapperX<ErpProductUnitDO> {
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpProductUnitDO>()
                 .likeIfPresent(ErpProductUnitDO::getName, reqVO.getName())
                 .eqIfPresent(ErpProductUnitDO::getStatus, reqVO.getStatus())
+                .eqIfPresent(ErpProductUnitDO::getUnitType, reqVO.getUnitType())
+                .eqIfPresent(ErpProductUnitDO::getBaseUnitId, reqVO.getBaseUnitId())
                 .orderByDesc(ErpProductUnitDO::getId));
     }
 
@@ -28,8 +30,28 @@ public interface ErpProductUnitMapper extends BaseMapperX<ErpProductUnitDO> {
         return selectOne(ErpProductUnitDO::getName, name);
     }
 
+    default ErpProductUnitDO selectByNameAndUnitType(String name, Integer unitType) {
+        return selectOne(new LambdaQueryWrapperX<ErpProductUnitDO>()
+                .eq(ErpProductUnitDO::getName, name)
+                .eq(ErpProductUnitDO::getUnitType, unitType));
+    }
+
+    default ErpProductUnitDO selectByNameAndBaseUnitId(String name, Long baseUnitId) {
+        return selectOne(new LambdaQueryWrapperX<ErpProductUnitDO>()
+                .eq(ErpProductUnitDO::getName, name)
+                .eq(ErpProductUnitDO::getBaseUnitId, baseUnitId));
+    }
+
     default List<ErpProductUnitDO> selectListByStatus(Integer status) {
         return selectList(ErpProductUnitDO::getStatus, status);
+    }
+
+    default List<ErpProductUnitDO> selectListByBaseUnitId(Long baseUnitId) {
+        return selectList(ErpProductUnitDO::getBaseUnitId, baseUnitId);
+    }
+
+    default Long selectCountByBaseUnitId(Long baseUnitId) {
+        return selectCount(ErpProductUnitDO::getBaseUnitId, baseUnitId);
     }
 
 }

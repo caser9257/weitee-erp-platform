@@ -189,7 +189,13 @@ class ErpPurchaseInStockExecuteHelper {
         if (stock == null) {
             return;
         }
-        erpStockMapper.updateAvailableCountIncrement(stock.getId(), count, false);
+        // 可用库存唯一记账人：确认入库同步事务内 CAS 扣减式增加；
+        // CAS 不满足（available 被并发扣穿）必须抛异常整体回滚，禁止静默丢账
+        int updated = erpStockMapper.updateAvailableCountIncrement(stock.getId(), count, false);
+        if (updated == 0) {
+            throw exception(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.STOCK_COUNT_NEGATIVE,
+                    productId.toString(), "仓库" + warehouseId, stock.getAvailableCount(), count);
+        }
     }
 
     public void reverseExecutedStockRecords(ErpPurchaseInDO purchaseIn) {

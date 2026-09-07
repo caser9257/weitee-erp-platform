@@ -9,6 +9,7 @@ import cn.weitee.erp.module.erp.enums.ErpRdBomBpmConstants;
 import cn.weitee.erp.module.erp.enums.rd.ErpRdBomChangeType;
 import cn.weitee.erp.module.erp.enums.rd.ErpRdBomStatusEnum;
 import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_APPROVE_F
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_CANCEL_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_BPM_SUBMIT_FAIL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_VOID_LOCKED;
 
 @Service
@@ -49,11 +51,16 @@ public class ErpRdBomBpmServiceImpl implements ErpRdBomBpmService {
                 && StrUtil.isNotBlank(bom.getProcessInstanceId())) {
             throw exception(RD_BOM_BPM_SUBMIT_FAIL);
         }
-        // 事务内：只写本地为审批中
-        erpRdBomMapper.updateById(new ErpRdBomDO()
-                .setId(bomId)
-                .setStatus(ErpRdBomStatusEnum.PROCESS.getStatus())
-                .setProcessInstanceId(null));
+        // 事务内：CAS 写本地为审批中（WHERE status=读到的旧状态），
+        // 防御并发双击/重放穿透读-判-写窗口产生重复流程实例
+        int updated = erpRdBomMapper.update(null, new LambdaUpdateWrapper<ErpRdBomDO>()
+                .eq(ErpRdBomDO::getId, bomId)
+                .eq(ErpRdBomDO::getStatus, bom.getStatus())
+                .set(ErpRdBomDO::getStatus, ErpRdBomStatusEnum.PROCESS.getStatus())
+                .set(ErpRdBomDO::getProcessInstanceId, null));
+        if (updated == 0) {
+            throw exception(RD_BOM_STATUS_UPDATE_ILLEGAL);
+        }
         changeLogService.logChange(bomId, ErpRdBomChangeType.SUBMIT.getType(),
                 "提交审批，当前版本=" + bom.getVersion());
 
@@ -85,9 +92,11 @@ public class ErpRdBomBpmServiceImpl implements ErpRdBomBpmService {
             throw exception(RD_BOM_BPM_CANCEL_FAIL);
         }
         // 事务内仅校验，实际撤回在 afterCommit 中，终态由 ResultHandler 统一回写
+        // BPM 底层要求取消原因必填：入口兜底默认值，避免空原因导致撤回校验失败
+        String safeReason = StrUtil.isNotBlank(reason) ? reason : "发起人撤回";
         ErpTransactionUtils.afterCommit(() -> {
             try {
-                approvalRuntimeService.cancel(ErpRdBomBpmConstants.SCENE_CODE, bomId, userId, reason);
+                approvalRuntimeService.cancel(ErpRdBomBpmConstants.SCENE_CODE, bomId, userId, safeReason);
             } catch (Exception e) {
                 log.warn("[cancelRdBomApproval] BPM 撤回失败，bomId={}", bomId, e);
                 throw e;

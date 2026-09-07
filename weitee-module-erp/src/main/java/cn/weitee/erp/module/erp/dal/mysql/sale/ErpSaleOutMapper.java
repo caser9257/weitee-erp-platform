@@ -12,6 +12,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -60,6 +61,17 @@ public interface ErpSaleOutMapper extends BaseMapperX<ErpSaleOutDO> {
     default int updateByIdAndStatus(Long id, Integer status, ErpSaleOutDO updateObj) {
         return update(updateObj, new LambdaUpdateWrapper<ErpSaleOutDO>()
                 .eq(ErpSaleOutDO::getId, id).eq(ErpSaleOutDO::getStatus, status));
+    }
+
+    /**
+     * 反审核专用 CAS：仅当出库单仍处于指定状态且尚未产生任何收款（receipt_price = 0）时才更新。
+     * 把「已收款不可反审核」的校验下沉到 WHERE 条件，关闭「读校验→并发收款回写→改状态」的脏状态窗口。
+     */
+    default int updateByIdAndStatusAndNoReceipt(Long id, Integer status, ErpSaleOutDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpSaleOutDO>()
+                .eq(ErpSaleOutDO::getId, id)
+                .eq(ErpSaleOutDO::getStatus, status)
+                .eq(ErpSaleOutDO::getReceiptPrice, BigDecimal.ZERO));
     }
 
     default ErpSaleOutDO selectByNo(String no) {

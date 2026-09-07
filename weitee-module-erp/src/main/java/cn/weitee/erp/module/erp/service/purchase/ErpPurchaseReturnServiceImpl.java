@@ -13,17 +13,20 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePrepaymentAllocateMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
 import cn.weitee.erp.module.erp.dal.redis.no.ErpNoRedisDAO;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
+import cn.weitee.erp.module.erp.enums.ErpFinancePrepaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
@@ -70,6 +73,8 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     @Resource
     private ErpProductService productService;
     @Resource
+    private ErpProductUnitConversionService unitConversionService;
+    @Resource
     @Lazy // 延迟加载，避免循环依赖
     private ErpPurchaseOrderService purchaseOrderService;
     @Resource
@@ -82,6 +87,8 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     private ErpFinanceBizHookService financeBizHookService;
     @Resource
     private ErpFinancePaymentAllocateMapper erpFinancePaymentAllocateMapper;
+    @Resource
+    private ErpFinancePrepaymentAllocateMapper erpFinancePrepaymentAllocateMapper;
     @Resource
     private ErpStockRecordService stockRecordService;
     @Resource
@@ -299,31 +306,47 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     @Override
     public void updatePurchaseReturnRefundPrice(Long id, BigDecimal refundPrice) {
         ErpPurchaseReturnDO purchaseReturn = erpPurchaseReturnMapper.selectById(id);
-        if (purchaseReturn.getRefundPrice().equals(refundPrice)) {
+        if (purchaseReturn == null) {
+            // 与入库一致：台账指向不存在的退货单时快速失败为明确业务错误，禁止 NPE 留下半条 AP 事实
+            throw exception(PURCHASE_RETURN_NOT_EXISTS);
+        }
+        BigDecimal actualRefundPrice = ObjectUtil.defaultIfNull(refundPrice, BigDecimal.ZERO);
+        BigDecimal currentRefundPrice = ObjectUtil.defaultIfNull(purchaseReturn.getRefundPrice(), BigDecimal.ZERO);
+        if (currentRefundPrice.compareTo(actualRefundPrice) == 0) {
             return;
         }
-        if (refundPrice.compareTo(purchaseReturn.getTotalPrice()) > 0) {
-            throw exception(PURCHASE_RETURN_FAIL_REFUND_PRICE_EXCEED, refundPrice, purchaseReturn.getTotalPrice());
+        if (actualRefundPrice.compareTo(ObjectUtil.defaultIfNull(purchaseReturn.getTotalPrice(), BigDecimal.ZERO)) > 0) {
+            throw exception(PURCHASE_RETURN_FAIL_REFUND_PRICE_EXCEED, actualRefundPrice, purchaseReturn.getTotalPrice());
         }
-        erpPurchaseReturnMapper.updateById(new ErpPurchaseReturnDO().setId(id).setRefundPrice(refundPrice));
+        erpPurchaseReturnMapper.updateById(new ErpPurchaseReturnDO().setId(id).setRefundPrice(actualRefundPrice));
     }
 
     private List<ErpPurchaseReturnItemDO> validatePurchaseReturnItems(List<ErpPurchaseReturnSaveReqVO.Item> list) {
         // 1. 校验产品存在
-        List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpPurchaseReturnSaveReqVO.Item::getProductId));
-        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
+        productService.validProductList(convertSet(list, ErpPurchaseReturnSaveReqVO.Item::getProductId));
         // 2. 转化为 ErpPurchaseReturnItemDO 列表
-        return convertList(list, o -> BeanUtils.toBean(o, ErpPurchaseReturnItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
-            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
+        List<ErpPurchaseReturnItemDO> items = convertList(list, o -> BeanUtils.toBean(o, ErpPurchaseReturnItemDO.class));
+        // 3. 批量换算录入单位：count 换算为基本单位记账数量，inputCount/conversionRate 保留录入口径
+        List<ErpProductUnitConversionService.ConversionResult> results = unitConversionService.convertBatch(
+                convertList(items, item -> new ErpProductUnitConversionService.ConversionRequest(
+                        item.getProductId(), item.getProductUnitId(), item.getCount())));
+        for (int i = 0; i < items.size(); i++) {
+            ErpPurchaseReturnItemDO item = items.get(i);
+            ErpProductUnitConversionService.ConversionResult result = results.get(i);
+            item.setProductUnitId(result.getInputUnitId());
+            item.setInputCount(result.getInputCount());
+            item.setConversionRate(result.getConversionRate());
+            item.setCount(result.getBaseCount());
+            // 4. 金额计算：单价为录入单位口径，金额 = 单价 × 录入数量
+            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), result.getInputCount()));
             if (item.getTotalPrice() == null) {
-                return;
+                continue;
             }
             if (item.getTaxPercent() != null) {
                 item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
             }
-        }));
+        }
+        return items;
     }
 
     private void updatePurchaseReturnItemList(Long id, List<ErpPurchaseReturnItemDO> newList) {
@@ -405,9 +428,13 @@ public class ErpPurchaseReturnServiceImpl implements ErpPurchaseReturnService {
     // ==================== 采购退货项 ====================
 
     private boolean hasApprovedAllocate(Long bizId) {
+        // 与采购入库一致：付款核销与预付款核销都必须阻断退货单反审核
         return ObjectUtil.defaultIfNull(erpFinancePaymentAllocateMapper.selectCountByBizTypeAndBizIdAndStatus(
                 ErpBizTypeEnum.PURCHASE_RETURN.getType(), bizId,
-                ErpFinancePaymentAllocateStatusEnum.APPROVED.getStatus()), 0L) > 0;
+                ErpFinancePaymentAllocateStatusEnum.APPROVED.getStatus()), 0L) > 0
+                || ObjectUtil.defaultIfNull(erpFinancePrepaymentAllocateMapper.selectCountByBizTypeAndBizIdAndStatus(
+                ErpBizTypeEnum.PURCHASE_RETURN.getType(), bizId,
+                ErpFinancePrepaymentAllocateStatusEnum.APPROVED.getStatus()), 0L) > 0;
     }
 
     @Override

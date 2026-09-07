@@ -31,8 +31,12 @@ const runGitCommand = (args) => {
   if (process.platform !== 'win32') {
     return runCommand('git', args)
   }
+  // 本机为 PowerShell 7（pwsh.exe），无旧版 powershell.exe（v5.1）；
+  // 优先使用 pwsh.exe，不存在时回退 powershell.exe，避免 spawn 时 ENOENT
+  const hasPwsh = spawnSync('where.exe', ['pwsh.exe'], { encoding: 'utf8' }).status === 0
+  const shell = hasPwsh ? 'pwsh.exe' : 'powershell.exe'
   const gitCommand = `& git ${args.map(escapePowerShellArgument).join(' ')}`
-  return runCommand('powershell.exe', ['-NoProfile', '-Command', gitCommand])
+  return runCommand(shell, ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', gitCommand])
 }
 
 const repoRoot = runGitCommand(['rev-parse', '--show-toplevel']).trim()

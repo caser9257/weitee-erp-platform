@@ -36,6 +36,11 @@ public class ErpBomRespVO {
 
     private String remark;
 
+    /**
+     * 停用审批在途流程实例 ID；非空表示停用审批中
+     */
+    private String processInstanceId;
+
     private LocalDateTime createTime;
 
     private List<Item> items;
@@ -60,6 +65,8 @@ public class ErpBomRespVO {
         private BigDecimal lossRate;
 
         private String referenceDesignator;
+
+        private String position;
 
         private Integer issueMode;
 

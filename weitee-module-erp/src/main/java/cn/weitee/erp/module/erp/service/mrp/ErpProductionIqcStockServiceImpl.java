@@ -1,28 +1,25 @@
 package cn.weitee.erp.module.erp.service.mrp;
 
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpProductionOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityDO;
-import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInQualityItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockTaskFailureLogDO;
 import cn.weitee.erp.module.erp.dal.mysql.mrp.ErpProductionOrderMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockMapper;
 import cn.weitee.erp.module.erp.dal.mysql.stock.ErpStockTaskFailureLogMapper;
-import cn.weitee.erp.module.erp.enums.ErpPurchaseInQualityResultEnum;
-import cn.weitee.erp.module.erp.enums.ErpPurchaseInQualityStatusEnum;
 import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
+import cn.weitee.erp.module.erp.event.ErpPurchaseInQualityFinishedEvent;
 import cn.weitee.erp.module.erp.service.purchase.ErpPurchaseInQualityService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
-import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.annotation.Resource;
@@ -67,38 +64,44 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
 
     // ========== 生产领料扣减 ==========
 
+    /**
+     * 领料扣减可用库存。
+     *
+     * 调用契约：调用方（领料主流程）在本事务提交后的 afterCommit 阶段调用本方法，
+     * 此时业务单据已提交，本方法内的任何失败都只能落失败记录待重试，不允许抛出——
+     * 抛出既无法回滚已提交的领料单，还会被 afterCommit 调用链静默吞掉（历史缺陷）。
+     * 因此前置校验必须前置到领料主事务内完成（见 ErpProductionIssueServiceImpl），
+     * 这里保留校验仅作为其它调用路径的防御，且失败同样落失败记录。
+     *
+     * 仓库取自领料明细的发料仓（warehouseId 参数）：生产订单上的 warehouse_id 语义是
+     * 完工入库仓（finish 流程才写入），在制品阶段的领料扣减不能使用（历史缺陷：语义错配）。
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deductStockForProduction(Long productionOrderId, Long productId, BigDecimal qty) {
-        if (productionOrderId == null || productId == null || qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
-            throw exception(PRODUCTION_ORDER_STATUS_INVALID);
-        }
-        ErpProductionOrderDO order = productionOrderMapper.selectById(productionOrderId);
-        if (order == null) {
-            throw exception(PRODUCTION_ORDER_NOT_EXISTS);
-        }
-        if (order.getStatus() == null || order.getStatus() < 10) {
-            throw exception(PRODUCTION_ORDER_STATUS_INVALID);
-        }
-        Long warehouseId = order.getWarehouseId();
-        if (warehouseId == null) {
-            log.error("[deductStockForProduction] 生产任务单未配置仓库，orderId={}", productionOrderId);
-            throw exception(PRODUCTION_ORDER_STATUS_INVALID);
-        }
-        // 事务内仅校验，实际扣减在 afterCommit 的行锁事务中执行；失败落库可重试
-        ErpTransactionUtils.afterCommit(() -> {
-            try {
-                newStockTxTemplate().executeWithoutResult(
-                        status -> deductCore(productId, warehouseId, qty));
-                log.info("[deductStockForProduction] 可用库存扣减成功，orderId={}, productId={}, warehouseId={}, qty={}",
-                        productionOrderId, productId, warehouseId, qty);
-            } catch (Exception e) {
-                log.error("[deductStockForProduction] 可用库存扣减失败，orderId={}, productId={}, warehouseId={}, qty={}",
-                        productionOrderId, productId, warehouseId, qty, e);
-                saveFailureLog(ErpStockTaskFailureLogDO.BIZ_TYPE_PRODUCTION_DEDUCT,
-                        productionOrderId, null, productId, warehouseId, qty, e.getMessage());
+    public void deductStockForProduction(Long productionOrderId, Long productId, Long warehouseId, BigDecimal qty) {
+        try {
+            if (productionOrderId == null || productId == null || warehouseId == null
+                    || qty == null || qty.compareTo(BigDecimal.ZERO) <= 0) {
+                throw exception(PRODUCTION_ORDER_STATUS_INVALID);
             }
-        });
+            ErpProductionOrderDO order = productionOrderMapper.selectById(productionOrderId);
+            if (order == null) {
+                throw exception(PRODUCTION_ORDER_NOT_EXISTS);
+            }
+            if (order.getStatus() == null || order.getStatus() < 10) {
+                throw exception(PRODUCTION_ORDER_STATUS_INVALID);
+            }
+            // 行锁新事务内 CAS 扣 available_count；失败抛出后统一落失败记录可重试。
+            // 注意：不得在 afterCommit 阶段再注册嵌套 afterCommit——外层事务已提交，
+            // 新注册的同步器不在已快照的回调列表里，永远不会执行（历史缺陷：扣减静默丢失）。
+            newStockTxTemplate().executeWithoutResult(status -> deductCore(productId, warehouseId, qty));
+            log.info("[deductStockForProduction] 可用库存扣减成功，orderId={}, productId={}, warehouseId={}, qty={}",
+                    productionOrderId, productId, warehouseId, qty);
+        } catch (Exception e) {
+            log.error("[deductStockForProduction] 可用库存扣减失败，orderId={}, productId={}, warehouseId={}, qty={}",
+                    productionOrderId, productId, warehouseId, qty, e);
+            saveFailureLog(ErpStockTaskFailureLogDO.BIZ_TYPE_PRODUCTION_DEDUCT,
+                    productionOrderId, null, productId, warehouseId, qty, e.getMessage());
+        }
     }
 
     /**
@@ -122,65 +125,31 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
 
     // ========== IQC 合格移可用 ==========
 
+    /**
+     * IQC 质检完成回调（单写者约定下的无库存动作）。
+     *
+     * 可用库存的唯一记账人是采购入库确认（ErpPurchaseInStockExecuteHelper#increaseAvailableCount，
+     * "过检即可用"，按实入量同步事务入账，CAS 失败整体回滚）。本方法不再写库存——
+     * 历史版本在此按 qaPassCount 再加一次 available，与确认入库形成双写，
+     * 谁先谁后产生两种不同账目（缺陷：同一笔入库 available 双计）。
+     * 保留方法与事件接线用于审计与未来扩展；retryStockTaskFailure 对历史
+     * IQC_MOVE 失败记录的重试仍走 moveAvailableCore，保持兼容。
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void handleIqcPassed(Long purchaseInId) {
-        if (purchaseInId == null) {
-            return;
-        }
-        ErpPurchaseInQualityDO quality = purchaseInQualityService.getPurchaseInQualityByPurchaseInId(purchaseInId);
-        if (quality == null) {
-            log.warn("[handleIqcPassed] 未找到质检单，purchaseInId={}", purchaseInId);
-            return;
-        }
-        if (!ErpPurchaseInQualityStatusEnum.DONE.getStatus().equals(quality.getStatus())) {
-            log.warn("[handleIqcPassed] 质检单未完成，qualityId={}, status={}", quality.getId(), quality.getStatus());
-            return;
-        }
-        Integer result = quality.getResult();
-        boolean passed = ErpPurchaseInQualityResultEnum.PASSED.getStatus().equals(result)
-                || ErpPurchaseInQualityResultEnum.PARTIAL.getStatus().equals(result);
-        if (!passed) {
-            log.info("[handleIqcPassed] 质检未合格，不计入库存，qualityId={}, result={}", quality.getId(), result);
-            return;
-        }
-        List<ErpPurchaseInQualityItemDO> items = purchaseInQualityService.getPurchaseInQualityItemListByQualityId(quality.getId());
-        if (CollUtil.isEmpty(items)) {
-            log.warn("[handleIqcPassed] 质检单无明细，qualityId={}", quality.getId());
-            return;
-        }
-        String bizNo = quality.getPurchaseInNo() != null ? quality.getPurchaseInNo() : quality.getNo();
-        if (bizNo == null) {
-            bizNo = String.valueOf(purchaseInId);
-        }
-        String finalBizNo = bizNo;
-        ErpTransactionUtils.afterCommit(() -> {
-            for (ErpPurchaseInQualityItemDO item : items) {
-                BigDecimal passCount = item.getQaPassCount();
-                if (passCount == null || passCount.compareTo(BigDecimal.ZERO) <= 0) {
-                    continue;
-                }
-                Long productId = item.getProductId();
-                Long warehouseId = item.getWarehouseId();
-                if (productId == null || warehouseId == null) {
-                    log.warn("[handleIqcPassed] 明细缺产品或仓库，qualityItemId={}, productId={}, warehouseId={}",
-                            item.getId(), productId, warehouseId);
-                    continue;
-                }
-                try {
-                    newStockTxTemplate().executeWithoutResult(
-                            status -> moveAvailableCore(purchaseInId, item.getId(), finalBizNo,
-                                    productId, warehouseId, passCount));
-                    log.info("[handleIqcPassed] IQC合格计入库存成功，purchaseInId={}, productId={}, warehouseId={}, passCount={}",
-                            purchaseInId, productId, warehouseId, passCount);
-                } catch (Exception e) {
-                    log.error("[handleIqcPassed] 计入可用库存失败，purchaseInId={}, productId={}, warehouseId={}, passCount={}",
-                            purchaseInId, productId, warehouseId, passCount, e);
-                    saveFailureLog(ErpStockTaskFailureLogDO.BIZ_TYPE_IQC_MOVE_AVAILABLE,
-                            purchaseInId, item.getId(), productId, warehouseId, passCount, e.getMessage());
-                }
-            }
-        });
+        log.info("[handleIqcPassed] IQC 质检完成，可用库存由确认入库统一入账，无需处理，purchaseInId={}", purchaseInId);
+    }
+
+    /**
+     * 消费质检完结事件：事务提交后执行 IQC 合格移可用。
+     *
+     * <p>接线点为质检单 DONE 终态写入源头（finishQualityOrder 发布事件），
+     * 本监听只做转发，DONE/PASSED/PARTIAL 校验与幂等均由 {@link #handleIqcPassed} 及
+     * moveAvailableCore 的流水锚点保证。
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onPurchaseInQualityFinished(ErpPurchaseInQualityFinishedEvent event) {
+        handleIqcPassed(event.getPurchaseInId());
     }
 
     /**
@@ -189,6 +158,12 @@ public class ErpProductionIqcStockServiceImpl implements ErpProductionIqcStockSe
      */
     private void moveAvailableCore(Long purchaseInId, Long itemId, String bizNo,
                                    Long productId, Long warehouseId, BigDecimal passCount) {
+        // 幂等锚点：同一入库明细已存在 PURCHASE_IN 流水说明移可用已完成，直接跳过，
+        // 防御事件重复投递、手工重试与正常流转撞车导致的重复加库存
+        if (stockRecordService.hasStockRecord(ErpStockRecordBizTypeEnum.PURCHASE_IN.getType(), purchaseInId, itemId)) {
+            log.info("[moveAvailableCore] 库存流水已存在，跳过重复移可用，purchaseInId={}, itemId={}", purchaseInId, itemId);
+            return;
+        }
         ErpStockDO stock = stockMapper.selectByProductIdAndWarehouseIdForUpdate(productId, warehouseId);
         if (stock == null) {
             // 无库存行：先建行累加总量，再补可用

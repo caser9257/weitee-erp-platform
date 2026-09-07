@@ -32,6 +32,7 @@ import cn.weitee.erp.module.erp.enums.ErpPurchaseInQualityRoundTypeEnum;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInQualityStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockInStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpQaStatusEnum;
+import cn.weitee.erp.module.erp.event.ErpPurchaseInQualityFinishedEvent;
 import cn.weitee.erp.module.erp.util.ErpTransactionUtils;
 import cn.weitee.erp.module.system.api.permission.PermissionApi;
 import cn.weitee.erp.module.system.api.user.AdminUserApi;
@@ -39,6 +40,7 @@ import cn.weitee.erp.module.system.enums.permission.RoleCodeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
@@ -105,9 +107,13 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
     @Resource
     private ErpPurchaseReturnService erpPurchaseReturnService;
     @Resource
+    private cn.weitee.erp.module.erp.service.product.ErpProductUnitService productUnitService;
+    @Resource
     private ErpPurchaseReturnMapper erpPurchaseReturnMapper;
     @Resource
     private RedissonClient redissonClient;
+    @Resource
+    private ApplicationEventPublisher eventPublisher;
 
     // endregion
 
@@ -582,12 +588,18 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
             throw exception(PURCHASE_IN_NOT_EXISTS);
         }
 
+        ErpPurchaseReturnDO existingReturn = erpPurchaseReturnMapper.selectByQualityId(qualityId);
+        if (existingReturn != null) {
+            log.info("[createReturnFromQuality] 质检单已创建过退货单，qualityId={}, returnId={}", qualityId, existingReturn.getId());
+            return existingReturn.getId();
+        }
+        // 兼容旧数据：旧退货单无 quality_id 字段，fallback 到 remark 文本匹配
         List<ErpPurchaseReturnDO> existingReturns = erpPurchaseReturnMapper.selectListByOrderId(purchaseIn.getOrderId());
         if (CollUtil.isNotEmpty(existingReturns)) {
-            for (ErpPurchaseReturnDO existingReturn : existingReturns) {
-                if (existingReturn.getRemark() != null && existingReturn.getRemark().contains(quality.getNo())) {
-                    log.info("[createReturnFromQuality] 质检单已创建过退货单，qualityId={}, returnId={}", qualityId, existingReturn.getId());
-                    return existingReturn.getId();
+            for (ErpPurchaseReturnDO oldReturn : existingReturns) {
+                if (oldReturn.getRemark() != null && oldReturn.getRemark().contains(quality.getNo())) {
+                    log.info("[createReturnFromQuality] 旧数据兼容：质检单已创建过退货单，qualityId={}, returnId={}", qualityId, oldReturn.getId());
+                    return oldReturn.getId();
                 }
             }
         }
@@ -625,10 +637,11 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
                     new cn.weitee.erp.module.erp.controller.admin.purchase.vo.returns.ErpPurchaseReturnSaveReqVO.Item();
             returnItem.setWarehouseId(qualityItem.getWarehouseId());
             returnItem.setProductId(qualityItem.getProductId());
-            returnItem.setProductUnitId(purchaseInItem.getProductUnitId());
+            // 拒收数量为基本单位口径，转单时回落产品基本单位录入，单价换算为基本单位单价
+            returnItem.setProductUnitId(resolveBaseUnitId(purchaseInItem.getProductUnitId()));
             returnItem.setCount(qualityItem.getQaRejectCount());
             returnItem.setOrderItemId(purchaseInItem.getOrderItemId());
-            returnItem.setProductPrice(purchaseInItem.getProductPrice());
+            returnItem.setProductPrice(toBaseUnitPrice(purchaseInItem.getProductPrice(), purchaseInItem.getConversionRate()));
             returnItem.setTaxPercent(purchaseInItem.getTaxPercent());
 
             returnItems.add(returnItem);
@@ -638,11 +651,31 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
             throw exception(PURCHASE_IN_QUALITY_NO_REJECT_ITEMS);
         }
         reqVO.setItems(returnItems);
+        reqVO.setQualityId(qualityId);
 
         Long returnId = erpPurchaseReturnService.createPurchaseReturn(reqVO);
 
         log.info("[createReturnFromQuality] 从质检创建退货单成功，qualityId={}, returnId={}", qualityId, returnId);
         return returnId;
+    }
+
+    /**
+     * 解析录入单位对应的产品基本单位编号；基本单位原样返回
+     */
+    private Long resolveBaseUnitId(Long inputUnitId) {
+        cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductUnitDO unit =
+                productUnitService.getProductUnit(inputUnitId);
+        return unit != null && unit.getBaseUnitId() != null ? unit.getBaseUnitId() : inputUnitId;
+    }
+
+    /**
+     * 录入单位单价换算为基本单位单价；无换算率时原样返回
+     */
+    private BigDecimal toBaseUnitPrice(BigDecimal inputPrice, BigDecimal conversionRate) {
+        if (inputPrice == null || conversionRate == null) {
+            return inputPrice;
+        }
+        return inputPrice.divide(conversionRate, 6, java.math.RoundingMode.HALF_UP);
     }
 
     // endregion
@@ -709,6 +742,8 @@ public class ErpPurchaseInQualityServiceImpl implements ErpPurchaseInQualityServ
             ErpTransactionUtils.afterCommit(() -> notificationHelper.sendQualityFinishedNotify(
                     finalQuality, finalPurchaseIn, result, totalPassCount, totalRejectCount, stockInStatus));
         }
+        // 发布质检完结事件：库存侧 AFTER_COMMIT 消费，执行 IQC 合格移可用（幂等由流水锚点保证）
+        eventPublisher.publishEvent(new ErpPurchaseInQualityFinishedEvent(quality.getId(), purchaseIn.getId()));
     }
 
     /**

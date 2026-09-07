@@ -25,6 +25,9 @@ public class ErpProductRespVO {
     @ExcelProperty("Material Code")
     private String materialCode;
 
+    @Schema(description = "最近一次变更前物料编码（编码沿革，无改码历史为 null）", example = "MAT-OLD-001")
+    private String prevMaterialCode;
+
     @Schema(description = "Bar code", requiredMode = Schema.RequiredMode.REQUIRED, example = "X110")
     @ExcelProperty("Bar Code")
     private String barCode;
@@ -132,11 +135,83 @@ public class ErpProductRespVO {
     @Schema(description = "Asset candidate flag", example = "true")
     private Boolean assetFlag;
 
+    @Schema(description = "是否 PCB 元器件", example = "true")
+    private Boolean pcbComponent;
+
+    @Schema(description = "Cadence schematic symbol")
+    private String schematicPart;
+
+    @Schema(description = "Cadence PCB footprint")
+    private String pcbFootprint;
+
+    @Schema(description = "Cadence key parameter description")
+    private String cadenceDescription;
+
+    @Schema(description = "Manufacturer part number")
+    private String manufacturerPartNumber;
+
+    @Schema(description = "Component dimension")
+    private String dimension;
+
+    @Schema(description = "3D model library")
+    private String threeDLib;
+
+    @Schema(description = "Datasheet URL or document reference")
+    private String datasheet;
+
+    @Schema(description = "Component lifecycle")
+    private String lifecycle;
+
+    @Schema(description = "Whether this is a preferred component")
+    private Boolean preferredPart;
+
+    @Schema(description = "Operating temperature")
+    private String operatingTemperature;
+
+    @Schema(description = "Mounting type")
+    private String mountingType;
+
+    @Schema(description = "Do not populate flag")
+    private Boolean dnp;
+
+    @Schema(description = "Imported or replacement component")
+    private String importedOrReplacement;
+
+    @Schema(description = "Secondary parameter description")
+    private String secondDescription;
+
+    @Schema(description = "Third parameter description")
+    private String thirdDescription;
+
+    @Schema(description = "Fourth parameter description")
+    private String fourthDescription;
+
     @Schema(description = "审核状态：0草稿 10审批中 20已审批 30已驳回 60处理失败")
     private Integer auditStatus;
 
     @Schema(description = "流程实例编号")
     private String processInstanceId;
+
+    @Schema(description = "在途批量审批批次编号（属于批量导入批次审批时非空；撤回将作废整批）")
+    private Long pendingBatchId;
+
+    @Schema(description = "在途批量审批批次成员数（pendingBatchId 非空时有值）")
+    private Integer pendingBatchSize;
+
+    @Schema(description = "是否被 BOM 引用（引用后 standard 冻结；materialCode 走编码沿革可改，仅编辑场景使用）")
+    private Boolean referencedByBom;
+
+    @Schema(description = "是否已废除（废除=销号，编码释放可复用）")
+    private Boolean abolishFlag;
+
+    @Schema(description = "废除时间")
+    private LocalDateTime abolishTime;
+
+    @Schema(description = "废除原因")
+    private String abolishReason;
+
+    @Schema(description = "废除操作人")
+    private Long abolishBy;
 
     @Schema(description = "Create time", requiredMode = Schema.RequiredMode.REQUIRED)
     @ExcelProperty("Create Time")

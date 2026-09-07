@@ -30,6 +30,9 @@ public class ErpPurchaseReturnRespVO {
     @Schema(description = "审批流程实例编号", example = "PI-20260703-001")
     private String processInstanceId;
 
+    @Schema(description = "来源质检单编号，从 IQC 质检单创建退货单时记录", example = "11756")
+    private Long qualityId;
+
     @Schema(description = "供应商编号", requiredMode = Schema.RequiredMode.REQUIRED, example = "1724")
     private Long supplierId;
     @Schema(description = "供应商名称", example = "芋道")
@@ -114,6 +117,12 @@ public class ErpPurchaseReturnRespVO {
 
         @Schema(description = "产品单位单位", requiredMode = Schema.RequiredMode.REQUIRED, example = "3113")
         private Long productUnitId;
+
+        @Schema(description = "录入数量（录入单位口径）；null 表示与 count 相同", example = "10.00")
+        private BigDecimal inputCount;
+
+        @Schema(description = "换算率快照：1 录入单位 = conversionRate 基本单位；基本单位为 null", example = "12")
+        private BigDecimal conversionRate;
 
         @Schema(description = "产品单价", example = "100.00")
         private BigDecimal productPrice;

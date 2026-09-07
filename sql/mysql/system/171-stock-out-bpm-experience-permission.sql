@@ -21,7 +21,7 @@ INSERT INTO system_menu (
     status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
 )
 SELECT @erp_stock_out_permission_next_id, 'Stock-out submit', 'erp:stock-out:submit', 3, 7,
-       @erp_stock_out_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'tester', NOW(), 'tester', NOW(), b'0'
+       @erp_stock_out_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @erp_stock_out_page_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM system_menu WHERE deleted = b'0' AND permission = 'erp:stock-out:submit'
@@ -33,14 +33,14 @@ INSERT INTO system_menu (
     status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted
 )
 SELECT @erp_stock_out_permission_next_id, 'Stock-out cancel approval', 'erp:stock-out:cancel-approval', 3, 8,
-       @erp_stock_out_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'tester', NOW(), 'tester', NOW(), b'0'
+       @erp_stock_out_page_id, '', '', '', '', 0, b'1', b'1', b'0', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @erp_stock_out_page_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM system_menu WHERE deleted = b'0' AND permission = 'erp:stock-out:cancel-approval'
   );
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT role.id, menu.id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT role.id, menu.id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_role role
 JOIN system_menu menu
   ON menu.deleted = b'0'

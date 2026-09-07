@@ -8,13 +8,13 @@ SET @demo_password = '$2a$04$Vk595eYyvcQeKxi6HROnoOocURoMI6vlprElugL6hVoI8qQtBM5
 -- Hide two obsolete supply-chain posts from the experience deployment.
 UPDATE system_post
 SET deleted = b'1',
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE code IN ('supply_fanxiangwen', 'supply_zahongsai')
   AND deleted = b'0';
 
 INSERT INTO system_users (username, password, nickname, remark, dept_id, post_ids, email, mobile, sex, avatar, status, creator, create_time, updater, update_time, deleted)
-SELECT 'finance01', @demo_password, _utf8mb4 0xE8B4A2E58AA1E6A8A1E59D97E4BD93E9AA8CE8B4A6E58FB7, _utf8mb4 0xE794A8E4BA8EE8B4A2E58AA1E6A8A1E59D97E6ADA3E5B8B8E4BDBFE794A8E9AA8CE8AF81, 940100, '[]', '', '', 0, '', 0, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT 'finance01', @demo_password, _utf8mb4 0xE8B4A2E58AA1E6A8A1E59D97E4BD93E9AA8CE8B4A6E58FB7, _utf8mb4 0xE794A8E4BA8EE8B4A2E58AA1E6A8A1E59D97E6ADA3E5B8B8E4BDBFE794A8E9AA8CE8AF81, 940100, '[]', '', '', 0, '', 0, 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE NOT EXISTS (SELECT 1 FROM system_users WHERE username = 'finance01' AND deleted = b'0');
 
 UPDATE system_users
@@ -24,12 +24,12 @@ SET password = @demo_password,
     dept_id = 940100,
     post_ids = '[]',
     status = 0,
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE username = 'finance01' AND deleted = b'0';
 
 INSERT INTO system_users (username, password, nickname, remark, dept_id, post_ids, email, mobile, sex, avatar, status, creator, create_time, updater, update_time, deleted)
-SELECT 'scm01', @demo_password, _utf8mb4 0xE4BE9BE5BA94E993BEE4BD93E9AA8CE8B4A6E58FB7, _utf8mb4 0xE794A8E4BA8EE4BE9BE5BA94E993BEE6A8A1E59D97E58A9FE883BDE4BD93E9AA8CE9AA8CE8AF81, 920100, '[]', '', '', 0, '', 0, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT 'scm01', @demo_password, _utf8mb4 0xE4BE9BE5BA94E993BEE4BD93E9AA8CE8B4A6E58FB7, _utf8mb4 0xE794A8E4BA8EE4BE9BE5BA94E993BEE6A8A1E59D97E58A9FE883BDE4BD93E9AA8CE9AA8CE8AF81, 920100, '[]', '', '', 0, '', 0, 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE NOT EXISTS (SELECT 1 FROM system_users WHERE username = 'scm01' AND deleted = b'0');
 
 UPDATE system_users
@@ -39,12 +39,12 @@ SET password = @demo_password,
     dept_id = 920100,
     post_ids = '[]',
     status = 0,
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE username = 'scm01' AND deleted = b'0';
 
 INSERT INTO system_user_role (user_id, role_id, creator, create_time, updater, update_time, deleted)
-SELECT u.id, r.role_id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT u.id, r.role_id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_users u
 JOIN (
     SELECT 940001 AS role_id UNION ALL
@@ -82,7 +82,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE587ADE8AF81E69BB4E696B0,
        'erp:finance-voucher:update', 3, 2, @experience_finance_voucher_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_finance_voucher_menu_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM system_menu
@@ -98,7 +98,7 @@ SET @experience_finance_voucher_update_menu_id := (
 );
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT 940002, @experience_finance_voucher_update_menu_id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT 940002, @experience_finance_voucher_update_menu_id, 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_finance_voucher_update_menu_id IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM system_role_menu
@@ -121,7 +121,7 @@ SET @experience_mes_root_id := (
 INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE588B6E980A0E689A7E8A18CE7AEA1E79086, '', 1, 380, 0, '/mes', 'ep:operation', '',
-       'ProjectMesRoot', 0, b'1', b'1', b'1', 'tester', NOW(), 'tester', NOW(), b'0'
+       'ProjectMesRoot', 0, b'1', b'1', b'1', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_mes_root_id IS NULL;
 
 SET @experience_mes_root_id := (
@@ -143,7 +143,7 @@ SET @experience_next_menu_id := @experience_next_menu_id + 1;
 INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon, component, component_name,
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE7949FE4BAA7E5B7A5E58D95, '', 2, 10, @experience_mes_root_id, 'work-order',
-       'ep:calendar', 'mes/work-order/index', 'ProjectMesWorkOrder', 0, b'1', b'1', b'1', 'tester', NOW(), 'tester', NOW(), b'0'
+       'ep:calendar', 'mes/work-order/index', 'ProjectMesWorkOrder', 0, b'1', b'1', b'1', 'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_mes_root_id IS NOT NULL
   AND @experience_work_order_menu_id IS NULL;
 
@@ -159,7 +159,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E5B7A5E58D95E69FA5E8AFA2,
        'erp:production-order:query', 3, 1, @experience_work_order_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_work_order_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-order:query' AND deleted = b'0');
 
@@ -167,7 +167,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E5B7A5E58D95E5889BE5BBBA,
        'erp:production-order:create', 3, 2, @experience_work_order_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_work_order_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-order:create' AND deleted = b'0');
 
@@ -175,7 +175,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E5B7A5E58D95E69BB4E696B0,
        'erp:production-order:update', 3, 3, @experience_work_order_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_work_order_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-order:update' AND deleted = b'0');
 
@@ -191,7 +191,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE7949FE4BAA7E9A286E69699, '', 2, 30, @experience_mes_root_id, 'material-issue',
        'ep:box', 'erp/manufacturing/material-issue/index', 'FormalMesMaterialIssue', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_mes_root_id IS NOT NULL
   AND @experience_issue_menu_id IS NULL;
 
@@ -215,7 +215,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE7949FE4BAA7E98080E69699, '', 2, 40, @experience_mes_root_id, 'material-return',
        'ep:refresh-left', 'erp/manufacturing/material-return/index', 'FormalMesMaterialReturn', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_mes_root_id IS NOT NULL
   AND @experience_return_menu_id IS NULL;
 
@@ -231,7 +231,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E9A286E69699E69FA5E8AFA2,
        'erp:production-material-issue:query', 3, 1, @experience_issue_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_issue_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-material-issue:query' AND deleted = b'0');
 
@@ -239,7 +239,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E9A286E69699E68EA8E88D90,
        'erp:production-material-issue:recommend', 3, 2, @experience_issue_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_issue_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-material-issue:recommend' AND deleted = b'0');
 
@@ -247,7 +247,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E9A286E69699E5889BE5BBBA,
        'erp:production-material-issue:create', 3, 3, @experience_issue_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_issue_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-material-issue:create' AND deleted = b'0');
 
@@ -255,7 +255,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E9A286E69699E5AFBCE587BA,
        'erp:production-material-issue:export', 3, 4, @experience_issue_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_issue_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-material-issue:export' AND deleted = b'0');
 
@@ -263,7 +263,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE7949FE4BAA7E98080E69699E5889BE5BBBA,
        'erp:production-material-return:create', 3, 1, @experience_return_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_return_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-material-return:create' AND deleted = b'0');
 
@@ -286,7 +286,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE887AAE588B6E585A5E5BA93, '', 2, 85, @experience_scm_root_id, 'production-inbound',
        'ep:box', 'erp/mrp/production-inbound/index', 'ErpProductionInboundPage', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_scm_root_id IS NOT NULL
   AND @experience_inbound_menu_id IS NULL;
 
@@ -302,7 +302,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE887AAE588B6E585A5E5BA93E69FA5E8AFA2,
        'erp:production-inbound:query', 3, 1, @experience_inbound_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_inbound_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-inbound:query' AND deleted = b'0');
 
@@ -310,7 +310,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE887AAE588B6E585A5E5BA93E69BB4E696B0,
        'erp:production-inbound:update', 3, 2, @experience_inbound_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_inbound_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:production-inbound:update' AND deleted = b'0');
 
@@ -329,7 +329,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE7BB84E8A385E4B88EE68B86E58DB8, '', 2, 90, @experience_scm_root_id,
        'assemble', 'ep:set-up', 'erp/stock/assemble/index', 'ErpStockAssemblePage', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_scm_root_id IS NOT NULL
   AND @experience_assemble_menu_id IS NULL;
 
@@ -345,7 +345,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE69FA5E8AFA2,
        'erp:stock-assemble:query', 3, 1, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_assemble_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:query' AND deleted = b'0');
 
@@ -353,7 +353,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE696B0E5A29E,
        'erp:stock-assemble:create', 3, 2, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_assemble_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:create' AND deleted = b'0');
 
@@ -361,7 +361,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE4BFAEE694B9,
        'erp:stock-assemble:update', 3, 3, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_assemble_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:update' AND deleted = b'0');
 
@@ -369,7 +369,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE5AEA1E6A0B8,
        'erp:stock-assemble:update-status', 3, 4, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_assemble_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:update-status' AND deleted = b'0');
 
@@ -377,7 +377,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE588A0E999A4,
        'erp:stock-assemble:delete', 3, 5, @experience_assemble_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_assemble_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-assemble:delete' AND deleted = b'0');
 
@@ -395,7 +395,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0x42E4BEBFE7AEA1E79086, '', 2, 20, @experience_mes_root_id,
        'bom', 'ep:document-copy', 'erp/mrp/bom/index', 'ErpBomPage', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_mes_root_id IS NOT NULL
   AND @experience_bom_menu_id IS NULL;
 
@@ -411,7 +411,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE69FA5E8AFA2,
        'erp:bom:query', 3, 1, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_bom_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:query' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
 
@@ -419,7 +419,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE696B0E5A29E,
        'erp:bom:create', 3, 2, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_bom_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:create' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
 
@@ -427,7 +427,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE4BFAEE694B9,
        'erp:bom:update', 3, 3, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_bom_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:update' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
 
@@ -435,7 +435,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE588A0E999A4,
        'erp:bom:delete', 3, 4, @experience_bom_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_bom_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:bom:delete' AND parent_id = @experience_bom_menu_id AND deleted = b'0');
 
@@ -462,7 +462,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE68F90E4BAA4E5AEA1E689B9,
        'erp:stock-in:submit', 3, 7, @experience_stock_in_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_stock_in_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-in:submit' AND deleted = b'0');
 
@@ -470,7 +470,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE692A4E59B9EE5AEA1E689B9,
        'erp:stock-in:cancel-approval', 3, 8, @experience_stock_in_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_stock_in_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-in:cancel-approval' AND deleted = b'0');
 
@@ -478,7 +478,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE68F90E4BAA4E5AEA1E689B9,
        'erp:stock-out:submit', 3, 7, @experience_stock_out_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_stock_out_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-out:submit' AND deleted = b'0');
 
@@ -486,7 +486,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE692A4E59B9EE5AEA1E689B9,
        'erp:stock-out:cancel-approval', 3, 8, @experience_stock_out_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_stock_out_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:stock-out:cancel-approval' AND deleted = b'0');
 
@@ -494,7 +494,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id := @experience_next_menu_id + 1, _utf8mb4 0xE8B4A8E6A380E98080E8B4A7,
        'erp:purchase-in-quality:update', 3, 7, @experience_iqc_menu_id, '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_iqc_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'erp:purchase-in-quality:update' AND deleted = b'0');
 
@@ -603,7 +603,7 @@ WHERE role_menu.role_id = 910004
   AND allowed.menu_id IS NULL;
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT 910004, allowed.menu_id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT 910004, allowed.menu_id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM tmp_experience_scm_menu_ids allowed
 WHERE NOT EXISTS (
     SELECT 1 FROM system_role_menu role_menu
@@ -619,14 +619,14 @@ DROP TEMPORARY TABLE IF EXISTS tmp_experience_scm_menu_ids;
 UPDATE system_user_role ur
 INNER JOIN system_users u ON u.id = ur.user_id AND u.deleted = b'0'
 SET ur.deleted = b'1',
-    ur.updater = 'tester',
+    ur.updater = 'codex',
     ur.update_time = NOW()
 WHERE u.username = 'scm01'
   AND ur.role_id IN (920001, 920004, 920701)
   AND ur.deleted = b'0';
 
 INSERT INTO system_user_role (user_id, role_id, creator, create_time, updater, update_time, deleted)
-SELECT u.id, r.role_id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT u.id, r.role_id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_users u
 JOIN (
     SELECT 910004 AS role_id
@@ -652,7 +652,7 @@ SELECT required.ledger_id,
        DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE()) - 1 DAY),
        LAST_DAY(CURDATE()),
        10,
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 FROM (
     SELECT id AS ledger_id
     FROM erp_finance_ledger
@@ -691,7 +691,7 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE5BE85E58AA1E5AEA1, 'bpm:task:query', 2, 10, 3000,
        'task-todo', 'ep:checked', 'bpm/task/todo/index', 'BpmTaskTodo', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_bpm_todo_menu_id IS NULL
   AND EXISTS (SELECT 1 FROM system_menu WHERE id = 3000 AND deleted = b'0');
 
@@ -707,12 +707,12 @@ INSERT INTO system_menu (id, name, permission, type, sort, parent_id, path, icon
                          status, visible, keep_alive, always_show, creator, create_time, updater, update_time, deleted)
 SELECT @experience_next_menu_id, _utf8mb4 0xE5AEA1E689B9, 'bpm:task:update', 3, 1, @experience_bpm_todo_menu_id,
        '', '', '', '', 0, b'1', b'1', b'1',
-       'tester', NOW(), 'tester', NOW(), b'0'
+       'codex', NOW(), 'codex', NOW(), b'0'
 WHERE @experience_bpm_todo_menu_id IS NOT NULL
   AND NOT EXISTS (SELECT 1 FROM system_menu WHERE permission = 'bpm:task:update' AND deleted = b'0');
 
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT 920003, menu.id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT 920003, menu.id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_menu menu
 WHERE menu.permission IN ('bpm:task:query', 'bpm:task:update')
   AND menu.deleted = b'0'

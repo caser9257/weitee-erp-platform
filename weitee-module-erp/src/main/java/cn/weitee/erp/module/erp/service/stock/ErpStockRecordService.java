@@ -37,4 +37,14 @@ public interface ErpStockRecordService {
      */
     void createStockRecord(@Valid ErpStockRecordCreateReqBO createReqBO);
 
+    /**
+     * 判断指定业务单据的库存明细是否已存在（用于库存变更幂等防重）
+     *
+     * @param bizType   业务类型
+     * @param bizId     业务单据编号
+     * @param bizItemId 业务明细编号
+     * @return 是否已存在
+     */
+    boolean hasStockRecord(Integer bizType, Long bizId, Long bizItemId);
+
 }

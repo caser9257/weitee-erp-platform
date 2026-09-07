@@ -6,6 +6,7 @@ import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomIntegrityIssueRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomVersionDiffRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomBaselineDiffVO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.rd.ErpRdBomItemSubstituteDO;
@@ -19,11 +20,33 @@ public interface ErpRdBomService {
 
     Long createRdBom(@Valid ErpRdBomSaveReqVO createReqVO);
 
+    /**
+     * 导入专用创建：跳过整单完整性断言（导入链路已在落库前自行完成行级校验剔行），
+     * 其余校验与 {@link #createRdBom} 一致。
+     *
+     * @param createReqVO 创建请求
+     * @return 研发 BOM 编号
+     */
+    Long createRdBomForImport(@Valid ErpRdBomSaveReqVO createReqVO);
+
+    /**
+     * 行级完整性校验（导入专用）：返回问题清单但不抛异常，供导入链路将 ERROR 行剔入 failDetails。
+     *
+     * @param items 明细列表（SaveReqVO.Item 形态）
+     * @return 完整性问题清单（含 WARN/ERROR），无问题返回空列表
+     */
+    List<ErpRdBomIntegrityIssueRespVO> validateRdBomItemsIntegrity(List<ErpRdBomSaveReqVO.Item> items);
+
     void updateRdBom(@Valid ErpRdBomSaveReqVO updateReqVO);
 
     void deleteRdBom(Long id);
 
     ErpRdBomDO getRdBom(Long id);
+
+    /**
+     * 按产品、BOM 编码和版本查找未删除的同身份 BOM；空版本按草稿版本匹配。
+     */
+    ErpRdBomDO getRdBomByIdentity(Long productId, String bomCode, String version);
 
     PageResult<ErpRdBomDO> getRdBomPage(ErpRdBomPageReqVO pageReqVO);
 
@@ -133,5 +156,15 @@ public interface ErpRdBomService {
      * @return 审批视图数据
      */
     ErpRdBomApprovalViewRespVO getRdBomApprovalView(Long id);
+
+    /**
+     * 导入增量差异警示：本次导入的物料集合相较该成品最新版 BOM 缺失了哪些物料。
+     * 仅提示不阻断（改版减料属正常工程行为，缺失清单供人工确认是否漏行）。
+     *
+     * @param productId          成品编号；为 null 时返回 null（无法确定对比基准）
+     * @param importMaterialIds  本次导入文件解析出的明细物料编号集合
+     * @return 差异结果；该成品无任何非作废 BOM 时返回 null（首次导入）
+     */
+    ErpRdBomBaselineDiffVO diffImportAgainstLatest(Long productId, Collection<Long> importMaterialIds);
 
 }

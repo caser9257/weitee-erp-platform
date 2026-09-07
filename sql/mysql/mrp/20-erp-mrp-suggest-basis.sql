@@ -8,7 +8,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @add_purchase_gross_demand_qty = (
   SELECT IF(

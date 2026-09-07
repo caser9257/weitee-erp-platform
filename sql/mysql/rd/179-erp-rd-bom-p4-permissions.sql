@@ -6,8 +6,9 @@
   可重复执行；已存在时仅做启用与绑定修复。
 */
 SET NAMES utf8mb4;
+-- 不指定 USE，跟随执行时连接的数据库（与 182+ 口径一致）
 SET FOREIGN_KEY_CHECKS = 0;
-USE `ruoyi-vue-pro`;
+
 
 -- 研发BOM 菜单ID
 SET @rd_bom_menu_id := (

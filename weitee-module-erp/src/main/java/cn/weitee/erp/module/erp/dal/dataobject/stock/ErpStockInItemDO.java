@@ -53,6 +53,16 @@ public class ErpStockInItemDO extends BaseDO {
      * 冗余 {@link ErpProductDO#getUnitId()}
      */
     private Long productUnitId;
+
+    /**
+     * 录入数量（录入单位口径）；null 表示与 count 相同
+     */
+    private BigDecimal inputCount;
+
+    /**
+     * 换算率快照：1 录入单位 = conversionRate 基本单位；基本单位为 null
+     */
+    private BigDecimal conversionRate;
     /**
      * 产品单价
      */

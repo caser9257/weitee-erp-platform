@@ -108,6 +108,10 @@ class ErpProductionCostAllocationServiceImplTest {
                 updatedAllocationRef.set((ErpProductionCostAllocationDO) args[0]);
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedAllocationRef.set((ErpProductionCostAllocationDO) args[2]);
+                return 1;
+            }
             return null;
         }));
         setField(service, "erpProductionCostAllocationRuleMapper", createProxy(ErpProductionCostAllocationRuleMapper.class, (methodName, args) -> {
@@ -197,6 +201,10 @@ class ErpProductionCostAllocationServiceImplTest {
             }
             if ("updateById".equals(methodName)) {
                 updatedAllocationRef.set((ErpProductionCostAllocationDO) args[0]);
+                return 1;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedAllocationRef.set((ErpProductionCostAllocationDO) args[2]);
                 return 1;
             }
             return null;
@@ -300,6 +308,9 @@ class ErpProductionCostAllocationServiceImplTest {
             if ("updateById".equals(methodName)) {
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                return 1;
+            }
             return null;
         }));
         setField(service, "erpProductionCostAllocationRuleMapper", createProxy(ErpProductionCostAllocationRuleMapper.class, (methodName, args) -> {
@@ -383,6 +394,9 @@ class ErpProductionCostAllocationServiceImplTest {
                 return allocation;
             }
             if ("updateById".equals(methodName)) {
+                return 1;
+            }
+            if ("updateByIdAndStatus".equals(methodName)) {
                 return 1;
             }
             return null;

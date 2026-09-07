@@ -26,20 +26,7 @@
           />
         </el-form-item>
         <el-form-item label="产品" prop="productId">
-          <el-select
-            v-model="queryParams.productId"
-            clearable
-            filterable
-            placeholder="请选择产品"
-            class="!w-160px"
-          >
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="queryParams.productId" placeholder="请选择产品" class="!w-160px" />
         </el-form-item>
         <el-form-item label="退货时间" prop="orderTime">
           <el-date-picker
@@ -155,7 +142,7 @@ const open = async (customerId: number) => {
   queryParams.customerId = customerId
   await resetQuery()
   // 加载产品列表
-  productList.value = await ProductApi.getProductSimpleList()
+  productList.value = []
 }
 defineExpose({ open }) // 提供 open 方法，用于打开弹窗
 

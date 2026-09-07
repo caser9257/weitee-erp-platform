@@ -8,6 +8,7 @@ export interface BomItemVO {
   materialId: number
   materialName?: string
   referenceDesignator?: string
+  position?: string
   materialType?: number
   unitId?: number
   unitName?: string
@@ -124,6 +125,8 @@ export interface BomVO {
   expireDate?: string | Date
   sourceRdBomId?: number
   remark?: string
+  /** 停用审批在途流程实例 ID；非空表示停用审批中 */
+  processInstanceId?: string
   createTime?: string | number
   items: BomItemVO[]
 }
@@ -164,20 +167,23 @@ export const BomApi = {
     return await request.get<BomVO>({ url: `/erp/bom/get?id=${id}` })
   },
 
-  createBom: async (data: BomSaveReqVO) => {
-    return await request.post<number>({ url: '/erp/bom/create', data })
+  // 发起制造 BOM 停用（废止）申请（BPM 审批，通过后由系统落 DISABLE）
+  submitDisableApproval: async (id: number, reason?: string) => {
+    const params: Record<string, any> = { id }
+    if (reason) params.reason = reason
+    return await request.post<boolean>({ url: '/erp/bom/lifecycle/submit', params })
   },
 
-  updateBom: async (data: BomSaveReqVO) => {
-    return await request.put<boolean>({ url: '/erp/bom/update', data })
+  // 撤回制造 BOM 停用申请
+  cancelDisableApproval: async (id: number, reason?: string) => {
+    const params: Record<string, any> = { id }
+    if (reason) params.reason = reason
+    return await request.post<boolean>({ url: '/erp/bom/lifecycle/cancel', params })
   },
 
-  updateBomStatus: async (id: number, status: number) => {
-    return await request.put<boolean>({ url: `/erp/bom/update-status?id=${id}&status=${status}` })
-  },
-
-  deleteBom: async (id: number) => {
-    return await request.delete<boolean>({ url: `/erp/bom/delete?id=${id}` })
+  // 从研发 BOM 重新发布（管理动作，刷新 MBOM 快照）
+  rePublishFromRdBom: async (rdBomId: number) => {
+    return await request.post<boolean>({ url: `/erp/bom/re-publish?rdBomId=${rdBomId}` })
   },
 
   getBomTree: async (params: BomTreeReqVO | number) => {

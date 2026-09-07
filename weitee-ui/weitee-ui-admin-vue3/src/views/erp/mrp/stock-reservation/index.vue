@@ -16,21 +16,7 @@
         class="-mb-15px summary-query-form"
       >
         <el-form-item label="物料" prop="productId">
-          <el-select
-            v-model="summaryQueryParams.productId"
-            clearable
-            filterable
-            :loading="loadingOptions"
-            class="query-control"
-            placeholder="请选择物料"
-          >
-            <el-option
-              v-for="item in productOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="summaryQueryParams.productId" class="query-control" placeholder="请选择物料" />
         </el-form-item>
         <el-form-item>
           <el-button :disabled="!canSearchSummary" @click="handleSummaryQuery" v-hasPermi="['erp:stock-reservation:query']">
@@ -175,21 +161,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="物料" prop="productId">
-          <el-select
-            v-model="detailQueryParams.productId"
-            clearable
-            filterable
-            :loading="loadingOptions"
-            class="query-control"
-            placeholder="请选择物料"
-          >
-            <el-option
-              v-for="item in productOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="detailQueryParams.productId" class="query-control" placeholder="请选择物料" />
         </el-form-item>
         <el-form-item label="来源销售单" prop="sourceOrderId">
           <el-input-number
@@ -590,7 +562,7 @@ const loadOptions = async () => {
   try {
     const [projects, products] = await Promise.all([
       ProjectApi.getProjectSimpleList(),
-      ProductApi.getProductSimpleList()
+      Promise.resolve([])
     ])
     projectOptions.value = projects
     productOptions.value = products

@@ -139,6 +139,10 @@ class ErpProductionOrderServiceImplTest {
                     }
                     return null;
                 }));
+        // 下达流程会发布 ErpProductionOrderReleasedEvent，夹具注入 no-op 事件发布器
+        setField(productionOrderService, "eventPublisher",
+                createProxy(org.springframework.context.ApplicationEventPublisher.class,
+                        (methodName, args) -> null));
     }
 
     @Test

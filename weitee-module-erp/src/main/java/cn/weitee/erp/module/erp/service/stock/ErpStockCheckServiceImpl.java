@@ -26,6 +26,7 @@ import cn.weitee.erp.module.erp.enums.stock.ErpStockRecordBizTypeEnum;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceVoucherService;
 import cn.weitee.erp.module.erp.service.mrp.ErpProductionCostService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,6 +70,8 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
 
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductUnitConversionService unitConversionService;
     @Resource
     private ErpWarehouseService warehouseService;
     @Resource
@@ -223,10 +226,16 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
     private void approveAndClose(ErpStockCheckDO stockCheck) {
         Long checkId = stockCheck.getId();
 
-        // 0. 先写 PROCESSING 中间态（业务完成后才能落 CLOSED 终态）
-        erpStockCheckMapper.updateById(new ErpStockCheckDO()
-                .setId(checkId)
-                .setStatus(ErpStockCheckStatusEnum.PROCESSING.getStatus()));
+        // 0. 先以 CAS 写 PROCESSING 中间态（业务完成后才能落 CLOSED 终态）。
+        //    必须带原状态条件：盘点审核没有分布式锁，两个并发/重复提交请求都会先读到同一状态，
+        //    无条件 updateById 会让两者都通过状态校验、重复执行盘盈亏出入库和凭证生成（历史缺陷）。
+        //    CAS 失败方事务回滚，不会留下半条流水。
+        int updateCount = erpStockCheckMapper.updateByIdAndStatus(checkId, stockCheck.getStatus(),
+                new ErpStockCheckDO().setStatus(ErpStockCheckStatusEnum.PROCESSING.getStatus()));
+        if (updateCount == 0) {
+            throw exception(STOCK_CHECK_STATUS_TRANSITION_FAIL, stockCheck.getStatus(),
+                    ErpStockCheckStatusEnum.PROCESSING.getStatus());
+        }
 
         // 1. 更新库存
         List<ErpStockCheckItemDO> stockCheckItems = erpStockCheckItemMapper.selectListByCheckId(checkId);
@@ -381,15 +390,26 @@ public class ErpStockCheckServiceImpl implements ErpStockCheckService {
 
     private List<ErpStockCheckItemDO> validateStockCheckItems(List<ErpStockCheckSaveReqVO.Item> list) {
         // 1.1 校验产品存在
-        List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpStockCheckSaveReqVO.Item::getProductId));
-        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
+        productService.validProductList(convertSet(list, ErpStockCheckSaveReqVO.Item::getProductId));
         // 1.2 校验仓库存在
         warehouseService.validWarehouseList(convertSet(list, ErpStockCheckSaveReqVO.Item::getWarehouseId));
         // 2. 转化为 ErpStockCheckItemDO 列表
-        return convertList(list, o -> BeanUtils.toBean(o, ErpStockCheckItemDO.class, item -> item
-                .setProductUnitId(productMap.get(item.getProductId()).getUnitId())
-                .setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()))));
+        List<ErpStockCheckItemDO> items = convertList(list, o -> BeanUtils.toBean(o, ErpStockCheckItemDO.class));
+        // 3. 批量换算录入单位：count 换算为基本单位记账数量，inputCount/conversionRate 保留录入口径
+        List<ErpProductUnitConversionService.ConversionResult> results = unitConversionService.convertBatch(
+                convertList(items, item -> new ErpProductUnitConversionService.ConversionRequest(
+                        item.getProductId(), item.getProductUnitId(), item.getCount())));
+        for (int i = 0; i < items.size(); i++) {
+            ErpStockCheckItemDO item = items.get(i);
+            ErpProductUnitConversionService.ConversionResult result = results.get(i);
+            item.setProductUnitId(result.getInputUnitId());
+            item.setInputCount(result.getInputCount());
+            item.setConversionRate(result.getConversionRate());
+            item.setCount(result.getBaseCount());
+            // 4. 金额计算：单价为录入单位口径，金额 = 单价 × 录入数量
+            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), result.getInputCount()));
+        }
+        return items;
     }
 
     private void updateStockCheckItemList(Long id, List<ErpStockCheckItemDO> newList) {

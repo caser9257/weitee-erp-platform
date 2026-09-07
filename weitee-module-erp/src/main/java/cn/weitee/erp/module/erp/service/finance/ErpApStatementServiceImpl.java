@@ -53,6 +53,7 @@ import static cn.weitee.erp.framework.common.exception.util.ServiceExceptionUtil
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertMap;
 import static cn.weitee.erp.framework.common.util.collection.CollectionUtils.convertSet;
 import static cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils.getLoginUserId;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_HAS_APPROVED_ALLOCATE;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.AP_STATEMENT_NOT_EXISTS;
 
 @Service
@@ -84,10 +85,15 @@ public class ErpApStatementServiceImpl implements ErpApStatementService {
         if (purchaseIn == null || purchaseIn.getId() == null) {
             return;
         }
-        if (erpApStatementMapper.selectByBizTypeAndBizId(ErpBizTypeEnum.PURCHASE_IN.getType(), purchaseIn.getId()) != null) {
+        BigDecimal amount = defaultAmount(purchaseIn.getTotalPrice());
+        ErpApStatementDO existed = erpApStatementMapper.selectByBizTypeAndBizId(ErpBizTypeEnum.PURCHASE_IN.getType(), purchaseIn.getId());
+        if (existed != null && !ErpApStatementStatusEnum.CLOSED.getStatus().equals(existed.getStatus())) {
             return;
         }
-        BigDecimal amount = defaultAmount(purchaseIn.getTotalPrice());
+        if (existed != null) {
+            reopenClosedStatement(existed, amount, purchaseIn.getRemark(), "重新生成应付（反审核后重新审批）");
+            return;
+        }
         LocalDateTime bizDate = resolveBizDate(purchaseIn.getInTime(), purchaseIn.getCreateTime(), purchaseIn.getUpdateTime());
         ErpApStatementDO statement = new ErpApStatementDO()
                 .setStatementNo(buildStatementNo(ErpBizTypeEnum.PURCHASE_IN.getType(), purchaseIn.getNo()))
@@ -126,10 +132,15 @@ public class ErpApStatementServiceImpl implements ErpApStatementService {
         if (purchaseReturn == null || purchaseReturn.getId() == null) {
             return;
         }
-        if (erpApStatementMapper.selectByBizTypeAndBizId(ErpBizTypeEnum.PURCHASE_RETURN.getType(), purchaseReturn.getId()) != null) {
+        BigDecimal amount = defaultAmount(purchaseReturn.getTotalPrice()).negate();
+        ErpApStatementDO existed = erpApStatementMapper.selectByBizTypeAndBizId(ErpBizTypeEnum.PURCHASE_RETURN.getType(), purchaseReturn.getId());
+        if (existed != null && !ErpApStatementStatusEnum.CLOSED.getStatus().equals(existed.getStatus())) {
             return;
         }
-        BigDecimal amount = defaultAmount(purchaseReturn.getTotalPrice()).negate();
+        if (existed != null) {
+            reopenClosedStatement(existed, amount, purchaseReturn.getRemark(), "重新生成应付（反审核后重新审批）");
+            return;
+        }
         LocalDateTime bizDate = resolveBizDate(purchaseReturn.getReturnTime(), purchaseReturn.getCreateTime(), purchaseReturn.getUpdateTime());
         ErpApStatementDO statement = new ErpApStatementDO()
                 .setStatementNo(buildStatementNo(ErpBizTypeEnum.PURCHASE_RETURN.getType(), purchaseReturn.getNo()))
@@ -160,6 +171,34 @@ public class ErpApStatementServiceImpl implements ErpApStatementService {
                 .setAfterPaidAmount(statement.getPaidAmount())
                 .setAfterRemainAmount(statement.getRemainAmount())
                 .setRemark("create statement"));
+    }
+
+    /**
+     * 重新打开已关闭的应付台账（反审核后重新审批场景）。
+     * 仅重置金额与状态，paidAmount 归零，防止历史付款分配残留导致应付金额不一致。
+     */
+    private void reopenClosedStatement(ErpApStatementDO existed, BigDecimal amount, String bizRemark, String itemRemark) {
+        erpApStatementMapper.updateById(new ErpApStatementDO()
+                .setId(existed.getId())
+                .setAmount(amount)
+                .setPaidAmount(BigDecimal.ZERO)
+                .setRemainAmount(amount)
+                .setStatus(ErpApStatementStatusEnum.UNPAID.getStatus())
+                .setRemark(bizRemark));
+        erpApStatementMapper.updateInvoiceById(existed.getId(), ErpApInvoiceStatusEnum.NONE.getStatus(), null, null);
+        erpApStatementItemMapper.insert(new ErpApStatementItemDO()
+                .setStatementId(existed.getId())
+                .setItemType(ErpApStatementItemTypeEnum.CREATED.getStatus())
+                .setRefType(existed.getBizType())
+                .setRefId(existed.getBizId())
+                .setRefNo(existed.getBizNo())
+                .setAmount(amount)
+                .setAfterPaidAmount(BigDecimal.ZERO)
+                .setAfterRemainAmount(amount)
+                .setRemark(itemRemark));
+        if (ErpBizTypeEnum.PURCHASE_IN.getType().equals(existed.getBizType())) {
+            apEstimateService.restoreByStatementReopen(existed.getBizType(), existed.getBizId());
+        }
     }
 
     @Override
@@ -309,6 +348,10 @@ public class ErpApStatementServiceImpl implements ErpApStatementService {
         if (statement == null || ErpApStatementStatusEnum.CLOSED.getStatus().equals(statement.getStatus())) {
             return;
         }
+        // 机制级守卫：台账存在已生效核销事实（付款或预付款）时禁止关闭。
+        // 关闭后 refreshStatementAmountByIds 会跳过 CLOSED 台账，若此时仍有 APPROVED 核销，
+        // 台账 paid/remain 与核销明细将永久不一致（半条 AP 事实），必须在源头阻断。
+        validateNoApprovedAllocate(statement);
         erpApStatementMapper.updateById(new ErpApStatementDO()
                 .setId(statement.getId())
                 .setStatus(ErpApStatementStatusEnum.CLOSED.getStatus())
@@ -329,6 +372,14 @@ public class ErpApStatementServiceImpl implements ErpApStatementService {
                     statement.getId(),
                     statement.getStatementNo(),
                     remark);
+        }
+    }
+
+    private void validateNoApprovedAllocate(ErpApStatementDO statement) {
+        List<Long> statementIds = List.of(statement.getId());
+        if (CollUtil.isNotEmpty(erpFinancePaymentAllocateMapper.selectApprovedListByStatementIds(statementIds))
+                || CollUtil.isNotEmpty(erpFinancePrepaymentAllocateMapper.selectApprovedListByStatementIds(statementIds))) {
+            throw exception(AP_STATEMENT_HAS_APPROVED_ALLOCATE, statement.getStatementNo());
         }
     }
 

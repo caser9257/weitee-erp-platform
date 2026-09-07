@@ -10,17 +10,23 @@ import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemBatchDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseInStockExecuteItemDO;
+import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpApInvoiceMatchItemDO;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpApInvoiceMatchItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePrepaymentAllocateMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteItemBatchMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseInStockExecuteMapper;
+import cn.weitee.erp.module.erp.enums.ErpApInvoiceMatchItemStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ErpFinancePaymentAllocateStatusEnum;
+import cn.weitee.erp.module.erp.enums.ErpFinancePrepaymentAllocateStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpPurchaseInStockInStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpQaStatusEnum;
 import cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Component;
 
@@ -52,6 +58,10 @@ class ErpPurchaseInQueryHelper {
     private ErpPurchaseInStockExecuteItemBatchMapper erpPurchaseInStockExecuteItemBatchMapper;
     @Resource
     private ErpFinancePaymentAllocateMapper erpFinancePaymentAllocateMapper;
+    @Resource
+    private ErpApInvoiceMatchItemMapper erpApInvoiceMatchItemMapper;
+    @Resource
+    private ErpFinancePrepaymentAllocateMapper erpFinancePrepaymentAllocateMapper;
 
     // region 基础查询
 
@@ -152,9 +162,20 @@ class ErpPurchaseInQueryHelper {
     }
 
     public boolean hasApprovedAllocate(Long bizId) {
+        // 付款核销与预付款核销都会占用台账金额，反审核守卫必须同时覆盖两类核销事实，
+        // 否则预付款已核销的入库单被反审核后，台账关闭但核销事实悬挂（半条 AP 事实）。
         return ObjectUtil.defaultIfNull(erpFinancePaymentAllocateMapper.selectCountByBizTypeAndBizIdAndStatus(
                 ErpBizTypeEnum.PURCHASE_IN.getType(), bizId,
-                ErpFinancePaymentAllocateStatusEnum.APPROVED.getStatus()), 0L) > 0;
+                ErpFinancePaymentAllocateStatusEnum.APPROVED.getStatus()), 0L) > 0
+                || ObjectUtil.defaultIfNull(erpFinancePrepaymentAllocateMapper.selectCountByBizTypeAndBizIdAndStatus(
+                ErpBizTypeEnum.PURCHASE_IN.getType(), bizId,
+                ErpFinancePrepaymentAllocateStatusEnum.APPROVED.getStatus()), 0L) > 0;
+    }
+
+    public boolean hasActiveInvoiceMatch(Long purchaseInId) {
+        return erpApInvoiceMatchItemMapper.selectCount(new LambdaQueryWrapper<ErpApInvoiceMatchItemDO>()
+                .eq(ErpApInvoiceMatchItemDO::getSourcePurchaseInId, purchaseInId)
+                .eq(ErpApInvoiceMatchItemDO::getStatus, ErpApInvoiceMatchItemStatusEnum.ACTIVE.getStatus())) > 0;
     }
 
     public boolean isQualityChecked(Integer qaStatus) {

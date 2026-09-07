@@ -23,8 +23,7 @@ const isDatabaseGroupRoute = (route: AppRouteRecordRaw) => {
   const children = route.children || []
   const routePath = route.path || ''
   return (
-    Boolean(routePath) &&
-    !routePath.startsWith('/') &&
+    (!routePath || !routePath.startsWith('/')) &&
     children.length > 0 &&
     children.every((child) => !child.children?.length)
   )
@@ -99,17 +98,16 @@ const visitGroupedRoutes = (
   }
 
   if (childRoutes.some((child) => hasGroupedDescendant(child))) {
-    childRoutes.forEach((child) => visitGroupedRoutes(child, groupedRouteMap, directRoutes, fullPath))
+    childRoutes.forEach((child) =>
+      visitGroupedRoutes(child, groupedRouteMap, directRoutes, fullPath)
+    )
     return
   }
 
   directRoutes.push(route)
 }
 
-export const buildGroupedMenuEntries = (
-  routes: AppRouteRecordRaw[] = [],
-  basePath = '/'
-) => {
+export const buildGroupedMenuEntries = (routes: AppRouteRecordRaw[] = [], basePath = '/') => {
   const groupedRouteMap = new Map<string, GroupedMenuEntry>()
   const directRoutes: AppRouteRecordRaw[] = []
 

@@ -5,6 +5,8 @@ import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOrderMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceReceiptService;
+import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductUnitDO;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitService;
 import cn.weitee.erp.module.crm.service.contract.CrmContractService;
 import cn.weitee.erp.module.crm.dal.dataobject.contract.CrmContractDO;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +41,9 @@ class ErpShipmentReleaseServiceImplTest {
 
     @Mock
     private CrmContractService crmContractService;
+
+    @Mock
+    private ErpProductUnitService productUnitService;
 
     private ErpSaleOrderDO baseOrder;
     private CrmContractDO baseContract;

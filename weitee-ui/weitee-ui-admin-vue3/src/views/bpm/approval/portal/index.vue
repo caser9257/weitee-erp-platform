@@ -91,7 +91,7 @@
                 </el-table-column>
                 <el-table-column min-width="170" label="完成时间" align="right">
                   <template #default="{ row }">
-                    <span class="approval-page__mono approval-page__muted-text">{{ formatTime(row.finishTime || row.createTime) }}</span>
+                    <span class="approval-page__mono approval-page__muted-text">{{ formatTime(row.endTime || row.createTime) }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column min-width="120" label="操作" align="center" fixed="right">
@@ -130,7 +130,8 @@
                 </el-table-column>
                 <el-table-column min-width="170" label="发起时间" align="right">
                   <template #default="{ row }">
-                    <span class="approval-page__mono approval-page__muted-text">{{ formatTime(row.createTime) }}</span>
+                    <!-- 流程实例的时间字段是 startTime（接口不返回 createTime），兜底 createTime 兼容 -->
+                    <span class="approval-page__mono approval-page__muted-text">{{ formatTime(row.startTime || row.createTime) }}</span>
                   </template>
                 </el-table-column>
                 <el-table-column min-width="120" label="操作" align="center" fixed="right">
@@ -220,9 +221,9 @@ watch(activeTab, (key) => {
   loadTab(key)
 })
 
-/** 待办处理：跳转待办列表 */
+/** 待办处理：打开流程详情执行审批 */
 const handleTodo = (row: any) => {
-  router.push('/bpm/task/todo')
+  goDetail(row)
 }
 
 /** 查看流程详情 */

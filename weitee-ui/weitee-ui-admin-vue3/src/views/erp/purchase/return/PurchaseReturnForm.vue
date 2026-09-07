@@ -176,6 +176,7 @@
   />
 </template>
 <script setup lang="ts">
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import { PurchaseReturnApi, PurchaseReturnVO } from '@/api/erp/purchase/return'
 import PurchaseReturnPrintDialog from './PurchaseReturnPrintDialog.vue'
 import PurchaseReturnItemForm from './components/PurchaseReturnItemForm.vue'
@@ -254,6 +255,7 @@ const open = async (type: string, id?: number) => {
     formLoading.value = true
     try {
       formData.value = await PurchaseReturnApi.getPurchaseReturn(id)
+      await normalizeItemsForUnitInput(formData.value.items)
     } finally {
       formLoading.value = false
     }

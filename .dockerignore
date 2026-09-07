@@ -8,7 +8,7 @@
 **/output
 **/.playwright-cli
 .worktrees-*
-.tester-runtime/*.log
-.tester-runtime/*.json
+.codex-runtime/*.log
+.codex-runtime/*.json
 tmp
 **/tmp

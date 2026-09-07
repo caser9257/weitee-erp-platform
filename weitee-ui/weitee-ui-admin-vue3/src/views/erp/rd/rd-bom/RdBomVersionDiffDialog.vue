@@ -111,8 +111,7 @@ const visibleEntries = computed<RdBomVersionDiffEntryVO[]>(() => {
   return showUnchanged.value ? entries : entries.filter((entry) => entry.changeType !== 'UNCHANGED')
 })
 
-const formatQty = (value?: number) =>
-  value == null ? '—' : String(value).replace(/\.?0+$/, '') || '0'
+const formatQty = (value?: number) => (value == null ? '—' : String(Number(value)))
 
 const open = async (sourceId: number, targetId: number, opts?: { sourceVersion?: string; targetVersion?: string }) => {
   dialogVisible.value = true

@@ -22,6 +22,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.finance.ErpArStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockBatchAllocationService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
@@ -75,6 +76,8 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
 
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductUnitConversionService unitConversionService;
     @Resource
     @Lazy // 延迟加载，避免循环依赖
     private ErpSaleOrderService saleOrderService;
@@ -199,6 +202,9 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         if (saleOut.getDiscountPercent() == null) {
             saleOut.setDiscountPercent(BigDecimal.ZERO);
         }
+        if (saleOut.getOtherPrice() == null) {
+            saleOut.setOtherPrice(BigDecimal.ZERO);
+        }
         saleOut.setDiscountPrice(MoneyUtils.priceMultiplyPercent(saleOut.getTotalPrice(), saleOut.getDiscountPercent()));
         saleOut.setTotalPrice(saleOut.getTotalPrice().subtract(saleOut.getDiscountPrice().add(saleOut.getOtherPrice())));
     }
@@ -228,11 +234,21 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
             throw exception(SALE_OUT_PROCESS_FAIL_EXISTS_RECEIPT);
         }
 
-        // 2. 更新状态
-        int updateCount = erpSaleOutMapper.updateByIdAndStatus(id, saleOut.getStatus(),
-                new ErpSaleOutDO().setStatus(status));
+        // 2. 更新状态（反审核走带 receipt_price=0 的 CAS，关闭「读校验→并发收款回写→改状态」脏状态窗口）
+        int updateCount = approve
+                ? erpSaleOutMapper.updateByIdAndStatus(id, saleOut.getStatus(), new ErpSaleOutDO().setStatus(status))
+                : erpSaleOutMapper.updateByIdAndStatusAndNoReceipt(id, saleOut.getStatus(), new ErpSaleOutDO().setStatus(status));
         if (updateCount == 0) {
-            throw exception(approve ? SALE_OUT_APPROVE_FAIL : SALE_OUT_PROCESS_FAIL);
+            if (approve) {
+                throw exception(SALE_OUT_APPROVE_FAIL);
+            }
+            // 反审核 CAS 失败：区分「并发已回写收款」与「并发状态变更」，给准确提示
+            ErpSaleOutDO latest = erpSaleOutMapper.selectById(id);
+            if (latest != null && latest.getReceiptPrice() != null
+                    && latest.getReceiptPrice().compareTo(BigDecimal.ZERO) > 0) {
+                throw exception(SALE_OUT_PROCESS_FAIL_EXISTS_RECEIPT);
+            }
+            throw exception(SALE_OUT_PROCESS_FAIL);
         }
 
         // 3. 变更库存
@@ -323,20 +339,30 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
 
     private List<ErpSaleOutItemDO> validateSaleOutItems(List<ErpSaleOutSaveReqVO.Item> list) {
         // 1. 校验产品存在
-        List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpSaleOutSaveReqVO.Item::getProductId));
-        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
+        productService.validProductList(convertSet(list, ErpSaleOutSaveReqVO.Item::getProductId));
         // 2. 转化为 ErpSaleOutItemDO 列表
-        return convertList(list, o -> BeanUtils.toBean(o, ErpSaleOutItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
-            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
+        List<ErpSaleOutItemDO> items = convertList(list, o -> BeanUtils.toBean(o, ErpSaleOutItemDO.class));
+        // 3. 批量换算录入单位：count 换算为基本单位记账数量，inputCount/conversionRate 保留录入口径
+        List<ErpProductUnitConversionService.ConversionResult> results = unitConversionService.convertBatch(
+                convertList(items, item -> new ErpProductUnitConversionService.ConversionRequest(
+                        item.getProductId(), item.getProductUnitId(), item.getCount())));
+        for (int i = 0; i < items.size(); i++) {
+            ErpSaleOutItemDO item = items.get(i);
+            ErpProductUnitConversionService.ConversionResult result = results.get(i);
+            item.setProductUnitId(result.getInputUnitId());
+            item.setInputCount(result.getInputCount());
+            item.setConversionRate(result.getConversionRate());
+            item.setCount(result.getBaseCount());
+            // 4. 金额计算：单价为录入单位口径，金额 = 单价 × 录入数量
+            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), result.getInputCount()));
             if (item.getTotalPrice() == null) {
-                return;
+                continue;
             }
             if (item.getTaxPercent() != null) {
                 item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
             }
-        }));
+        }
+        return items;
     }
 
     private void updateSaleOutItemList(Long id, List<ErpSaleOutItemDO> newList) {
@@ -369,6 +395,10 @@ public class ErpSaleOutServiceImpl implements ErpSaleOutService {
         saleOuts.forEach(saleOut -> {
             if (ErpAuditStatus.APPROVE.getStatus().equals(saleOut.getStatus())) {
                 throw exception(SALE_OUT_DELETE_FAIL_APPROVE, saleOut.getNo());
+            }
+            // 已产生收款的出库单禁止删除，避免收款项 bizId 悬空、后续重算脏数据
+            if (saleOut.getReceiptPrice() != null && saleOut.getReceiptPrice().compareTo(BigDecimal.ZERO) > 0) {
+                throw exception(SALE_OUT_DELETE_FAIL_EXISTS_RECEIPT, saleOut.getNo());
             }
         });
 

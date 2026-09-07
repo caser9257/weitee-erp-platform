@@ -104,6 +104,16 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
             throw exception(PRODUCTION_INBOUND_STATUS_INVALID);
         }
         LocalDateTime now = LocalDateTime.now();
+        // CAS 先行：仅当状态仍为 PENDING 才允许进入执行，并发重复执行在写库存前即被拒绝，
+        // 避免双写批次量、库存流水和入库成本（历史缺陷：读-判-写竞态导致自制入库重复记账）
+        if (erpProductionInboundMapper.updateByIdAndStatus(id, ErpProductionInboundStatusEnum.PENDING.getStatus(),
+                new ErpProductionInboundDO()
+                        .setStatus(ErpProductionInboundStatusEnum.EXECUTED.getStatus())
+                        .setInboundTime(now)
+                        .setExecutedBy(operatorUserId)
+                        .setExecutedTime(now)) == 0) {
+            throw exception(PRODUCTION_INBOUND_STATUS_INVALID);
+        }
         stockBatchService.createOrIncreaseBatch(new ErpStockBatchInboundReqBO(
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getNo(), now, null, null,
                 inbound.getInboundQty(), Boolean.FALSE, ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(),
@@ -113,25 +123,19 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getInboundQty(),
                 ErpStockRecordBizTypeEnum.PRODUCTION_IN.getType(), inbound.getId(), inbound.getId(), inbound.getNo(),
                 inbound.getUnitCost(), inbound.getTotalCost()));
-        erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
-                .setId(id)
-                .setStatus(ErpProductionInboundStatusEnum.EXECUTED.getStatus())
-                .setInboundTime(now)
-                .setExecutedBy(operatorUserId)
-                .setExecutedTime(now));
         financeBizHookService.handleApprovedBiz(ErpBizTypeEnum.PRODUCTION_INBOUND.getType(), id, now.toLocalDate());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cancelProductionInbound(Long id) {
-        ErpProductionInboundDO inbound = validateProductionInboundExists(id);
-        if (!ErpProductionInboundStatusEnum.PENDING.getStatus().equals(inbound.getStatus())) {
+        validateProductionInboundExists(id);
+        // CAS：作废与执行互斥，防止并发下 CANCELED 被 execute 覆盖回 EXECUTED
+        if (erpProductionInboundMapper.updateByIdAndStatus(id, ErpProductionInboundStatusEnum.PENDING.getStatus(),
+                new ErpProductionInboundDO()
+                        .setStatus(ErpProductionInboundStatusEnum.CANCELED.getStatus())) == 0) {
             throw exception(PRODUCTION_INBOUND_STATUS_INVALID);
         }
-        erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
-                .setId(id)
-                .setStatus(ErpProductionInboundStatusEnum.CANCELED.getStatus()));
     }
 
     @Override
@@ -146,6 +150,13 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
         if (stockBatch == null) {
             throw exception(PRODUCTION_INBOUND_BATCH_NOT_EXISTS);
         }
+        // CAS 先行：仅当状态仍为 EXECUTED 才允许反执行，并发重复反执行在扣库存前即被拒绝
+        if (erpProductionInboundMapper.updateByIdAndStatus(id, ErpProductionInboundStatusEnum.EXECUTED.getStatus(),
+                new ErpProductionInboundDO()
+                        .setStatus(ErpProductionInboundStatusEnum.PENDING.getStatus())) == 0) {
+            throw exception(PRODUCTION_INBOUND_STATUS_INVALID);
+        }
+        erpProductionInboundMapper.resetExecutionInfoById(id);
         stockBatchService.decreaseBatch(new ErpStockBatchChangeReqBO(
                 stockBatch.getId(), inbound.getInboundQty(), ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(),
                 inbound.getId(), inbound.getId(), inbound.getNo(), "自制入库反执行"));
@@ -153,10 +164,6 @@ public class ErpProductionInboundServiceImpl implements ErpProductionInboundServ
                 inbound.getProductId(), inbound.getWarehouseId(), inbound.getInboundQty().negate(),
                 ErpStockRecordBizTypeEnum.PRODUCTION_IN_CANCEL.getType(), inbound.getId(), inbound.getId(), inbound.getNo(),
                 inbound.getUnitCost(), inbound.getTotalCost()));
-        erpProductionInboundMapper.updateById(new ErpProductionInboundDO()
-                .setId(id)
-                .setStatus(ErpProductionInboundStatusEnum.PENDING.getStatus()));
-        erpProductionInboundMapper.resetExecutionInfoById(id);
         financeBizHookService.handleRollbackBiz(ErpBizTypeEnum.PRODUCTION_INBOUND.getType(), id, operatorUserId, "自制入库反执行回滚凭证");
     }
 

@@ -847,7 +847,7 @@ const handleApprovalClick = () => {
   if (!canEnterApproval.value || loading.value) {
     return
   }
-  router.push('/bpm/task/my')
+  router.push('/approval/todo')
 }
 
 onMounted(() => {

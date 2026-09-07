@@ -21,7 +21,7 @@
       <el-table-column label="颜色" align="center" width="120">
         <template #default="{ row }">
           <div class="flex items-center justify-center gap-2">
-            <span class="inline-block w-5 h-5 rounded-full border border-slate-200" :style="{ backgroundColor: row.color || '#409EFF' }" />
+            <span class="inline-block w-5 h-5 rounded-full border border-slate-200" :style="{ backgroundColor: row.color || '#409EFF' }" ></span>
             <span class="text-slate-500 text-sm font-mono">{{ row.color || '-' }}</span>
           </div>
         </template>

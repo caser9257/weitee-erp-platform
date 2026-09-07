@@ -169,7 +169,7 @@
           <el-timeline-item
             v-for="log in view.changeLogs"
             :key="log.id"
-            :timestamp="log.createTime || ''"
+            :timestamp="log.createTime ? formatDate(log.createTime) : ''"
             placement="top"
             :type="LOG_TYPE_META[log.changeType]?.type || 'info'"
           >
@@ -192,6 +192,7 @@ import {
   type RdBomVersionDiffEntryVO,
   type RdBomItemSubstituteVO
 } from '@/api/erp/rd/bom'
+import { formatDate } from '@/utils/formatTime'
 import { DICT_TYPE } from '@/utils/dict'
 
 defineOptions({ name: 'RdBomApprovalPanel' })
@@ -246,8 +247,7 @@ const visibleEntries = computed<RdBomVersionDiffEntryVO[]>(() => {
   return showUnchanged.value ? entries : entries.filter((entry) => entry.changeType !== 'UNCHANGED')
 })
 
-const formatQty = (value?: number | null) =>
-  value == null ? '—' : String(value).replace(/\.?0+$/, '') || '0'
+const formatQty = (value?: number | null) => (value == null ? '—' : String(Number(value)))
 
 const formatSubstitutes = (substitutes: RdBomItemSubstituteVO[]) =>
   substitutes

@@ -54,8 +54,8 @@ application-my.yaml
 **/.DS_Store
 
 # Local tooling scratch files
-/.tester-temp/
-/.tester-temp-erp-lib*.jar
+/.codex-temp/
+/.codex-temp-erp-lib*.jar
 /.superpowers/
 /.worktrees/
 /tmp-*.png
@@ -74,4 +74,29 @@ weitee-ui/weitee-ui-admin-vue3/tmp-node-*-check.ts
 
 # tmp workspace garbage
 tmp/
-.tester/tasks/
+.opencode/tasks/
+
+# 本地 Maven 仓库缓存（禁止入库）
+.m2home/
+
+# 临时调试脚本与产物
+weitee-ui/weitee-ui-admin-vue3/scripts/pw-*.js
+weitee-ui/weitee-ui-admin-vue3/scripts/pw-*.cjs
+weitee-ui/weitee-ui-admin-vue3/scripts/route-merge-probe.ts
+weitee-ui/weitee-ui-admin-vue3/scripts/route-probe-run.cjs
+weitee-ui/weitee-ui-admin-vue3/*.tmp.cjs
+weitee-ui/weitee-ui-admin-vue3/panel-final.tmp.cjs
+weitee-ui/weitee-ui-admin-vue3/perm.json
+weitee-ui/weitee-ui-admin-vue3/.playwright-cli/
+weitee-ui/weitee-ui-admin-vue3/output/
+.codex/
+serve_ui.py
+nul
+
+# 本地缓存与临时工作区
+.pnpm-store/
+.scratch/
+.opencode/
+.tmp/
+.worktrees-push/
+output/

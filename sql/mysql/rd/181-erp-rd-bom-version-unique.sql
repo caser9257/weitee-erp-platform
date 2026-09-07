@@ -4,7 +4,8 @@
   幂等：先查再建
 */
 SET NAMES utf8mb4;
-USE `ruoyi-vue-pro`;
+-- 不指定 USE，跟随执行时连接的数据库（与 182+ 口径一致）
+
 
 SET @uk_exists := (
   SELECT COUNT(*) FROM information_schema.STATISTICS

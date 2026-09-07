@@ -6,7 +6,7 @@ USE `weitee-erp`;
 
 UPDATE system_users
 SET nickname = CONVERT(0xE8B4A2E58AA1E5AEA1E8AEA1E4BD93E9AA8CE8B4A6E58FB7 USING utf8mb4),
-    updater = 'tester',
+    updater = 'codex',
     update_time = NOW()
 WHERE username = 'financeaud'
   AND deleted = b'0'

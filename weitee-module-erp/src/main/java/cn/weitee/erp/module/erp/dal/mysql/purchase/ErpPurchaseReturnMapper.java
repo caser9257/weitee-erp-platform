@@ -71,6 +71,10 @@ public interface ErpPurchaseReturnMapper extends BaseMapperX<ErpPurchaseReturnDO
         return selectOne(ErpPurchaseReturnDO::getNo, no);
     }
 
+    default ErpPurchaseReturnDO selectByQualityId(Long qualityId) {
+        return selectOne(ErpPurchaseReturnDO::getQualityId, qualityId);
+    }
+
     default List<ErpPurchaseReturnDO> selectListByOrderId(Long orderId) {
         return selectList(ErpPurchaseReturnDO::getOrderId, orderId);
     }

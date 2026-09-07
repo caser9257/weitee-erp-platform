@@ -162,7 +162,7 @@
 
           <el-form ref="queryFormRef" :model="queryParams" label-width="90px" class="query-form">
             <el-row :gutter="16" class="query-row">
-              <el-col :xs="24" :sm="14" :lg="10" :xl="8">
+              <el-col :xs="24" :sm="12" :lg="7" :xl="6">
                 <el-form-item
                   :label="PAGE_COPY.productNameLabel"
                   prop="name"
@@ -177,16 +177,87 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="10" :lg="14" :xl="16">
+              <el-col :xs="24" :sm="12" :lg="7" :xl="6">
+                <el-form-item label="物料编号" prop="materialCode" class="query-form-item">
+                  <el-input
+                    v-model="queryParams.materialCode"
+                    placeholder="请输入物料编号"
+                    clearable
+                    class="query-input"
+                    @keyup.enter="handleQuery"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :lg="10" :xl="12">
                 <el-form-item class="query-form-item query-form-actions">
-                  <el-button :disabled="!canQueryProducts" @click="handleQuery">
-                    <Icon icon="ep:search" class="mr-5px" />
-                    {{ PAGE_COPY.search }}
-                  </el-button>
-                  <el-button :disabled="!canResetQuery" @click="resetQuery">
-                    <Icon icon="ep:refresh" class="mr-5px" />
-                    {{ PAGE_COPY.reset }}
-                  </el-button>
+                  <div class="query-actions">
+                    <el-button :disabled="!canQueryProducts" @click="handleQuery">
+                      <Icon icon="ep:search" class="mr-5px" />
+                      {{ PAGE_COPY.search }}
+                    </el-button>
+                    <el-button :disabled="!canResetQuery" @click="resetQuery">
+                      <Icon icon="ep:refresh" class="mr-5px" />
+                      {{ PAGE_COPY.reset }}
+                    </el-button>
+                    <el-divider direction="vertical" />
+                    <el-button link type="primary" @click="advancedSearchVisible = !advancedSearchVisible">
+                      {{ advancedSearchVisible ? '收起高级搜索' : '高级搜索' }}
+                      <Icon :icon="advancedSearchVisible ? 'ep:arrow-up' : 'ep:arrow-down'" class="ml-3px" />
+                    </el-button>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row v-show="advancedSearchVisible" :gutter="16" class="query-row advanced-row">
+              <el-col :xs="24" :sm="12" :lg="6" :xl="6">
+                <el-form-item label="产品型号" prop="standard" class="query-form-item">
+                  <el-input
+                    v-model="queryParams.standard"
+                    placeholder="请输入产品型号"
+                    clearable
+                    class="query-input"
+                    @keyup.enter="handleQuery"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6" :xl="6">
+                <el-form-item label="品牌/制造商" prop="brandManufacturer" class="query-form-item">
+                  <el-input
+                    v-model="queryParams.brandManufacturer"
+                    placeholder="请输入品牌/制造商"
+                    clearable
+                    class="query-input"
+                    @keyup.enter="handleQuery"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6" :xl="6">
+                <el-form-item label="审批状态" prop="auditStatus" class="query-form-item">
+                  <el-select
+                    v-model="queryParams.auditStatus"
+                    placeholder="全部"
+                    clearable
+                    class="query-input"
+                  >
+                    <el-option label="草稿" :value="0" />
+                    <el-option label="审批中" :value="10" />
+                    <el-option label="已审批" :value="20" />
+                    <el-option label="已驳回" :value="30" />
+                    <el-option label="处理失败" :value="60" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6" :xl="6">
+                <el-form-item label="PCB 元器件" prop="pcbComponent" class="query-form-item">
+                  <el-select
+                    v-model="queryParams.pcbComponent"
+                    placeholder="全部"
+                    clearable
+                    class="query-input"
+                  >
+                    <el-option label="是" :value="true" />
+                    <el-option label="否" :value="false" />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -234,60 +305,51 @@
                 :data="list"
                 :stripe="true"
                 :show-overflow-tooltip="true"
+                :border="true"
                 class="product-table"
-                @expand-change="handleExpand"
+                @header-dragend="handleHeaderDragend"
               >
-                <el-table-column type="selection" width="32" />
-                <el-table-column :label="PAGE_COPY.productInfoLabel" align="left" min-width="120">
+                <el-table-column type="expand" width="36" :resizable="false">
                   <template #default="{ row }">
-                    <div class="product-cell">
-                      <div class="product-cell-primary">{{ row.name || '-' }}</div>
-                      <div class="product-cell-secondary">
-                        {{ row.materialCode || row.barCode || row.id }}
-                      </div>
-                    </div>
+                    <ProductSubstituteExpand :product-id="row.id" />
                   </template>
                 </el-table-column>
-                <el-table-column :label="PAGE_COPY.specCategoryLabel" align="left" min-width="100">
+                <el-table-column type="selection" width="32" :resizable="false" />
+                <el-table-column label="产品名称" prop="name" min-width="140" show-overflow-tooltip />
+                <el-table-column label="产品编号" min-width="130">
                   <template #default="{ row }">
-                    <div class="product-cell">
-                      <div class="product-cell-primary">{{ row.standard || '-' }}</div>
-                      <div class="product-cell-secondary">{{ row.categoryName || '-' }}</div>
-                    </div>
+                    <span class="font-mono text-slate-600">{{
+                      formatMaterialCode(row.materialCode, row.prevMaterialCode)
+                    }}</span>
                   </template>
+                </el-table-column>
+                <el-table-column label="产品型号" prop="standard" min-width="100" show-overflow-tooltip>
+                  <template #default="{ row }">{{ row.standard || '-' }}</template>
+                </el-table-column>
+                <el-table-column label="产品分类" prop="categoryName" min-width="100" show-overflow-tooltip>
+                  <template #default="{ row }">{{ row.categoryName || '-' }}</template>
                 </el-table-column>
                 <el-table-column
                   :label="PAGE_COPY.productUnitLabel"
                   align="center"
                   prop="unitName"
-                  min-width="46"
+                  min-width="70"
                 />
                 <el-table-column
                   :label="PAGE_COPY.approvalStatusLabel"
                   align="center"
                   prop="status"
-                  min-width="60"
+                  min-width="80"
                 >
                   <template #default="{ row }">
                     <dict-tag :type="DICT_TYPE.COMMON_STATUS" :value="row.status" />
-                  </template>
-                </el-table-column>
-                <el-table-column label="审核状态" width="100" align="center">
-                  <template #default="{ row }">
-                    <el-tag
-                      :type="({0:'info',10:'warning',20:'success',30:'danger',60:'danger'}[row.auditStatus] || 'info') as any"
-                      size="small"
-                      effect="light"
-                    >
-                      {{ ({0:'草稿',10:'审批中',20:'已审批',30:'已驳回',60:'失败'}[row.auditStatus] || row.auditStatus) }}
-                    </el-tag>
                   </template>
                 </el-table-column>
                 <el-table-column
                   :label="PAGE_COPY.packagingLabel"
                   align="center"
                   prop="packaging"
-                  min-width="68"
+                  min-width="80"
                 >
                   <template #default="{ row }">{{ row.packaging || '-' }}</template>
                 </el-table-column>
@@ -295,7 +357,7 @@
                   :label="PAGE_COPY.qualityGradeLabel"
                   align="center"
                   prop="qualityGrade"
-                  min-width="60"
+                  min-width="80"
                 >
                   <template #default="{ row }">{{ row.qualityGrade || '-' }}</template>
                 </el-table-column>
@@ -303,7 +365,8 @@
                   :label="PAGE_COPY.brandManufacturerLabel"
                   align="center"
                   prop="brandManufacturer"
-                  min-width="84"
+                  min-width="100"
+                  show-overflow-tooltip
                 >
                   <template #default="{ row }">{{ row.brandManufacturer || '-' }}</template>
                 </el-table-column>
@@ -311,42 +374,10 @@
                   :label="PAGE_COPY.alternativeModelLabel"
                   align="center"
                   prop="alternativeModel"
-                  min-width="76"
+                  min-width="100"
+                  show-overflow-tooltip
                 >
                   <template #default="{ row }">{{ row.alternativeModel || '-' }}</template>
-                </el-table-column>
-                <el-table-column label="替代料" width="100" align="center">
-                  <template #default="{ row }">
-                    <el-tag
-                      v-if="hasSubstituteMap[row.id]"
-                      size="small"
-                      type="warning"
-                      effect="plain"
-                    >
-                      有替代料
-                    </el-tag>
-                    <span v-else class="text-11px text-slate-300">—</span>
-                  </template>
-                </el-table-column>
-                <el-table-column type="expand" width="50">
-                  <template #default="{ row }">
-                    <div v-loading="subLoading[row.id]" class="px-16px py-12px bg-slate-50">
-                      <div v-if="substituteMap[row.id]?.length" class="space-y-8px">
-                        <div
-                          v-for="sub in substituteMap[row.id]"
-                          :key="sub.id"
-                          class="flex items-center gap-10px rounded border border-slate-100 bg-white px-12px py-8px text-12px"
-                        >
-                          <span class="font-medium text-slate-700">{{ sub.substituteProductName }}</span>
-                          <span class="font-mono text-slate-400">{{ sub.substituteMaterialCode || sub.substituteProductId }}</span>
-                          <el-tag size="small" effect="plain">优先级 {{ sub.priority }}</el-tag>
-                          <span class="text-slate-500">替换比 {{ sub.replaceRatio }}</span>
-                          <span v-if="sub.remark" class="text-slate-400">{{ sub.remark }}</span>
-                        </div>
-                      </div>
-                      <div v-else class="py-8px text-center text-12px text-slate-400">暂无替代料（展开可查看）</div>
-                    </div>
-                  </template>
                 </el-table-column>
                 <el-table-column
                   :label="PAGE_COPY.actionsLabel"
@@ -365,7 +396,9 @@
                       >
                         {{ PAGE_COPY.detail }}
                       </el-button>
+                      <!-- 修改：仅未生效物料（草稿/驳回/失败）与两段式编辑中（保存暂存）可见 -->
                       <el-button
+                        v-if="[0, 30, 60, 22].includes(row.auditStatus ?? -1)"
                         link
                         type="primary"
                         :disabled="isProductActionBusy"
@@ -374,27 +407,41 @@
                       >
                         {{ PAGE_COPY.modify }}
                       </el-button>
+                      <!-- 变更/废除：仅已生效物料可见（修改语义统一收敛到两段式变更） -->
                       <el-button
-                        v-if="[0,30,60].includes(row.auditStatus ?? 0) && !row.processInstanceId"
-                        link
-                        type="primary"
-                        :disabled="isProductActionBusy"
-                        @click="handleSubmitAudit(row)"
-                        v-hasPermi="['erp:product:submit']"
-                      >
-                        提交审核
-                      </el-button>
-                      <el-button
-                        v-if="row.auditStatus === 10 && row.processInstanceId"
+                        v-if="row.auditStatus === 20"
                         link
                         type="warning"
                         :disabled="isProductActionBusy"
-                        @click="handleCancelAudit(row)"
-                        v-hasPermi="['erp:product:cancel']"
+                        @click="handleStartChange(row)"
+                        v-hasPermi="['erp:product:update']"
                       >
-                        撤回
+                        变更
                       </el-button>
                       <el-button
+                        v-if="row.auditStatus === 20"
+                        link
+                        type="danger"
+                        :disabled="isProductActionBusy"
+                        @click="handleStartObsolete(row)"
+                        v-hasPermi="['erp:product:update']"
+                      >
+                        废除
+                      </el-button>
+                      <!-- 提交审批：变更编辑中（保存与提交分离，修改完成后手动送审） -->
+                      <el-button
+                        v-if="row.auditStatus === 22"
+                        link
+                        type="warning"
+                        :disabled="isProductActionBusy"
+                        @click="handleSubmitChangeConfirm(row)"
+                        v-hasPermi="['erp:product:update']"
+                      >
+                        提交审批
+                      </el-button>
+                      <!-- 启停：已生效物料走启停审批（提交理由，审批通过即切换状态） -->
+                      <el-button
+                        v-if="row.auditStatus === 20"
                         link
                         type="warning"
                         :loading="productStatusUpdatingId === row.id"
@@ -409,6 +456,49 @@
                         }}
                       </el-button>
                       <el-button
+                        v-if="[0,30,60].includes(row.auditStatus ?? 0) && !row.processInstanceId"
+                        link
+                        type="primary"
+                        :disabled="isProductActionBusy"
+                        @click="handleSubmitAudit(row)"
+                        v-hasPermi="['erp:product:submit']"
+                      >
+                        提交审核
+                      </el-button>
+                      <el-button
+                        v-if="
+                          (row.auditStatus === 10 ||
+                            [21, 23, 24, 26].includes(row.auditStatus ?? -1)) &&
+                          row.processInstanceId
+                        "
+                        link
+                        type="warning"
+                        :disabled="isProductActionBusy"
+                        @click="handleCancelAudit(row)"
+                        v-hasPermi="['erp:product:cancel']"
+                      >
+                        撤回
+                      </el-button>
+                      <!-- 启停：仅未生效物料直改；已生效物料启停统一走「变更」两段式 -->
+                      <el-button
+                        v-if="[0, 30, 60].includes(row.auditStatus ?? -1)"
+                        link
+                        type="warning"
+                        :loading="productStatusUpdatingId === row.id"
+                        :disabled="isProductActionBusy"
+                        @click="handleStatusChange(row)"
+                        v-hasPermi="['erp:product:update']"
+                      >
+                        {{
+                          row.status === CommonStatusEnum.ENABLE
+                            ? PAGE_COPY.disable
+                            : PAGE_COPY.enable
+                        }}
+                      </el-button>
+                      <!-- 删除：仅未生效物料（草稿/驳回/失败）可见，用于清理误建档；
+                           已生效物料的退出路径只有停用（冻结）/废除（销号留痕），均走两段式审批 -->
+                      <el-button
+                        v-if="[0, 30, 60].includes(row.auditStatus ?? -1)"
                         link
                         type="danger"
                         :loading="productDeletingId === row.id"
@@ -453,11 +543,13 @@
 
 <script setup lang="ts">
 import download from '@/utils/download'
+import { formatMaterialCode } from '@/utils/erp/materialCode'
 import { ProductApi, ProductVO } from '@/api/erp/product/product'
 import { ProductCategoryApi, ProductCategoryVO } from '@/api/erp/product/category'
 import ProductForm from './ProductForm.vue'
 import ProductDetailDrawer from './ProductDetailDrawer.vue'
 import ProductImportForm from './ProductImportForm.vue'
+import ProductSubstituteExpand from './ProductSubstituteExpand.vue'
 import ProductCategoryForm from '../category/ProductCategoryForm.vue'
 import { DICT_TYPE } from '@/utils/dict'
 import { CommonStatusEnum } from '@/utils/constants'
@@ -483,8 +575,6 @@ const PAGE_COPY = {
   deleteCategory: '删除分类',
   noCategoryData: '暂无分类数据',
   productListTitle: '产品列表',
-  productInfoLabel: '产品信息',
-  specCategoryLabel: '规格/分类',
   productNameLabel: '产品名称',
   productNamePlaceholder: '请输入产品名称',
   search: '搜索',
@@ -495,7 +585,7 @@ const PAGE_COPY = {
   productLoadFailed: '产品列表加载失败',
   categoryLabel: '产品分类',
   productUnitLabel: '产品单位',
-  approvalStatusLabel: '审批状态',
+  approvalStatusLabel: '启用状态',
   packagingLabel: '产品封装',
   qualityGradeLabel: '质量等级',
   brandManufacturerLabel: '品牌/制造商',
@@ -522,18 +612,20 @@ const categoryDeletingId = ref<number>()
 const productDeletingId = ref<number>()
 const productStatusUpdatingId = ref<number>()
 
-const hasSubstituteMap = ref<Record<number, boolean>>({})
-const substituteMap = ref<Record<number, any[]>>({})
-const subLoading = ref<Record<number, boolean>>({})
-
 const list = ref<ProductVO[]>([])
 const total = ref(0)
 const queryParams = reactive({
   pageNo: 1,
   pageSize: 10,
   name: undefined as string | undefined,
+  materialCode: undefined as string | undefined,
+  standard: undefined as string | undefined,
+  brandManufacturer: undefined as string | undefined,
+  auditStatus: undefined as number | undefined,
+  pcbComponent: undefined as boolean | undefined,
   categoryId: undefined as number | undefined
 })
+const advancedSearchVisible = ref(false)
 
 const queryFormRef = ref()
 const categoryTreeRef = ref()
@@ -619,7 +711,6 @@ const getList = async () => {
     const data = await ProductApi.getProductPage(queryParams)
     list.value = data.list
     total.value = data.total
-    await loadHasSubstituteMap()
   } catch {
     productLoadError.value = true
   } finally {
@@ -627,32 +718,8 @@ const getList = async () => {
   }
 }
 
-const loadHasSubstituteMap = async () => {
-  if (!list.value.length) {
-    hasSubstituteMap.value = {}
-    return
-  }
-  const ids = list.value.map((p) => p.id)
-  try {
-    const map: any = await ProductApi.getHasSubstituteMap(ids as any)
-    hasSubstituteMap.value = map || {}
-  } catch {
-    hasSubstituteMap.value = {}
-  }
-}
-
-const handleExpand = async (row: ProductVO, expandedRows: ProductVO[]) => {
-  const expanded = expandedRows.find((r) => r.id === row.id)
-  if (!expanded) return
-  if (substituteMap.value[row.id]) return
-  subLoading.value[row.id] = true
-  try {
-    const subs: any = await ProductApi.getSubstituteList(row.id)
-    substituteMap.value[row.id] = subs || []
-    if (subs?.length) hasSubstituteMap.value[row.id] = true
-  } finally {
-    subLoading.value[row.id] = false
-  }
+const handleHeaderDragend = (_newWidth: number, _oldWidth: number, _column: any) => {
+  // 列宽调整完成后的回调，可用于保存用户偏好
 }
 
 const handleQuery = async () => {
@@ -760,23 +827,39 @@ const handleStatusChange = async (row: ProductVO) => {
   if (isProductActionBusy.value) {
     return
   }
-  let actionText = row.status === CommonStatusEnum.ENABLE ? PAGE_COPY.disable : PAGE_COPY.enable
+  const isApproved = row.auditStatus === 20
   productStatusUpdatingId.value = row.id
   try {
     const latestProduct = await ProductApi.getProduct(row.id)
     const isEnabled = latestProduct.status === CommonStatusEnum.ENABLE
-    actionText = isEnabled ? PAGE_COPY.disable : PAGE_COPY.enable
-    await message.confirm(`确认${actionText}产品“${row.name}”吗？`)
+    const actionText = isEnabled ? PAGE_COPY.disable : PAGE_COPY.enable
     const nextStatus =
-      latestProduct.status === CommonStatusEnum.ENABLE
-        ? CommonStatusEnum.DISABLE
-        : CommonStatusEnum.ENABLE
+      isEnabled ? CommonStatusEnum.DISABLE : CommonStatusEnum.ENABLE
+    if (isApproved) {
+      // 已生效物料：启停走一段式审批（提交理由，审批通过即切换状态）
+      const { value } = await message.prompt(`确认${actionText}该产品吗？`, '填写启停理由')
+      if (!value || !String(value).trim()) {
+        message.warning('请填写启停理由')
+        return
+      }
+      await ProductApi.submitStatusChange(row.id, nextStatus, String(value).trim())
+      await getList()
+      const updated: any = list.value.find((p: any) => p.id === row.id)
+      if (updated?.auditStatus === 28 && updated?.processInstanceId) {
+        message.success('启停审批已提交，等待审批')
+      } else {
+        message.error('提交已受理但流程创建失败，请重试')
+      }
+      return
+    }
+    // 未生效物料：直接切换
+    await message.confirm(`确认${actionText}该产品吗？`)
     await ProductApi.updateProduct({ ...latestProduct, status: nextStatus })
-    message.success(`${actionText}成功`)
+    message.success(t('common.updateSuccess'))
     await getList()
   } catch (error: any) {
     if (error !== 'cancel' && error !== 'close') {
-      message.error(error?.msg || error?.message || `${actionText}失败`)
+      message.error(error?.msg || error?.message || '操作失败')
     }
   } finally {
     productStatusUpdatingId.value = undefined
@@ -801,9 +884,9 @@ const handleDelete = async (id: number) => {
 
 const handleSubmitAudit = async (row: ProductVO) => {
   try {
-    await message.confirm(`确认提交物料“${row.name}”进行审核吗？`)
+    await message.confirm('确认提交审核吗？')
     await ProductApi.submitProduct(row.id)
-    message.success('提交请求已发送，列表将刷新校验状态')
+    // 不在此处弹受理提示：以刷新后的真实状态为准，由下方分支统一提示，避免双胶囊
     await getList()
     const updated: any = list.value.find((p: any) => p.id === row.id)
     if (updated?.auditStatus === 10 && updated?.processInstanceId) {
@@ -816,10 +899,75 @@ const handleSubmitAudit = async (row: ProductVO) => {
 
 const handleCancelAudit = async (row: ProductVO) => {
   try {
-    await message.confirm(`确认撤回物料“${row.name}”的审核吗？`)
-    await ProductApi.cancelProduct(row.id)
+    // 撤回原因后端必填：弹窗强制填写（新建审核/单条修改审批/两段式审批共用此入口，后端按在途状态自动分流）
+    const isTwoStage = [21, 23, 24, 26].includes(row.auditStatus ?? -1)
+    const batchTip = row.pendingBatchId
+      ? `该物料属于批量审批批次（共 ${row.pendingBatchSize ?? '?'} 条），撤回将作废整批变更。`
+      : ''
+    const { value } = await message.prompt(
+      `确认撤回该物料的审批吗？${batchTip}`,
+      '填写撤回原因'
+    )
+    if (!value || !String(value).trim()) {
+      message.warning('请填写撤回原因')
+      return
+    }
+    if (isTwoStage) {
+      await ProductApi.cancelTwoStageApproval(row.id, String(value).trim())
+    } else {
+      await ProductApi.cancelProduct(row.id, String(value).trim())
+    }
     message.success('撤回成功')
     await getList()
+  } catch {}
+}
+
+// ========== 两段式变更/废除（行内快捷入口，与详情抽屉同一套 API） ==========
+
+const handleStartChange = async (row: ProductVO) => {
+  try {
+    await message.confirm('确认对该物料发起变更申请吗？')
+    await ProductApi.submitChangeRequest(row.id)
+    await getList()
+    const updated: any = list.value.find((p: any) => p.id === row.id)
+    if (updated?.auditStatus === 21 && updated?.processInstanceId) {
+      message.success('变更申请已提交，等待审批')
+    } else if (updated?.auditStatus === 20) {
+      message.error('变更申请提交已受理但流程创建失败，请重试')
+    }
+  } catch {}
+}
+
+const handleStartObsolete = async (row: ProductVO) => {
+  try {
+    // 废除原因是最终留痕，弹窗强制填写
+    const { value } = await message.prompt('确认对该物料发起废除申请吗？', '填写废除原因')
+    if (!value || !String(value).trim()) {
+      message.warning('请填写废除原因')
+      return
+    }
+    await ProductApi.submitObsoleteRequest(row.id, String(value).trim())
+    await getList()
+    const updated: any = list.value.find((p: any) => p.id === row.id)
+    if (updated?.auditStatus === 24 && updated?.processInstanceId) {
+      message.success('废除申请已提交，等待审批')
+    } else if (updated?.auditStatus === 20) {
+      message.error('废除申请提交已受理但流程创建失败，请重试')
+    }
+  } catch {}
+}
+
+const handleSubmitChangeConfirm = async (row: ProductVO) => {
+  try {
+    await message.confirm('确认提交变更审批吗？')
+    await ProductApi.submitChangeConfirm(row.id)
+    await getList()
+    const updated: any = list.value.find((p: any) => p.id === row.id)
+    if (updated?.auditStatus === 23 && updated?.processInstanceId) {
+      message.success('变更审批已提交，等待负责人审批')
+    } else if (updated?.auditStatus === 22) {
+      message.error('提交已受理但流程创建失败，请重试')
+    }
   } catch {}
 }
 
@@ -959,7 +1107,24 @@ onMounted(async () => {
 }
 
 .query-form-item {
-  margin-bottom: 0;
+  margin-bottom: 18px;
+}
+
+.query-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.advanced-row {
+  margin: 0 0 4px;
+  padding: 16px 12px 2px;
+  background: var(--erp-slate-50, #f8fafc);
+  border: 1px solid var(--erp-slate-100, #f1f5f9);
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .query-input {
@@ -990,6 +1155,23 @@ onMounted(async () => {
 .product-table :deep(.cell) {
   padding-right: 4px;
   padding-left: 4px;
+}
+
+.product-table :deep(.el-table__header-wrapper .el-table__header th) {
+  position: relative;
+}
+
+.product-table :deep(.el-table__header-wrapper .el-table__header th .cell) {
+  font-weight: 600;
+  color: var(--erp-slate-600);
+}
+
+.product-table :deep(.el-table__border-left-patch) {
+  background-color: var(--erp-slate-100);
+}
+
+.product-table :deep(.el-table__border-right-patch) {
+  background-color: var(--erp-slate-100);
 }
 
 .product-cell {

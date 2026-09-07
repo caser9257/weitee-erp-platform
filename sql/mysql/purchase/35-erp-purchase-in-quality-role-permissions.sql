@@ -13,7 +13,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @admin_role_id = 1;
 SET @purchase_root_menu_id = 2563;

@@ -32,7 +32,13 @@
     </div>
 
     <div v-if="expanded && item.children && item.children.length" class="border-l border-slate-100 ml-[17px] pl-0">
-      <BomTreeNode v-for="child in item.children" :key="child.id" :item="child" :depth="depth + 1" />
+      <BomTreeNode
+        v-for="child in item.children"
+        :key="nodePath + '/' + (child.id ?? 0)"
+        :item="child"
+        :depth="depth + 1"
+        :node-path="nodePath + '/' + (child.id ?? 0)"
+      />
     </div>
   </div>
 </template>
@@ -44,16 +50,16 @@ import type { RdBomTreeItemVO } from '@/api/erp/rd/bom'
 const props = defineProps<{
   item: RdBomTreeItemVO
   depth: number
+  /** 路径敏感的节点标识（父链 id 拼接）：后端防环允许同一子 BOM 在多路径出现，以 id 作 key 会导致跨分支展开联动与 duplicate-key */
+  nodePath: string
 }>()
 
-const expandState = inject<Record<number, boolean>>('rdBomExpandState')!
+const expandState = inject<Record<string, boolean>>('rdBomExpandState')!
 
 const expanded = computed({
-  get: () => !!expandState[props.item.id ?? 0],
+  get: () => !!expandState[props.nodePath],
   set: (v: boolean) => {
-    if (props.item.id != null) {
-      expandState[props.item.id] = v
-    }
+    expandState[props.nodePath] = v
   }
 })
 

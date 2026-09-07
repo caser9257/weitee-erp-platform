@@ -25,6 +25,8 @@ public interface ErpApEstimateService {
     void reverseBySourceBiz(Integer sourceBizType, Long sourceBizId, Long userId, Integer reverseType,
                             Long reverseSourceId, String reverseSourceNo, String remark);
 
+    void restoreByStatementReopen(Integer sourceBizType, Long sourceBizId);
+
     void syncByStatementInvoiceChange(ErpApStatementDO statement, Integer oldInvoiceStatus, Integer newInvoiceStatus,
                                       Long userId, Long reverseSourceId, String reverseSourceNo);
 

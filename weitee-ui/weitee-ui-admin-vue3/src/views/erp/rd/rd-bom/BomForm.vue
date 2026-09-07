@@ -1,5 +1,5 @@
 <template>
-  <Dialog v-model="dialogVisible" :title="dialogTitle" width="1200px">
+  <Dialog v-model="dialogVisible" :title="dialogTitle" width="80%">
     <el-form
       ref="formRef"
       v-loading="formLoading"
@@ -15,20 +15,14 @@
         </el-col>
         <el-col :span="12">
           <el-form-item label="成品" prop="productId">
-            <el-select
+            <el-select-v2
               v-model="formData.productId"
               clearable
               filterable
+              :options="productSelectOptions"
               placeholder="请选择成品"
               style="width: 100%"
-            >
-              <el-option
-                v-for="item in productOptions"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -55,34 +49,40 @@
         </el-button>
       </div>
 
-      <el-table :data="formData.items" border>
+      <!-- row-key 必须稳定：Element Plus 在数据深度变更时会重算展开状态，
+           无 row-key 时展开状态被直接清空（expand.mjs updateExpandRows） -->
+      <el-table :data="formData.items" border :row-key="(row: BomItemFormData) => row.uid">
         <el-table-column type="expand" width="48">
           <template #default="{ row }">
             <div class="pl-32px pr-12px pb-12px">
               <div class="mb-8px flex items-center justify-between">
                 <span class="text-12px text-[var(--el-text-color-secondary)]">替代料列表</span>
-                <el-button type="primary" link @click="handleAddSubstitute(row)">
-                  新增替代料
-                </el-button>
+                <div class="flex gap-8px">
+                  <el-button
+                    type="primary"
+                    link
+                    :disabled="!row.materialId || loadingGlobal"
+                    @click="importGlobalSubstitutes(row)"
+                  >
+                    <Icon icon="ep:download" class="mr-4px" />从全局替代料导入
+                  </el-button>
+                  <el-button type="primary" link @click="handleAddSubstitute(row)">
+                    <Icon icon="ep:plus" class="mr-4px" />新增替代料
+                  </el-button>
+                </div>
               </div>
               <el-table :data="row.substitutes" border size="small">
                 <el-table-column type="index" label="#" width="56" align="center" />
                 <el-table-column label="替代物料" min-width="220">
                   <template #default="{ row: substitute }">
-                    <el-select
+                    <el-select-v2
                       v-model="substitute.substituteMaterialId"
                       clearable
                       filterable
+                      :options="productSelectOptions"
                       placeholder="请选择替代物料"
                       style="width: 100%"
-                    >
-                      <el-option
-                        v-for="item in productOptions"
-                        :key="item.id"
-                        :label="item.name"
-                        :value="item.id"
-                      />
-                    </el-select>
+                    />
                   </template>
                 </el-table-column>
                 <el-table-column label="优先级" width="120" align="center">
@@ -142,21 +142,15 @@
         <el-table-column type="index" label="#" width="56" align="center" />
         <el-table-column label="物料" min-width="220">
           <template #default="{ row }">
-            <el-select
+            <el-select-v2
               v-model="row.materialId"
               clearable
               filterable
+              :options="productSelectOptions"
               placeholder="请选择物料"
               style="width: 100%"
               @change="(value) => handleMaterialChange(row, value)"
-            >
-              <el-option
-                v-for="item in productOptions"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              />
-            </el-select>
+            />
           </template>
         </el-table-column>
         <el-table-column label="供给方式" width="120" align="center">
@@ -258,11 +252,13 @@
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from '@/hooks/web/useMessage'
+import { useGlobalSubstituteImport } from '@/hooks/web/useGlobalSubstituteImport'
 import { RdBomApi, type RdBomVO } from '@/api/erp/rd/bom'
-import { type ProductVO } from '@/api/erp/product/product'
+import { type ProductSimpleVO } from '@/api/erp/product/product'
 import { DICT_TYPE } from '@/utils/dict'
 import {
   buildBomPayload,
+  createBomItemUid,
   createDefaultBomFormData,
   createEmptyBomItem,
   createEmptyBomSubstitute,
@@ -274,7 +270,7 @@ import {
 defineOptions({ name: 'RdBomForm' })
 
 const props = defineProps<{
-  productOptions: ProductVO[]
+  productOptions: ProductSimpleVO[]
 }>()
 
 const emit = defineEmits<{
@@ -291,6 +287,8 @@ const formType = ref<'create' | 'update'>('create')
 const formRef = ref()
 const formData = ref<BomFormData>(createDefaultBomFormData())
 
+const { loadingGlobal, importGlobalSubstitutes } = useGlobalSubstituteImport()
+
 const formRules = reactive({
   bomCode: [{ required: true, message: '请输入研发 BOM 编码', trigger: 'blur' }],
   productId: [{ required: true, message: '请选择成品', trigger: 'change' }]
@@ -299,8 +297,12 @@ const formRules = reactive({
 const dialogTitle = computed(() => (formType.value === 'create' ? '新增研发BOM' : '编辑研发BOM'))
 const canSubmit = computed(() => getCanSubmitBomForm(formData.value, saveSubmitting.value))
 const versionDisplayText = computed(() => formData.value.version || '发布时自动生成')
+/** 万级物料必须走虚拟滚动（el-select-v2），全量 el-option 会把主线程卡死 */
+const productSelectOptions = computed(() =>
+  props.productOptions.map((product) => ({ label: product.name, value: product.id }))
+)
 const productMap = computed(() =>
-  props.productOptions.reduce<Record<number, ProductVO>>((acc, item) => {
+  props.productOptions.reduce<Record<number, ProductSimpleVO>>((acc, item) => {
     acc[item.id] = item
     return acc
   }, {})
@@ -321,8 +323,10 @@ const toFormData = (data: RdBomVO): BomFormData => ({
   items:
     data.items?.length > 0
       ? data.items.map((item) => ({
+          uid: createBomItemUid(),
           id: item.id,
           materialId: item.materialId,
+          materialStandard: item.materialStandard || '',
           materialType: item.materialType,
           unitId: item.unitId,
           usageQty: item.usageQty,
@@ -347,12 +351,14 @@ const toFormData = (data: RdBomVO): BomFormData => ({
 
 const handleMaterialChange = (row: BomItemFormData, materialId?: number) => {
   if (!materialId) {
+    row.materialStandard = undefined
     row.materialType = undefined
     row.unitId = undefined
     return
   }
   const product = productMap.value[materialId]
-  row.materialType = product?.supplyType
+  row.materialStandard = undefined
+  // 注：后端 ErpProductDO 无 supplyType 字段，供给方式恒为空，此处不再做无效反查
   row.unitId = product?.unitId
 }
 

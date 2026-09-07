@@ -3,10 +3,10 @@ package cn.weitee.erp.module.erp.controller.admin.mrp;
 import cn.weitee.erp.framework.common.pojo.CommonResult;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
+import cn.weitee.erp.framework.security.core.util.SecurityFrameworkUtils;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.bom.ErpBomPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.bom.ErpBomPricingPreviewRespVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.bom.ErpBomRespVO;
-import cn.weitee.erp.module.erp.controller.admin.mrp.vo.bom.ErpBomSaveReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.rule.ErpMaterialPlanRulePageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.rule.ErpMaterialPlanRuleRespVO;
 import cn.weitee.erp.module.erp.controller.admin.mrp.vo.rule.ErpMaterialPlanRuleSaveReqVO;
@@ -15,6 +15,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpBomItemSubstituteDO;
 import cn.weitee.erp.module.erp.dal.dataobject.mrp.ErpMaterialPlanRuleDO;
+import cn.weitee.erp.module.erp.service.mrp.ErpBomLifecycleBpmService;
 import cn.weitee.erp.module.erp.service.mrp.ErpBomService;
 import cn.weitee.erp.module.erp.service.mrp.ErpBomPricingService;
 import cn.weitee.erp.module.erp.service.mrp.ErpMaterialPlanRuleService;
@@ -23,6 +24,7 @@ import cn.weitee.erp.module.erp.service.mrp.support.ErpBomPricingPreviewResult;
 import cn.weitee.erp.module.erp.service.mrp.support.ErpMaterialPlanRuleValidator;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
 import cn.weitee.erp.module.erp.service.purchase.ErpSupplierService;
+import cn.weitee.erp.module.erp.service.rd.ErpRdBomService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,6 +55,10 @@ public class ErpBomController {
     @Resource
     private ErpBomService bomService;
     @Resource
+    private ErpBomLifecycleBpmService bomLifecycleBpmService;
+    @Resource
+    private ErpRdBomService rdBomService;
+    @Resource
     private ErpMaterialPlanRuleService materialPlanRuleService;
     @Resource
     private ErpMaterialPlanRuleValidator materialPlanRuleValidator;
@@ -63,35 +69,35 @@ public class ErpBomController {
     @Resource
     private ErpBomPricingService bomPricingService;
 
-    @PostMapping("/create")
-    @Operation(summary = "创建 BOM")
-    @PreAuthorize("@ss.hasPermission('erp:bom:create')")
-    public CommonResult<Long> createBom(@Valid @RequestBody ErpBomSaveReqVO createReqVO) {
-        return success(bomService.createBom(createReqVO));
-    }
+    // ==================== 结构维护入口已下线 ====================
+    // 制造 BOM 为研发 BOM 审批发布的快照（publishRdBom），不支持手工创建/编辑/删除。
+    // 原 /create /update /delete /update-status 直改入口已按 BPM 治理口径移除，
+    // 停用/废止请走 /lifecycle/submit 申请流。
 
-    @PutMapping("/update")
-    @Operation(summary = "更新 BOM")
-    @PreAuthorize("@ss.hasPermission('erp:bom:update')")
-    public CommonResult<Boolean> updateBom(@Valid @RequestBody ErpBomSaveReqVO updateReqVO) {
-        bomService.updateBom(updateReqVO);
-        return success(true);
-    }
-
-    @PutMapping("/update-status")
-    @Operation(summary = "更新制造 BOM 状态")
+    @PostMapping("/lifecycle/submit")
+    @Operation(summary = "发起制造 BOM 停用（废止）申请")
     @PreAuthorize("@ss.hasPermission('erp:bom:update-status')")
-    public CommonResult<Boolean> updateBomStatus(@RequestParam("id") Long id,
-                                                 @RequestParam("status") Integer status) {
-        bomService.updateBomStatus(id, status);
+    public CommonResult<Boolean> submitDisableApproval(@RequestParam("id") Long id,
+                                                       @RequestParam(value = "reason", required = false) String reason) {
+        bomLifecycleBpmService.submitDisableApproval(SecurityFrameworkUtils.getLoginUserId(), id, reason);
         return success(true);
     }
 
-    @DeleteMapping("/delete")
-    @Operation(summary = "删除 BOM")
-    @PreAuthorize("@ss.hasPermission('erp:bom:delete')")
-    public CommonResult<Boolean> deleteBom(@RequestParam("id") Long id) {
-        bomService.deleteBom(id);
+    @PostMapping("/lifecycle/cancel")
+    @Operation(summary = "撤回制造 BOM 停用申请")
+    @PreAuthorize("@ss.hasPermission('erp:bom:update-status')")
+    public CommonResult<Boolean> cancelDisableApproval(@RequestParam("id") Long id,
+                                                       @RequestParam(value = "reason", required = false) String reason) {
+        bomLifecycleBpmService.cancelDisableApproval(SecurityFrameworkUtils.getLoginUserId(), id, reason);
+        return success(true);
+    }
+
+    @PostMapping("/re-publish")
+    @Operation(summary = "从研发 BOM 重新发布（管理动作，刷新 MBOM 快照）")
+    @Parameter(name = "rdBomId", description = "研发 BOM 编号", required = true)
+    @PreAuthorize("@ss.hasPermission('erp:bom:republish')")
+    public CommonResult<Boolean> rePublishFromRdBom(@RequestParam("rdBomId") Long rdBomId) {
+        rdBomService.publishRdBom(rdBomId);
         return success(true);
     }
 

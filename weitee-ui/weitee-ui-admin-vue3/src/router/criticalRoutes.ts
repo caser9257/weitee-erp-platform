@@ -1,6 +1,9 @@
+import type { Router } from 'vue-router'
+
 /**
  * 关键路由清单：这些路由是框架级功能入口，缺失即视为前端不可用。
- * generateRoutes 完成后（dev 环境）会断言全部已注册，缺失直接 console.error。
+ * 断言在动态路由全部 addRoute 挂载完成后（dev 环境）执行一次，
+ * 数据源取 router.getRoutes() 权威注册表——避免遍历本地路由树导致的时序/嵌套误报。
  */
 export const CRITICAL_ROUTES: string[] = [
   '/approval/todo',
@@ -11,10 +14,29 @@ export const CRITICAL_ROUTES: string[] = [
   '/rd/rd-bom'
 ]
 
-export const collectRoutePaths = (routes: any[], acc: Set<string> = new Set()): Set<string> => {
-  for (const route of routes || []) {
-    if (route?.path) acc.add(route.path)
-    if (route?.children?.length) collectRoutePaths(route.children, acc)
+let asserted = false
+
+/**
+ * 纯函数：从已注册全路径集合中找出缺失的关键路由
+ */
+export const findMissingCriticalRoutes = (registeredPaths: Iterable<string>): string[] => {
+  const registered = new Set(registeredPaths)
+  return CRITICAL_ROUTES.filter((p) => !registered.has(p))
+}
+
+/**
+ * dev 断言：动态路由挂载完成后调用；缺失直接 console.error 暴露，仅执行一次
+ */
+export const assertCriticalRoutesMounted = (router: Router): void => {
+  if (asserted) {
+    return
   }
-  return acc
+  asserted = true
+  // router.getRoutes() 返回扁平化的全路径注册表（含 addRoute 动态挂载），是唯一权威来源
+  const missing = findMissingCriticalRoutes(router.getRoutes().map((route) => route.path))
+  if (missing.length) {
+    console.error(
+      `[route-guard] 关键路由缺失: ${missing.join(', ')} — 请检查动态菜单合并/权限过滤/菜单种子`
+    )
+  }
 }

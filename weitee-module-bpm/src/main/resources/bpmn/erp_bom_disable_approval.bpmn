@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="http://www.flowable.org/processdef"
+             typeLanguage="http://www.w3.org/2001/XMLSchema"
+             expressionLanguage="http://www.w3.org/1999/XPath">
+
+  <process id="erp_bom_disable_approval" name="制造BOM停用审核" isExecutable="true">
+    <documentation>制造 BOM 停用（废止）申请审批流程；通过后由系统落 DISABLE</documentation>
+
+    <startEvent id="start" name="开始" flowable:formFieldValidation="true"/>
+
+    <userTask id="task_approve_disable" name="供应链主管审批"
+              flowable:assignee="${#task.getAssignee()}"
+              flowable:skipExpression="${startUserId == '0'}">
+      <extensionElements>
+        <flowable:candidateStrategy>38</flowable:candidateStrategy>
+        <flowable:candidateParam>2</flowable:candidateParam>
+        <flowable:assignStartUserHandlerType>3</flowable:assignStartUserHandlerType>
+        <flowable:assignEmptyHandlerType>4</flowable:assignEmptyHandlerType>
+      </extensionElements>
+    </userTask>
+
+    <endEvent id="end" name="结束"/>
+
+    <sequenceFlow id="flow_start_to_approve" sourceRef="start" targetRef="task_approve_disable"/>
+    <sequenceFlow id="flow_approve_to_end" sourceRef="task_approve_disable" targetRef="end"/>
+
+  </process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_erp_bom_disable_approval">
+    <bpmndi:BPMNShape bpmnElement="start" id="BPMNShape_start">
+      <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNShape bpmnElement="task_approve_disable" id="BPMNShape_task_approve_disable">
+      <omgdc:Bounds height="80.0" width="100.0" x="220.0" y="138.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNShape bpmnElement="end" id="BPMNShape_end">
+      <omgdc:Bounds height="28.0" width="28.0" x="420.0" y="164.0"/>
+    </bpmndi:BPMNShape>
+    <bpmndi:BPMNEdge bpmnElement="flow_start_to_approve" id="BPMNEdge_flow_start_to_approve">
+      <omgdi:waypoint x="130.0" y="178.0"/>
+      <omgdi:waypoint x="220.0" y="178.0"/>
+    </bpmndi:BPMNEdge>
+    <bpmndi:BPMNEdge bpmnElement="flow_approve_to_end" id="BPMNEdge_flow_approve_to_end">
+      <omgdi:waypoint x="320.0" y="178.0"/>
+      <omgdi:waypoint x="420.0" y="178.0"/>
+    </bpmndi:BPMNEdge>
+  </bpmndi:BPMNDiagram>
+
+</definitions>

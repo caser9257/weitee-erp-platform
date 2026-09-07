@@ -674,6 +674,7 @@ import { AccountApi, AccountVO } from '@/api/erp/finance/account'
 import { formatDate } from '@/utils/formatTime'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
 import { erpPriceInputFormatter, erpPriceMultiply } from '@/utils'
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import * as UserApi from '@/api/system/user'
 import { ProjectApi } from '@/api/erp/project'
 
@@ -1087,6 +1088,7 @@ const open = async (type: string, id?: number, defaults?: Partial<SaleOrderVO>) 
     formLoading.value = true
     try {
       formData.value = await SaleOrderApi.getSaleOrder(id)
+      normalizeItemsForUnitInput(formData.value.items)
     } finally {
       formLoading.value = false
     }

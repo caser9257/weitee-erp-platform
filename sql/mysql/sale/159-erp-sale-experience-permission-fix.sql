@@ -23,7 +23,7 @@ START TRANSACTION;
 --   2591  erp:stock:query（库存查询）
 --   2647  erp:account:query（结算账户查询）
 INSERT INTO system_role_menu (role_id, menu_id, creator, create_time, updater, update_time, deleted)
-SELECT 940005, m.id, 'tester', NOW(), 'tester', NOW(), b'0'
+SELECT 940005, m.id, 'codex', NOW(), 'codex', NOW(), b'0'
 FROM system_menu m
 WHERE m.id IN (2585, 2591, 2647)
   AND m.deleted = b'0'

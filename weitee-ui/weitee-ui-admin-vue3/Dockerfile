@@ -1,5 +1,10 @@
 # ---- Build stage ----
-FROM node:20-alpine AS builder
+# 基础镜像可参数化：内网/CI 环境经 docker.env 或 CI 变量指向可达的镜像源
+ARG DOCKER_REGISTRY_MIRROR=docker.io
+ARG NODE_IMAGE=library/node:20-alpine
+ARG NGINX_IMAGE=library/nginx:1.24-alpine
+
+FROM ${DOCKER_REGISTRY_MIRROR}/${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
@@ -18,7 +23,7 @@ ENV NO_PROXY=${NO_PROXY}
 ENV VITE_APP_CAPTCHA_ENABLE=${VITE_APP_CAPTCHA_ENABLE}
 
 RUN npm config set registry ${NPM_REGISTRY} \
-    && npm install -g pnpm \
+    && npm install -g pnpm@9 \
     && pnpm config set registry ${PNPM_REGISTRY} \
     && pnpm config set fetch-retries 5 \
     && pnpm config set fetch-timeout 120000
@@ -31,7 +36,7 @@ COPY . .
 RUN pnpm build:prod
 
 # ---- Runtime stage ----
-FROM nginx:1.24-alpine
+FROM ${DOCKER_REGISTRY_MIRROR}/${NGINX_IMAGE}
 
 ENV TZ=Asia/Shanghai
 

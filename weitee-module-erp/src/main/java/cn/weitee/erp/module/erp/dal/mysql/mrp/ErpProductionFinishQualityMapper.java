@@ -21,6 +21,12 @@ public interface ErpProductionFinishQualityMapper extends BaseMapperX<ErpProduct
         return selectOne(ErpProductionFinishQualityDO::getProductionOrderId, productionOrderId);
     }
 
+    default int updateByIdAndStatus(Long id, Integer status, ErpProductionFinishQualityDO updateObj) {
+        return update(updateObj, new LambdaQueryWrapperX<ErpProductionFinishQualityDO>()
+                .eq(ErpProductionFinishQualityDO::getId, id)
+                .eq(ErpProductionFinishQualityDO::getStatus, status));
+    }
+
     default PageResult<ErpProductionFinishQualityDO> selectPage(ErpProductionFinishQualityPageReqVO reqVO) {
         return selectPage(reqVO, new LambdaQueryWrapperX<ErpProductionFinishQualityDO>()
                 .likeIfPresent(ErpProductionFinishQualityDO::getNo, reqVO.getNo())

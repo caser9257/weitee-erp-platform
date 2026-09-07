@@ -96,6 +96,7 @@ class ErpSaleOrderServiceImplTest {
                 return "SO-TEST-001";
             }
         });
+        setField(saleOrderService, "unitConversionService", cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionTestSupport.passthrough());
         setField(saleOrderService, "productService", createProxy(ErpProductService.class, (methodName, args) -> {
             if ("validProductList".equals(methodName)) {
                 return List.of(new cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductDO()

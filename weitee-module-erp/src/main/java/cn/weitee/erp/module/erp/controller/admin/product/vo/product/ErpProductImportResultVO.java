@@ -27,6 +27,9 @@ public class ErpProductImportResultVO {
     @Schema(description = "成功行所属分类编号集合（去重）", example = "[1, 2]")
     private List<Long> successCategoryIds;
 
+    @Schema(description = "文件中未被写入的列（已识别但仅作参考，或完全未识别），仅报告不写入", example = "[\"Part_Type\", \"Value\"]")
+    private List<String> ignoredColumns;
+
     /**
      * 失败详情
      */

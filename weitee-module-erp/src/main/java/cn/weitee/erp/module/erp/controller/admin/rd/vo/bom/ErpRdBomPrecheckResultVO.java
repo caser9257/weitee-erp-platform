@@ -28,14 +28,23 @@ public class ErpRdBomPrecheckResultVO implements Serializable {
     @Schema(description = "智能识别的表头信息")
     private DetectedHeader detectedHeader;
 
+    @Schema(description = "较该成品最新版 BOM 缺失的物料对比；null 表示未对比（首次导入/无法确定成品）")
+    private ErpRdBomBaselineDiffVO baselineDiff;
+
     @Schema(description = "待建档物料清单")
     private List<MissingMaterial> missingMaterials;
 
     @Schema(description = "已建档但当前状态不可用的物料清单（未审核通过/已停用）")
     private List<UnapprovedMaterial> unapprovedMaterials;
 
-    @Schema(description = "格式类问题清单")
+    @Schema(description = "导入行问题清单")
     private List<RowIssue> rowIssues;
+
+    @Schema(description = "重复产品编码提醒清单；仅提醒，不阻断导入")
+    private List<DuplicateMaterialCode> duplicateMaterialCodes;
+
+    @Schema(description = "已存在的同身份研发 BOM；存在时阻断导入")
+    private DuplicateBom duplicateBom;
 
     @Schema(description = "智能识别的表头信息")
     @Data
@@ -116,6 +125,35 @@ public class ErpRdBomPrecheckResultVO implements Serializable {
         @Schema(description = "失败原因")
         private String reason;
 
+        @Schema(description = "问题分类：FORMAT_ERROR=格式错误 / CADENCE_DATA_INCOMPLETE=Cadence 数据不完整")
+        private String issueType;
+
+    }
+
+    @Schema(description = "重复产品编码提醒")
+    @Data
+    public static class DuplicateMaterialCode implements Serializable {
+
+        @Schema(description = "产品编码", example = "MAT-1001")
+        private String materialCode;
+
+        @Schema(description = "出现的 Excel 行号列表（从 1 开始，含表头）")
+        private List<Integer> rowNumbers;
+
+    }
+
+    @Schema(description = "重复的研发 BOM 主身份")
+    @Data
+    public static class DuplicateBom implements Serializable {
+
+        @Schema(description = "已存在的研发 BOM 编号")
+        private Long id;
+        @Schema(description = "BOM 编码")
+        private String bomCode;
+        @Schema(description = "版本；为空表示草稿")
+        private String version;
+        @Schema(description = "当前状态")
+        private Integer status;
     }
 
 }

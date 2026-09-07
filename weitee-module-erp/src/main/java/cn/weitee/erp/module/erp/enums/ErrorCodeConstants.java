@@ -45,6 +45,7 @@ public interface ErrorCodeConstants {
     ErrorCode PURCHASE_IN_NOT_APPROVE = new ErrorCode(1_030_102_006, "采购入库单未审核，无法操作");
     ErrorCode PURCHASE_IN_FAIL_PAYMENT_PRICE_EXCEED = new ErrorCode(1_030_102_007, "付款金额({})超过采购入库单总金额({})");
     ErrorCode PURCHASE_IN_PROCESS_FAIL_EXISTS_PAYMENT = new ErrorCode(1_030_102_008, "反审核失败，已存在对应的付款单");
+    ErrorCode PURCHASE_IN_PROCESS_FAIL_EXISTS_INVOICE_MATCH = new ErrorCode(1_030_102_039, "反审核失败，已存在对应的发票匹配记录，请先撤销匹配");
     ErrorCode PURCHASE_IN_BPM_SUBMIT_FAIL = new ErrorCode(1_030_102_009, "当前采购入库单不允许提交审批");
     ErrorCode PURCHASE_IN_BPM_CANCEL_FAIL = new ErrorCode(1_030_102_010, "当前采购入库单不存在可撤回的审批流程");
     ErrorCode PURCHASE_IN_UPDATE_FAIL_PROCESSING = new ErrorCode(1_030_102_011, "采购入库单({})审批中，无法修改");
@@ -131,6 +132,7 @@ public interface ErrorCodeConstants {
     ErrorCode SHIPMENT_RELEASE_NOT_RELEASED = new ErrorCode(1_020_202_010, "该订单尚未放行，无法创建出库单");
     ErrorCode SALE_ORDER_ITEM_ALL_OUTED = new ErrorCode(1_020_202_011, "该订单所有产品已全部出库");
     ErrorCode SALE_ORDER_ITEM_NOT_EXISTS = new ErrorCode(1_020_202_012, "销售订单项不存在");
+    ErrorCode SALE_OUT_DELETE_FAIL_EXISTS_RECEIPT = new ErrorCode(1_020_202_013, "销售出库单({})已存在收款，无法删除");
 
     // ========== ERP 销售退货（1-030-203-000） ==========
     ErrorCode SALE_RETURN_NOT_EXISTS = new ErrorCode(1_020_203_000, "销售退货单不存在");
@@ -142,6 +144,7 @@ public interface ErrorCodeConstants {
     ErrorCode SALE_RETURN_NOT_APPROVE = new ErrorCode(1_020_203_006, "销售退货单未审核，无法操作");
     ErrorCode SALE_RETURN_FAIL_REFUND_PRICE_EXCEED = new ErrorCode(1_020_203_007, "退款金额({})超过销售退货单总金额({})");
     ErrorCode SALE_RETURN_PROCESS_FAIL_EXISTS_REFUND = new ErrorCode(1_020_203_008, "反审核失败，已存在对应的退款单");
+    ErrorCode SALE_RETURN_DELETE_FAIL_EXISTS_REFUND = new ErrorCode(1_020_203_009, "销售退货单({})已存在退款，无法删除");
 
     // ========== ERP 项目（1-020-204-000）==========
     ErrorCode PROJECT_NOT_EXISTS = new ErrorCode(1_020_204_000, "项目不存在");
@@ -245,6 +248,30 @@ public interface ErrorCodeConstants {
     // ========== ERP 产品 1-030-500-000 ==========
     ErrorCode PRODUCT_NOT_EXISTS = new ErrorCode(1_030_500_000, "产品不存在");
     ErrorCode PRODUCT_NOT_ENABLE = new ErrorCode(1_030_500_001, "产品({})未启用");
+    ErrorCode PRODUCT_CADENCE_ACCESS_DENIED = new ErrorCode(1_030_500_002, "无权限");
+
+    // ========== ERP 物料修改审批 1-030-500-1xx ==========
+    ErrorCode PRODUCT_UPDATE_PROCESSING = new ErrorCode(1_030_500_100, "物料({})审批进行中，无法编辑或重复提交");
+    ErrorCode PRODUCT_FROZEN_FIELD_LOCKED = new ErrorCode(1_030_500_101,
+            "物料已被 BOM 引用，{}不允许修改；如需调整请联系研发发起新版本变更");
+    ErrorCode PRODUCT_PENDING_CHANGE_NOT_EXISTS = new ErrorCode(1_030_500_102, "物料不存在待审变更，无法执行该操作");
+    ErrorCode PRODUCT_NO_CHANGES = new ErrorCode(1_030_500_103, "未检测到任何字段变更，无需提交审批");
+    ErrorCode PRODUCT_IMPORT_OVERWRITE_FORBIDDEN = new ErrorCode(1_030_500_104,
+            "条码已存在：{}。已建档物料不支持导入覆盖，请通过「编辑」提交修改审批");
+    ErrorCode PRODUCT_BATCH_UPDATE_EMPTY = new ErrorCode(1_030_500_105, "批量修改明细不能为空");
+    ErrorCode PRODUCT_DELETE_REFERENCED_FORBIDDEN = new ErrorCode(1_030_500_106,
+            "物料被 BOM 引用，禁止删除；如需清除请先走停用/废除流程");
+    ErrorCode PRODUCT_DELETE_ONLY_DRAFT = new ErrorCode(1_030_500_107,
+            "仅未生效物料（草稿/驳回/失败）允许删除；已生效物料的退出请走停用/废除流程");
+    ErrorCode PRODUCT_OBSOLETE_REASON_REQUIRED = new ErrorCode(1_030_500_108, "废除原因不能为空");
+    ErrorCode PRODUCT_MATERIAL_CODE_HISTORY_OCCUPIED = new ErrorCode(1_030_500_109,
+            "物料编码({})已被历史编码占用，不可复用（旧码占用防止混料）");
+
+    // ========== ERP 物料替代料 1-030-500-2xx ==========
+    ErrorCode PRODUCT_SUBSTITUTE_SELF = new ErrorCode(1_030_500_200, "替代料不能是主物料自身");
+    ErrorCode PRODUCT_SUBSTITUTE_EXISTS = new ErrorCode(1_030_500_201, "该替代料已存在，无需重复维护");
+    ErrorCode PRODUCT_SUBSTITUTE_LIST_EMPTY = new ErrorCode(1_030_500_202, "替代料列表不能为空");
+    ErrorCode PRODUCT_SUBSTITUTE_REPEATED = new ErrorCode(1_030_500_203, "替代料列表中存在重复项");
 
     // ========== ERP 产品分类 1-030-501-000 ==========
     ErrorCode PRODUCT_CATEGORY_NOT_EXISTS = new ErrorCode(1_030_501_000, "产品分类不存在");
@@ -261,6 +288,19 @@ public interface ErrorCodeConstants {
     ErrorCode PRODUCT_QUANTITY_PRECISION_INVALID = new ErrorCode(1_030_502_003,
             "产品【{}】数量最多允许 {} 位小数");
     ErrorCode PRODUCT_UNIT_EXITS_PRODUCT = new ErrorCode(1_030_502_002, "存在产品使用该单位，无法删除");
+    ErrorCode PRODUCT_UNIT_BASE_NOT_EXISTS = new ErrorCode(1_030_502_004, "基本单位不存在或未启用");
+    ErrorCode PRODUCT_UNIT_BASE_REQUIRED = new ErrorCode(1_030_502_005, "辅助单位必须指定基本单位");
+    ErrorCode PRODUCT_UNIT_CONVERSION_RATE_REQUIRED = new ErrorCode(1_030_502_006, "辅助单位必须指定换算率");
+    ErrorCode PRODUCT_UNIT_EXITS_AUXILIARY = new ErrorCode(1_030_502_007, "该基本单位下存在辅助单位，无法删除");
+    ErrorCode PRODUCT_UNIT_USED_BY_PRODUCT = new ErrorCode(1_030_502_008, "该单位被产品用作记账单位，不能改为辅助单位");
+    ErrorCode PRODUCT_UNIT_NOT_BELONG_TO_BASE = new ErrorCode(1_030_502_009, "单位【{}】不属于产品基本单位【{}】的单位族");
+    ErrorCode PRODUCT_UNIT_BASE_SELF_REFERENCE = new ErrorCode(1_030_502_010, "辅助单位的基本单位不能是自己");
+    ErrorCode PRODUCT_UNIT_INPUT_QUANTITY_PRECISION_INVALID = new ErrorCode(1_030_502_011,
+            "产品【{}】按单位【{}】录入的数量最多允许 {} 位小数");
+    ErrorCode PRODUCT_UNIT_BASE_QUANTITY_PRECISION_INVALID = new ErrorCode(1_030_502_012,
+            "产品【{}】换算成基本单位【{}】后的数量最多允许 {} 位小数");
+    ErrorCode PRODUCT_UNIT_NOT_ENABLE = new ErrorCode(1_030_502_013, "单位【{}】未启用，不能用于录入");
+    ErrorCode PRODUCT_UNIT_NOT_BASE = new ErrorCode(1_030_502_014, "产品记账单位【{}】必须是基本单位");
 
     // ========== ERP 结算账户 1-030-600-000 ==========
     ErrorCode ACCOUNT_NOT_EXISTS = new ErrorCode(1_030_600_000, "结算账户不存在");
@@ -290,6 +330,7 @@ public interface ErrorCodeConstants {
     ErrorCode PREPAYMENT_UPDATE_FAIL_APPROVE = new ErrorCode(1_030_605_005, "预付款单({})已审核，无法修改");
     ErrorCode PREPAYMENT_ALLOCATE_FAIL_APPROVE = new ErrorCode(1_030_605_006, "预付款单({})未审核，无法核销");
     ErrorCode PREPAYMENT_ALLOCATE_AMOUNT_EXCEED = new ErrorCode(1_030_605_007, "预付款单({})本次核销金额({})超过剩余可核销金额({})");
+    ErrorCode PREPAYMENT_ALLOCATE_LOCKED = new ErrorCode(1_030_605_008, "预付款单({})正在被核销，请稍后重试");
 
     // ========== ERP 采购发票三单匹配 1-030-606-000 ==========
     ErrorCode AP_INVOICE_NOT_EXISTS = new ErrorCode(1_030_606_000, "采购发票不存在");
@@ -313,6 +354,7 @@ public interface ErrorCodeConstants {
     ErrorCode AP_STATEMENT_ALLOCATE_AMOUNT_EXCEED = new ErrorCode(1_030_603_003, "应付台账({})本次核销金额({})超过剩余可核销金额({})");
     ErrorCode AP_STATEMENT_HAS_APPROVED_ALLOCATE = new ErrorCode(1_030_603_004, "应付台账({})存在已生效核销记录，无法反审核");
     ErrorCode AP_STATEMENT_ALLOCATE_AMOUNT_INVALID = new ErrorCode(1_030_603_005, "应付台账({})本次核销金额必须大于 0");
+    ErrorCode AP_STATEMENT_ALLOCATE_LOCKED = new ErrorCode(1_030_603_006, "应付台账({})正在被核销，请稍后重试");
 
     // ========== ERP 暂估单 1-030-604-000 ==========
     ErrorCode AP_ESTIMATE_NOT_EXISTS = new ErrorCode(1_030_604_000, "暂估单不存在");
@@ -343,6 +385,12 @@ public interface ErrorCodeConstants {
     ErrorCode PRODUCTION_ORDER_EFFECTIVE_BOM_NOT_EXISTS = new ErrorCode(1_030_700_011, "当前生产工单缺少有效 BOM，无法下达");
     ErrorCode BOM_STATUS_INVALID = new ErrorCode(1_030_700_012, "BOM 状态不合法");
     ErrorCode RD_BOM_NOT_EXISTS = new ErrorCode(1_030_700_013, "研发 BOM 不存在");
+
+    // ========== 制造 BOM 生命周期审批 1-030-700-1xx ==========
+    ErrorCode BOM_STRUCTURE_MAINTENANCE_FORBIDDEN = new ErrorCode(1_030_700_100,
+            "制造 BOM 为研发 BOM 发布快照，不支持手工创建/编辑/删除；结构调整请在研发管理发起新版本变更");
+    ErrorCode BOM_LIFECYCLE_SUBMIT_FAIL = new ErrorCode(1_030_700_101, "制造 BOM({})当前状态不允许发起停用申请");
+    ErrorCode BOM_LIFECYCLE_CANCEL_FAIL = new ErrorCode(1_030_700_102, "制造 BOM({})不存在可撤回的停用申请");
     ErrorCode RD_BOM_STATUS_UPDATE_ILLEGAL = new ErrorCode(1_030_700_060, "研发 BOM 状态不合法，无法执行该操作");
     ErrorCode RD_BOM_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_061, "研发 BOM 已在审批中，无法重复提交");
     ErrorCode RD_BOM_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_062, "研发 BOM 不在审批中，无法撤回");
@@ -359,7 +407,14 @@ public interface ErrorCodeConstants {
     ErrorCode RD_BOM_DELETE_VOID_FORBIDDEN = new ErrorCode(1_030_700_085, "研发 BOM 已作废，属于版本历史，禁止删除");
     ErrorCode RD_BOM_VOID_LOCKED = new ErrorCode(1_030_700_086, "研发 BOM 已作废，禁止修改");
     ErrorCode RD_BOM_UNVOID_NOT_VOID = new ErrorCode(1_030_700_087, "仅已作废的研发 BOM 可以取消作废");
+    ErrorCode RD_BOM_IMPORT_ROWS_EXCEED = new ErrorCode(1_030_700_088, "导入明细行数超过上限 {}，请拆分文件后分批导入");
+    ErrorCode RD_BOM_TOP_MATERIAL_DISABLED = new ErrorCode(1_030_700_089, "顶层物料已停用，无法导入：{}");
+    ErrorCode RD_BOM_TOP_MATERIAL_NOT_APPROVED = new ErrorCode(1_030_700_090, "顶层物料未审核通过，请先完成物料审核：{}");
     ErrorCode PRODUCT_AUDIT_STATUS_ILLEGAL = new ErrorCode(1_030_700_064, "物料审核状态不合法，无法执行该操作");
+    ErrorCode RD_BOM_MATERIALS_NOT_APPROVED = new ErrorCode(1_030_700_091, "以下物料未审核通过，仅已审核物料可被 BOM 发布，请先完成物料审核：{}");
+    ErrorCode RD_BOM_TOP_MATERIAL_NOT_EXISTS = new ErrorCode(1_030_700_092, "顶层物料编号在产品库中不存在，无法导入，请先建档并审核通过：{}");
+    ErrorCode RD_BOM_BASELINE_MISSING = new ErrorCode(1_030_700_093, "本次导入较该成品最新版 BOM 减少 {} 个物料（{}），如确认属正常改版，请在导入弹窗勾选「确认放行」后重试");
+    ErrorCode RD_BOM_DUPLICATE = new ErrorCode(1_030_700_094, "BOM 编码({})的版本({})已存在，请修改版本或检查已有草稿");
     ErrorCode PRODUCT_BPM_SUBMIT_FAIL = new ErrorCode(1_030_700_065, "物料已在审批中，无法重复提交");
     ErrorCode PRODUCT_BPM_CANCEL_FAIL = new ErrorCode(1_030_700_066, "物料不在审批中，无法撤回");
     ErrorCode PRODUCT_APPROVE_FAIL = new ErrorCode(1_030_700_067, "物料已审批通过，无法重复提交");
@@ -467,4 +522,13 @@ public interface ErrorCodeConstants {
 
     // ========== ERP 应收台账 1-030-609-000 ==========
     ErrorCode AR_STATEMENT_NOT_EXISTS = new ErrorCode(1_030_609_000, "应收台账不存在");
+
+    // ========== ERP 凭证生成失败记录 1-030-612-000 ==========
+    ErrorCode VOUCHER_FAILURE_NOT_EXISTS = new ErrorCode(1_030_612_000, "凭证失败记录不存在");
+    ErrorCode VOUCHER_FAILURE_STATUS_INVALID = new ErrorCode(1_030_612_001, "当前凭证失败记录状态不允许执行该操作");
+    ErrorCode VOUCHER_FAILURE_RETRY_NO_TEMPLATE = new ErrorCode(1_030_612_002, "重试失败：业务单据({})未配置可用凭证模板");
+    ErrorCode VOUCHER_FAILURE_CONFIRM_REASON_REQUIRED = new ErrorCode(1_030_612_003, "人工确认关闭必须填写原因");
+    ErrorCode VOUCHER_FAILURE_RETRY_FAIL = new ErrorCode(1_030_612_004, "凭证重试失败：{}");
+    ErrorCode VOUCHER_FAILURE_RETRY_LOCK_BUSY = new ErrorCode(1_030_612_005, "该业务单据的凭证正在被其他重试操作处理，请稍后重试");
+
 }

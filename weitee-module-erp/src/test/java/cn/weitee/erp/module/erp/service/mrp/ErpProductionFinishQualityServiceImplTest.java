@@ -57,6 +57,10 @@ class ErpProductionFinishQualityServiceImplTest {
                 updatedQualityRef.set((ErpProductionFinishQualityDO) args[0]);
                 return 1;
             }
+            if ("updateByIdAndStatus".equals(methodName)) {
+                updatedQualityRef.set((ErpProductionFinishQualityDO) args[2]);
+                return 1;
+            }
             return null;
         }));
         setField(service, "noRedisDAO", new ErpNoRedisDAO() {

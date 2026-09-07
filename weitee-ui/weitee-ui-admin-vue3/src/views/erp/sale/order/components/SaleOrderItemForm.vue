@@ -62,14 +62,26 @@
           </el-form-item>
         </template>
       </el-table-column>
-      <el-table-column label="单位" width="86" align="center">
+      <el-table-column label="单位" width="100" align="center">
         <template #default="{ row }">
           <el-form-item class="mb-0px!">
-            <el-input disabled v-model="row.productUnitName" />
+            <el-select
+              v-model="row.productUnitId"
+              placeholder="单位"
+              class="!w-100%"
+              @change="handleUnitChange(row)"
+            >
+              <el-option
+                v-for="unit in getUnitFamilyOptions(row)"
+                :key="unit.id"
+                :label="unit.name"
+                :value="unit.id"
+              />
+            </el-select>
           </el-form-item>
         </template>
       </el-table-column>
-      <el-table-column label="数量" prop="count" width="128" align="right">
+      <el-table-column label="数量" prop="count" width="140" align="right">
         <template #default="{ row, $index }">
           <el-form-item :prop="`${$index}.count`" :rules="formRules.count" class="mb-0px!">
             <el-input-number
@@ -81,6 +93,9 @@
               class="!w-100%"
             />
           </el-form-item>
+          <div v-if="isRowAuxiliaryUnit(row)" class="unit-convert-tip">
+            ≈ {{ rowBaseCountText(row) }} {{ rowBaseUnitName(row) }}
+          </div>
         </template>
       </el-table-column>
       <el-table-column label="产品单价" width="128" align="right">
@@ -170,9 +185,18 @@ import {
 } from '@/utils'
 import {
   getProductQuantityPrecision,
-  getProductQuantityStep,
   normalizeQuantityPrecision
 } from '@/utils/erpQuantityPrecision'
+import {
+  loadProductUnits,
+  getUnitFamily,
+  getUnitQuantityPrecision,
+  getUnitName,
+  resolveBaseUnitId,
+  toBaseCount,
+  isAuxiliaryUnit
+} from '@/utils/erpUnitConversion'
+import type { ProductUnitVO } from '@/api/erp/product/unit'
 
 type SaleOrderItemRow = Record<string, any>
 
@@ -206,6 +230,7 @@ const formData = ref<SaleOrderItemRow[]>([])
 const formRef = ref()
 const productPickerDrawerRef = ref<InstanceType<typeof SaleOrderProductPickerDrawer>>()
 const productList = ref<ProductVO[]>([])
+const unitList = ref<ProductUnitVO[]>([])
 
 const formRules = reactive({
   productId: [{ required: true, message: '商品不能为空', trigger: 'blur' }],
@@ -260,6 +285,10 @@ const getSummaries: SummaryMethod<SaleOrderItemRow> = (param) => {
 }
 
 const getQuantityPrecision = (row: SaleOrderItemRow) => {
+  const unitPrecision = getUnitQuantityPrecision(unitList.value, row.productUnitId)
+  if (unitPrecision != null) {
+    return normalizeQuantityPrecision(unitPrecision)
+  }
   if (row.quantityPrecision != null) {
     return normalizeQuantityPrecision(row.quantityPrecision)
   }
@@ -267,11 +296,31 @@ const getQuantityPrecision = (row: SaleOrderItemRow) => {
 }
 
 const getQuantityStep = (row: SaleOrderItemRow) => {
-  if (row.quantityPrecision != null) {
-    const precision = normalizeQuantityPrecision(row.quantityPrecision)
-    return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+  const precision = getQuantityPrecision(row)
+  return precision === 0 ? 1 : Number((10 ** -precision).toFixed(precision))
+}
+
+/** 当前行可选单位族（产品基本单位 + 辅助单位） */
+const getUnitFamilyOptions = (row: SaleOrderItemRow): ProductUnitVO[] =>
+  getUnitFamily(unitList.value, row.baseUnitId ?? resolveBaseUnitId(unitList.value, row.productUnitId))
+
+/** 切换录入单位时，按新单位精度收敛数量 */
+const handleUnitChange = (row: SaleOrderItemRow) => {
+  if (row.count != null) {
+    row.count = Number(Number(row.count).toFixed(getQuantityPrecision(row)))
   }
-  return getProductQuantityStep(productList.value, row.productId)
+}
+
+const isRowAuxiliaryUnit = (row: SaleOrderItemRow) => isAuxiliaryUnit(unitList.value, row.productUnitId)
+
+const rowBaseUnitName = (row: SaleOrderItemRow) =>
+  getUnitName(unitList.value, row.baseUnitId ?? resolveBaseUnitId(unitList.value, row.productUnitId))
+
+const rowBaseCountText = (row: SaleOrderItemRow) => {
+  const baseCount = toBaseCount(unitList.value, row.productUnitId, row.count)
+  return baseCount == null
+    ? '-'
+    : Number(baseCount).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
 }
 
 const handleAdd = () => {
@@ -279,6 +328,7 @@ const handleAdd = () => {
     id: undefined,
     productId: undefined,
     productName: undefined,
+    baseUnitId: undefined,
     productUnitId: undefined,
     productUnitName: undefined,
     productBarCode: undefined,
@@ -312,6 +362,7 @@ const handleConfirmProduct = ({ row, product, stockCount }: ProductPickerSelecti
   Object.assign(row, {
     productId: product.productId,
     productName: product.productName,
+    baseUnitId: product.productUnitId,
     productUnitId: product.productUnitId,
     productUnitName: product.productUnitName,
     productBarCode: product.productBarCode,
@@ -334,6 +385,7 @@ defineExpose({ validate })
 
 onMounted(async () => {
   productList.value = await ProductApi.getProductSimpleList()
+  unitList.value = await loadProductUnits()
   if (formData.value.length === 0) {
     handleAdd()
   }
@@ -349,6 +401,14 @@ onMounted(async () => {
   :deep(.el-form-item__content) {
     width: 100%;
     min-width: 0;
+  }
+
+  .unit-convert-tip {
+    margin-top: 2px;
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: right;
+    color: var(--erp-slate-400);
   }
 }
 

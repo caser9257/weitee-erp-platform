@@ -1,12 +1,14 @@
 package cn.weitee.erp.module.erp.service.sale;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.ShipmentReleasePageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.ShipmentReleasePageVO;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.ShipmentReleaseResultVO;
 import cn.weitee.erp.module.erp.controller.admin.sale.vo.ShipmentReleaseStatsVO;
+import cn.weitee.erp.module.erp.dal.dataobject.product.ErpProductUnitDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOrderItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
@@ -16,6 +18,7 @@ import cn.weitee.erp.module.erp.dal.mysql.sale.ErpSaleOutMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import cn.weitee.erp.module.erp.enums.ShipmentReleaseRule;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceReceiptService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitService;
 import cn.weitee.erp.module.crm.service.contract.CrmContractService;
 import cn.weitee.erp.module.crm.dal.dataobject.contract.CrmContractDO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -31,6 +34,7 @@ import org.springframework.validation.annotation.Validated;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +60,8 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
     private ErpSaleOrderItemMapper erpSaleOrderItemMapper;
     @Resource
     private ErpSaleOutMapper erpSaleOutMapper;
+    @Resource
+    private ErpProductUnitService productUnitService;
     @Resource
     private ErpSaleOutService erpSaleOutService;
 
@@ -236,7 +242,7 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
         detail.setCheckItem("订单状态校验");
 
         // 检查订单是否已审批通过
-        if (order.getStatus() == null || order.getStatus() != ErpAuditStatus.APPROVE.getStatus()) {
+        if (order.getStatus() == null || ObjectUtil.notEqual(order.getStatus(), ErpAuditStatus.APPROVE.getStatus())) {
             detail.setPassed(false);
             detail.setMessage("订单未审批通过，当前状态：" + order.getStatus());
         } else {
@@ -594,9 +600,10 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
                     new cn.weitee.erp.module.erp.controller.admin.sale.vo.out.ErpSaleOutSaveReqVO.Item();
             outItem.setWarehouseId(warehouseId);
             outItem.setProductId(orderItem.getProductId());
-            outItem.setProductUnitId(orderItem.getProductUnitId());
+            // 剩余数量为基本单位口径，转单时回落产品基本单位录入，单价换算为基本单位单价
+            outItem.setProductUnitId(resolveBaseUnitId(orderItem.getProductUnitId()));
             outItem.setCount(remainCount);
-            outItem.setProductPrice(orderItem.getProductPrice());
+            outItem.setProductPrice(toBaseUnitPrice(orderItem.getProductPrice(), orderItem.getConversionRate()));
             outItem.setTaxPercent(orderItem.getTaxPercent());
             outItems.add(outItem);
         }
@@ -611,6 +618,24 @@ public class ErpShipmentReleaseServiceImpl implements ErpShipmentReleaseService 
 
         log.info("[createSaleOutFromRelease] 从发货放行创建出库单成功，orderId={}, saleOutId={}", orderId, saleOutId);
         return saleOutId;
+    }
+
+    /**
+     * 解析录入单位对应的产品基本单位编号；基本单位原样返回
+     */
+    private Long resolveBaseUnitId(Long inputUnitId) {
+        ErpProductUnitDO unit = productUnitService.getProductUnit(inputUnitId);
+        return unit != null && unit.getBaseUnitId() != null ? unit.getBaseUnitId() : inputUnitId;
+    }
+
+    /**
+     * 录入单位单价换算为基本单位单价；无换算率时原样返回
+     */
+    private BigDecimal toBaseUnitPrice(BigDecimal inputPrice, BigDecimal conversionRate) {
+        if (inputPrice == null || conversionRate == null) {
+            return inputPrice;
+        }
+        return inputPrice.divide(conversionRate, 6, RoundingMode.HALF_UP);
     }
 
 }

@@ -177,6 +177,7 @@
   <SaleOrderReturnEnableList ref="saleOrderReturnEnableListRef" @success="handleSaleOrderChange" />
 </template>
 <script setup lang="ts">
+import { normalizeItemsForUnitInput } from '@/utils/erpUnitConversion'
 import { SaleReturnApi, SaleReturnVO } from '@/api/erp/sale/return'
 import SaleReturnItemForm from './components/SaleReturnItemForm.vue'
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
@@ -253,6 +254,7 @@ const open = async (type: string, id?: number) => {
     formLoading.value = true
     try {
       formData.value = await SaleReturnApi.getSaleReturn(id)
+      await normalizeItemsForUnitInput(formData.value.items)
     } finally {
       formLoading.value = false
     }

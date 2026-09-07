@@ -4,6 +4,7 @@ import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnDO;
 import cn.weitee.erp.module.erp.dal.dataobject.purchase.ErpPurchaseReturnItemDO;
 import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePaymentAllocateMapper;
+import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePrepaymentAllocateMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnItemMapper;
 import cn.weitee.erp.module.erp.dal.mysql.purchase.ErpPurchaseReturnMapper;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
@@ -125,6 +126,7 @@ class ErpPurchaseReturnServiceImplTest {
             return null;
         }));
         setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> 0L));
+        setField(service, "erpFinancePrepaymentAllocateMapper", createProxy(ErpFinancePrepaymentAllocateMapper.class, (methodName, args) -> 0L));
 
         service.updatePurchaseReturnStatus(2L, ErpAuditStatus.APPROVE.getStatus());
 
@@ -208,6 +210,12 @@ class ErpPurchaseReturnServiceImplTest {
         setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> null));
         setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> List.of()));
         setField(service, "erpFinancePaymentAllocateMapper", createProxy(ErpFinancePaymentAllocateMapper.class, (methodName, args) -> {
+            if ("selectCountByBizTypeAndBizIdAndStatus".equals(methodName)) {
+                return 0L;
+            }
+            return null;
+        }));
+        setField(service, "erpFinancePrepaymentAllocateMapper", createProxy(ErpFinancePrepaymentAllocateMapper.class, (methodName, args) -> {
             if ("selectCountByBizTypeAndBizIdAndStatus".equals(methodName)) {
                 return 0L;
             }

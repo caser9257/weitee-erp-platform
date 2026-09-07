@@ -12,11 +12,16 @@ import java.util.List;
 public interface ErpProductSubstituteMapper extends BaseMapperX<ErpProductSubstituteDO> {
 
     default List<ErpProductSubstituteDO> selectListByProductId(Long productId) {
-        return selectList(ErpProductSubstituteDO::getProductId, productId);
+        return selectList(new LambdaQueryWrapperX<ErpProductSubstituteDO>()
+                .eq(ErpProductSubstituteDO::getProductId, productId)
+                .orderByAsc(ErpProductSubstituteDO::getPriority)
+                .orderByAsc(ErpProductSubstituteDO::getId));
     }
 
     default List<ErpProductSubstituteDO> selectListByProductIds(Collection<Long> productIds) {
-        return selectList(ErpProductSubstituteDO::getProductId, productIds);
+        return selectList(new LambdaQueryWrapperX<ErpProductSubstituteDO>()
+                .in(ErpProductSubstituteDO::getProductId, productIds)
+                .orderByAsc(ErpProductSubstituteDO::getPriority));
     }
 
     default void deleteByProductIdAndSubstituteId(Long productId, Long substituteProductId) {

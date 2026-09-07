@@ -7,7 +7,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 ALTER TABLE `erp_sale_order`
   ADD COLUMN `delivery_ready_status` varchar(32) NOT NULL DEFAULT 'NOT_READY' COMMENT 'delivery ready status' AFTER `return_count`;

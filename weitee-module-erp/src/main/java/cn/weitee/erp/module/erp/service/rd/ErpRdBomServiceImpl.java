@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.weitee.erp.framework.common.pojo.PageResult;
 import cn.weitee.erp.framework.common.util.object.BeanUtils;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomApprovalViewRespVO;
+import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomBaselineDiffVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomPageReqVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomRespVO;
 import cn.weitee.erp.module.erp.controller.admin.rd.vo.bom.ErpRdBomSaveReqVO;
@@ -45,7 +46,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,6 +71,7 @@ import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DELETE_RE
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DELETE_VOID_FORBIDDEN;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DIFF_PRODUCT_MISMATCH;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_NOT_EXISTS;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_STATUS_UPDATE_ILLEGAL;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_UNVOID_NOT_VOID;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_VOID_LOCKED;
 import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_VOID_NOT_APPROVED;
@@ -103,17 +107,48 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createRdBom(ErpRdBomSaveReqVO createReqVO) {
+        return doCreateRdBom(createReqVO, true);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Long createRdBomForImport(ErpRdBomSaveReqVO createReqVO) {
+        // 导入链路已在落库前完成行级完整性校验并剔行（部分成功语义），此处跳过整单断言，
+        // 避免"一行缺位号 → 整单回滚且无行号诊断"的语义冲突
+        return doCreateRdBom(createReqVO, false);
+    }
+
+    private Long doCreateRdBom(ErpRdBomSaveReqVO createReqVO, boolean assertIntegrity) {
         validateBomItems(createReqVO.getItems());
         productService.validProductList(List.of(createReqVO.getProductId()));
+        // bomCode 归一化：trim 空白，与生成列 identity_bom_code_key 对齐，防止因首尾空格绕过唯一索引
+        String normalizedBomCode = StrUtil.trim(createReqVO.getBomCode());
+        createReqVO.setBomCode(normalizedBomCode);
+        ErpRdBomDO duplicate = getRdBomByIdentity(createReqVO.getProductId(), normalizedBomCode,
+                null);
+        if (duplicate != null) {
+            throw exception(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DUPLICATE,
+                    normalizedBomCode, normalizeVersionForMessage(null));
+        }
         ErpRdBomDO rdBom = BeanUtils.toBean(createReqVO, ErpRdBomDO.class)
                 .setVersion(null)
                 .setStatus(ErpRdBomStatusEnum.DRAFT.getStatus());
         erpRdBomMapper.insert(rdBom);
         saveRdBomItems(rdBom.getId(), createReqVO.getItems());
-        assertBomIntegrityPassed(rdBom.getId());
+        if (assertIntegrity) {
+            assertBomIntegrityPassed(rdBom.getId());
+        }
         changeLogService.logChange(rdBom.getId(), ErpRdBomChangeType.CREATE.getType(),
                 "创建研发 BOM，版本=" + rdBom.getVersion());
         return rdBom.getId();
+    }
+
+    @Override
+    public List<ErpRdBomIntegrityIssueRespVO> validateRdBomItemsIntegrity(List<ErpRdBomSaveReqVO.Item> items) {
+        if (CollUtil.isEmpty(items)) {
+            return List.of();
+        }
+        return validateItemsIntegrity(BeanUtils.toBean(items, ErpRdBomItemDO.class));
     }
 
     @Override
@@ -128,6 +163,13 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         }
         if (ErpRdBomStatusEnum.VOID.getStatus().equals(existed.getStatus())) {
             throw exception(RD_BOM_VOID_LOCKED);
+        }
+        String normalizedBomCode = StrUtil.trim(updateReqVO.getBomCode());
+        updateReqVO.setBomCode(normalizedBomCode);
+        ErpRdBomDO duplicate = getRdBomByIdentity(updateReqVO.getProductId(), normalizedBomCode, null);
+        if (duplicate != null && !duplicate.getId().equals(existed.getId())) {
+            throw exception(cn.weitee.erp.module.erp.enums.ErrorCodeConstants.RD_BOM_DUPLICATE,
+                    normalizedBomCode, normalizeVersionForMessage(null));
         }
         validateBomItems(updateReqVO.getItems());
         productService.validProductList(List.of(updateReqVO.getProductId()));
@@ -229,6 +271,54 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
     }
 
     @Override
+    public ErpRdBomDO getRdBomByIdentity(Long productId, String bomCode, String version) {
+        if (productId == null || StrUtil.isBlank(bomCode)) {
+            return null;
+        }
+        return erpRdBomMapper.selectByIdentity(productId, bomCode, version);
+    }
+
+    private String normalizeVersionForMessage(String version) {
+        return StrUtil.isBlank(version) ? "草稿" : version.trim();
+    }
+
+    @Override
+    public ErpRdBomBaselineDiffVO diffImportAgainstLatest(Long productId, Collection<Long> importMaterialIds) {
+        if (productId == null) {
+            return null;
+        }
+        ErpRdBomDO baseline = getLatestRdBomByProductId(productId);
+        if (baseline == null) {
+            // 首次导入：该成品尚无非作废 BOM，无对比基准
+            return null;
+        }
+        Set<Long> importIds = importMaterialIds == null ? Set.of() : new HashSet<>(importMaterialIds);
+        List<ErpRdBomItemDO> baselineItems = erpRdBomItemMapper.selectListByBomId(baseline.getId());
+        // 按物料去重：同一物料在基准中占多行时只报一条，避免警示清单噪音
+        LinkedHashSet<Long> missingIds = baselineItems.stream()
+                .map(ErpRdBomItemDO::getMaterialId)
+                .filter(id -> id != null && !importIds.contains(id))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        ErpRdBomBaselineDiffVO vo = new ErpRdBomBaselineDiffVO();
+        vo.setBaselineBomId(baseline.getId());
+        vo.setBaselineVersion(baseline.getVersion());
+        vo.setMissingItems(new ArrayList<>());
+        if (missingIds.isEmpty()) {
+            return vo;
+        }
+        Map<Long, ErpProductRespVO> productMap = productService.getProductVOMap(missingIds);
+        for (Long materialId : missingIds) {
+            ErpProductRespVO product = productMap.get(materialId);
+            ErpRdBomBaselineDiffVO.MissingItem item = new ErpRdBomBaselineDiffVO.MissingItem();
+            item.setMaterialCode(product != null && product.getMaterialCode() != null
+                    ? product.getMaterialCode() : String.valueOf(materialId));
+            item.setProductName(product != null ? product.getName() : null);
+            vo.getMissingItems().add(item);
+        }
+        return vo;
+    }
+
+    @Override
     public ErpRdBomDO getLatestRdBomByProductId(Long productId) {
         if (productId == null) {
             return null;
@@ -308,20 +398,39 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         if (CollUtil.isEmpty(rdBomItems)) {
             throw exception(BOM_ITEM_EMPTY);
         }
-        String nextVersion = generateNextVersion(rdBom.getProductId());
+        // P5：发布是消费点——制造 BOM 快照落库前，顶层成品、明细物料与替代料必须全部已审核。
+        // 草稿保存阶段不做此校验，避免与物料修改审批流互相死锁
+        Set<Long> bomMaterialIds = new java.util.LinkedHashSet<>();
+        bomMaterialIds.add(rdBom.getProductId());
+        rdBomItems.forEach(item -> bomMaterialIds.add(item.getMaterialId()));
+        erpRdBomItemSubstituteMapper
+                .selectListByBomItemIds(convertSet(rdBomItems, ErpRdBomItemDO::getId))
+                .forEach(sub -> bomMaterialIds.add(sub.getSubstituteMaterialId()));
+        productService.validateProductsApprovedForBom(bomMaterialIds);
+        // 并发防护：先占版本号（CAS），占号成功后再执行发布写库，
+        // 避免发布中途撞 product_id+version 唯一键留下半程数据（与 startChangeRdBom 同一防线）
+        String nextVersion = occupyNextVersion(rdBom);
         rdBom.setVersion(nextVersion);
 
         ErpBomDO manufacturingBom = rdBom.getPublishedBomId() == null ? null : erpBomMapper.selectById(rdBom.getPublishedBomId());
         boolean createNewManufacturingBom = manufacturingBom == null
                 || ErpBomStatusEnum.ENABLE.getStatus().equals(manufacturingBom.getStatus());
+        // 生效语义：发布来源是已审批的研发 BOM，发布的 MBOM 即为生效版本（生产订单依赖 status=ENABLE）。
+        // 例外：既有 MBOM 已被人工停用（走 BPM 停用治理）时只刷新快照、保持 DISABLE，不绕过停用流程。
 
         Long manufacturingBomId;
         if (createNewManufacturingBom) {
+            // 旧生效行降级为历史版本，保证同一产品仅一条生效 MBOM
+            if (manufacturingBom != null) {
+                erpBomMapper.updateById(new ErpBomDO()
+                        .setId(manufacturingBom.getId())
+                        .setStatus(ErpBomStatusEnum.DISABLE.getStatus()));
+            }
             ErpBomDO newManufacturingBom = new ErpBomDO()
                     .setBomCode(rdBom.getBomCode())
                     .setProductId(rdBom.getProductId())
                     .setVersion(rdBom.getVersion())
-                    .setStatus(ErpBomStatusEnum.DISABLE.getStatus())
+                    .setStatus(createNewManufacturingBom ? ErpBomStatusEnum.ENABLE.getStatus() : ErpBomStatusEnum.DISABLE.getStatus())
                     .setSourceRdBomId(rdBom.getId())
                     .setRemark(rdBom.getRemark());
             erpBomMapper.insert(newManufacturingBom);
@@ -335,7 +444,7 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                     .setBomCode(rdBom.getBomCode())
                     .setProductId(rdBom.getProductId())
                     .setVersion(rdBom.getVersion())
-                    .setStatus(ErpBomStatusEnum.DISABLE.getStatus())
+                    .setStatus(createNewManufacturingBom ? ErpBomStatusEnum.ENABLE.getStatus() : ErpBomStatusEnum.DISABLE.getStatus())
                     .setSourceRdBomId(rdBom.getId())
                     .setRemark(rdBom.getRemark()));
             erpBomItemMapper.deleteByBomId(manufacturingBomId);
@@ -363,6 +472,38 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
                 .setVersion(nextVersion)
                 .setPublishedBomId(manufacturingBomId)
                 .setLastPublishedTime(LocalDateTime.now()));
+    }
+
+    /**
+     * 占用下一个发布版本号：CAS 更新（WHERE version=当前值），唯一键冲突时重新生成重试一次。
+     * 必须在任何发布写库动作之前完成，保证冲突重试不产生残留数据。
+     */
+    private String occupyNextVersion(ErpRdBomDO rdBom) {
+        for (int attempt = 0; attempt < 2; attempt++) {
+            String nextVersion = generateNextVersion(rdBom.getProductId());
+            try {
+                LambdaUpdateWrapper<ErpRdBomDO> wrapper = new LambdaUpdateWrapper<ErpRdBomDO>()
+                        .eq(ErpRdBomDO::getId, rdBom.getId());
+                // 草稿期 version 为 NULL，eq(null) 会生成 "version = NULL"（永假），必须用 isNull
+                if (rdBom.getVersion() == null) {
+                    wrapper.isNull(ErpRdBomDO::getVersion);
+                } else {
+                    wrapper.eq(ErpRdBomDO::getVersion, rdBom.getVersion());
+                }
+                wrapper.set(ErpRdBomDO::getVersion, nextVersion);
+                int updated = erpRdBomMapper.update(null, wrapper);
+                if (updated == 0) {
+                    throw exception(RD_BOM_STATUS_UPDATE_ILLEGAL);
+                }
+                return nextVersion;
+            } catch (DuplicateKeyException e) {
+                if (attempt == 1) {
+                    throw e;
+                }
+                log.warn("[publishRdBom] 版本号并发冲突，将重新生成版本号，productId={}", rdBom.getProductId());
+            }
+        }
+        throw exception(RD_BOM_STATUS_UPDATE_ILLEGAL);
     }
 
     @Override
@@ -566,6 +707,8 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
             ErpProductRespVO material = productMap.get(item.getMaterialId());
             if (material != null) {
                 item.setMaterialName(material.getName());
+                item.setMaterialStandard(StrUtil.isNotBlank(item.getMaterialStandard())
+                        ? item.getMaterialStandard() : material.getStandard());
                 item.setUnitName(material.getUnitName());
             }
             List<ErpRdBomItemSubstituteDO> subs = substituteMap.get(item.getId());
@@ -761,7 +904,8 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
             if (StrUtil.isBlank(item.getReferenceDesignator())) {
                 issues.add(buildIssue(rowIndex, item.getMaterialId(), material.getName(),
                         RdBomIntegrityIssueType.MISSING_DESIGNATOR, null));
-            } else {
+            } else if (BomDesignatorUtils.isDesignatorLike(item.getReferenceDesignator())) {
+                // 仅位号形态文本才做数量一致性比对；位置描述等自由文本（两类原始模板混写）跳过
                 int designatorCount = BomDesignatorUtils.countDesignators(item.getReferenceDesignator());
                 boolean usageIsInteger = item.getUsageQty() != null
                         && item.getUsageQty().remainder(BigDecimal.ONE).compareTo(BigDecimal.ZERO) == 0;
@@ -943,7 +1087,15 @@ public class ErpRdBomServiceImpl implements ErpRdBomService {
         List<ErpProductDO> products = productService.validProductList(convertSet(items, ErpRdBomSaveReqVO.Item::getMaterialId));
         Map<Long, ErpProductDO> productMap = convertMap(products, ErpProductDO::getId);
         List<ErpRdBomItemDO> itemDOs = BeanUtils.toBean(items, ErpRdBomItemDO.class,
-                item -> item.setId(null).setBomId(bomId).setUnitId(productMap.get(item.getMaterialId()).getUnitId()));
+                item -> {
+                    ErpProductDO product = productMap.get(item.getMaterialId());
+                    item.setId(null).setBomId(bomId).setUnitId(product.getUnitId());
+                    if (StrUtil.isBlank(item.getMaterialStandard())) {
+                        item.setMaterialStandard(product.getStandard());
+                    } else {
+                        item.setMaterialStandard(item.getMaterialStandard().trim());
+                    }
+                });
         erpRdBomItemMapper.insertBatch(itemDOs);
         saveRdBomItemSubstitutes(itemDOs, items);
     }

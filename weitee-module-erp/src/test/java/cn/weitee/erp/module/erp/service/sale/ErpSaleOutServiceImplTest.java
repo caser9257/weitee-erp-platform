@@ -1,5 +1,6 @@
 package cn.weitee.erp.module.erp.service.sale;
 
+import cn.weitee.erp.framework.common.exception.ServiceException;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutItemDO;
 import cn.weitee.erp.module.erp.dal.dataobject.stock.ErpStockDO;
@@ -25,6 +26,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static cn.weitee.erp.module.erp.enums.ErrorCodeConstants.SALE_OUT_PROCESS_FAIL_EXISTS_RECEIPT;
 
 class ErpSaleOutServiceImplTest {
 
@@ -85,7 +89,7 @@ class ErpSaleOutServiceImplTest {
                 return new ErpSaleOutDO().setId(100L).setNo("XSCK202604290001")
                         .setStatus(ErpAuditStatus.APPROVE.getStatus()).setReceiptPrice(BigDecimal.ZERO);
             }
-            if ("updateByIdAndStatus".equals(methodName)) {
+            if ("updateByIdAndStatusAndNoReceipt".equals(methodName)) {
                 return 1;
             }
             return null;
@@ -113,6 +117,52 @@ class ErpSaleOutServiceImplTest {
         assertEquals(ErpStockRecordBizTypeEnum.SALE_OUT.getType(), rollbackArgsRef.get()[0]);
         assertEquals(100L, rollbackArgsRef.get()[1]);
         assertEquals(ErpStockRecordBizTypeEnum.SALE_OUT_CANCEL.getType(), rollbackArgsRef.get()[2]);
+    }
+
+    @Test
+    void updateSaleOutStatus_shouldAbortReverseWhenConcurrentReceiptLanded() throws Exception {
+        ErpSaleOutServiceImpl service = new ErpSaleOutServiceImpl();
+        java.util.concurrent.atomic.AtomicInteger selectCount = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicBoolean stockTouched = new java.util.concurrent.atomic.AtomicBoolean(false);
+        java.util.concurrent.atomic.AtomicBoolean arClosed = new java.util.concurrent.atomic.AtomicBoolean(false);
+
+        // 首次读：APPROVE 且未收款（前置校验通过）；失败重读：并发收款已回写 receiptPrice=100
+        setField(service, "saleOutMapper", createProxy(ErpSaleOutMapper.class, (methodName, args) -> {
+            if ("selectById".equals(methodName)) {
+                BigDecimal receipt = selectCount.getAndIncrement() == 0
+                        ? BigDecimal.ZERO : new BigDecimal("100.00");
+                return new ErpSaleOutDO().setId(100L).setNo("XSCK202604290001")
+                        .setStatus(ErpAuditStatus.APPROVE.getStatus()).setReceiptPrice(receipt);
+            }
+            if ("updateByIdAndStatusAndNoReceipt".equals(methodName)) {
+                return 0; // 并发收款先落地，CAS 命中 0 行
+            }
+            return null;
+        }));
+        setField(service, "saleOutItemMapper", createProxy(ErpSaleOutItemMapper.class, (methodName, args) -> null));
+        setField(service, "stockBatchAllocationService", createProxy(ErpStockBatchAllocationService.class, (methodName, args) -> null));
+        setField(service, "stockRecordService", createProxy(ErpStockRecordService.class, (methodName, args) -> {
+            if ("createStockRecord".equals(methodName)) {
+                stockTouched.set(true);
+            }
+            return null;
+        }));
+        setDefaultStockService(service);
+        setField(service, "arStatementService", createProxy(ErpArStatementService.class, (methodName, args) -> {
+            if ("closeStatementByBiz".equals(methodName)) {
+                arClosed.set(true);
+            }
+            return null;
+        }));
+        setField(service, "financeBizHookService", createProxy(ErpFinanceBizHookService.class, (methodName, args) -> null));
+
+        ServiceException ex = assertThrows(ServiceException.class,
+                () -> service.updateSaleOutStatus(100L, ErpAuditStatus.PROCESS.getStatus()));
+
+        assertEquals(SALE_OUT_PROCESS_FAIL_EXISTS_RECEIPT.getCode(), ex.getCode());
+        // 关键：CAS 失败发生在库存/AR 变更之前，脏状态被拦截，未产生任何副作用
+        assertFalse(stockTouched.get(), "反审核被拦时不应扣减/回滚库存");
+        assertFalse(arClosed.get(), "反审核被拦时不应关闭 AR 台账");
     }
 
     @Test
@@ -242,6 +292,11 @@ class ErpSaleOutServiceImplTest {
         setField(service, "stockService", createProxy(ErpStockService.class, (methodName, args) -> {
             if ("getStock".equals(methodName)) {
                 return new ErpStockDO().setAverageCost(new BigDecimal("10.00"));
+            }
+            if ("getStockMapByProductAndWarehouseIds".equals(methodName)) {
+                return java.util.Collections.singletonMap(
+                        ErpStockService.buildProductWarehouseKey(1L, 2L),
+                        new ErpStockDO().setAverageCost(new BigDecimal("10.00")));
             }
             return null;
         }));

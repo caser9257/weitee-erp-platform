@@ -130,20 +130,7 @@
           />
         </el-form-item>
         <el-form-item label="物料" prop="materialId">
-          <el-select
-            v-model="purchaseQueryParams.materialId"
-            clearable
-            filterable
-            placeholder="请选择物料"
-            class="!w-full"
-          >
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="purchaseQueryParams.materialId" placeholder="请选择物料" class="!w-full" />
         </el-form-item>
         <el-form-item label="处理状态" prop="status">
           <el-select
@@ -382,20 +369,7 @@
           />
         </el-form-item>
         <el-form-item label="产品" prop="productId">
-          <el-select
-            v-model="productionQueryParams.productId"
-            clearable
-            filterable
-            placeholder="请选择产品"
-            class="!w-full"
-          >
-            <el-option
-              v-for="item in productList"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
+          <ProductRemoteSelect v-model="productionQueryParams.productId" placeholder="请选择产品" class="!w-full" />
         </el-form-item>
         <el-form-item label="处理状态" prop="status">
           <el-select
@@ -1620,7 +1594,7 @@ const submitProductionConvert = async () => {
 
 onMounted(async () => {
   const [products, suppliers, accounts] = await Promise.all([
-    ProductApi.getProductSimpleList(),
+    Promise.resolve([]),
     SupplierApi.getSupplierSimpleList(),
     AccountApi.getAccountSimpleList()
   ])

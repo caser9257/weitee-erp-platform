@@ -8,6 +8,7 @@ import cn.weitee.erp.module.erp.dal.dataobject.finance.ErpArStatementDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleOutDO;
 import cn.weitee.erp.module.erp.dal.dataobject.sale.ErpSaleReturnDO;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,42 @@ public interface ErpArStatementService {
      * @param statementIds 台账ID列表
      */
     void refreshStatementAmountByIds(Collection<Long> statementIds);
+
+    /**
+     * 按业务单据刷新台账已收/剩余金额与状态
+     *
+     * 已收金额来源于该业务单据下已审核收款单的收款单项汇总，幂等可重放
+     *
+     * @param bizType 业务类型（销售出库/销售退货）
+     * @param bizIds 业务单据ID集合
+     */
+    void refreshStatementAmountByBizIds(Integer bizType, Collection<Long> bizIds);
+
+    /**
+     * 写入收款分配事实明细（审批通过时）
+     *
+     * @param bizType 业务类型
+     * @param bizId 业务单据ID
+     * @param refId 收款单ID
+     * @param refNo 收款单号
+     * @param amount 本次分配金额（方向随台账金额方向）
+     * @param remark 备注
+     */
+    void createReceiptAllocatedItem(Integer bizType, Long bizId, Long refId,
+                                    String refNo, BigDecimal amount, String remark);
+
+    /**
+     * 写入收款退回事实明细（反审核/作废回滚时）
+     *
+     * @param bizType 业务类型
+     * @param bizId 业务单据ID
+     * @param refId 收款单ID
+     * @param refNo 收款单号
+     * @param amount 本次退回金额（与分配方向相反）
+     * @param remark 备注
+     */
+    void createReceiptReturnedItem(Integer bizType, Long bizId, Long refId,
+                                   String refNo, BigDecimal amount, String remark);
 
     /**
      * 分页查询应收台账

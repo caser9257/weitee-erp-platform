@@ -34,8 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.annotation.Validated;
 
@@ -190,12 +188,13 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         if (payment.getStatus().equals(status)) {
             throw exception(approve ? FINANCE_PAYMENT_APPROVE_FAIL : FINANCE_PAYMENT_PROCESS_FAIL);
         }
+        // 审核与反审核都会写入/取消核销事实并刷新台账金额，两条路径都必须获取台账锁；
         // 在事务外获取 Redisson 锁，防止锁在事务内获取导致锁超时前无法释放
         List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
-        List<RLock> locks = approve ? lockApStatements(paymentItems) : Collections.emptyList();
+        List<RLock> locks = lockApStatements(paymentItems);
         try {
             executeInRequiredTransaction(() -> {
-                doUpdateFinancePaymentStatus(id, status, payment, paymentItems, locks, approve, process);
+                doUpdateFinancePaymentStatus(id, status, payment, paymentItems, approve);
             });
         } finally {
             unlockNow(locks);
@@ -203,8 +202,7 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     }
 
     private void doUpdateFinancePaymentStatus(Long id, Integer status, ErpFinancePaymentDO payment,
-                                               List<ErpFinancePaymentItemDO> paymentItems,
-                                               List<RLock> locks, boolean approve, boolean process) {
+                                               List<ErpFinancePaymentItemDO> paymentItems, boolean approve) {
         Map<Long, ErpApStatementDO> statementMap = approve
                 ? validateApprovePaymentItems(payment.getSupplierId(), paymentItems)
                 : Collections.emptyMap();
@@ -231,19 +229,27 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
     }
 
     /**
-     * 更新关联采购订单的付款状态
+     * 更新关联采购订单的付款状态（批量查询入库单，消除 N+1）
      */
     private void updateRelatedPurchaseOrderPayment(List<ErpFinancePaymentItemDO> paymentItems) {
         if (CollUtil.isEmpty(paymentItems)) {
             return;
         }
-        java.util.Set<Long> orderIds = new java.util.LinkedHashSet<>();
+        java.util.Set<Long> purchaseInIds = new java.util.LinkedHashSet<>();
         for (ErpFinancePaymentItemDO item : paymentItems) {
             if (!Objects.equals(item.getBizType(), cn.weitee.erp.module.erp.enums.common.ErpBizTypeEnum.PURCHASE_IN.getType())) {
                 continue;
             }
-            ErpPurchaseInDO purchaseIn = purchaseInMapper.selectById(item.getBizId());
-            if (purchaseIn != null && purchaseIn.getOrderId() != null) {
+            if (item.getBizId() != null) {
+                purchaseInIds.add(item.getBizId());
+            }
+        }
+        if (purchaseInIds.isEmpty()) {
+            return;
+        }
+        java.util.Set<Long> orderIds = new java.util.LinkedHashSet<>();
+        for (ErpPurchaseInDO purchaseIn : purchaseInMapper.selectByIds(purchaseInIds)) {
+            if (purchaseIn.getOrderId() != null) {
                 orderIds.add(purchaseIn.getOrderId());
             }
         }
@@ -336,9 +342,9 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         List<RLock> locks = new ArrayList<>(statementIds.size());
         try {
             for (Long statementId : statementIds) {
-                RLock lock = redissonClient.getLock("erp:finance-payment:ap-statement:" + statementId);
-                if (!lock.tryLock()) {
-                    throw exception(AP_STATEMENT_ALLOCATE_AMOUNT_EXCEED, String.valueOf(statementId), BigDecimal.ZERO, BigDecimal.ZERO);
+                RLock lock = redissonClient.getLock(ErpApStatementService.allocateLockKey(statementId));
+                if (!ErpAllocateLocks.acquire(lock)) {
+                    throw exception(AP_STATEMENT_ALLOCATE_LOCKED, String.valueOf(statementId));
                 }
                 locks.add(lock);
             }
@@ -352,33 +358,11 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         }
     }
 
-    private void unlockAfterTransaction(List<RLock> locks) {
-        if (CollUtil.isEmpty(locks)) {
-            return;
-        }
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            unlockNow(locks);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                unlockNow(locks);
-            }
-        });
-    }
-
     private void unlockNow(List<RLock> locks) {
-        for (int index = locks.size() - 1; index >= 0; index--) {
-            RLock lock = locks.get(index);
-            if (lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
-        }
+        ErpAllocateLocks.unlockAll(locks);
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void voidFinancePayment(Long id, String reason) {
         ErpFinancePaymentDO payment = validateFinancePaymentExists(id);
         // 幂等处理：已作废则直接返回
@@ -389,6 +373,21 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
         if (!ErpAuditStatus.APPROVE.getStatus().equals(payment.getStatus())) {
             throw exception(FINANCE_PAYMENT_VOID_FAIL, payment.getNo());
         }
+        // 作废会取消核销事实并刷新台账金额，必须与审批核销共用台账锁串行，否则并发下会基于旧 remainAmount 超额核销。
+        // 在事务外获取 Redisson 锁，防止锁在事务内获取导致锁超时前无法释放
+        List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
+        List<RLock> locks = lockApStatements(paymentItems);
+        try {
+            executeInRequiredTransaction(() -> {
+                doVoidFinancePayment(id, reason, payment, paymentItems);
+            });
+        } finally {
+            unlockNow(locks);
+        }
+    }
+
+    private void doVoidFinancePayment(Long id, String reason, ErpFinancePaymentDO payment,
+                                      List<ErpFinancePaymentItemDO> paymentItems) {
         // 更新状态为已作废
         int updateCount = erpFinancePaymentMapper.updateByIdAndStatus(id, payment.getStatus(),
                 new ErpFinancePaymentDO()
@@ -400,7 +399,6 @@ public class ErpFinancePaymentServiceImpl implements ErpFinancePaymentService {
             throw exception(FINANCE_PAYMENT_VOID_FAIL, payment.getNo());
         }
         // 释放关联的应付台账额度
-        List<ErpFinancePaymentItemDO> paymentItems = erpFinancePaymentItemMapper.selectListByPaymentId(id);
         if (CollUtil.isNotEmpty(paymentItems)) {
             List<ErpFinancePaymentAllocateDO> approvedAllocates = selectApprovedAllocateList(id);
             cancelApprovedAllocateFacts(approvedAllocates);

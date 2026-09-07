@@ -39,6 +39,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpFinanceAssetCandidateService;
 import cn.weitee.erp.module.erp.service.finance.ErpApStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -87,6 +88,8 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
     private ErpNoRedisDAO noRedisDAO;
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductUnitConversionService unitConversionService;
     @Resource
     @Lazy
     private ErpPurchaseOrderService purchaseOrderService;
@@ -252,6 +255,9 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
         }
         if (!approve && queryHelper.hasApprovedAllocate(id)) {
             throw exception(PURCHASE_IN_PROCESS_FAIL_EXISTS_PAYMENT);
+        }
+        if (!approve && queryHelper.hasActiveInvoiceMatch(id)) {
+            throw exception(PURCHASE_IN_PROCESS_FAIL_EXISTS_INVOICE_MATCH);
         }
 
         ErpPurchaseInDO updateObj = new ErpPurchaseInDO().setStatus(status);
@@ -458,13 +464,20 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
     @Override
     public void updatePurchaseInPaymentPrice(Long id, BigDecimal paymentPrice) {
         ErpPurchaseInDO purchaseIn = erpPurchaseInMapper.selectById(id);
-        if (purchaseIn.getPaymentPrice().equals(paymentPrice)) {
+        if (purchaseIn == null) {
+            // 台账 bizId 指向不存在（或已删除）的入库单：快速失败为明确业务错误并整体回滚，
+            // 禁止 NPE 或静默跳过留下半条 AP 事实；悬挂来源按 p2 巡检清单人工处置
+            throw exception(PURCHASE_IN_NOT_EXISTS);
+        }
+        BigDecimal actualPaymentPrice = ObjectUtil.defaultIfNull(paymentPrice, BigDecimal.ZERO);
+        BigDecimal currentPaymentPrice = ObjectUtil.defaultIfNull(purchaseIn.getPaymentPrice(), BigDecimal.ZERO);
+        if (currentPaymentPrice.compareTo(actualPaymentPrice) == 0) {
             return;
         }
-        if (paymentPrice.compareTo(purchaseIn.getTotalPrice()) > 0) {
-            throw exception(PURCHASE_IN_FAIL_PAYMENT_PRICE_EXCEED, paymentPrice, purchaseIn.getTotalPrice());
+        if (actualPaymentPrice.compareTo(ObjectUtil.defaultIfNull(purchaseIn.getTotalPrice(), BigDecimal.ZERO)) > 0) {
+            throw exception(PURCHASE_IN_FAIL_PAYMENT_PRICE_EXCEED, actualPaymentPrice, purchaseIn.getTotalPrice());
         }
-        erpPurchaseInMapper.updateById(new ErpPurchaseInDO().setId(id).setPaymentPrice(paymentPrice));
+        erpPurchaseInMapper.updateById(new ErpPurchaseInDO().setId(id).setPaymentPrice(actualPaymentPrice));
     }
 
     // endregion
@@ -602,16 +615,25 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
     }
 
     private List<ErpPurchaseInItemDO> validatePurchaseInItems(List<ErpPurchaseInSaveReqVO.Item> list) {
-        List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpPurchaseInSaveReqVO.Item::getProductId));
-        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
-        return convertList(list, o -> BeanUtils.toBean(o, ErpPurchaseInItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
-            BigDecimal materialTotalPrice = MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount());
+        productService.validProductList(convertSet(list, ErpPurchaseInSaveReqVO.Item::getProductId));
+        List<ErpPurchaseInItemDO> items = convertList(list, o -> BeanUtils.toBean(o, ErpPurchaseInItemDO.class));
+        // 批量换算录入单位：count 换算为基本单位记账数量，inputCount/conversionRate 保留录入口径
+        List<ErpProductUnitConversionService.ConversionResult> results = unitConversionService.convertBatch(
+                convertList(items, item -> new ErpProductUnitConversionService.ConversionRequest(
+                        item.getProductId(), item.getProductUnitId(), item.getCount())));
+        for (int i = 0; i < items.size(); i++) {
+            ErpPurchaseInItemDO item = items.get(i);
+            ErpProductUnitConversionService.ConversionResult result = results.get(i);
+            item.setProductUnitId(result.getInputUnitId());
+            item.setInputCount(result.getInputCount());
+            item.setConversionRate(result.getConversionRate());
+            item.setCount(result.getBaseCount());
+            // 金额计算：单价为录入单位口径，材料金额 = 单价 × 录入数量
+            BigDecimal materialTotalPrice = MoneyUtils.priceMultiply(item.getProductPrice(), result.getInputCount());
             BigDecimal engineeringFee = ObjectUtil.defaultIfNull(item.getEngineeringFee(), BigDecimal.ZERO);
             if (materialTotalPrice == null) {
                 if (engineeringFee.compareTo(BigDecimal.ZERO) == 0) {
-                    return;
+                    continue;
                 }
                 item.setTotalPrice(engineeringFee);
             } else {
@@ -620,7 +642,8 @@ public class ErpPurchaseInServiceImpl implements ErpPurchaseInService {
             if (item.getTaxPercent() != null) {
                 item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
             }
-        }));
+        }
+        return items;
     }
 
     private void validatePurchaseOrderItemRemainingCount(Long orderId, List<ErpPurchaseInItemDO> purchaseInItems) {

@@ -1,6 +1,7 @@
 package cn.weitee.erp.module.erp.dal.dataobject.product;
 
 import lombok.*;
+import java.math.BigDecimal;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.time.LocalDateTime;
@@ -35,6 +36,27 @@ public class ErpProductUnitDO extends BaseDO {
      * 单位状态
      */
     private Integer status;
+
+    /**
+     * 单位类型
+     *
+     * 枚举 {@link cn.weitee.erp.module.erp.enums.product.ErpProductUnitTypeEnum}
+     */
+    private Integer unitType;
+
+    /**
+     * 基本单位编号，辅助单位归属；基本单位为 null
+     *
+     * 关联 {@link ErpProductUnitDO#getId()}
+     */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private Long baseUnitId;
+
+    /**
+     * 换算率：1 辅助单位 = conversionRate 基本单位；基本单位为 null
+     */
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
+    private BigDecimal conversionRate;
 
     /**
      * 数量精度，0 表示只允许整数

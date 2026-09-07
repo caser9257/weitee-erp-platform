@@ -22,6 +22,7 @@ import cn.weitee.erp.module.erp.service.finance.ErpAccountService;
 import cn.weitee.erp.module.erp.service.finance.ErpArStatementService;
 import cn.weitee.erp.module.erp.service.finance.ErpFinanceBizHookService;
 import cn.weitee.erp.module.erp.service.product.ErpProductService;
+import cn.weitee.erp.module.erp.service.product.ErpProductUnitConversionService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockRecordService;
 import cn.weitee.erp.module.erp.service.stock.ErpStockService;
 import cn.weitee.erp.module.erp.service.stock.bo.ErpStockRecordCreateReqBO;
@@ -67,6 +68,8 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
 
     @Resource
     private ErpProductService productService;
+    @Resource
+    private ErpProductUnitConversionService unitConversionService;
     @Resource
     @Lazy // 延迟加载，避免循环依赖
     private ErpSaleOrderService saleOrderService;
@@ -185,6 +188,9 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         if (saleReturn.getDiscountPercent() == null) {
             saleReturn.setDiscountPercent(BigDecimal.ZERO);
         }
+        if (saleReturn.getOtherPrice() == null) {
+            saleReturn.setOtherPrice(BigDecimal.ZERO);
+        }
         saleReturn.setDiscountPrice(MoneyUtils.priceMultiplyPercent(saleReturn.getTotalPrice(), saleReturn.getDiscountPercent()));
         saleReturn.setTotalPrice(saleReturn.getTotalPrice().subtract(saleReturn.getDiscountPrice().add(saleReturn.getOtherPrice())));
     }
@@ -209,8 +215,9 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         if (saleReturn.getStatus().equals(status)) {
             throw exception(approve ? SALE_RETURN_APPROVE_FAIL : SALE_RETURN_PROCESS_FAIL);
         }
-        // 1.3 校验已退款
-        if (!approve && saleReturn.getRefundPrice().compareTo(BigDecimal.ZERO) > 0) {
+        // 1.3 校验已退款：refund_price 非 0 即视为已发生退款冲减（兼容正负号口径，修复原 > 0 对负数恒不成立的漏判）
+        if (!approve && saleReturn.getRefundPrice() != null
+                && saleReturn.getRefundPrice().compareTo(BigDecimal.ZERO) != 0) {
             throw exception(SALE_RETURN_PROCESS_FAIL_EXISTS_REFUND);
         }
 
@@ -246,11 +253,21 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
             arStatementService.closeStatementByBiz(ErpBizTypeEnum.SALE_RETURN.getType(), id, "销售退货反审核");
         }
 
-        // 3. 最后落终态（CAS 更新，防止并发覆盖）
-        int updateCount = erpSaleReturnMapper.updateByIdAndStatus(id, saleReturn.getStatus(),
-                new ErpSaleReturnDO().setStatus(status));
+        // 3. 最后落终态（反审核走带 refund_price=0 的 CAS，关闭「读校验→并发退款回写→改状态」脏状态窗口）
+        int updateCount = approve
+                ? erpSaleReturnMapper.updateByIdAndStatus(id, saleReturn.getStatus(), new ErpSaleReturnDO().setStatus(status))
+                : erpSaleReturnMapper.updateByIdAndStatusAndNoRefund(id, saleReturn.getStatus(), new ErpSaleReturnDO().setStatus(status));
         if (updateCount == 0) {
-            throw exception(approve ? SALE_RETURN_APPROVE_FAIL : SALE_RETURN_PROCESS_FAIL);
+            if (approve) {
+                throw exception(SALE_RETURN_APPROVE_FAIL);
+            }
+            // 反审核 CAS 失败：区分「并发已回写退款」与「并发状态变更」，给准确提示
+            ErpSaleReturnDO latest = erpSaleReturnMapper.selectById(id);
+            if (latest != null && latest.getRefundPrice() != null
+                    && latest.getRefundPrice().compareTo(BigDecimal.ZERO) != 0) {
+                throw exception(SALE_RETURN_PROCESS_FAIL_EXISTS_REFUND);
+            }
+            throw exception(SALE_RETURN_PROCESS_FAIL);
         }
     }
 
@@ -277,20 +294,30 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
 
     private List<ErpSaleReturnItemDO> validateSaleReturnItems(List<ErpSaleReturnSaveReqVO.Item> list) {
         // 1. 校验产品存在
-        List<ErpProductDO> productList = productService.validProductList(
-                convertSet(list, ErpSaleReturnSaveReqVO.Item::getProductId));
-        Map<Long, ErpProductDO> productMap = convertMap(productList, ErpProductDO::getId);
+        productService.validProductList(convertSet(list, ErpSaleReturnSaveReqVO.Item::getProductId));
         // 2. 转化为 ErpSaleReturnItemDO 列表
-        return convertList(list, o -> BeanUtils.toBean(o, ErpSaleReturnItemDO.class, item -> {
-            item.setProductUnitId(productMap.get(item.getProductId()).getUnitId());
-            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), item.getCount()));
+        List<ErpSaleReturnItemDO> items = convertList(list, o -> BeanUtils.toBean(o, ErpSaleReturnItemDO.class));
+        // 3. 批量换算录入单位：count 换算为基本单位记账数量，inputCount/conversionRate 保留录入口径
+        List<ErpProductUnitConversionService.ConversionResult> results = unitConversionService.convertBatch(
+                convertList(items, item -> new ErpProductUnitConversionService.ConversionRequest(
+                        item.getProductId(), item.getProductUnitId(), item.getCount())));
+        for (int i = 0; i < items.size(); i++) {
+            ErpSaleReturnItemDO item = items.get(i);
+            ErpProductUnitConversionService.ConversionResult result = results.get(i);
+            item.setProductUnitId(result.getInputUnitId());
+            item.setInputCount(result.getInputCount());
+            item.setConversionRate(result.getConversionRate());
+            item.setCount(result.getBaseCount());
+            // 4. 金额计算：单价为录入单位口径，金额 = 单价 × 录入数量
+            item.setTotalPrice(MoneyUtils.priceMultiply(item.getProductPrice(), result.getInputCount()));
             if (item.getTotalPrice() == null) {
-                return;
+                continue;
             }
             if (item.getTaxPercent() != null) {
                 item.setTaxPrice(MoneyUtils.priceMultiplyPercent(item.getTotalPrice(), item.getTaxPercent()));
             }
-        }));
+        }
+        return items;
     }
 
     private void updateSaleReturnItemList(Long id, List<ErpSaleReturnItemDO> newList) {
@@ -323,6 +350,10 @@ public class ErpSaleReturnServiceImpl implements ErpSaleReturnService {
         saleReturns.forEach(saleReturn -> {
             if (ErpAuditStatus.APPROVE.getStatus().equals(saleReturn.getStatus())) {
                 throw exception(SALE_RETURN_DELETE_FAIL_APPROVE, saleReturn.getNo());
+            }
+            // 已产生退款的退货单禁止删除，避免退款项 bizId 悬空、后续重算脏数据
+            if (saleReturn.getRefundPrice() != null && saleReturn.getRefundPrice().compareTo(BigDecimal.ZERO) != 0) {
+                throw exception(SALE_RETURN_DELETE_FAIL_EXISTS_REFUND, saleReturn.getNo());
             }
         });
 

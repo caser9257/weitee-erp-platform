@@ -19,6 +19,11 @@ public interface ErpProductionInboundMapper extends BaseMapperX<ErpProductionInb
         return selectOne(ErpProductionInboundDO::getFinishQualityId, finishQualityId);
     }
 
+    default int updateByIdAndStatus(Long id, Integer status, ErpProductionInboundDO updateObj) {
+        return update(updateObj, new LambdaUpdateWrapper<ErpProductionInboundDO>()
+                .eq(ErpProductionInboundDO::getId, id).eq(ErpProductionInboundDO::getStatus, status));
+    }
+
     default int resetExecutionInfoById(Long id) {
         return update(new LambdaUpdateWrapper<ErpProductionInboundDO>()
                 .eq(ErpProductionInboundDO::getId, id)

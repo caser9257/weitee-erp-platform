@@ -23,6 +23,17 @@ import java.util.List;
 
 public interface ErpApStatementService {
 
+    /**
+     * AP 台账核销互斥锁 key。锁必须绑定在资源（应付台账）上，
+     * 付款审批、付款作废、预付款核销、预付款核销回滚等所有"校验余额-写入核销事实"的路径必须共用同一 key，
+     * 否则不同子系统之间无法互斥，会出现并发超额核销。
+     */
+    String ALLOCATE_LOCK_KEY_PREFIX = "erp:ap-statement:allocate:";
+
+    static String allocateLockKey(Long statementId) {
+        return ALLOCATE_LOCK_KEY_PREFIX + statementId;
+    }
+
     void createStatementForPurchaseIn(ErpPurchaseInDO purchaseIn);
 
     void createStatementForPurchaseReturn(ErpPurchaseReturnDO purchaseReturn);

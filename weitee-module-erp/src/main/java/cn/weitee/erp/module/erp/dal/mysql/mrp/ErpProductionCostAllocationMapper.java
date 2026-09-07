@@ -34,4 +34,10 @@ public interface ErpProductionCostAllocationMapper extends BaseMapperX<ErpProduc
                 .eq(ErpProductionCostAllocationDO::getStatus, ErpProductionCostAllocationStatusEnum.EXECUTED.getStatus()));
     }
 
+    default int updateByIdAndStatus(Long id, Integer status, ErpProductionCostAllocationDO updateObj) {
+        return update(updateObj, new LambdaQueryWrapperX<ErpProductionCostAllocationDO>()
+                .eq(ErpProductionCostAllocationDO::getId, id)
+                .eq(ErpProductionCostAllocationDO::getStatus, status));
+    }
+
 }

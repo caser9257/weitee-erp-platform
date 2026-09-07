@@ -22,7 +22,9 @@
             </span>
           </div>
           <div class="product-drawer-head__meta">
-            <span class="product-drawer-head__mono">{{ product?.materialCode || '-' }}</span>
+            <span class="product-drawer-head__mono">{{
+              formatMaterialCode(product?.materialCode, product?.prevMaterialCode)
+            }}</span>
             <span class="product-drawer-head__mono">{{ product?.barCode || '-' }}</span>
             <span>{{ product?.categoryName || '-' }}</span>
             <span>{{ product?.unitName || '-' }}</span>
@@ -339,6 +341,46 @@
         <el-button @click="close">关闭</el-button>
         <div class="product-drawer-footer__actions">
           <el-button
+            v-if="canCancelTwoStage"
+            type="warning"
+            plain
+            :loading="cancelingTwoStage"
+            :disabled="actionBusy"
+            @click="handleCancelTwoStage"
+          >
+            撤回两段式审批
+          </el-button>
+          <el-button
+            v-if="canStartObsolete"
+            type="danger"
+            plain
+            :loading="obsoleteRequesting"
+            :disabled="actionBusy"
+            @click="handleStartObsolete"
+          >
+            发起废除
+          </el-button>
+          <el-button
+            v-if="canSubmitChangeConfirm"
+            type="warning"
+            plain
+            :loading="changeConfirming"
+            :disabled="actionBusy"
+            @click="handleSubmitChangeConfirm"
+          >
+            提交审批
+          </el-button>
+          <el-button
+            v-if="canStartChange"
+            type="warning"
+            plain
+            :loading="changeRequesting"
+            :disabled="actionBusy"
+            @click="handleStartChange"
+          >
+            发起变更
+          </el-button>
+          <el-button
             v-if="canCancelAudit"
             type="warning"
             plain
@@ -383,6 +425,7 @@ import { checkPermi } from '@/utils/permission'
 import { formatDate } from '@/utils/formatTime'
 import { useMessage } from '@/hooks/web/useMessage'
 import { CommonStatusEnum } from '@/utils/constants'
+import { formatMaterialCode } from '@/utils/erp/materialCode'
 import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import { RdBomApi, type RdBomVO } from '@/api/erp/rd/bom'
 import { RouteApi, type RouteVO } from '@/api/erp/route'
@@ -400,10 +443,25 @@ const { width } = useWindowSize()
 
 const AUDIT_STATUS_DRAFT = 0
 const AUDIT_STATUS_PROCESS = 10
+const AUDIT_STATUS_APPROVE = 20
+const AUDIT_STATUS_CR_PENDING = 21
+const AUDIT_STATUS_EDITING = 22
+const AUDIT_STATUS_CONFIRM_PENDING = 23
+const AUDIT_STATUS_OBSOLETE_CR_PENDING = 24
+const AUDIT_STATUS_OBSOLETED = 27
+const AUDIT_STATUS_STOP_PENDING = 28
 const AUDIT_STATUS_FAILED = 60
 
 const SUBMIT_SETTLE_RETRY_MAX = 2
 const SUBMIT_SETTLE_RETRY_INTERVAL_MS = 500
+
+/** 两段式审批流状态（任一审批中，禁止流转/修改） */
+const TWO_STAGE_PENDING_STATUSES = [
+  AUDIT_STATUS_CR_PENDING,
+  AUDIT_STATUS_CONFIRM_PENDING,
+  AUDIT_STATUS_OBSOLETE_CR_PENDING,
+  AUDIT_STATUS_STOP_PENDING
+]
 
 interface StatusMeta {
   label: string
@@ -414,7 +472,15 @@ const AUDIT_STATUS_META: Record<number, StatusMeta> = {
   0: { label: '草稿', tone: 'slate' },
   10: { label: '审批中', tone: 'warning' },
   20: { label: '已审批', tone: 'success' },
+  21: { label: '变更申请审批中', tone: 'warning' },
+  22: { label: '变更编辑中', tone: 'primary' },
+  23: { label: '变更确认审批中', tone: 'warning' },
+  24: { label: '废除审批中', tone: 'warning' },
+  27: { label: '已废除', tone: 'danger' },
+  28: { label: '启停审批中', tone: 'warning' },
   30: { label: '已驳回', tone: 'danger' },
+  40: { label: '已结转', tone: 'slate' },
+  50: { label: '已作废', tone: 'danger' },
   60: { label: '流程失败', tone: 'danger' }
 }
 
@@ -423,6 +489,7 @@ const BOM_STATUS_META: Record<number, StatusMeta> = {
   10: { label: '审批中', tone: 'warning' },
   20: { label: '已审批', tone: 'success' },
   30: { label: '已驳回', tone: 'danger' },
+  50: { label: '已作废', tone: 'danger' },
   60: { label: '处理失败', tone: 'danger' }
 }
 
@@ -434,6 +501,10 @@ const bomLoading = ref(false)
 const bomLoadFailed = ref(false)
 const submittingAudit = ref(false)
 const cancelingAudit = ref(false)
+const changeRequesting = ref(false)
+const changeConfirming = ref(false)
+const obsoleteRequesting = ref(false)
+const cancelingTwoStage = ref(false)
 
 const selectedProductId = ref<number>()
 const product = ref<ProductVO | null>(null)
@@ -449,8 +520,35 @@ const drawerSize = computed(() => {
 const isApprovalRunning = computed(
   () => product.value?.auditStatus === AUDIT_STATUS_PROCESS && !!product.value?.processInstanceId
 )
+/** 两段式任一审批中（禁止流转阶段、禁止修改） */
+const isTwoStagePending = computed(() =>
+  TWO_STAGE_PENDING_STATUSES.includes(product.value?.auditStatus ?? -1)
+)
+/** 两段式变更：已获编辑权限（EDITING）可编辑暂存 */
+const isChangeEditing = computed(() => product.value?.auditStatus === AUDIT_STATUS_EDITING)
+const isObsoleted = computed(() => product.value?.auditStatus === AUDIT_STATUS_OBSOLETED)
+
 const canEdit = computed(
-  () => checkPermi(['erp:product:update']) && !isApprovalRunning.value
+  () =>
+    checkPermi(['erp:product:update']) &&
+    [AUDIT_STATUS_DRAFT, 30, AUDIT_STATUS_FAILED, AUDIT_STATUS_EDITING].includes(
+      product.value?.auditStatus ?? -1
+    )
+)
+const canStartChange = computed(
+  () => checkPermi(['erp:product:update']) && product.value?.auditStatus === AUDIT_STATUS_APPROVE
+)
+const canStartObsolete = computed(
+  () => checkPermi(['erp:product:update']) && product.value?.auditStatus === AUDIT_STATUS_APPROVE
+)
+const canSubmitChangeConfirm = computed(
+  () => checkPermi(['erp:product:update']) && isChangeEditing.value
+)
+const canCancelTwoStage = computed(
+  () =>
+    checkPermi(['erp:product:cancel']) &&
+    isTwoStagePending.value &&
+    !!product.value?.processInstanceId
 )
 const canSubmitAudit = computed(
   () =>
@@ -459,7 +557,16 @@ const canSubmitAudit = computed(
     !product.value?.processInstanceId
 )
 const canCancelAudit = computed(() => checkPermi(['erp:product:cancel']) && isApprovalRunning.value)
-const actionBusy = computed(() => loadingDetail.value || submittingAudit.value || cancelingAudit.value)
+const actionBusy = computed(
+  () =>
+    loadingDetail.value ||
+    submittingAudit.value ||
+    cancelingAudit.value ||
+    changeRequesting.value ||
+    changeConfirming.value ||
+    obsoleteRequesting.value ||
+    cancelingTwoStage.value
+)
 const hasBom = computed(() => boms.value.length > 0)
 
 const auditStatusMeta = computed(() =>
@@ -679,7 +786,7 @@ const handleSubmitAudit = async () => {
     return
   }
   try {
-    await message.confirm(`确认提交产品“${current.name}”进行审核吗？`)
+    await message.confirm('确认提交审核吗？')
   } catch {
     return
   }
@@ -710,7 +817,10 @@ const handleCancelAudit = async () => {
     return
   }
   try {
-    await message.confirm(`确认撤回产品“${current.name}”的审核吗？`)
+    const batchTip = current.pendingBatchId
+      ? `该物料属于批量审批批次（共 ${current.pendingBatchSize ?? '?'} 条），撤回将作废整批变更。`
+      : ''
+    await message.confirm(`确认撤回该物料的审核吗？${batchTip}`)
   } catch {
     return
   }
@@ -731,6 +841,95 @@ const handleEdit = () => {
   }
   detailDrawerVisible.value = false
   emit('edit', product.value.id)
+}
+
+// ========== 两段式变更/废除 ==========
+
+const handleStartChange = async () => {
+  const current = product.value
+  if (!current?.id || changeRequesting.value) {
+    return
+  }
+  try {
+    await message.confirm('确认对该物料发起变更申请吗？')
+  } catch {
+    return
+  }
+  changeRequesting.value = true
+  try {
+    await ProductApi.submitChangeRequest(current.id)
+    await reloadAfterAction()
+    message.success('变更申请已提交，等待审批')
+  } catch {
+  } finally {
+    changeRequesting.value = false
+  }
+}
+
+const handleSubmitChangeConfirm = async () => {
+  const current = product.value
+  if (!current?.id || changeConfirming.value) {
+    return
+  }
+  try {
+    await message.confirm('确认提交变更审批吗？')
+  } catch {
+    return
+  }
+  changeConfirming.value = true
+  try {
+    await ProductApi.submitChangeConfirm(current.id)
+    await reloadAfterAction()
+    message.success('变更审批已提交，等待负责人审批')
+  } catch {
+  } finally {
+    changeConfirming.value = false
+  }
+}
+
+const handleStartObsolete = async () => {
+  const current = product.value
+  if (!current?.id || obsoleteRequesting.value) {
+    return
+  }
+  try {
+    // 废除原因是最终留痕，弹窗强制填写
+    const { value } = await message.prompt('确认对该物料发起废除申请吗？', '填写废除原因')
+    if (!value || !String(value).trim()) {
+      message.warning('请填写废除原因')
+      return
+    }
+    obsoleteRequesting.value = true
+    try {
+      await ProductApi.submitObsoleteRequest(current.id, String(value).trim())
+      await reloadAfterAction()
+      message.success('废除申请已提交，等待审批')
+    } catch {
+    } finally {
+      obsoleteRequesting.value = false
+    }
+  } catch {}
+}
+
+const handleCancelTwoStage = async () => {
+  const current = product.value
+  if (!current?.id || cancelingTwoStage.value) {
+    return
+  }
+  try {
+    await message.confirm('确认撤回该物料的审批吗？')
+  } catch {
+    return
+  }
+  cancelingTwoStage.value = true
+  try {
+    await ProductApi.cancelTwoStageApproval(current.id)
+    await reloadAfterAction()
+    message.success('撤回成功')
+  } catch {
+  } finally {
+    cancelingTwoStage.value = false
+  }
 }
 
 const handleOpenProcessDetail = async () => {

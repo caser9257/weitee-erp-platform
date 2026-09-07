@@ -13,7 +13,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @role_apply_id = 910001;
 SET @role_leader_id = 910002;

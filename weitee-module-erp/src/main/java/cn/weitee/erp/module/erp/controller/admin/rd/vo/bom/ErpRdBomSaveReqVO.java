@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -17,7 +18,7 @@ public class ErpRdBomSaveReqVO {
     private Long id;
 
     @Schema(description = "BOM 编码", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotEmpty(message = "BOM 编码不能为空")
+    @NotBlank(message = "BOM 编码不能为空")
     private String bomCode;
 
     @Schema(description = "产品编号", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -43,6 +44,9 @@ public class ErpRdBomSaveReqVO {
         @Schema(description = "物料编号", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "物料编号不能为空")
         private Long materialId;
+
+        @Schema(description = "产品型号快照")
+        private String materialStandard;
 
         @Schema(description = "物料类型")
         private Integer materialType;

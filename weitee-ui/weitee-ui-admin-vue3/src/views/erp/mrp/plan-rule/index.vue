@@ -9,21 +9,7 @@
       class="plan-rule-query-form -mb-15px"
     >
       <el-form-item label="产品" prop="productId">
-        <el-select
-          v-model="queryParams.productId"
-          clearable
-          filterable
-          placeholder="请选择产品"
-          class="plan-rule-query-select"
-          :loading="optionLoading"
-        >
-          <el-option
-            v-for="item in productList"
-            :key="item.id"
-            :label="item.name"
-            :value="item.id"
-          />
-        </el-select>
+        <ProductRemoteSelect v-model="queryParams.productId" class="plan-rule-query-select" placeholder="请选择产品" />
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select
@@ -244,7 +230,7 @@ const loadOptions = async () => {
   optionErrorMessage.value = ''
   try {
     const [products, suppliers] = await Promise.all([
-      ProductApi.getProductSimpleList(),
+      Promise.resolve([]),
       SupplierApi.getSupplierSimpleList()
     ])
     productList.value = products

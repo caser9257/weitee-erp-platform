@@ -56,4 +56,13 @@ public class ErpProductSubstituteController {
         return success(true);
     }
 
+    @PostMapping("/batch-update")
+    @Operation(summary = "批量新增/更新物料的替代料列表")
+    @PreAuthorize("@ss.hasPermission('erp:product:update')")
+    public CommonResult<Boolean> batchUpdate(@RequestParam("productId") Long productId,
+                                             @RequestBody @Valid List<ErpProductSubstituteSaveReqVO> list) {
+        productSubstituteService.batchUpdateSubstitutes(productId, list);
+        return success(true);
+    }
+
 }

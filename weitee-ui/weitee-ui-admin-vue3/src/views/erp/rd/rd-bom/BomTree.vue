@@ -26,7 +26,13 @@
         <span class="ml-auto text-11px text-slate-400">共 {{ totalCount }} 项</span>
       </div>
       <div class="p-8px">
-        <BomTreeNode v-for="item in treeData.items" :key="item.id" :item="item" :depth="1" />
+        <BomTreeNode
+          v-for="item in treeData.items"
+          :key="item.id ?? 0"
+          :item="item"
+          :depth="1"
+          :node-path="String(item.id ?? 0)"
+        />
         <div v-if="!treeData.items || !treeData.items.length" class="py-32px text-center text-13px text-slate-400">
           该 BOM 暂无明细
         </div>
@@ -48,7 +54,7 @@ const props = defineProps<{
   treeData: RdBomTreeRespVO | null
 }>()
 
-const expandState = reactive<Record<number, boolean>>({})
+const expandState = reactive<Record<string, boolean>>({})
 provide('rdBomExpandState', expandState)
 
 const maxLevel = 6
@@ -68,16 +74,17 @@ const totalCount = computed(() => {
   return c
 })
 
-function walk(items: any[] | undefined, depth: number, cb: (id: number, depth: number) => void) {
+function walk(items: any[] | undefined, depth: number, cb: (nodePath: string, depth: number) => void, parentPath = '') {
   if (!items) return
   for (const it of items) {
-    if (it.id != null) cb(it.id, depth)
-    walk(it.children, depth + 1, cb)
+    const nodePath = parentPath ? `${parentPath}/${it.id ?? 0}` : String(it.id ?? 0)
+    cb(nodePath, depth)
+    walk(it.children, depth + 1, cb, nodePath)
   }
 }
 
 const expandAll = () => {
-  walk(props.treeData?.items, 1, (id) => (expandState[id] = true))
+  walk(props.treeData?.items, 1, (nodePath) => (expandState[nodePath] = true))
 }
 
 const collapseAll = () => {
@@ -91,8 +98,8 @@ const expandToLevel = (n: number) => {
     expandAll()
     return
   }
-  walk(props.treeData?.items, 1, (id, depth) => {
-    if (depth < n) expandState[id] = true
+  walk(props.treeData?.items, 1, (nodePath, depth) => {
+    if (depth < n) expandState[nodePath] = true
   })
 }
 

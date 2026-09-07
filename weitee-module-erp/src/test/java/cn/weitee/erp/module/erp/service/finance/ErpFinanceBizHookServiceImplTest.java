@@ -218,6 +218,53 @@ class ErpFinanceBizHookServiceImplTest {
         assertEquals("反审核回滚", rollbackRemarkRef.get());
     }
 
+    @Test
+    void handleApprovedBiz_shouldRecordFailureAndNotBlockApprovalWhenVoucherGenerationFails() throws Exception {
+        // P3 闭环：制证失败 → 落失败记录（随业务事务）+ 发布告警事件 + 审核不被阻断
+        ErpFinanceBizHookServiceImpl service = new ErpFinanceBizHookServiceImpl();
+        AtomicReference<Integer> recordedBizTypeRef = new AtomicReference<>();
+        AtomicReference<Long> recordedBizIdRef = new AtomicReference<>();
+        AtomicReference<String> recordedMessageRef = new AtomicReference<>();
+        AtomicReference<Object> publishedEventRef = new AtomicReference<>();
+
+        setField(service, "financeLedgerService", createProxy(ErpFinanceLedgerService.class,
+                (methodName, args) -> null));
+        setField(service, "financePeriodService", createProxy(ErpFinancePeriodService.class,
+                (methodName, args) -> null));
+        setField(service, "financeVoucherService", createProxy(ErpFinanceVoucherService.class,
+                (methodName, args) -> {
+                    if ("autoGenerateVoucher".equals(methodName)) {
+                        throw new IllegalStateException("凭证模板缺失");
+                    }
+                    return null;
+                }));
+        setField(service, "voucherFailureService", createProxy(ErpFinanceVoucherFailureService.class,
+                (methodName, args) -> {
+                    if ("recordFailure".equals(methodName)) {
+                        recordedBizTypeRef.set((Integer) args[0]);
+                        recordedBizIdRef.set((Long) args[1]);
+                        recordedMessageRef.set((String) args[2]);
+                    }
+                    return null;
+                }));
+        setField(service, "eventPublisher", createProxy(org.springframework.context.ApplicationEventPublisher.class,
+                (methodName, args) -> {
+                    if ("publishEvent".equals(methodName)) {
+                        publishedEventRef.set(args[0]);
+                    }
+                    return null;
+                }));
+
+        Long result = service.handleApprovedBiz(ErpBizTypeEnum.SALE_OUT.getType(), 33L, LocalDate.of(2026, 9, 7));
+
+        assertNull(result);
+        assertEquals(ErpBizTypeEnum.SALE_OUT.getType(), recordedBizTypeRef.get());
+        assertEquals(33L, recordedBizIdRef.get());
+        assertEquals("凭证模板缺失", recordedMessageRef.get());
+        org.junit.jupiter.api.Assertions.assertTrue(publishedEventRef.get() instanceof
+                cn.weitee.erp.module.erp.framework.event.VoucherGenerateFailedEvent);
+    }
+
     @SuppressWarnings("unchecked")
     private <T> T createProxy(Class<T> type, MethodHandler handler) {
         return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type},

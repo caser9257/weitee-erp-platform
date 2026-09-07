@@ -93,6 +93,19 @@ public class ErpProcessRouteController {
         return success(new PageResult<>(buildProcessRouteRespVOList(pageResult.getList()), pageResult.getTotal()));
     }
 
+    @GetMapping("/simple-list")
+    @Operation(summary = "获得工艺路线精简列表", description = "不过滤状态，供详情展示做 defaultRouteId → 名称映射")
+    @PreAuthorize("@ss.hasPermission('erp:process-route:query')")
+    public CommonResult<List<ErpProcessRouteRespVO>> getProcessRouteSimpleList() {
+        return success(convertList(processRouteService.getSimpleList(), route -> new ErpProcessRouteRespVO()
+                .setId(route.getId())
+                .setRouteCode(route.getRouteCode())
+                .setRouteName(route.getRouteName())
+                .setProductId(route.getProductId())
+                .setDefaultFlag(route.getDefaultFlag())
+                .setStatus(route.getStatus())));
+    }
+
     private List<ErpProcessRouteRespVO> buildProcessRouteRespVOList(List<ErpProcessRouteDO> list) {
         if (list == null || list.isEmpty()) {
             return List.of();

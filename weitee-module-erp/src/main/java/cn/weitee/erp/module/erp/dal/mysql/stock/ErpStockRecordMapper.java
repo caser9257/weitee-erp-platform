@@ -25,4 +25,12 @@ public interface ErpStockRecordMapper extends BaseMapperX<ErpStockRecordDO> {
                 .orderByDesc(ErpStockRecordDO::getId));
     }
 
+    default ErpStockRecordDO selectFirstByBiz(Integer bizType, Long bizId, Long bizItemId) {
+        return selectOne(new LambdaQueryWrapperX<ErpStockRecordDO>()
+                .eq(ErpStockRecordDO::getBizType, bizType)
+                .eq(ErpStockRecordDO::getBizId, bizId)
+                .eq(ErpStockRecordDO::getBizItemId, bizItemId)
+                .last("LIMIT 1"));
+    }
+
 }

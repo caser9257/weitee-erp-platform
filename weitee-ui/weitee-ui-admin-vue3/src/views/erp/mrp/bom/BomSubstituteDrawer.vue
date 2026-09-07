@@ -56,6 +56,16 @@
             <Icon icon="ep:plus" class="mr-5px" />
             新增替代料
           </el-button>
+          <el-button
+            type="primary"
+            plain
+            :disabled="drawerSaving || !props.itemMaterialId"
+            :loading="globalImporting"
+            @click="handleImportGlobalSubstitutes"
+          >
+            <Icon icon="ep:download" class="mr-5px" />
+            从全局替代料导入
+          </el-button>
         </div>
 
         <div class="bom-substitute-drawer__table-wrap">
@@ -168,7 +178,7 @@
 import { computed, ref, watch } from 'vue'
 import { useWindowSize } from '@vueuse/core'
 import { useMessage } from '@/hooks/web/useMessage'
-import { ProductVO } from '@/api/erp/product/product'
+import { ProductApi, type ProductVO } from '@/api/erp/product/product'
 import {
   cloneBomItemSubstitutes,
   createEmptyBomSubstitute,
@@ -203,6 +213,7 @@ const { width } = useWindowSize()
 
 const drawerSaving = ref(false)
 const submitTouched = ref(false)
+const globalImporting = ref(false)
 const draftRows = ref<DraftRow[]>([])
 const sourceSignature = ref('')
 
@@ -316,6 +327,47 @@ const handleSubstituteMaterialChange = (row: DraftRow, value?: number) => {
     return
   }
   row.substituteMaterialName = productMap.value[value]?.name
+}
+
+const handleImportGlobalSubstitutes = async () => {
+  if (globalImporting.value) {
+    return
+  }
+  if (!props.itemMaterialId) {
+    message.warning('请先选择物料后再从全局替代料导入')
+    return
+  }
+  globalImporting.value = true
+  try {
+    const list = await ProductApi.getSubstituteList(props.itemMaterialId)
+    const validRows = (list || []).filter(
+      (item) =>
+        item.substituteType === 1 &&
+        item.status === 0 &&
+        item.substituteProductId !== props.itemMaterialId
+    )
+    if (!validRows.length) {
+      message.info('该物料未预设全局替代料')
+      return
+    }
+    const existingIds = new Set(draftRows.value.map((r) => r.substituteMaterialId).filter(Boolean))
+    const newRows = validRows
+      .filter((item) => !existingIds.has(item.substituteProductId))
+      .map((item) => ({
+        ...createEmptyBomSubstitute(),
+        substituteMaterialId: item.substituteProductId,
+        substituteMaterialName: item.substituteProductName,
+        priority: item.priority ?? 1,
+        replaceRatio: item.replaceRatio ?? 1,
+        draftKey: buildDraftKey(draftRows.value.length)
+      }))
+    draftRows.value.push(...newRows)
+    message.success(`已从全局替代料带出 ${newRows.length} 条`)
+  } catch {
+    message.error('全局替代料加载失败')
+  } finally {
+    globalImporting.value = false
+  }
 }
 
 const handleSave = () => {

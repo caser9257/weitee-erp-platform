@@ -10,6 +10,10 @@ import cn.weitee.erp.module.erp.dal.mysql.finance.ErpFinancePrepaymentMapper;
 import cn.weitee.erp.module.erp.enums.ErpApStatementStatusEnum;
 import cn.weitee.erp.module.erp.enums.ErpAuditStatus;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -98,6 +102,16 @@ class ErpFinancePrepaymentServiceImplTest {
                     }
                     return defaultValue(methodName);
                 }));
+        setField(service, "redissonClient", createProxy(RedissonClient.class,
+                (methodName, args) -> "getLock".equals(methodName)
+                        ? createProxy(RLock.class, (lockMethodName, lockArgs) -> switch (lockMethodName) {
+                            case "tryLock" -> true;
+                            case "isHeldByCurrentThread" -> true;
+                            default -> null;
+                        })
+                        : null));
+        setField(service, "transactionManager", createProxy(PlatformTransactionManager.class,
+                (methodName, args) -> "getTransaction".equals(methodName) ? new SimpleTransactionStatus() : null));
         return service;
     }
 

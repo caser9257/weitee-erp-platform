@@ -8,7 +8,6 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-USE `ruoyi-vue-pro`;
 
 SET @add_warehouse_category_id = (
   SELECT IF(
@@ -199,10 +198,10 @@ DROP TEMPORARY TABLE IF EXISTS `tmp_warehouse_category_role_ids`;
 INSERT INTO `erp_warehouse_category`
 (`id`, `parent_id`, `name`, `code`, `sort`, `status`, `creator`, `create_time`, `updater`, `update_time`, `deleted`)
 VALUES
-(99211, 0, '原料仓', 'RAW', 1, 0, 'tester', NOW(), 'tester', NOW(), b'0'),
-(99212, 0, '成品仓', 'FINISHED', 2, 0, 'tester', NOW(), 'tester', NOW(), b'0'),
-(99213, 0, '在途仓', 'IN_TRANSIT', 3, 0, 'tester', NOW(), 'tester', NOW(), b'0'),
-(99214, 0, '测试仓库', 'TEST', 4, 0, 'tester', NOW(), 'tester', NOW(), b'0')
+(99211, 0, '原料仓', 'RAW', 1, 0, 'codex', NOW(), 'codex', NOW(), b'0'),
+(99212, 0, '成品仓', 'FINISHED', 2, 0, 'codex', NOW(), 'codex', NOW(), b'0'),
+(99213, 0, '在途仓', 'IN_TRANSIT', 3, 0, 'codex', NOW(), 'codex', NOW(), b'0'),
+(99214, 0, '测试仓库', 'TEST', 4, 0, 'codex', NOW(), 'codex', NOW(), b'0')
 ON DUPLICATE KEY UPDATE
 `parent_id` = VALUES(`parent_id`),
 `name` = VALUES(`name`),
